@@ -22,10 +22,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .as_storage_client();
     let container = storage_account.as_container_client(container_name);
 
-    let max_results = NonZeroU32::new(3).unwrap().into();
+    let max_results = NonZeroU32::new(3).unwrap();
     let iv = storage_account
         .list_containers()
-        .with_max_results(max_results)
+        .max_results(max_results)
         .execute()
         .await?;
     println!(
@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let iv = container
         .list_blobs()
-        .with_max_results(max_results)
+        .max_results(max_results)
         .execute()
         .await?;
 

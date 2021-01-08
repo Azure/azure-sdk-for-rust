@@ -42,14 +42,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         a_timestamp: chrono::Utc::now().timestamp(),
     });
 
-    let mut partition_keys = PartitionKeys::new();
-    partition_keys.push(&doc.document.id)?;
-
+    let partition_keys = PartitionKeys::from([&doc.document.id]);
     // let's add an entity.
     let create_document_response = client
         .create_document()
-        .with_partition_keys(&partition_keys)
-        .with_is_upsert(true)
+        .partition_keys(partition_keys.clone())
+        .is_upsert(true)
         .execute_with_document(&doc)
         .await?;
 
@@ -64,7 +62,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let get_document_response = document_client
         .get_document()
-        .with_consistency_level((&create_document_response).into())
+        .consistency_level(&create_document_response)
         .execute::<serde_json::Value>()
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
@@ -75,7 +73,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let get_document_response = document_client
         .get_document()
-        .with_consistency_level((&get_document_response).into())
+        .consistency_level(&get_document_response)
         .execute::<serde_json::Value>()
         .await?;
     println!(
@@ -85,16 +83,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let list_documents_response = client
         .list_documents()
-        .with_consistency_level((&get_document_response).into())
+        .consistency_level(&get_document_response)
         .execute::<serde_json::Value>()
         .await?;
     println!("list_documents_response == {:#?}", list_documents_response);
 
     let query_documents_response = client
         .query_documents()
-        .with_query(&("SELECT * FROM c WHERE c.a_number = 600".into()))
-        .with_consistency_level((&list_documents_response).into())
-        .with_query_cross_partition(true)
+        .query(&("SELECT * FROM c WHERE c.a_number = 600".into()))
+        .consistency_level(&list_documents_response)
+        .query_cross_partition(true)
         .execute::<serde_json::Value>()
         .await?;
     println!(
@@ -106,9 +104,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let replace_document_response = client
         .replace_document()
-        .with_consistency_level((&query_documents_response).into())
-        .with_document_id(&doc.document.id)
-        .with_partition_keys(&partition_keys)
+        .consistency_level(&query_documents_response)
+        .document_id(&doc.document.id)
+        .partition_keys(partition_keys)
         .execute_with_document(&doc)
         .await?;
     println!(

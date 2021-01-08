@@ -27,8 +27,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let res = storage_account
         .list_containers()
-        .with_client_request_id("ciccio".into())
-        .with_include_metadata(true)
+        .client_request_id("ciccio")
+        .include_metadata(true)
         .execute()
         .await?;
 
@@ -44,9 +44,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     //   time is waaay better than doing it at runtime!
     container
         .create()
-        .with_public_access(PublicAccess::Container)
-        .with_metadata(&metadata)
-        .with_timeout(Duration::from_secs(100).into())
+        .public_access(PublicAccess::Container)
+        .metadata(&metadata)
+        .timeout(Duration::from_secs(100))
         .execute()
         .await?;
 
@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let _result = container
         .set_acl(PublicAccess::Blob)
-        .with_stored_access_policy_list(&sapl)
+        .stored_access_policy_list(&sapl)
         .execute()
         .await?;
 
@@ -97,14 +97,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("\nget_properties() == {:?}", res);
 
     let res = container
-        .acquire_lease(Duration::from_secs(15).into())
+        .acquire_lease(Duration::from_secs(15))
         .execute()
         .await?;
     println!("\nacquire_lease() == {:?}", res);
 
     container
         .delete()
-        .with_lease_id(&res.lease_id) // we need to specify the lease or it won't work!
+        .lease_id(&res.lease_id) // we need to specify the lease or it won't work!
         .execute()
         .await?;
 

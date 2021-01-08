@@ -39,7 +39,7 @@ async fn code() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     {
         container
             .create()
-            .with_public_access(PublicAccess::Blob)
+            .public_access(PublicAccess::Blob)
             .execute()
             .await?;
     }
@@ -47,7 +47,7 @@ async fn code() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let string = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
 
     blob.put_block_blob(string.as_ref())
-        .with_content_type("text/plain".into())
+        .content_type("text/plain")
         .execute()
         .await?;
 
@@ -66,7 +66,7 @@ async fn code() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
         let chunk_size = 8;
 
-        let mut stream = Box::pin(blob.get().with_range(range).stream(chunk_size));
+        let mut stream = Box::pin(blob.get().range(range).stream(chunk_size));
 
         let result = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
 
@@ -94,7 +94,7 @@ async fn code() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 
     blob.delete()
-        .with_delete_snapshots_method(DeleteSnapshotsMethod::Include)
+        .delete_snapshots_method(DeleteSnapshotsMethod::Include)
         .execute()
         .await?;
 

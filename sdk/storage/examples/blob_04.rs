@@ -36,7 +36,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
         let put_block_response = blob
             .put_block(&block_id, block)
-            .with_hash(&hash)
+            .hash(&hash)
             .execute()
             .await?;
 

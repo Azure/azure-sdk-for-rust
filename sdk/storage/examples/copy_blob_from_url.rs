@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let response = blob
         .copy_from_url(&source_url)
-        .with_is_synchronous(true)
+        .is_synchronous(true)
         .execute()
         .await?;
 

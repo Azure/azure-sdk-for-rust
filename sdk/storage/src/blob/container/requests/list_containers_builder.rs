@@ -117,7 +117,7 @@ impl<'a> ListContainersBuilder<'a> {
                 let response = match next_marker {
                     Some(States::Init) => req.execute().await,
                     Some(States::NextMarker(next_marker)) => {
-                        req.with_next_marker(next_marker).execute().await
+                        req.next_marker(next_marker).execute().await
                     }
                     None => return None,
                 };

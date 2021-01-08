@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // create container
     let res = container
         .create()
-        .with_public_access(PublicAccess::None)
+        .public_access(PublicAccess::None)
         .execute()
         .await?;
     println!("{:?}", res);
@@ -40,8 +40,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let res = container
         .as_blob_client("blob0.txt")
         .put_block_blob(data)
-        .with_content_type("text/plain".into())
-        .with_hash(&hash)
+        .content_type("text/plain")
+        .hash(&hash)
         .execute()
         .await?;
     println!("{:?}", res);
@@ -49,8 +49,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let res = container
         .as_blob_client("blob1.txt")
         .put_block_blob(data)
-        .with_content_type("text/plain".into())
-        .with_hash(&hash)
+        .content_type("text/plain")
+        .hash(&hash)
         .execute()
         .await?;
     println!("{:?}", res);
@@ -58,15 +58,15 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let res = container
         .as_blob_client("blob2.txt")
         .put_block_blob(data)
-        .with_content_type("text/plain".into())
-        .with_hash(&hash)
+        .content_type("text/plain")
+        .hash(&hash)
         .execute()
         .await?;
     println!("{:?}", res);
 
     let res = container
         .list_blobs()
-        .with_include_metadata(true)
+        .include_metadata(true)
         .execute()
         .await?;
     println!("{:?}", res);

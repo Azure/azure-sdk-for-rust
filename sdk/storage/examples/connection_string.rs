@@ -37,8 +37,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // create the container
     container
         .create()
-        .with_public_access(PublicAccess::None)
-        .with_timeout(Duration::from_secs(100).into())
+        .public_access(PublicAccess::None)
+        .timeout(Duration::from_secs(100))
         .execute()
         .await?;
     println!("Container {} created", container_name);
@@ -48,16 +48,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         container
             .as_blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata".as_bytes())
-            .with_content_type("text/plain".into())
+            .content_type("text/plain")
             .execute()
             .await?;
         println!("\tAdded blob {}", i);
     }
 
-    let max_results = NonZeroU32::new(3).unwrap().into();
+    let max_results = NonZeroU32::new(3).unwrap();
     let iv = container
         .list_blobs()
-        .with_max_results(max_results)
+        .max_results(max_results)
         .execute()
         .await?;
 
@@ -66,12 +66,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("\t{}\t{} bytes", cont.name, cont.content_length);
     }
 
-    let mut stream = Box::pin(
-        container
-            .list_blobs()
-            .with_max_results(max_results)
-            .stream(),
-    );
+    let mut stream = Box::pin(container.list_blobs().max_results(max_results).stream());
 
     let mut cnt = 0;
     while let Some(value) = stream.next().await {

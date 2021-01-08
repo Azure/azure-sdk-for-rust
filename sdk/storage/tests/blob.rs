@@ -10,7 +10,6 @@ use azure_storage::blob::{
 };
 use azure_storage::core::prelude::*;
 use chrono::{FixedOffset, Utc};
-use std::convert::TryInto;
 use std::ops::Add;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -26,7 +25,7 @@ async fn create_and_delete_container() {
 
     container
         .create()
-        .with_public_access(PublicAccess::Container)
+        .public_access(PublicAccess::Container)
         .execute()
         .await
         .unwrap();
@@ -44,7 +43,7 @@ async fn create_and_delete_container() {
 
     let _result = container
         .set_acl(PublicAccess::Blob)
-        .with_stored_access_policy_list(&sapl)
+        .stored_access_policy_list(&sapl)
         .execute()
         .await
         .unwrap();
@@ -71,7 +70,7 @@ async fn create_and_delete_container() {
 
     let list = storage_client
         .list_containers()
-        .with_prefix(name.into())
+        .prefix(name)
         .execute()
         .await
         .unwrap();
@@ -87,7 +86,7 @@ async fn create_and_delete_container() {
     }
 
     let res = container
-        .acquire_lease(Duration::from_secs(30).into())
+        .acquire_lease(Duration::from_secs(30))
         .execute()
         .await
         .unwrap();
@@ -98,7 +97,7 @@ async fn create_and_delete_container() {
 
     container
         .delete()
-        .with_lease_id(&lease_id) // must pass the lease here too
+        .lease_id(&lease_id) // must pass the lease here too
         .execute()
         .await
         .unwrap();
@@ -116,7 +115,7 @@ async fn put_and_get_block_list() {
 
     container
         .create()
-        .with_public_access(PublicAccess::Container)
+        .public_access(PublicAccess::Container)
         .execute()
         .await
         .expect("container already present");
@@ -145,7 +144,7 @@ async fn put_and_get_block_list() {
 
     let put_block_response = blob
         .put_block(&"block3".into(), &contents3.as_bytes())
-        .with_hash(&digest3)
+        .hash(&digest3)
         .execute()
         .await
         .unwrap();
@@ -157,7 +156,7 @@ async fn put_and_get_block_list() {
 
     let received_block_list = blob
         .get_block_list()
-        .with_block_list_type(BlockListType::All)
+        .block_list_type(BlockListType::All)
         .execute()
         .await
         .unwrap();
@@ -168,7 +167,7 @@ async fn put_and_get_block_list() {
         .unwrap();
 
     let res = blob
-        .acquire_lease(Duration::from_secs(60).into())
+        .acquire_lease(Duration::from_secs(60))
         .execute()
         .await
         .unwrap();
@@ -182,7 +181,7 @@ async fn put_and_get_block_list() {
 
     let res = blob
         .break_lease()
-        .with_lease_break_period(Duration::from_secs(15).into())
+        .lease_break_period(Duration::from_secs(15))
         .execute()
         .await
         .unwrap();
@@ -193,7 +192,7 @@ async fn put_and_get_block_list() {
 
     let res = blob
         .delete()
-        .with_delete_snapshots_method(DeleteSnapshotsMethod::Include)
+        .delete_snapshots_method(DeleteSnapshotsMethod::Include)
         .execute()
         .await
         .unwrap();
@@ -215,9 +214,9 @@ async fn list_containers() {
         let ret = {
             let builder = storage
                 .list_containers()
-                .with_max_results(2u32.try_into().unwrap());
+                .max_results(std::num::NonZeroU32::new(2u32).unwrap());
             if let Some(nm) = next_marker {
-                builder.with_next_marker(nm).execute().await.unwrap()
+                builder.next_marker(nm).execute().await.unwrap()
             } else {
                 builder.execute().await.unwrap()
             }
@@ -254,7 +253,7 @@ async fn put_block_blob() {
     {
         container
             .create()
-            .with_public_access(PublicAccess::Blob)
+            .public_access(PublicAccess::Blob)
             .execute()
             .await
             .unwrap();
@@ -264,8 +263,8 @@ async fn put_block_blob() {
     let digest = md5::compute(&data[..]).into();
 
     blob.put_block_blob(data)
-        .with_content_type("text/plain".into())
-        .with_hash(&digest)
+        .content_type("text/plain")
+        .hash(&digest)
         .execute()
         .await
         .unwrap();
@@ -295,7 +294,7 @@ async fn copy_blob() {
     {
         container
             .create()
-            .with_public_access(PublicAccess::Blob)
+            .public_access(PublicAccess::Blob)
             .execute()
             .await
             .unwrap();
@@ -305,8 +304,8 @@ async fn copy_blob() {
     let digest = md5::compute(&data[..]).into();
 
     blob.put_block_blob(data)
-        .with_content_type("text/plain".into())
-        .with_hash(&digest)
+        .content_type("text/plain")
+        .hash(&digest)
         .execute()
         .await
         .unwrap();
@@ -356,7 +355,7 @@ async fn put_block_blob_and_get_properties() {
     {
         container
             .create()
-            .with_public_access(PublicAccess::Blob)
+            .public_access(PublicAccess::Blob)
             .execute()
             .await
             .unwrap();
@@ -366,8 +365,8 @@ async fn put_block_blob_and_get_properties() {
     let digest = md5::compute(&data[..]).into();
 
     blob.put_block_blob(data)
-        .with_content_type("text/plain".into())
-        .with_hash(&digest)
+        .content_type("text/plain")
+        .hash(&digest)
         .execute()
         .await
         .unwrap();
@@ -389,7 +388,7 @@ fn send_check() {
         .as_container_client("a")
         .as_blob_client("b");
 
-    let _ = requires_send_future(blob.acquire_lease(Duration::from_secs(10).into()).execute());
+    let _ = requires_send_future(blob.acquire_lease(Duration::from_secs(10)).execute());
     let _ = requires_send_future(blob.clear_page(BA512Range::new(0, 1024).unwrap()).execute());
 }
 

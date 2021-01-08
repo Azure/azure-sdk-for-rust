@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let create_permission_response = permission_client
         .create_permission()
-        .with_expiry_seconds(18000) // 5 hours, max!
+        .expiry_seconds(18000u64) // 5 hours, max!
         .execute_with_permission(&permission_mode)
         .await?;
     println!(
@@ -76,7 +76,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         new_authorization_token
     );
     let mut client = client.clone();
-    client.with_auth_token(new_authorization_token);
+    client.auth_token(new_authorization_token);
 
     // let's list the documents with the new auth token
     let list_documents_response = client
@@ -116,8 +116,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_database_client(database_name.clone())
         .into_collection_client(collection_name.clone())
         .create_document()
-        .with_is_upsert(true)
-        .with_partition_keys(PartitionKeys::new().push("Gianluigi Bombatomica")?)
+        .is_upsert(true)
+        .partition_keys(["Gianluigi Bombatomica"])
         .execute_with_document(&document)
         .await
     {
@@ -131,7 +131,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let permission_mode = get_collection_response.collection.all_permission();
     let create_permission_response = permission_client
         .create_permission()
-        .with_expiry_seconds(18000) // 5 hours, max!
+        .expiry_seconds(18000u64) // 5 hours, max!
         .execute_with_permission(&permission_mode)
         .await?;
     println!(
@@ -148,7 +148,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         "Replacing authorization_token with {:?}.",
         new_authorization_token
     );
-    client.with_auth_token(new_authorization_token);
+    client.auth_token(new_authorization_token);
 
     // now we have an "All" authorization_token
     // so the create_document should succeed!
@@ -156,8 +156,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_database_client(database_name)
         .into_collection_client(collection_name)
         .create_document()
-        .with_is_upsert(true)
-        .with_partition_keys(PartitionKeys::new().push("Gianluigi Bombatomica")?)
+        .is_upsert(true)
+        .partition_keys(["Gianluigi Bombatomica"])
         .execute_with_document(&document)
         .await?;
     println!(

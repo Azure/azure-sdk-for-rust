@@ -105,7 +105,7 @@ impl<'a, 'b, MediaSet> ReplaceReferenceAttachmentBuilder<'a, 'b, No, MediaSet>
 where
     MediaSet: ToAssign,
 {
-    pub fn with_content_type(
+    pub fn content_type(
         self,
         content_type: &'b str,
     ) -> ReplaceReferenceAttachmentBuilder<'a, 'b, Yes, MediaSet> {
@@ -127,7 +127,7 @@ impl<'a, 'b, ContentTypeSet> ReplaceReferenceAttachmentBuilder<'a, 'b, ContentTy
 where
     ContentTypeSet: ToAssign,
 {
-    pub fn with_media(
+    pub fn media(
         self,
         media: &'b str,
     ) -> ReplaceReferenceAttachmentBuilder<'a, 'b, ContentTypeSet, Yes> {

@@ -46,8 +46,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // so make sure to check with the documentation.
     let res = blob
         .put_block_blob(data)
-        .with_content_type("text/plain".into())
-        .with_hash(&hash)
+        .content_type("text/plain")
+        .hash(&hash)
         .execute()
         .await?;
     println!("1-put_block_blob {:?}", res);
@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let ret = blob
         .get_block_list()
-        .with_block_list_type(BlockListType::All)
+        .block_list_type(BlockListType::All)
         .execute()
         .await?;
 
@@ -87,7 +87,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("PutBlockList == {:?}", res);
 
     let res = blob
-        .acquire_lease(Duration::from_secs(60).into())
+        .acquire_lease(Duration::from_secs(60))
         .execute()
         .await?;
     println!("Acquire lease == {:?}", res);
@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let res = blob
         .break_lease()
-        .with_lease_break_period(Duration::from_secs(15).into())
+        .lease_break_period(Duration::from_secs(15))
         .execute()
         .await?;
     println!("Break lease == {:?}", res);
@@ -109,7 +109,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let res = blob
         .delete()
-        .with_delete_snapshots_method(DeleteSnapshotsMethod::Include)
+        .delete_snapshots_method(DeleteSnapshotsMethod::Include)
         .execute()
         .await?;
     println!("Delete blob == {:?}", res);

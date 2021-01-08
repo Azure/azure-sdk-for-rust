@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let _response = blob
         .put_block_blob(string.as_bytes())
-        .with_content_type("text/plain".into())
+        .content_type("text/plain")
         .execute()
         .await?;
 
@@ -91,7 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     );
 
     blob.delete()
-        .with_delete_snapshots_method(DeleteSnapshotsMethod::Include)
+        .delete_snapshots_method(DeleteSnapshotsMethod::Include)
         .execute()
         .await?;
 

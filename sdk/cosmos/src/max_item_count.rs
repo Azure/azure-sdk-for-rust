@@ -2,10 +2,12 @@ use crate::headers;
 use azure_core::AddAsHeader;
 use http::request::Builder;
 
+/// The max number of items in the collection
 #[derive(Debug, Clone, Copy)]
 pub struct MaxItemCount(i32);
 
 impl MaxItemCount {
+    /// Create a new `MaxItemCount`
     pub fn new(count: i32) -> Self {
         Self(count)
     }

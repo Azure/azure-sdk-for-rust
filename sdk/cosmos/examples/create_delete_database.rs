@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let db = client
         .create_database()
-        .with_database_name(&database_name)
+        .database_name(&database_name)
         .execute()
         .await?;
     println!("created database = {:#?}", db);
@@ -71,10 +71,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
         let create_collection_response = db_client
             .create_collection()
-            .with_collection_name(&"panzadoro")
-            .with_partition_key(&("/id".into()))
-            .with_offer(Offer::Throughput(400))
-            .with_indexing_policy(&ip)
+            .collection_name(&"panzadoro")
+            .partition_key("/id")
+            .offer(Offer::Throughput(400))
+            .indexing_policy(&ip)
             .execute()
             .await?;
 

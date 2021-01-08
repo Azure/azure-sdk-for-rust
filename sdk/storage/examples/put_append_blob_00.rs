@@ -50,9 +50,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     trace!("before put_append_blob");
     let res = blob
         .put_append_blob()
-        .with_content_type("text/plain".into())
-        .with_content_language("en/us".into())
-        .with_metadata(&metadata)
+        .content_type("text/plain")
+        .content_language("en/us")
+        .metadata(&metadata)
         .execute()
         .await?;
 

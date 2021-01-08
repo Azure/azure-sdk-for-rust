@@ -6,7 +6,7 @@ mod query;
 
 pub use document_attributes::DocumentAttributes;
 pub use indexing_directive::IndexingDirective;
-pub use query::Query;
+pub use query::{Param, Query};
 
 use super::Resource;
 use crate::{headers, CosmosError};
@@ -63,6 +63,7 @@ impl<T> Resource for &Document<T> {
     }
 }
 
+/// Whether to query across partitions
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum QueryCrossPartition {
     Yes,
@@ -87,6 +88,7 @@ impl AddAsHeader for QueryCrossPartition {
     }
 }
 
+/// Whether to parallelize across partitions
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ParallelizeCrossPartition {
     Yes,
@@ -111,6 +113,7 @@ impl AddAsHeader for ParallelizeCrossPartition {
     }
 }
 
+/// Whether the operation is an upsert
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum IsUpsert {
     Yes,
@@ -132,6 +135,7 @@ impl AddAsHeader for IsUpsert {
     }
 }
 
+/// Whether to use an incremental change feed
 #[derive(Debug, Clone, Copy)]
 pub enum ChangeFeed {
     Incremental,
@@ -147,6 +151,7 @@ impl AddAsHeader for ChangeFeed {
     }
 }
 
+/// Whether to allow tenative writes allowance
 #[derive(Debug, Clone, Copy)]
 pub enum TenativeWritesAllowance {
     Allow,
@@ -168,10 +173,12 @@ impl AddAsHeader for TenativeWritesAllowance {
     }
 }
 
+/// Collections of partition keys grouped by physical partitions
 #[derive(Debug, Clone, Copy)]
 pub struct PartitionRangeId<'a>(&'a str);
 
 impl<'a> PartitionRangeId<'a> {
+    /// A new partition range id from a string
     pub fn new(id: &'a str) -> Self {
         Self(id)
     }

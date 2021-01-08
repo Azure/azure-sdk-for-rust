@@ -95,7 +95,7 @@ where
     TriggerTypeSet: ToAssign,
     BodySet: ToAssign,
 {
-    pub fn with_trigger_operation(
+    pub fn trigger_operation(
         self,
         trigger_operation: TriggerOperation,
     ) -> CreateOrReplaceTriggerBuilder<'a, Yes, TriggerTypeSet, BodySet> {
@@ -121,7 +121,7 @@ where
     TriggerOperationSet: ToAssign,
     BodySet: ToAssign,
 {
-    pub fn with_trigger_type(
+    pub fn trigger_type(
         self,
         trigger_type: TriggerType,
     ) -> CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, Yes, BodySet> {
@@ -147,7 +147,7 @@ where
     TriggerOperationSet: ToAssign,
     TriggerTypeSet: ToAssign,
 {
-    pub fn with_body(
+    pub fn body(
         self,
         body: &'a str,
     ) -> CreateOrReplaceTriggerBuilder<'a, TriggerOperationSet, TriggerTypeSet, Yes> {

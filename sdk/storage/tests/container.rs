@@ -14,13 +14,13 @@ async fn lease() {
 
     container
         .create()
-        .with_public_access(PublicAccess::Container)
+        .public_access(PublicAccess::Container)
         .execute()
         .await
         .unwrap();
 
     let res = container
-        .acquire_lease(Duration::from_secs(30).into())
+        .acquire_lease(Duration::from_secs(30))
         .execute()
         .await
         .unwrap();
@@ -42,13 +42,13 @@ async fn break_lease() {
 
     container
         .create()
-        .with_public_access(PublicAccess::Container)
+        .public_access(PublicAccess::Container)
         .execute()
         .await
         .unwrap();
 
     let res = container
-        .acquire_lease(Duration::from_secs(30).into())
+        .acquire_lease(Duration::from_secs(30))
         .execute()
         .await
         .unwrap();
@@ -58,7 +58,7 @@ async fn break_lease() {
 
     let res = container
         .break_lease()
-        .with_lease_break_period(Duration::from_secs(0).into())
+        .lease_break_period(Duration::from_secs(0))
         .execute()
         .await
         .unwrap();

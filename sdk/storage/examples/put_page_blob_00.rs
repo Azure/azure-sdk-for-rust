@@ -49,9 +49,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // so make sure to check with the documentation.
     let res = blob
         .put_page_blob(1024 * 3)
-        .with_content_type("text/plain".into())
-        .with_metadata(&metadata)
-        .with_sequence_number(100.into())
+        .content_type("text/plain")
+        .metadata(&metadata)
+        .sequence_number(100)
         .execute()
         .await?;
     println!("put_page_blob == {:?}", res);
@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // of bounds error will be thrown.
     let res = blob
         .update_page(BA512Range::new(0, 511)?, slice)
-        .with_hash(&digest.into())
+        .hash(&digest.into())
         .execute()
         .await?;
     println!("update first page == {:?}", res);
@@ -69,7 +69,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // update a second page with the same data
     let res = blob
         .update_page(BA512Range::new(512, 1023)?, slice)
-        .with_hash(&digest.into())
+        .hash(&digest.into())
         .execute()
         .await?;
     println!("update second page == {:?}", res);
@@ -77,8 +77,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // update the second page again with checks
     let res = blob
         .update_page(BA512Range::new(512, 1023)?, slice)
-        .with_hash(&digest.into())
-        .with_sequence_number_condition(SequenceNumberCondition::Equal(100))
+        .hash(&digest.into())
+        .sequence_number_condition(SequenceNumberCondition::Equal(100))
         .execute()
         .await?;
     println!("update sequence number condition == {:?}", res);

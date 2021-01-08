@@ -53,7 +53,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // let's add an entity.
     match client
         .create_document()
-        .with_partition_keys(PartitionKeys::new().push(&doc.document.id)?)
+        .partition_keys([&doc.document.id])
         .execute_with_document(&doc)
         .await
     {
@@ -78,9 +78,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let attachment_client = document_client.clone().into_attachment_client("myref06");
     let resp = attachment_client
         .create_reference()
-        .with_consistency_level((&ret).into())
-        .with_content_type("image/jpeg")
-        .with_media(
+        .consistency_level(ret)
+        .content_type("image/jpeg")
+        .media(
             "https://cdn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
         )
         .execute()
@@ -93,7 +93,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let resp = attachment_client
         .get()
-        .with_consistency_level(session_token)
+        .consistency_level(session_token)
         .execute()
         .await?;
 
@@ -104,9 +104,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let attachment_client = document_client.clone().into_attachment_client("myref06");
     let resp = attachment_client
         .replace_reference()
-        .with_consistency_level(session_token)
-        .with_content_type("image/jpeg")
-        .with_media(
+        .consistency_level(session_token)
+        .content_type("image/jpeg")
+        .media(
             "https://Adn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
         )
         .execute()
@@ -116,7 +116,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("deleting");
     let resp_delete = attachment_client
         .delete()
-        .with_consistency_level((&resp).into())
+        .consistency_level(&resp)
         .execute()
         .await?;
     println!("delete attachment == {:#?}", resp_delete);
@@ -126,9 +126,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let attachment_client = document_client.into_attachment_client("slug00".to_owned());
     let resp = attachment_client
         .create_slug()
-        .with_consistency_level((&resp_delete).into())
-        .with_content_type("text/plain")
-        .with_body(b"FFFFF")
+        .consistency_level(&resp_delete)
+        .content_type("text/plain")
+        .body(b"FFFFF")
         .execute()
         .await?;
 
@@ -137,7 +137,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("deleting");
     let resp_delete = attachment_client
         .delete()
-        .with_consistency_level((&resp).into())
+        .consistency_level(&resp)
         .execute()
         .await?;
     println!("delete attachment == {:#?}", resp_delete);

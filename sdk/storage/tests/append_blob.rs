@@ -37,7 +37,7 @@ async fn put_append_blob() {
     {
         container
             .create()
-            .with_public_access(PublicAccess::Blob)
+            .public_access(PublicAccess::Blob)
             .execute()
             .await
             .unwrap();
@@ -48,8 +48,8 @@ async fn put_append_blob() {
     metadata.insert("second", "something");
 
     blob.put_append_blob()
-        .with_content_type("text/plain".into())
-        .with_metadata(&metadata)
+        .content_type("text/plain")
+        .metadata(&metadata)
         .execute()
         .await
         .unwrap();

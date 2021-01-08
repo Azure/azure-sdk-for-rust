@@ -14,7 +14,7 @@ where
     IndexingPolicySet: ToAssign,
 {
     collection_client: &'a CollectionClient,
-    partition_key: Option<&'a PartitionKey>,
+    partition_key: Option<PartitionKey>,
     indexing_policy: Option<&'a IndexingPolicy>,
     user_agent: Option<UserAgent<'b>>,
     activity_id: Option<ActivityId<'b>>,
@@ -78,7 +78,7 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
         let request = Request {
             id: self.collection_client.collection_name(),
             indexing_policy: self.indexing_policy.unwrap(),
-            partition_key: self.partition_key.unwrap(),
+            partition_key: self.partition_key.as_ref().unwrap(),
         };
 
         let body = serde_json::to_string(&request)?;
@@ -104,15 +104,15 @@ impl<'a, 'b, IndexingPolicySet> ReplaceCollectionBuilder<'a, 'b, No, IndexingPol
 where
     IndexingPolicySet: ToAssign,
 {
-    pub fn with_partition_key(
+    pub fn partition_key<P: Into<PartitionKey>>(
         self,
-        partition_key: &'a PartitionKey,
+        partition_key: P,
     ) -> ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet> {
         ReplaceCollectionBuilder {
             collection_client: self.collection_client,
             p_partition_key: PhantomData,
             p_indexing_policy: PhantomData,
-            partition_key: Some(partition_key),
+            partition_key: Some(partition_key.into()),
             indexing_policy: self.indexing_policy,
             user_agent: self.user_agent,
             activity_id: self.activity_id,
@@ -125,7 +125,7 @@ impl<'a, 'b, PartitionKeysSet> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet
 where
     PartitionKeysSet: ToAssign,
 {
-    pub fn with_indexing_policy(
+    pub fn indexing_policy(
         self,
         indexing_policy: &'a IndexingPolicy,
     ) -> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, Yes> {

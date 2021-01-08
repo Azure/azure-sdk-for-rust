@@ -13,9 +13,9 @@ pub fn main() {
     };
 
     let connection_string = ConnectionStringBuilder::new()
-        .with_account_name(&account_name)
-        .with_account_key(&account_key)
-        .with_default_endpoints_protocol(default_endpoints_protocol)
+        .account_name(&account_name)
+        .account_key(&account_key)
+        .default_endpoints_protocol(default_endpoints_protocol)
         .build();
 
     println!("The connection string is: '{}'", connection_string);

@@ -22,14 +22,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // create container
     let res = container
         .create()
-        .with_public_access(PublicAccess::None)
+        .public_access(PublicAccess::None)
         .execute()
         .await?;
     println!("{:?}", res);
 
     let res = container
         .list_blobs()
-        .with_include_metadata(true)
+        .include_metadata(true)
         .execute()
         .await?;
     println!("{:?}", res);

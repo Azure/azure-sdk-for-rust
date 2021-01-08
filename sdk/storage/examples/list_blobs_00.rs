@@ -2,8 +2,8 @@ use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
-use std::convert::TryInto;
 use std::error::Error;
+use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -39,8 +39,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // create the container
     container
         .create()
-        .with_public_access(PublicAccess::None)
-        .with_timeout(Duration::from_secs(100).into())
+        .public_access(PublicAccess::None)
+        .timeout(Duration::from_secs(100))
         .execute()
         .await?;
     println!("Container {} created", container_name);
@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         container
             .as_blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata".as_bytes())
-            .with_content_type("text/plain".into())
+            .content_type("text/plain")
             .execute()
             .await?;
         println!("\tAdded blob {}", i);
@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let iv = container
         .list_blobs()
-        .with_max_results(3u32.try_into()?)
+        .max_results(NonZeroU32::new(3u32).unwrap())
         .execute()
         .await?;
 
@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut stream = Box::pin(
         container
             .list_blobs()
-            .with_max_results(3u32.try_into()?)
+            .max_results(NonZeroU32::new(3u32).unwrap())
             .stream(),
     );
 

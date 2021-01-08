@@ -55,8 +55,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .insert_entity(&entity)
         .with_partition_key("part100")
         .with_row_key("row100")
-        .with_client_request_id("sss".into())
-        .with_timeout(std::time::Duration::from_secs(20).into())
+        .client_request_id("sss")
+        .timeout(std::time::Duration::from_secs(20))
         .execute()
         .await?;
     println!("key response = {:#?}", response);

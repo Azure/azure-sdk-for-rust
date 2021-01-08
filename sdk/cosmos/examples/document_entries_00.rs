@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         response = Some(
             client
                 .create_document()
-                .with_partition_keys(PartitionKeys::new().push(&doc.document.id)?)
+                .partition_keys([&doc.document.id])
                 .execute_with_document(&doc)
                 .await?,
         );
@@ -67,8 +67,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Let's get 3 entries at a time.
     let response = client
         .list_documents()
-        .with_consistency_level(response.unwrap().into())
-        .with_max_item_count(3)
+        .consistency_level(response.unwrap())
+        .max_item_count(3i32)
         .execute::<MySampleStruct>()
         .await?;
 
@@ -79,14 +79,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // continuation_token must be present
     assert!(response.continuation_token.is_some());
 
-    let session_token = (&response).into();
+    let session_token = &response;
     let ct = response.continuation_token.clone().unwrap();
     println!("ct == {}", ct);
 
     let response = client
         .list_documents()
-        .with_consistency_level(session_token)
-        .with_continuation(&ct)
+        .consistency_level(session_token)
+        .continuation(ct.as_str())
         .execute::<MySampleStruct>()
         .await?;
 
@@ -106,8 +106,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("\nStreaming documents");
         let stream = client
             .list_documents()
-            .with_consistency_level(session_token.clone())
-            .with_max_item_count(3);
+            .consistency_level(session_token.clone())
+            .max_item_count(3);
         let mut stream = Box::pin(stream.stream::<MySampleStruct>());
         // TODO: As soon as the streaming functionality is completed
         // in Rust substitute this while let Some... into
@@ -120,13 +120,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("\n\nLooking for a specific item");
     let id = format!("unique_id{}", 3);
-    let partition_keys: PartitionKeys = (&id).into();
+    let partition_keys = PartitionKeys::from([&id]);
 
     let response = client
         .clone()
         .into_document_client(id.clone(), partition_keys.clone())
         .get_document()
-        .with_consistency_level(session_token)
+        .consistency_level(session_token)
         .execute::<MySampleStruct>()
         .await?;
 
@@ -145,10 +145,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("\n\nReplacing document");
     let replace_document_response = client
         .replace_document()
-        .with_partition_keys(&partition_keys)
-        .with_document_id(&id)
-        .with_consistency_level(ConsistencyLevel::from(&response))
-        .with_if_match_condition(IfMatchCondition::Match(&doc.etag)) // use optimistic concurrency check
+        .partition_keys(partition_keys)
+        .document_id(&id)
+        .consistency_level(ConsistencyLevel::from(&response))
+        .if_match_condition(IfMatchCondition::Match(&doc.etag)) // use optimistic concurrency check
         .execute_with_document(&doc.document)
         .await?;
 
@@ -161,13 +161,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // has_been_found == false
     println!("\n\nLooking for non-existing item");
     let id = format!("unique_id{}", 100);
-    let partition_keys: PartitionKeys = (&id).into();
+    let partition_keys = PartitionKeys::from([&id]);
 
     let response = client
         .clone()
         .into_document_client(id.clone(), partition_keys)
         .get_document()
-        .with_consistency_level((&response).into())
+        .consistency_level(&response)
         .execute::<MySampleStruct>()
         .await?;
 
@@ -179,12 +179,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     for i in 0u64..5 {
         let id = format!("unique_id{}", i);
-        let partition_keys: PartitionKeys = (&id).into();
+        let partition_keys = PartitionKeys::from([&id]);
         client
             .clone()
             .into_document_client(id, partition_keys)
             .delete_document()
-            .with_consistency_level((&response).into())
+            .consistency_level(&response)
             .execute()
             .await?;
     }

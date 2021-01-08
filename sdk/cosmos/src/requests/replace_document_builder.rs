@@ -16,7 +16,7 @@ where
     DocumentIdSet: ToAssign,
 {
     collection_client: &'a CollectionClient,
-    partition_keys: Option<&'b PartitionKeys>,
+    partition_keys: Option<PartitionKeys>,
     document_id: Option<&'b str>,
     indexing_directive: IndexingDirective,
     if_match_condition: Option<IfMatchCondition<'b>>,
@@ -93,7 +93,8 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
         let req = azure_core::headers::add_optional_header(&self.user_agent, req);
         let req = azure_core::headers::add_optional_header(&self.activity_id, req);
         let req = azure_core::headers::add_optional_header(&self.consistency_level, req);
-        let req = azure_core::headers::add_mandatory_header(&self.partition_keys.unwrap(), req);
+        let req =
+            azure_core::headers::add_mandatory_header(&self.partition_keys.as_ref().unwrap(), req);
         let req = azure_core::headers::add_mandatory_header(&self.allow_tentative_writes, req);
 
         let serialized = serde_json::to_string(document)?;
@@ -114,12 +115,12 @@ impl<'a, 'b, DocumentIdSet> ReplaceDocumentBuilder<'a, 'b, No, DocumentIdSet>
 where
     DocumentIdSet: ToAssign,
 {
-    pub fn with_partition_keys(
+    pub fn partition_keys<P: Into<PartitionKeys>>(
         self,
-        partition_keys: &'b PartitionKeys,
+        partition_keys: P,
     ) -> ReplaceDocumentBuilder<'a, 'b, Yes, DocumentIdSet> {
         ReplaceDocumentBuilder {
-            partition_keys: Some(partition_keys),
+            partition_keys: Some(partition_keys.into()),
             collection_client: self.collection_client,
             document_id: self.document_id,
             indexing_directive: self.indexing_directive,
@@ -139,7 +140,7 @@ impl<'a, 'b, PartitionKeysSet> ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, 
 where
     PartitionKeysSet: ToAssign,
 {
-    pub fn with_document_id(
+    pub fn document_id(
         self,
         document_id: &'b str,
     ) -> ReplaceDocumentBuilder<'a, 'b, PartitionKeysSet, Yes> {

@@ -71,8 +71,11 @@ impl ContainerClient {
         ListBlobsBuilder::new(self)
     }
 
-    pub fn acquire_lease(&self, lease_duration: LeaseDuration) -> AcquireLeaseBuilder {
-        AcquireLeaseBuilder::new(self, lease_duration)
+    pub fn acquire_lease<LD: Into<LeaseDuration>>(
+        &self,
+        lease_duration: LD,
+    ) -> AcquireLeaseBuilder {
+        AcquireLeaseBuilder::new(self, lease_duration.into())
     }
 
     pub fn break_lease(&self) -> BreakLeaseBuilder {

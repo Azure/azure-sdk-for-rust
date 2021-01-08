@@ -118,7 +118,7 @@ impl<'a> GetBlobBuilder<'a> {
                 Range::new(remaining.start, remaining.start + chunk_size)
             };
 
-            let req = self.with_range(range);
+            let req = self.range(range);
 
             let response = match req.execute().await {
                 Ok(response) => response,

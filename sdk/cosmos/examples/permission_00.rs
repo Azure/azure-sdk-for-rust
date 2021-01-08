@@ -59,8 +59,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let create_permission_response = permission_client
         .create_permission()
-        .with_consistency_level((&create_user_response).into())
-        .with_expiry_seconds(18000) // 5 hours, max!
+        .consistency_level(&create_user_response)
+        .expiry_seconds(18000u64) // 5 hours, max!
         .execute_with_permission(&permission_mode)
         .await?;
     println!(
@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let create_permission2_response = permission_client
         .create_permission()
-        .with_consistency_level((&create_user_response).into())
+        .consistency_level(&create_user_response)
         .execute_with_permission(&permission_mode)
         .await?;
     println!(
@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let list_permissions_response = user_client
         .list_permissions()
-        .with_consistency_level(ConsistencyLevel::Session(
+        .consistency_level(ConsistencyLevel::Session(
             create_permission2_response.session_token,
         ))
         .execute()
@@ -97,7 +97,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let get_permission_response = permission_client
         .get_permission()
-        .with_consistency_level(ConsistencyLevel::Session(
+        .consistency_level(ConsistencyLevel::Session(
             list_permissions_response.session_token,
         ))
         .execute()
@@ -110,8 +110,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // renew permission extending its validity for 60 seconds more.
     let replace_permission_response = permission_client
         .replace_permission()
-        .with_expiry_seconds(60)
-        .with_consistency_level(ConsistencyLevel::Session(
+        .expiry_seconds(60u64)
+        .consistency_level(ConsistencyLevel::Session(
             get_permission_response.session_token,
         ))
         .execute_with_permission(permission_mode)
@@ -123,7 +123,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let delete_permission_response = permission_client
         .delete_permission()
-        .with_consistency_level(ConsistencyLevel::Session(
+        .consistency_level(ConsistencyLevel::Session(
             replace_permission_response.session_token,
         ))
         .execute()
@@ -135,7 +135,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let delete_user_response = user_client
         .delete_user()
-        .with_consistency_level(ConsistencyLevel::Session(
+        .consistency_level(ConsistencyLevel::Session(
             delete_permission_response.session_token,
         ))
         .execute()

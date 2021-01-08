@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let response = blob_client
         .get()
-        .with_range(Range::new(0, 128000))
+        .range(Range::new(0, 128000))
         .execute()
         .await?;
 

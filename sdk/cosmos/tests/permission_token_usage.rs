@@ -16,7 +16,7 @@ async fn permission_token_usage() {
     // create a temp database
     let _create_database_response = client
         .create_database()
-        .with_database_name(&DATABASE_NAME)
+        .database_name(&DATABASE_NAME)
         .execute()
         .await
         .unwrap();
@@ -33,10 +33,10 @@ async fn permission_token_usage() {
 
     let create_collection_response = database_client
         .create_collection()
-        .with_collection_name(&COLLECTION_NAME)
-        .with_offer(Offer::Throughput(400))
-        .with_partition_key(&("/id".into()))
-        .with_indexing_policy(&indexing_policy)
+        .collection_name(&COLLECTION_NAME)
+        .offer(Offer::Throughput(400))
+        .partition_key("/id")
+        .indexing_policy(&indexing_policy)
         .execute()
         .await
         .unwrap();
@@ -50,7 +50,7 @@ async fn permission_token_usage() {
 
     let create_permission_response = permission_client
         .create_permission()
-        .with_expiry_seconds(18000) // 5 hours, max!
+        .expiry_seconds(18000u64) // 5 hours, max!
         .execute_with_permission(&permission_mode)
         .await
         .unwrap();
@@ -61,7 +61,7 @@ async fn permission_token_usage() {
         .permission
         .permission_token
         .into();
-    client.with_auth_token(new_authorization_token);
+    client.auth_token(new_authorization_token);
     let new_database_client = client.clone().into_database_client(DATABASE_NAME);
 
     // let's list the collection content.
@@ -90,8 +90,8 @@ async fn permission_token_usage() {
     let document = Document::new(serde_json::from_str::<serde_json::Value>(data).unwrap());
     new_collection_client
         .create_document()
-        .with_is_upsert(true)
-        .with_partition_keys(PartitionKeys::new().push(&"Gianluigi Bombatomica").unwrap())
+        .is_upsert(true)
+        .partition_keys(["Gianluigi Bombatomica"])
         .execute_with_document(&document)
         .await
         .unwrap_err();
@@ -106,7 +106,7 @@ async fn permission_token_usage() {
     let permission_mode = create_collection_response.collection.all_permission();
     let create_permission_response = permission_client
         .create_permission()
-        .with_expiry_seconds(18000) // 5 hours, max!
+        .expiry_seconds(18000u64) // 5 hours, max!
         .execute_with_permission(&permission_mode)
         .await
         .unwrap();
@@ -115,7 +115,7 @@ async fn permission_token_usage() {
         .permission
         .permission_token
         .into();
-    client.with_auth_token(new_authorization_token);
+    client.auth_token(new_authorization_token);
     let new_database_client = client.into_database_client(DATABASE_NAME);
     let new_collection_client = new_database_client.into_collection_client(COLLECTION_NAME);
 
@@ -123,8 +123,8 @@ async fn permission_token_usage() {
     // so the create_document should succeed!
     let create_document_response = new_collection_client
         .create_document()
-        .with_is_upsert(true)
-        .with_partition_keys(PartitionKeys::new().push(&"Gianluigi Bombatomica").unwrap())
+        .is_upsert(true)
+        .partition_keys(["Gianluigi Bombatomica"])
         .execute_with_document(&document)
         .await
         .unwrap();

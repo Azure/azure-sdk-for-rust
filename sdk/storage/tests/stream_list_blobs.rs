@@ -3,7 +3,6 @@ use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
-use std::convert::TryInto;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -37,8 +36,8 @@ async fn stream_list_blobs() {
     // create the container
     container
         .create()
-        .with_public_access(PublicAccess::None)
-        .with_timeout(Duration::from_secs(100).into())
+        .public_access(PublicAccess::None)
+        .timeout(Duration::from_secs(100))
         .execute()
         .await
         .unwrap();
@@ -48,7 +47,7 @@ async fn stream_list_blobs() {
         container
             .as_blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata".as_bytes())
-            .with_content_type("text/plain".into())
+            .content_type("text/plain")
             .execute()
             .await
             .unwrap();
@@ -57,11 +56,11 @@ async fn stream_list_blobs() {
     let mut stream = Box::pin(
         container
             .list_blobs()
-            .with_max_results(3u32.try_into().unwrap())
+            .max_results(std::num::NonZeroU32::new(3u32).unwrap())
             .stream(),
     );
 
-    let mut cnt = 0;
+    let mut cnt = 0u32;
     while let Some(value) = stream.next().await {
         let len = value.unwrap().incomplete_vector.len();
         println!("received {} blobs", len);

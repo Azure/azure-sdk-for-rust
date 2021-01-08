@@ -44,7 +44,7 @@ where
 }
 
 impl<'a> CreateDatabaseBuilder<'a, No> {
-    pub fn with_database_name(self, database_name: &'a str) -> CreateDatabaseBuilder<'a, Yes> {
+    pub fn database_name(self, database_name: &'a str) -> CreateDatabaseBuilder<'a, Yes> {
         CreateDatabaseBuilder {
             database_name: Some(database_name),
             cosmos_client: self.cosmos_client,

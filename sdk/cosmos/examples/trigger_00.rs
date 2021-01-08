@@ -62,19 +62,19 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let ret = trigger_client
         .create_trigger()
-        .with_trigger_type(TriggerType::Post)
-        .with_trigger_operation(TriggerOperation::All)
-        .with_body(&"something")
+        .trigger_type(TriggerType::Post)
+        .trigger_operation(TriggerOperation::All)
+        .body(&"something")
         .execute()
         .await?;
     println!("Creeate response object:\n{:#?}", ret);
 
     let ret = trigger_client
         .replace_trigger()
-        .with_consistency_level(ret.into())
-        .with_trigger_type(TriggerType::Post)
-        .with_trigger_operation(TriggerOperation::All)
-        .with_body(&TRIGGER_BODY)
+        .consistency_level(ret)
+        .trigger_type(TriggerType::Post)
+        .trigger_operation(TriggerOperation::All)
+        .body(&TRIGGER_BODY)
         .execute()
         .await?;
     println!("Replace response object:\n{:#?}", ret);
@@ -83,8 +83,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let stream = collection_client
         .list_triggers()
-        .with_max_item_count(3)
-        .with_consistency_level((&ret).into());
+        .max_item_count(3)
+        .consistency_level(&ret);
     let mut stream = Box::pin(stream.stream());
     while let Some(ret) = stream.next().await {
         let ret = ret.unwrap();
@@ -97,7 +97,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let ret = trigger_client
         .delete_trigger()
-        .with_consistency_level(last_session_token.unwrap())
+        .consistency_level(last_session_token.unwrap())
         .execute()
         .await?;
     println!("Delete response object:\n{:#?}", ret);

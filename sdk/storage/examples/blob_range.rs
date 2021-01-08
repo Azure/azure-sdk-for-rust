@@ -49,27 +49,19 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     assert_eq!(whole.data.len(), buf.len());
 
-    let chunk0 = blob.get().with_range(Range::new(0, 1024)).execute().await?;
+    let chunk0 = blob.get().range(Range::new(0, 1024)).execute().await?;
     assert_eq!(chunk0.data.len(), 1024);
     for i in 0..1024 {
         assert_eq!(chunk0.data[i], 71);
     }
 
-    let chunk1 = blob
-        .get()
-        .with_range(Range::new(1024, 1536))
-        .execute()
-        .await?;
+    let chunk1 = blob.get().range(Range::new(1024, 1536)).execute().await?;
     assert_eq!(chunk1.data.len(), 512);
     for i in 0..512 {
         assert_eq!(chunk1.data[i], 72);
     }
 
-    let chunk2 = blob
-        .get()
-        .with_range(Range::new(1536, 3584))
-        .execute()
-        .await?;
+    let chunk2 = blob.get().range(Range::new(1536, 3584)).execute().await?;
     assert_eq!(chunk2.data.len(), 2048);
     for i in 0..2048 {
         assert_eq!(chunk2.data[i], 73);

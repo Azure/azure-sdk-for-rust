@@ -86,7 +86,7 @@ impl CosmosClient {
         }
     }
 
-    pub fn with_auth_token(&mut self, auth_token: AuthorizationToken) {
+    pub fn auth_token(&mut self, auth_token: AuthorizationToken) {
         self.auth_token = auth_token;
     }
 

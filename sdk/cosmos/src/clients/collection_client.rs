@@ -83,12 +83,12 @@ impl CollectionClient {
         requests::GetPartitionKeyRangesBuilder::new(self)
     }
 
-    pub fn into_document_client<S: Into<ReadonlyString>>(
+    pub fn into_document_client<S: Into<ReadonlyString>, P: Into<PartitionKeys>>(
         self,
         document_name: S,
-        partition_keys: PartitionKeys,
+        partition_keys: P,
     ) -> DocumentClient {
-        DocumentClient::new(self, document_name, partition_keys)
+        DocumentClient::new(self, document_name, partition_keys.into())
     }
 
     pub fn into_trigger_client<S: Into<ReadonlyString>>(self, trigger_name: S) -> TriggerClient {

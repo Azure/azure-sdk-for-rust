@@ -26,11 +26,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let _res = container
         .list_blobs()
-        .with_include_copy(true)
-        .with_include_deleted(true)
-        .with_include_metadata(true)
-        .with_include_snapshots(true)
-        .with_include_uncommitted_blobs(true)
+        .include_copy(true)
+        .include_deleted(true)
+        .include_metadata(true)
+        .include_snapshots(true)
+        .include_uncommitted_blobs(true)
         .execute()
         .await?;
 

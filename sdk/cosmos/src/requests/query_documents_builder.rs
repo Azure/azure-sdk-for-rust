@@ -136,7 +136,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
                     Some(States::Init) => self.execute().await,
                     Some(States::Continuation(continuation_token)) => {
                         self.clone()
-                            .with_continuation(&continuation_token)
+                            .continuation(continuation_token.as_str())
                             .execute()
                             .await
                     }
@@ -160,7 +160,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
 }
 
 impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
-    pub fn with_query(self, query: &'b Query<'b>) -> QueryDocumentsBuilder<'a, 'b, Yes> {
+    pub fn query(self, query: &'b Query<'b>) -> QueryDocumentsBuilder<'a, 'b, Yes> {
         QueryDocumentsBuilder {
             query: Some(query),
             collection_client: self.collection_client,

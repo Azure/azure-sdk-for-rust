@@ -70,10 +70,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         session_token = Some(
             collection_client
                 .create_document()
-                .with_partition_keys(
-                    PartitionKeys::new().push(&document_to_insert.document.a_number)?,
-                )
-                .with_is_upsert(true) // this option will overwrite a preexisting document (if any)
+                .partition_keys([&document_to_insert.document.a_number])
+                .is_upsert(true) // this option will overwrite a preexisting document (if any)
                 .execute_with_document(&document_to_insert)
                 .await?
                 .session_token, // get only the session token, if everything else was ok!
@@ -91,8 +89,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // you will use a more sensible number (or accept the Azure default).
         let stream = collection_client
             .list_documents()
-            .with_consistency_level(session_token.clone())
-            .with_max_item_count(3);
+            .consistency_level(session_token.clone())
+            .max_item_count(3);
         let mut stream = Box::pin(stream.stream::<MySampleStruct>());
         // TODO: As soon as the streaming functionality is stabilized
         // in Rust we can substitute this while let Some... into
@@ -108,9 +106,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("\nQuerying documents");
     let query_documents_response = collection_client
         .query_documents()
-        .with_query(&("SELECT * FROM A WHERE A.a_number < 600".into())) // there are other ways to construct a query, this is the simplest.
-        .with_query_cross_partition(true) // this will perform a cross partition query! notice how simple it is!
-        .with_consistency_level(session_token)
+        .query(&("SELECT * FROM A WHERE A.a_number < 600".into())) // there are other ways to construct a query, this is the simplest.
+        .query_cross_partition(true) // this will perform a cross partition query! notice how simple it is!
+        .consistency_level(session_token)
         .execute::<MySampleStruct>() // This will make sure the result is our custom struct!
         .await?
         .into_documents() // queries can return Documents or Raw json (ie without etag, _rid, etc...). Since our query return docs we convert with this function.
@@ -142,11 +140,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .clone()
             .into_document_client(
                 document.result.id.clone().into_owned(),
-                document.result.a_number.into(),
+                [document.result.a_number],
             )
             .delete_document()
-            .with_consistency_level(session_token.clone())
-            .with_if_match_condition((&document.document_attributes).into())
+            .consistency_level(session_token.clone())
+            .if_match_condition(&document.document_attributes)
             .execute()
             .await?;
     }
@@ -155,7 +153,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Now the list documents should return 4 documents!
     let list_documents_response = collection_client
         .list_documents()
-        .with_consistency_level(session_token)
+        .consistency_level(session_token)
         .execute::<serde_json::Value>() // you can use this if you don't know/care about the return type!
         .await?;
     assert_eq!(list_documents_response.documents.len(), 4);
