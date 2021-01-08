@@ -2,7 +2,7 @@ use super::*;
 use crate::requests;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
-use azure_core::{HttpClient, No};
+use azure_core::HttpClient;
 
 /// A client for Cosmos database resources.
 #[derive(Debug, Clone)]
@@ -46,8 +46,11 @@ impl DatabaseClient {
         requests::DeleteDatabaseBuilder::new(self)
     }
 
-    pub fn create_collection(&self) -> requests::CreateCollectionBuilder<'_, No, No, No, No> {
-        requests::CreateCollectionBuilder::new(self)
+    pub fn create_collection<'a, C: Into<&'a str>>(
+        &'a self,
+        collection_name: C,
+    ) -> requests::CreateCollectionBuilder<'a> {
+        requests::CreateCollectionBuilder::new(self, collection_name.into())
     }
 
     pub fn list_users(&self) -> requests::ListUsersBuilder<'_, '_> {

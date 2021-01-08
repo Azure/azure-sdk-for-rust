@@ -40,12 +40,8 @@ async fn create_and_delete_document() {
     };
 
     database_client
-        .create_collection()
-        .collection_name(&COLLECTION_NAME)
-        .offer(Offer::Throughput(400))
-        .partition_key("/id")
-        .indexing_policy(&indexing_policy)
-        .execute()
+        .create_collection(COLLECTION_NAME)
+        .execute("/id", Offer::Throughput(400), indexing_policy)
         .await
         .unwrap();
 
@@ -130,12 +126,8 @@ async fn query_documents() {
     };
 
     database_client
-        .create_collection()
-        .collection_name(&COLLECTION_NAME)
-        .offer(Offer::S2)
-        .partition_key("/id")
-        .indexing_policy(&indexing_policy)
-        .execute()
+        .create_collection(COLLECTION_NAME)
+        .execute("/id", Offer::S2, indexing_policy)
         .await
         .unwrap();
 
@@ -207,12 +199,8 @@ async fn replace_document() {
     };
 
     database_client
-        .create_collection()
-        .collection_name(&COLLECTION_NAME)
-        .offer(Offer::S2)
-        .partition_key("/id")
-        .indexing_policy(&indexing_policy)
-        .execute()
+        .create_collection(COLLECTION_NAME)
+        .execute("/id", Offer::S2, indexing_policy)
         .await
         .unwrap();
 

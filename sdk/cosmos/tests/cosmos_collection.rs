@@ -28,12 +28,8 @@ async fn create_and_delete_collection() {
         excluded_paths: vec![],
     };
     let collection = database_client
-        .create_collection()
-        .collection_name(&COLLECTION_NAME)
-        .offer(Offer::S2)
-        .partition_key("/id")
-        .indexing_policy(&indexing_policy)
-        .execute()
+        .create_collection(COLLECTION_NAME)
+        .execute("/id", Offer::S2, indexing_policy)
         .await
         .unwrap();
     let collections = database_client.list_collections().execute().await.unwrap();
@@ -89,12 +85,8 @@ async fn replace_collection() {
         excluded_paths: vec![],
     };
     let collection = database_client
-        .create_collection()
-        .collection_name(&COLLECTION_NAME)
-        .offer(Offer::S2)
-        .partition_key("/id")
-        .indexing_policy(&indexing_policy)
-        .execute()
+        .create_collection(COLLECTION_NAME)
+        .execute("/id", Offer::S2, indexing_policy)
         .await
         .unwrap();
 

@@ -57,12 +57,8 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
         };
 
         database_client
-            .create_collection()
-            .collection_name(&COLLECTION_NAME)
-            .partition_key("/id")
-            .offer(Offer::Throughput(400))
-            .indexing_policy(&ip)
-            .execute()
+            .create_collection(COLLECTION_NAME)
+            .execute("/id", Offer::Throughput(400), ip)
             .await
             .unwrap()
     };
