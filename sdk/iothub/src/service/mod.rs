@@ -9,10 +9,12 @@ pub mod identity;
 pub mod twin;
 
 use crate::service::directmethod::DirectMethod;
-use crate::service::identity::{get_identity, Device, Module};
+use crate::service::identity::{
+    delete_identity, get_identity, Device, DeviceIdentityBuilder, IdentityOperation, Module,
+};
 use crate::service::twin::{get_twin, DesiredTwinBuilder, DeviceTwin, ModuleTwin};
 
-pub const API_VERSION: &str = "2020-03-13";
+pub const API_VERSION: &str = "2020-05-31-preview";
 
 /// The ServiceClient is the main entry point for communicating with the IoT Hub.
 ///
@@ -423,7 +425,7 @@ impl ServiceClient {
         get_identity(&self, device_id.into(), None).await
     }
 
-    /// Get the identity of a given module 
+    /// Get the identity of a given module
     ///
     /// ```
     /// use iothub::service::ServiceClient;
@@ -443,6 +445,66 @@ impl ServiceClient {
         T: Into<String>,
     {
         get_identity(&self, device_id.into(), Some(module_id.into())).await
+    }
+
+    /// Create a new device identity
+    ///
+    /// ```
+    /// use iothub::service::{ServiceClient, identity::Status};
+    /// use serde_json;
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iothub.create_device_identity()
+    ///     .device_id("some-new-device")
+    ///     .authentication_using_sas("first-key", "second-key")
+    ///     .status(Status::Enabled)
+    ///     .execute();
+    /// ```
+    pub fn create_device_identity(&self) -> DeviceIdentityBuilder {
+        DeviceIdentityBuilder::new(&self, IdentityOperation::Create, None)
+    }
+
+    /// Create a new device identity
+    ///
+    /// ```
+    /// use iothub::service::{ServiceClient, identity::Status};
+    /// use serde_json;
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iothub.update_device_identity("etag-of-device-to-update")
+    ///     .device_id("some-new-device")
+    ///     .authentication_using_sas("first-key", "second-key")
+    ///     .status(Status::Disabled)
+    ///     .execute();
+    /// ```
+    pub fn update_device_identity<S>(&self, etag: S) -> DeviceIdentityBuilder
+    where
+        S: Into<String>,
+    {
+        DeviceIdentityBuilder::new(&self, IdentityOperation::Update, Some(etag.into()))
+    }
+
+    /// Create a new device identity
+    ///
+    /// The if-match value can either be Some(String) or None. When if-match is None,
+    /// an unconditional delete will be performed.
+    ///
+    /// ```
+    /// use iothub::service::{ServiceClient};
+    /// use serde_json;
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iothub.delete_device_identity("some-device-id", None);
+    /// ```
+    pub async fn delete_device_identity<S>(
+        &self,
+        device_id: S,
+        if_match: Option<String>,
+    ) -> Result<(), AzureError>
+    where
+        S: Into<String>,
+    {
+        delete_identity(&self, if_match, device_id.into(), None).await
     }
 }
 
