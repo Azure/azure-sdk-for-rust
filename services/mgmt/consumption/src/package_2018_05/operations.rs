@@ -5,3 +5,1038 @@
 use crate::models::*;
 use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
+pub mod price_sheet {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        expand: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+        subscription_id: &str,
+    ) -> std::result::Result<PriceSheetResult, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.Consumption/pricesheets/default",
+            &operation_config.base_path, subscription_id
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(expand) = expand {
+            req_builder = req_builder.query(&[("$expand", expand)]);
+        }
+        if let Some(skiptoken) = skiptoken {
+            req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: PriceSheetResult = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get_by_billing_period(
+        operation_config: &crate::OperationConfig,
+        expand: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+        subscription_id: &str,
+        billing_period_name: &str,
+    ) -> std::result::Result<PriceSheetResult, get_by_billing_period::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/pricesheets/default",
+            &operation_config.base_path, subscription_id, billing_period_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_by_billing_period::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(expand) = expand {
+            req_builder = req_builder.query(&[("$expand", expand)]);
+        }
+        if let Some(skiptoken) = skiptoken {
+            req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        let req = req_builder.build().context(get_by_billing_period::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_by_billing_period::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_billing_period::ResponseBytesError)?;
+                let rsp_value: PriceSheetResult =
+                    serde_json::from_slice(&body).context(get_by_billing_period::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_by_billing_period::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_by_billing_period::DeserializeError { body })?;
+                get_by_billing_period::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_by_billing_period {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod usage_details {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+        apply: Option<&str>,
+    ) -> std::result::Result<UsageDetailsListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.Consumption/usageDetails",
+            &operation_config.base_path, subscription_id
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(expand) = expand {
+            req_builder = req_builder.query(&[("$expand", expand)]);
+        }
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        if let Some(skiptoken) = skiptoken {
+            req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        if let Some(apply) = apply {
+            req_builder = req_builder.query(&[("$apply", apply)]);
+        }
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: UsageDetailsListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_by_billing_period(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        billing_period_name: &str,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        apply: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+    ) -> std::result::Result<UsageDetailsListResult, list_by_billing_period::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails",
+            &operation_config.base_path, subscription_id, billing_period_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_period::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(expand) = expand {
+            req_builder = req_builder.query(&[("$expand", expand)]);
+        }
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        if let Some(apply) = apply {
+            req_builder = req_builder.query(&[("$apply", apply)]);
+        }
+        if let Some(skiptoken) = skiptoken {
+            req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        let req = req_builder.build().context(list_by_billing_period::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_period::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_period::ResponseBytesError)?;
+                let rsp_value: UsageDetailsListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_period::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_period::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_period::DeserializeError { body })?;
+                list_by_billing_period::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_period {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_by_billing_account(
+        operation_config: &crate::OperationConfig,
+        billing_account_id: &str,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+        apply: Option<&str>,
+    ) -> std::result::Result<UsageDetailsListResult, list_by_billing_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Consumption/usageDetails",
+            &operation_config.base_path, billing_account_id
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(expand) = expand {
+            req_builder = req_builder.query(&[("$expand", expand)]);
+        }
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        if let Some(skiptoken) = skiptoken {
+            req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        if let Some(apply) = apply {
+            req_builder = req_builder.query(&[("$apply", apply)]);
+        }
+        let req = req_builder.build().context(list_by_billing_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: UsageDetailsListResult =
+                    serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_billing_account::DeserializeError { body })?;
+                list_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_for_billing_period_by_billing_account(
+        operation_config: &crate::OperationConfig,
+        billing_account_id: &str,
+        billing_period_name: &str,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        apply: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+    ) -> std::result::Result<UsageDetailsListResult, list_for_billing_period_by_billing_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & operation_config . base_path , billing_account_id , billing_period_name) ;
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_for_billing_period_by_billing_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(expand) = expand {
+            req_builder = req_builder.query(&[("$expand", expand)]);
+        }
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        if let Some(apply) = apply {
+            req_builder = req_builder.query(&[("$apply", apply)]);
+        }
+        if let Some(skiptoken) = skiptoken {
+            req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        let req = req_builder
+            .build()
+            .context(list_for_billing_period_by_billing_account::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_for_billing_period_by_billing_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_for_billing_period_by_billing_account::ResponseBytesError)?;
+                let rsp_value: UsageDetailsListResult =
+                    serde_json::from_slice(&body).context(list_for_billing_period_by_billing_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_for_billing_period_by_billing_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(list_for_billing_period_by_billing_account::DeserializeError { body })?;
+                list_for_billing_period_by_billing_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_for_billing_period_by_billing_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_by_department(
+        operation_config: &crate::OperationConfig,
+        department_id: &str,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+        apply: Option<&str>,
+    ) -> std::result::Result<UsageDetailsListResult, list_by_department::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Consumption/usageDetails",
+            &operation_config.base_path, department_id
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_department::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(expand) = expand {
+            req_builder = req_builder.query(&[("$expand", expand)]);
+        }
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        if let Some(skiptoken) = skiptoken {
+            req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        if let Some(apply) = apply {
+            req_builder = req_builder.query(&[("$apply", apply)]);
+        }
+        let req = req_builder.build().context(list_by_department::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_department::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_department::ResponseBytesError)?;
+                let rsp_value: UsageDetailsListResult =
+                    serde_json::from_slice(&body).context(list_by_department::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_department::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_department::DeserializeError { body })?;
+                list_by_department::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_department {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_for_billing_period_by_department(
+        operation_config: &crate::OperationConfig,
+        department_id: &str,
+        billing_period_name: &str,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        apply: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+    ) -> std::result::Result<UsageDetailsListResult, list_for_billing_period_by_department::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & operation_config . base_path , department_id , billing_period_name) ;
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_for_billing_period_by_department::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(expand) = expand {
+            req_builder = req_builder.query(&[("$expand", expand)]);
+        }
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        if let Some(apply) = apply {
+            req_builder = req_builder.query(&[("$apply", apply)]);
+        }
+        if let Some(skiptoken) = skiptoken {
+            req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        let req = req_builder
+            .build()
+            .context(list_for_billing_period_by_department::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_for_billing_period_by_department::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_for_billing_period_by_department::ResponseBytesError)?;
+                let rsp_value: UsageDetailsListResult =
+                    serde_json::from_slice(&body).context(list_for_billing_period_by_department::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_for_billing_period_by_department::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(list_for_billing_period_by_department::DeserializeError { body })?;
+                list_for_billing_period_by_department::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_for_billing_period_by_department {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_by_enrollment_account(
+        operation_config: &crate::OperationConfig,
+        enrollment_account_id: &str,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+        apply: Option<&str>,
+    ) -> std::result::Result<UsageDetailsListResult, list_by_enrollment_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Consumption/usageDetails",
+            &operation_config.base_path, enrollment_account_id
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_enrollment_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(expand) = expand {
+            req_builder = req_builder.query(&[("$expand", expand)]);
+        }
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        if let Some(skiptoken) = skiptoken {
+            req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        if let Some(apply) = apply {
+            req_builder = req_builder.query(&[("$apply", apply)]);
+        }
+        let req = req_builder.build().context(list_by_enrollment_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_enrollment_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_enrollment_account::ResponseBytesError)?;
+                let rsp_value: UsageDetailsListResult =
+                    serde_json::from_slice(&body).context(list_by_enrollment_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_enrollment_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(list_by_enrollment_account::DeserializeError { body })?;
+                list_by_enrollment_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_enrollment_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_for_billing_period_by_enrollment_account(
+        operation_config: &crate::OperationConfig,
+        enrollment_account_id: &str,
+        billing_period_name: &str,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        apply: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+    ) -> std::result::Result<UsageDetailsListResult, list_for_billing_period_by_enrollment_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & operation_config . base_path , enrollment_account_id , billing_period_name) ;
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_for_billing_period_by_enrollment_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(expand) = expand {
+            req_builder = req_builder.query(&[("$expand", expand)]);
+        }
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        if let Some(apply) = apply {
+            req_builder = req_builder.query(&[("$apply", apply)]);
+        }
+        if let Some(skiptoken) = skiptoken {
+            req_builder = req_builder.query(&[("$skiptoken", skiptoken)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        let req = req_builder
+            .build()
+            .context(list_for_billing_period_by_enrollment_account::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_for_billing_period_by_enrollment_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_for_billing_period_by_enrollment_account::ResponseBytesError)?;
+                let rsp_value: UsageDetailsListResult =
+                    serde_json::from_slice(&body).context(list_for_billing_period_by_enrollment_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_for_billing_period_by_enrollment_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(list_for_billing_period_by_enrollment_account::DeserializeError { body })?;
+                list_for_billing_period_by_enrollment_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_for_billing_period_by_enrollment_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod forecasts {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        filter: Option<&str>,
+        subscription_id: &str,
+    ) -> std::result::Result<ForecastsListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.Consumption/forecasts",
+            &operation_config.base_path, subscription_id
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ForecastsListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod operations {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.Consumption/operations", &operation_config.base_path,);
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: OperationListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
