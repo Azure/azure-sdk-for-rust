@@ -7,6 +7,18 @@ pub use package_2020_09::{models, operations, API_VERSION};
 mod package_2020_06_preview;
 #[cfg(feature = "package-2020-06-preview")]
 pub use package_2020_06_preview::{models, operations, API_VERSION};
+#[cfg(feature = "package-2020-04")]
+mod package_2020_04;
+#[cfg(feature = "package-2020-04")]
+pub use package_2020_04::{models, operations, API_VERSION};
+#[cfg(feature = "package-2020-03")]
+mod package_2020_03;
+#[cfg(feature = "package-2020-03")]
+pub use package_2020_03::{models, operations, API_VERSION};
+#[cfg(feature = "package-2019-12")]
+mod package_2019_12;
+#[cfg(feature = "package-2019-12")]
+pub use package_2019_12::{models, operations, API_VERSION};
 #[cfg(feature = "package-2019-08")]
 mod package_2019_08;
 #[cfg(feature = "package-2019-08")]
