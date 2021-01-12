@@ -142,7 +142,7 @@ pub mod server_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageProfile {
     #[serde(rename = "backupRetentionDays", skip_serializing_if = "Option::is_none")]
-    pub backup_retention_days: Option<i64>,
+    pub backup_retention_days: Option<i32>,
     #[serde(rename = "geoRedundantBackup", skip_serializing_if = "Option::is_none")]
     pub geo_redundant_backup: Option<storage_profile::GeoRedundantBackup>,
     #[serde(rename = "storageMB", skip_serializing_if = "Option::is_none")]
@@ -487,13 +487,13 @@ pub struct PerformanceTierServiceLevelObjectives {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub edition: Option<String>,
     #[serde(rename = "vCore", skip_serializing_if = "Option::is_none")]
-    pub v_core: Option<i64>,
+    pub v_core: Option<i32>,
     #[serde(rename = "hardwareGeneration", skip_serializing_if = "Option::is_none")]
     pub hardware_generation: Option<String>,
     #[serde(rename = "maxBackupRetentionDays", skip_serializing_if = "Option::is_none")]
-    pub max_backup_retention_days: Option<i64>,
+    pub max_backup_retention_days: Option<i32>,
     #[serde(rename = "minBackupRetentionDays", skip_serializing_if = "Option::is_none")]
-    pub min_backup_retention_days: Option<i64>,
+    pub min_backup_retention_days: Option<i32>,
     #[serde(rename = "maxStorageMB", skip_serializing_if = "Option::is_none")]
     pub max_storage_mb: Option<i32>,
     #[serde(rename = "minStorageMB", skip_serializing_if = "Option::is_none")]
@@ -503,6 +503,18 @@ pub struct PerformanceTierServiceLevelObjectives {
 pub struct PerformanceTierProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[serde(rename = "maxBackupRetentionDays", skip_serializing_if = "Option::is_none")]
+    pub max_backup_retention_days: Option<i32>,
+    #[serde(rename = "minBackupRetentionDays", skip_serializing_if = "Option::is_none")]
+    pub min_backup_retention_days: Option<i32>,
+    #[serde(rename = "maxStorageMB", skip_serializing_if = "Option::is_none")]
+    pub max_storage_mb: Option<i32>,
+    #[serde(rename = "minLargeStorageMB", skip_serializing_if = "Option::is_none")]
+    pub min_large_storage_mb: Option<i32>,
+    #[serde(rename = "maxLargeStorageMB", skip_serializing_if = "Option::is_none")]
+    pub max_large_storage_mb: Option<i32>,
+    #[serde(rename = "minStorageMB", skip_serializing_if = "Option::is_none")]
+    pub min_storage_mb: Option<i32>,
     #[serde(rename = "serviceLevelObjectives", skip_serializing_if = "Vec::is_empty")]
     pub service_level_objectives: Vec<PerformanceTierServiceLevelObjectives>,
 }
@@ -558,6 +570,28 @@ pub struct ServerAdministratorResource {
 pub struct ServerAdministratorResourceListResult {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerAdministratorResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecoverableServerProperties {
+    #[serde(rename = "lastAvailableBackupDateTime", skip_serializing)]
+    pub last_available_backup_date_time: Option<String>,
+    #[serde(rename = "serviceLevelObjective", skip_serializing)]
+    pub service_level_objective: Option<String>,
+    #[serde(skip_serializing)]
+    pub edition: Option<String>,
+    #[serde(rename = "vCore", skip_serializing)]
+    pub v_core: Option<i32>,
+    #[serde(rename = "hardwareGeneration", skip_serializing)]
+    pub hardware_generation: Option<String>,
+    #[serde(skip_serializing)]
+    pub version: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecoverableServerResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RecoverableServerProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAlertPolicyProperties {
@@ -645,6 +679,21 @@ pub struct PrivateLinkResource {
     pub proxy_resource: ProxyResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryPerformanceInsightResetDataResult {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<query_performance_insight_reset_data_result::Status>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+pub mod query_performance_insight_reset_data_result {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Succeeded,
+        Failed,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {

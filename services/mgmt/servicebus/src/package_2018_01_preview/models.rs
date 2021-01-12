@@ -237,59 +237,6 @@ pub struct PrivateLinkResourcesListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Subnet {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NwRuleSetIpRules {
-    #[serde(rename = "ipMask", skip_serializing_if = "Option::is_none")]
-    pub ip_mask: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub action: Option<nw_rule_set_ip_rules::Action>,
-}
-pub mod nw_rule_set_ip_rules {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Action {
-        Allow,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NwRuleSetVirtualNetworkRules {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub subnet: Option<Subnet>,
-    #[serde(rename = "ignoreMissingVnetServiceEndpoint", skip_serializing_if = "Option::is_none")]
-    pub ignore_missing_vnet_service_endpoint: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkRuleSet {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<network_rule_set::Properties>,
-}
-pub mod network_rule_set {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Properties {
-        #[serde(rename = "defaultAction", skip_serializing_if = "Option::is_none")]
-        pub default_action: Option<properties::DefaultAction>,
-        #[serde(rename = "virtualNetworkRules", skip_serializing_if = "Vec::is_empty")]
-        pub virtual_network_rules: Vec<NwRuleSetVirtualNetworkRules>,
-        #[serde(rename = "ipRules", skip_serializing_if = "Vec::is_empty")]
-        pub ip_rules: Vec<NwRuleSetIpRules>,
-    }
-    pub mod properties {
-        use super::*;
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        pub enum DefaultAction {
-            Allow,
-            Deny,
-        }
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkRule {
     #[serde(flatten)]
     pub resource: Resource,
@@ -310,32 +257,6 @@ pub struct VirtualNetworkRuleListResult {
     pub value: Vec<VirtualNetworkRule>,
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(skip_serializing)]
-    pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
-    #[serde(skip_serializing)]
-    pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
-}
-pub mod operation {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(skip_serializing)]
-        pub provider: Option<String>,
-        #[serde(skip_serializing)]
-        pub resource: Option<String>,
-        #[serde(skip_serializing)]
-        pub operation: Option<String>,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SbAuthorizationRuleListResult {
@@ -543,6 +464,65 @@ pub mod destination {
         #[serde(rename = "archiveNameFormat", skip_serializing_if = "Option::is_none")]
         pub archive_name_format: Option<String>,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NwRuleSetIpRules {
+    #[serde(rename = "ipMask", skip_serializing_if = "Option::is_none")]
+    pub ip_mask: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub action: Option<nw_rule_set_ip_rules::Action>,
+}
+pub mod nw_rule_set_ip_rules {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Action {
+        Allow,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Subnet {
+    pub id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NwRuleSetVirtualNetworkRules {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subnet: Option<Subnet>,
+    #[serde(rename = "ignoreMissingVnetServiceEndpoint", skip_serializing_if = "Option::is_none")]
+    pub ignore_missing_vnet_service_endpoint: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkRuleSet {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<network_rule_set::Properties>,
+}
+pub mod network_rule_set {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "defaultAction", skip_serializing_if = "Option::is_none")]
+        pub default_action: Option<properties::DefaultAction>,
+        #[serde(rename = "virtualNetworkRules", skip_serializing_if = "Vec::is_empty")]
+        pub virtual_network_rules: Vec<NwRuleSetVirtualNetworkRules>,
+        #[serde(rename = "ipRules", skip_serializing_if = "Vec::is_empty")]
+        pub ip_rules: Vec<NwRuleSetIpRules>,
+    }
+    pub mod properties {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum DefaultAction {
+            Allow,
+            Deny,
+        }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkRuleSetListResult {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<NetworkRuleSet>,
+    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SbNamespaceMigrate {
@@ -854,6 +834,32 @@ pub struct SqlRuleAction {
     pub compatibility_level: Option<i32>,
     #[serde(rename = "requiresPreprocessing", skip_serializing_if = "Option::is_none")]
     pub requires_preprocessing: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<Operation>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display: Option<operation::Display>,
+}
+pub mod operation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Display {
+        #[serde(skip_serializing)]
+        pub provider: Option<String>,
+        #[serde(skip_serializing)]
+        pub resource: Option<String>,
+        #[serde(skip_serializing)]
+        pub operation: Option<String>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {

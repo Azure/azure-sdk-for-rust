@@ -1908,6 +1908,8 @@ pub struct VirtualMachineScaleSetNetworkConfigurationProperties {
     pub primary: Option<bool>,
     #[serde(rename = "enableAcceleratedNetworking", skip_serializing_if = "Option::is_none")]
     pub enable_accelerated_networking: Option<bool>,
+    #[serde(rename = "enableFpga", skip_serializing_if = "Option::is_none")]
+    pub enable_fpga: Option<bool>,
     #[serde(rename = "networkSecurityGroup", skip_serializing_if = "Option::is_none")]
     pub network_security_group: Option<SubResource>,
     #[serde(rename = "dnsSettings", skip_serializing_if = "Option::is_none")]
@@ -1923,6 +1925,8 @@ pub struct VirtualMachineScaleSetUpdateNetworkConfigurationProperties {
     pub primary: Option<bool>,
     #[serde(rename = "enableAcceleratedNetworking", skip_serializing_if = "Option::is_none")]
     pub enable_accelerated_networking: Option<bool>,
+    #[serde(rename = "enableFpga", skip_serializing_if = "Option::is_none")]
+    pub enable_fpga: Option<bool>,
     #[serde(rename = "networkSecurityGroup", skip_serializing_if = "Option::is_none")]
     pub network_security_group: Option<SubResource>,
     #[serde(rename = "dnsSettings", skip_serializing_if = "Option::is_none")]
@@ -2663,6 +2667,10 @@ pub struct LogAnalyticsInputBase {
     pub group_by_operation_name: Option<bool>,
     #[serde(rename = "groupByResourceName", skip_serializing_if = "Option::is_none")]
     pub group_by_resource_name: Option<bool>,
+    #[serde(rename = "groupByClientApplicationId", skip_serializing_if = "Option::is_none")]
+    pub group_by_client_application_id: Option<bool>,
+    #[serde(rename = "groupByUserAgent", skip_serializing_if = "Option::is_none")]
+    pub group_by_user_agent: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsOperationResult {

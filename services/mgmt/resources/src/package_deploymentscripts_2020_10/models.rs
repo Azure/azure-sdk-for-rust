@@ -156,9 +156,9 @@ pub mod managed_service_identity {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAssignedIdentity {
-    #[serde(rename = "principalId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "principalId", skip_serializing)]
     pub principal_id: Option<String>,
-    #[serde(rename = "clientId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "clientId", skip_serializing)]
     pub client_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

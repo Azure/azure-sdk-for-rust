@@ -453,7 +453,7 @@ pub mod tags {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn get(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<TagsResult, get::Error> {
+    pub async fn get(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<get::Response, get::Error> {
         let client = &operation_config.client;
         let uri_str = &format!("{}/{}/providers/Microsoft.Consumption/tags", &operation_config.base_path, scope);
         let mut req_builder = client.get(uri_str);
@@ -471,8 +471,9 @@ pub mod tags {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
                 let rsp_value: TagsResult = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
-                Ok(rsp_value)
+                Ok(get::Response::Ok200(rsp_value))
             }
+            StatusCode::NO_CONTENT => Ok(get::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
                 let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
@@ -488,6 +489,11 @@ pub mod tags {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(TagsResult),
+            NoContent204,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {

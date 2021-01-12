@@ -3530,6 +3530,7 @@ pub mod file_shares {
         share_name: &str,
         subscription_id: &str,
         expand: Option<&str>,
+        x_ms_snapshot: Option<&str>,
     ) -> std::result::Result<FileShare, get::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -3547,6 +3548,9 @@ pub mod file_shares {
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         if let Some(expand) = expand {
             req_builder = req_builder.query(&[("$expand", expand)]);
+        }
+        if let Some(x_ms_snapshot) = x_ms_snapshot {
+            req_builder = req_builder.header("x-ms-snapshot", x_ms_snapshot);
         }
         let req = req_builder.build().context(get::BuildRequestError)?;
         let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
@@ -3602,6 +3606,7 @@ pub mod file_shares {
         account_name: &str,
         share_name: &str,
         file_share: &FileShare,
+        expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let client = &operation_config.client;
@@ -3619,6 +3624,9 @@ pub mod file_shares {
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(file_share);
+        if let Some(expand) = expand {
+            req_builder = req_builder.query(&[("$expand", expand)]);
+        }
         let req = req_builder.build().context(create::BuildRequestError)?;
         let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
         match rsp.status() {
@@ -3754,6 +3762,7 @@ pub mod file_shares {
         account_name: &str,
         share_name: &str,
         subscription_id: &str,
+        x_ms_snapshot: Option<&str>,
     ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -3769,6 +3778,9 @@ pub mod file_shares {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(x_ms_snapshot) = x_ms_snapshot {
+            req_builder = req_builder.header("x-ms-snapshot", x_ms_snapshot);
+        }
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {

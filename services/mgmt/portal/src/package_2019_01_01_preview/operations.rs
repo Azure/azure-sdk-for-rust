@@ -102,6 +102,7 @@ pub mod dashboards {
                 let rsp_value: Dashboard = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
                 Ok(rsp_value)
             }
+            StatusCode::NOT_FOUND => get::NotFound404 {}.fail(),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
                 let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
@@ -120,6 +121,7 @@ pub mod dashboards {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
+            NotFound404 {},
             DefaultResponse {
                 status_code: StatusCode,
                 value: models::ErrorResponse,
@@ -252,6 +254,7 @@ pub mod dashboards {
                 let rsp_value: Dashboard = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
                 Ok(rsp_value)
             }
+            StatusCode::NOT_FOUND => update::NotFound404 {}.fail(),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
                 let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
@@ -270,6 +273,7 @@ pub mod dashboards {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
+            NotFound404 {},
             DefaultResponse {
                 status_code: StatusCode,
                 value: models::ErrorResponse,
@@ -588,6 +592,7 @@ pub mod tenant_configurations {
                 let rsp_value: Configuration = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
                 Ok(rsp_value)
             }
+            StatusCode::NOT_FOUND => get::NotFound404 {}.fail(),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
                 let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
@@ -606,6 +611,7 @@ pub mod tenant_configurations {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
+            NotFound404 {},
             DefaultResponse {
                 status_code: StatusCode,
                 value: models::ErrorResponse,

@@ -5203,6 +5203,7 @@ pub mod resource_groups {
     pub async fn delete(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
+        force_deletion_resource_types: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &operation_config.client;
@@ -5219,6 +5220,9 @@ pub mod resource_groups {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(force_deletion_resource_types) = force_deletion_resource_types {
+            req_builder = req_builder.query(&[("forceDeletionResourceTypes", force_deletion_resource_types)]);
+        }
         let req = req_builder.build().context(delete::BuildRequestError)?;
         let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {

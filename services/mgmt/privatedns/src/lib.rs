@@ -3,6 +3,14 @@
 mod package_2018_09;
 #[cfg(feature = "package-2018-09")]
 pub use package_2018_09::{models, operations, API_VERSION};
+#[cfg(feature = "package-2020-01")]
+mod package_2020_01;
+#[cfg(feature = "package-2020-01")]
+pub use package_2020_01::{models, operations, API_VERSION};
+#[cfg(feature = "package-2020-06")]
+mod package_2020_06;
+#[cfg(feature = "package-2020-06")]
+pub use package_2020_06::{models, operations, API_VERSION};
 pub struct OperationConfig {
     pub api_version: String,
     pub client: reqwest::Client,

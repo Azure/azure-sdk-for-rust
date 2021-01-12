@@ -1126,6 +1126,8 @@ pub struct IntegrationServiceEnvironmentProperties {
     pub endpoints_configuration: Option<FlowEndpointsConfiguration>,
     #[serde(rename = "networkConfiguration", skip_serializing_if = "Option::is_none")]
     pub network_configuration: Option<NetworkConfiguration>,
+    #[serde(rename = "encryptionConfiguration", skip_serializing_if = "Option::is_none")]
+    pub encryption_configuration: Option<IntegrationServiceEnvironmenEncryptionConfiguration>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IntegrationServiceEnvironmentSkuName {
@@ -1152,6 +1154,20 @@ pub enum IntegrationServiceEnvironmentAccessEndpointType {
     NotSpecified,
     External,
     Internal,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IntegrationServiceEnvironmenEncryptionConfiguration {
+    #[serde(rename = "encryptionKeyReference", skip_serializing_if = "Option::is_none")]
+    pub encryption_key_reference: Option<IntegrationServiceEnvironmenEncryptionKeyReference>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IntegrationServiceEnvironmenEncryptionKeyReference {
+    #[serde(rename = "keyVault", skip_serializing_if = "Option::is_none")]
+    pub key_vault: Option<ResourceReference>,
+    #[serde(rename = "keyName", skip_serializing_if = "Option::is_none")]
+    pub key_name: Option<String>,
+    #[serde(rename = "keyVersion", skip_serializing_if = "Option::is_none")]
+    pub key_version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FlowAccessControlConfiguration {

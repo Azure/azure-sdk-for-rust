@@ -19,19 +19,19 @@ pub mod dashboard_parts {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Position {
-        pub x: i64,
-        pub y: i64,
+        pub x: i32,
+        pub y: i32,
         #[serde(rename = "rowSpan")]
-        pub row_span: i64,
+        pub row_span: i32,
         #[serde(rename = "colSpan")]
-        pub col_span: i64,
+        pub col_span: i32,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub metadata: Option<serde_json::Value>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DashboardLens {
-    pub order: i64,
+    pub order: i32,
     pub parts: serde_json::Value,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
@@ -102,7 +102,7 @@ pub struct ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDefinition {
     #[serde(skip_serializing)]
-    pub code: Option<String>,
+    pub code: Option<i32>,
     #[serde(skip_serializing)]
     pub message: Option<String>,
     #[serde(skip_serializing)]

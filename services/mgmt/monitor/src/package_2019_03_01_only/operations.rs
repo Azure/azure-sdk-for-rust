@@ -519,7 +519,7 @@ pub mod baselines {
     ) -> std::result::Result<MetricBaselinesResponse, list::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/{}/providers/microsoft.insights/metricBaselines",
+            "{}/{}/providers/Microsoft.Insights/metricBaselines",
             &operation_config.base_path, resource_uri
         );
         let mut req_builder = client.get(uri_str);

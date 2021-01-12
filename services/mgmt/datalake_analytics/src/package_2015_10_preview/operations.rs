@@ -9,776 +9,15 @@ pub mod account {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn get_storage_account(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        account_name: &str,
-        storage_account_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<StorageAccountInfo, get_storage_account::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
-        );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_storage_account::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get_storage_account::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_storage_account::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_storage_account::ResponseBytesError)?;
-                let rsp_value: StorageAccountInfo =
-                    serde_json::from_slice(&body).context(get_storage_account::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_storage_account::ResponseBytesError)?;
-                get_storage_account::UnexpectedResponse { status_code, body: body }.fail()
-            }
-        }
-    }
-    pub mod get_storage_account {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn add_storage_account(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        account_name: &str,
-        storage_account_name: &str,
-        parameters: &AddStorageAccountParameters,
-        subscription_id: &str,
-    ) -> std::result::Result<(), add_storage_account::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
-        );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(add_storage_account::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(add_storage_account::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(add_storage_account::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => Ok(()),
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(add_storage_account::ResponseBytesError)?;
-                add_storage_account::UnexpectedResponse { status_code, body: body }.fail()
-            }
-        }
-    }
-    pub mod add_storage_account {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn update_storage_account(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        account_name: &str,
-        storage_account_name: &str,
-        parameters: &AddStorageAccountParameters,
-        subscription_id: &str,
-    ) -> std::result::Result<(), update_storage_account::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
-        );
-        let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(update_storage_account::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(update_storage_account::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(update_storage_account::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => Ok(()),
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(update_storage_account::ResponseBytesError)?;
-                update_storage_account::UnexpectedResponse { status_code, body: body }.fail()
-            }
-        }
-    }
-    pub mod update_storage_account {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn delete_storage_account(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        account_name: &str,
-        storage_account_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<(), delete_storage_account::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
-        );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete_storage_account::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete_storage_account::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete_storage_account::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => Ok(()),
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete_storage_account::ResponseBytesError)?;
-                delete_storage_account::UnexpectedResponse { status_code, body: body }.fail()
-            }
-        }
-    }
-    pub mod delete_storage_account {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn get_storage_container(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        account_name: &str,
-        storage_account_name: &str,
-        container_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<BlobContainer, get_storage_container::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}/Containers/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name, container_name
-        );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_storage_container::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get_storage_container::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_storage_container::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_storage_container::ResponseBytesError)?;
-                let rsp_value: BlobContainer = serde_json::from_slice(&body).context(get_storage_container::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_storage_container::ResponseBytesError)?;
-                get_storage_container::UnexpectedResponse { status_code, body: body }.fail()
-            }
-        }
-    }
-    pub mod get_storage_container {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn list_storage_containers(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        account_name: &str,
-        storage_account_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<ListBlobContainersResult, list_storage_containers::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}/Containers",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
-        );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_storage_containers::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_storage_containers::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_storage_containers::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_storage_containers::ResponseBytesError)?;
-                let rsp_value: ListBlobContainersResult =
-                    serde_json::from_slice(&body).context(list_storage_containers::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_storage_containers::ResponseBytesError)?;
-                list_storage_containers::UnexpectedResponse { status_code, body: body }.fail()
-            }
-        }
-    }
-    pub mod list_storage_containers {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn list_sas_tokens(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        account_name: &str,
-        storage_account_name: &str,
-        container_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<ListSasTokensResult, list_sas_tokens::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}/Containers/{}/listSasTokens" , & operation_config . base_path , subscription_id , resource_group_name , account_name , storage_account_name , container_name) ;
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_sas_tokens::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(list_sas_tokens::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_sas_tokens::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_sas_tokens::ResponseBytesError)?;
-                let rsp_value: ListSasTokensResult = serde_json::from_slice(&body).context(list_sas_tokens::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_sas_tokens::ResponseBytesError)?;
-                list_sas_tokens::UnexpectedResponse { status_code, body: body }.fail()
-            }
-        }
-    }
-    pub mod list_sas_tokens {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn get_data_lake_store_account(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        account_name: &str,
-        data_lake_store_account_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<DataLakeStoreAccountInfo, get_data_lake_store_account::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/DataLakeStoreAccounts/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, data_lake_store_account_name
-        );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get_data_lake_store_account::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get_data_lake_store_account::BuildRequestError)?;
-        let rsp = client
-            .execute(req)
-            .await
-            .context(get_data_lake_store_account::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_data_lake_store_account::ResponseBytesError)?;
-                let rsp_value: DataLakeStoreAccountInfo =
-                    serde_json::from_slice(&body).context(get_data_lake_store_account::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_data_lake_store_account::ResponseBytesError)?;
-                get_data_lake_store_account::UnexpectedResponse { status_code, body: body }.fail()
-            }
-        }
-    }
-    pub mod get_data_lake_store_account {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn add_data_lake_store_account(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        account_name: &str,
-        data_lake_store_account_name: &str,
-        parameters: &AddDataLakeStoreParameters,
-        subscription_id: &str,
-    ) -> std::result::Result<(), add_data_lake_store_account::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/DataLakeStoreAccounts/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, data_lake_store_account_name
-        );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(add_data_lake_store_account::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(add_data_lake_store_account::BuildRequestError)?;
-        let rsp = client
-            .execute(req)
-            .await
-            .context(add_data_lake_store_account::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => Ok(()),
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(add_data_lake_store_account::ResponseBytesError)?;
-                add_data_lake_store_account::UnexpectedResponse { status_code, body: body }.fail()
-            }
-        }
-    }
-    pub mod add_data_lake_store_account {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn delete_data_lake_store_account(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        account_name: &str,
-        data_lake_store_account_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<(), delete_data_lake_store_account::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/DataLakeStoreAccounts/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name, data_lake_store_account_name
-        );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(delete_data_lake_store_account::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete_data_lake_store_account::BuildRequestError)?;
-        let rsp = client
-            .execute(req)
-            .await
-            .context(delete_data_lake_store_account::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => Ok(()),
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete_data_lake_store_account::ResponseBytesError)?;
-                delete_data_lake_store_account::UnexpectedResponse { status_code, body: body }.fail()
-            }
-        }
-    }
-    pub mod delete_data_lake_store_account {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn list_storage_accounts(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        account_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
-        search: Option<&str>,
-        format: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<DataLakeAnalyticsAccountListStorageAccountsResult, list_storage_accounts::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name
-        );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_storage_accounts::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        if let Some(filter) = filter {
-            req_builder = req_builder.query(&[("$filter", filter)]);
-        }
-        if let Some(top) = top {
-            req_builder = req_builder.query(&[("$top", top)]);
-        }
-        if let Some(skip) = skip {
-            req_builder = req_builder.query(&[("$skip", skip)]);
-        }
-        if let Some(expand) = expand {
-            req_builder = req_builder.query(&[("$expand", expand)]);
-        }
-        if let Some(select) = select {
-            req_builder = req_builder.query(&[("$select", select)]);
-        }
-        if let Some(orderby) = orderby {
-            req_builder = req_builder.query(&[("$orderby", orderby)]);
-        }
-        if let Some(count) = count {
-            req_builder = req_builder.query(&[("$count", count)]);
-        }
-        if let Some(search) = search {
-            req_builder = req_builder.query(&[("$search", search)]);
-        }
-        if let Some(format) = format {
-            req_builder = req_builder.query(&[("$format", format)]);
-        }
-        let req = req_builder.build().context(list_storage_accounts::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_storage_accounts::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_storage_accounts::ResponseBytesError)?;
-                let rsp_value: DataLakeAnalyticsAccountListStorageAccountsResult =
-                    serde_json::from_slice(&body).context(list_storage_accounts::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_storage_accounts::ResponseBytesError)?;
-                list_storage_accounts::UnexpectedResponse { status_code, body: body }.fail()
-            }
-        }
-    }
-    pub mod list_storage_accounts {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn list_data_lake_store_accounts(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        account_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
-        search: Option<&str>,
-        format: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<DataLakeAnalyticsAccountListDataLakeStoreResult, list_data_lake_store_accounts::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/DataLakeStoreAccounts/",
-            &operation_config.base_path, subscription_id, resource_group_name, account_name
-        );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_data_lake_store_accounts::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        if let Some(filter) = filter {
-            req_builder = req_builder.query(&[("$filter", filter)]);
-        }
-        if let Some(top) = top {
-            req_builder = req_builder.query(&[("$top", top)]);
-        }
-        if let Some(skip) = skip {
-            req_builder = req_builder.query(&[("$skip", skip)]);
-        }
-        if let Some(expand) = expand {
-            req_builder = req_builder.query(&[("$expand", expand)]);
-        }
-        if let Some(select) = select {
-            req_builder = req_builder.query(&[("$select", select)]);
-        }
-        if let Some(orderby) = orderby {
-            req_builder = req_builder.query(&[("$orderby", orderby)]);
-        }
-        if let Some(count) = count {
-            req_builder = req_builder.query(&[("$count", count)]);
-        }
-        if let Some(search) = search {
-            req_builder = req_builder.query(&[("$search", search)]);
-        }
-        if let Some(format) = format {
-            req_builder = req_builder.query(&[("$format", format)]);
-        }
-        let req = req_builder.build().context(list_data_lake_store_accounts::BuildRequestError)?;
-        let rsp = client
-            .execute(req)
-            .await
-            .context(list_data_lake_store_accounts::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_data_lake_store_accounts::ResponseBytesError)?;
-                let rsp_value: DataLakeAnalyticsAccountListDataLakeStoreResult =
-                    serde_json::from_slice(&body).context(list_data_lake_store_accounts::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_data_lake_store_accounts::ResponseBytesError)?;
-                list_data_lake_store_accounts::UnexpectedResponse { status_code, body: body }.fail()
-            }
-        }
-    }
-    pub mod list_data_lake_store_accounts {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn list_by_resource_group(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
-        search: Option<&str>,
-        format: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<DataLakeAnalyticsAccountListResult, list_by_resource_group::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts",
-            &operation_config.base_path, subscription_id, resource_group_name
-        );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_by_resource_group::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        if let Some(filter) = filter {
-            req_builder = req_builder.query(&[("$filter", filter)]);
-        }
-        if let Some(top) = top {
-            req_builder = req_builder.query(&[("$top", top)]);
-        }
-        if let Some(skip) = skip {
-            req_builder = req_builder.query(&[("$skip", skip)]);
-        }
-        if let Some(expand) = expand {
-            req_builder = req_builder.query(&[("$expand", expand)]);
-        }
-        if let Some(select) = select {
-            req_builder = req_builder.query(&[("$select", select)]);
-        }
-        if let Some(orderby) = orderby {
-            req_builder = req_builder.query(&[("$orderby", orderby)]);
-        }
-        if let Some(count) = count {
-            req_builder = req_builder.query(&[("$count", count)]);
-        }
-        if let Some(search) = search {
-            req_builder = req_builder.query(&[("$search", search)]);
-        }
-        if let Some(format) = format {
-            req_builder = req_builder.query(&[("$format", format)]);
-        }
-        let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
-                let rsp_value: DataLakeAnalyticsAccountListResult =
-                    serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
-                list_by_resource_group::UnexpectedResponse { status_code, body: body }.fail()
-            }
-        }
-    }
-    pub mod list_by_resource_group {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
     pub async fn list(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
         filter: Option<&str>,
         top: Option<i32>,
         skip: Option<i32>,
-        expand: Option<&str>,
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-        search: Option<&str>,
-        format: Option<&str>,
-        subscription_id: &str,
     ) -> std::result::Result<DataLakeAnalyticsAccountListResult, list::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -803,9 +42,6 @@ pub mod account {
         if let Some(skip) = skip {
             req_builder = req_builder.query(&[("$skip", skip)]);
         }
-        if let Some(expand) = expand {
-            req_builder = req_builder.query(&[("$expand", expand)]);
-        }
         if let Some(select) = select {
             req_builder = req_builder.query(&[("$select", select)]);
         }
@@ -814,12 +50,6 @@ pub mod account {
         }
         if let Some(count) = count {
             req_builder = req_builder.query(&[("$count", count)]);
-        }
-        if let Some(search) = search {
-            req_builder = req_builder.query(&[("$search", search)]);
-        }
-        if let Some(format) = format {
-            req_builder = req_builder.query(&[("$format", format)]);
         }
         let req = req_builder.build().context(list::BuildRequestError)?;
         let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
@@ -832,7 +62,12 @@ pub mod account {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                list::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -843,19 +78,125 @@ pub mod account {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_by_resource_group(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        filter: Option<&str>,
+        top: Option<i32>,
+        skip: Option<i32>,
+        select: Option<&str>,
+        orderby: Option<&str>,
+        count: Option<bool>,
+    ) -> std::result::Result<DataLakeAnalyticsAccountListResult, list_by_resource_group::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts",
+            &operation_config.base_path, subscription_id, resource_group_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_resource_group::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        if let Some(skip) = skip {
+            req_builder = req_builder.query(&[("$skip", skip)]);
+        }
+        if let Some(select) = select {
+            req_builder = req_builder.query(&[("$select", select)]);
+        }
+        if let Some(orderby) = orderby {
+            req_builder = req_builder.query(&[("$orderby", orderby)]);
+        }
+        if let Some(count) = count {
+            req_builder = req_builder.query(&[("$count", count)]);
+        }
+        let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: DataLakeAnalyticsAccountListResult =
+                    serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                list_by_resource_group::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_resource_group {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        subscription_id: &str,
     ) -> std::result::Result<DataLakeAnalyticsAccount, get::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -881,7 +222,12 @@ pub mod account {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                get::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -892,19 +238,201 @@ pub mod account {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn create(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        parameters: &CreateDataLakeAnalyticsAccountParameters,
+    ) -> std::result::Result<create::Response, create::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name
+        );
+        let mut req_builder = client.put(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(parameters);
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: DataLakeAnalyticsAccount = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: DataLakeAnalyticsAccount = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                create::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(DataLakeAnalyticsAccount),
+            Created201(DataLakeAnalyticsAccount),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn update(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        parameters: Option<&UpdateDataLakeAnalyticsAccountParameters>,
+    ) -> std::result::Result<update::Response, update::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name
+        );
+        let mut req_builder = client.patch(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(parameters) = parameters {
+            req_builder = req_builder.json(parameters);
+        }
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: DataLakeAnalyticsAccount = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: DataLakeAnalyticsAccount = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Created201(rsp_value))
+            }
+            StatusCode::ACCEPTED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: DataLakeAnalyticsAccount = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Accepted202(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(DataLakeAnalyticsAccount),
+            Created201(DataLakeAnalyticsAccount),
+            Accepted202(DataLakeAnalyticsAccount),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -926,10 +454,14 @@ pub mod account {
             StatusCode::OK => Ok(delete::Response::Ok200),
             StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            StatusCode::NOT_FOUND => delete::NotFound404 {}.fail(),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                delete::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -946,87 +478,1147 @@ pub mod account {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            NotFound404 {},
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
-    pub async fn create(
+    pub async fn list_data_lake_store_accounts(
         operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        name: &str,
-        parameters: &DataLakeAnalyticsAccount,
         subscription_id: &str,
-    ) -> std::result::Result<create::Response, create::Error> {
+        resource_group_name: &str,
+        account_name: &str,
+        filter: Option<&str>,
+        top: Option<i32>,
+        skip: Option<i32>,
+        select: Option<&str>,
+        orderby: Option<&str>,
+        count: Option<bool>,
+    ) -> std::result::Result<DataLakeStoreAccountInformationListResult, list_data_lake_store_accounts::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, name
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/DataLakeStoreAccounts/",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_data_lake_store_accounts::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        if let Some(skip) = skip {
+            req_builder = req_builder.query(&[("$skip", skip)]);
+        }
+        if let Some(select) = select {
+            req_builder = req_builder.query(&[("$select", select)]);
+        }
+        if let Some(orderby) = orderby {
+            req_builder = req_builder.query(&[("$orderby", orderby)]);
+        }
+        if let Some(count) = count {
+            req_builder = req_builder.query(&[("$count", count)]);
+        }
+        let req = req_builder.build().context(list_data_lake_store_accounts::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_data_lake_store_accounts::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_data_lake_store_accounts::ResponseBytesError)?;
+                let rsp_value: DataLakeStoreAccountInformationListResult =
+                    serde_json::from_slice(&body).context(list_data_lake_store_accounts::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_data_lake_store_accounts::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(list_data_lake_store_accounts::DeserializeError { body })?;
+                list_data_lake_store_accounts::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_data_lake_store_accounts {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get_data_lake_store_account(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        data_lake_store_account_name: &str,
+    ) -> std::result::Result<DataLakeStoreAccountInformation, get_data_lake_store_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/DataLakeStoreAccounts/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, data_lake_store_account_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_data_lake_store_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get_data_lake_store_account::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(get_data_lake_store_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_data_lake_store_account::ResponseBytesError)?;
+                let rsp_value: DataLakeStoreAccountInformation =
+                    serde_json::from_slice(&body).context(get_data_lake_store_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_data_lake_store_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(get_data_lake_store_account::DeserializeError { body })?;
+                get_data_lake_store_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_data_lake_store_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn add_data_lake_store_account(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        data_lake_store_account_name: &str,
+        parameters: Option<&AddDataLakeStoreParameters>,
+    ) -> std::result::Result<(), add_data_lake_store_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/DataLakeStoreAccounts/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, data_lake_store_account_name
         );
         let mut req_builder = client.put(uri_str);
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
-                .context(create::GetTokenError)?;
+                .context(add_data_lake_store_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(parameters) = parameters {
+            req_builder = req_builder.json(parameters);
+        }
+        let req = req_builder.build().context(add_data_lake_store_account::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(add_data_lake_store_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(()),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(add_data_lake_store_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(add_data_lake_store_account::DeserializeError { body })?;
+                add_data_lake_store_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod add_data_lake_store_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn delete_data_lake_store_account(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        data_lake_store_account_name: &str,
+    ) -> std::result::Result<(), delete_data_lake_store_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/DataLakeStoreAccounts/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, data_lake_store_account_name
+        );
+        let mut req_builder = client.delete(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_data_lake_store_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(delete_data_lake_store_account::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(delete_data_lake_store_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(()),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_data_lake_store_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(&body).context(delete_data_lake_store_account::DeserializeError { body })?;
+                delete_data_lake_store_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete_data_lake_store_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_storage_accounts(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        filter: Option<&str>,
+        top: Option<i32>,
+        skip: Option<i32>,
+        select: Option<&str>,
+        orderby: Option<&str>,
+        count: Option<bool>,
+    ) -> std::result::Result<StorageAccountInformationListResult, list_storage_accounts::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_storage_accounts::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        if let Some(skip) = skip {
+            req_builder = req_builder.query(&[("$skip", skip)]);
+        }
+        if let Some(select) = select {
+            req_builder = req_builder.query(&[("$select", select)]);
+        }
+        if let Some(orderby) = orderby {
+            req_builder = req_builder.query(&[("$orderby", orderby)]);
+        }
+        if let Some(count) = count {
+            req_builder = req_builder.query(&[("$count", count)]);
+        }
+        let req = req_builder.build().context(list_storage_accounts::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_storage_accounts::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_storage_accounts::ResponseBytesError)?;
+                let rsp_value: StorageAccountInformationListResult =
+                    serde_json::from_slice(&body).context(list_storage_accounts::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_storage_accounts::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_storage_accounts::DeserializeError { body })?;
+                list_storage_accounts::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_storage_accounts {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get_storage_account(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        storage_account_name: &str,
+    ) -> std::result::Result<StorageAccountInformation, get_storage_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_storage_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get_storage_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_storage_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_storage_account::ResponseBytesError)?;
+                let rsp_value: StorageAccountInformation =
+                    serde_json::from_slice(&body).context(get_storage_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_storage_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_storage_account::DeserializeError { body })?;
+                get_storage_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_storage_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn add_storage_account(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        storage_account_name: &str,
+        parameters: &AddStorageAccountParameters,
+    ) -> std::result::Result<(), add_storage_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
+        );
+        let mut req_builder = client.put(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(add_storage_account::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
         req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(create::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        let req = req_builder.build().context(add_storage_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(add_storage_account::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::CREATED => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
-                let rsp_value: DataLakeAnalyticsAccount = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
-                Ok(create::Response::Created201(rsp_value))
-            }
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
-                let rsp_value: DataLakeAnalyticsAccount = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
-                Ok(create::Response::Ok200(rsp_value))
-            }
+            StatusCode::OK => Ok(()),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
-                create::UnexpectedResponse { status_code, body: body }.fail()
+                let body: bytes::Bytes = rsp.bytes().await.context(add_storage_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(add_storage_account::DeserializeError { body })?;
+                add_storage_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
-    pub mod create {
+    pub mod add_storage_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn update_storage_account(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        storage_account_name: &str,
+        parameters: Option<&UpdateStorageAccountParameters>,
+    ) -> std::result::Result<(), update_storage_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
+        );
+        let mut req_builder = client.patch(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(update_storage_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(parameters) = parameters {
+            req_builder = req_builder.json(parameters);
+        }
+        let req = req_builder.build().context(update_storage_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update_storage_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(()),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update_storage_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update_storage_account::DeserializeError { body })?;
+                update_storage_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update_storage_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn delete_storage_account(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        storage_account_name: &str,
+    ) -> std::result::Result<delete_storage_account::Response, delete_storage_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/StorageAccounts/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
+        );
+        let mut req_builder = client.delete(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete_storage_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(delete_storage_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete_storage_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete_storage_account::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete_storage_account::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete_storage_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete_storage_account::DeserializeError { body })?;
+                delete_storage_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete_storage_account {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
-            Created201(DataLakeAnalyticsAccount),
-            Ok200(DataLakeAnalyticsAccount),
+            Ok200,
+            NoContent204,
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_storage_containers(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        storage_account_name: &str,
+    ) -> std::result::Result<StorageContainerListResult, list_storage_containers::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/storageAccounts/{}/containers",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_storage_containers::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list_storage_containers::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_storage_containers::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_storage_containers::ResponseBytesError)?;
+                let rsp_value: StorageContainerListResult =
+                    serde_json::from_slice(&body).context(list_storage_containers::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_storage_containers::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_storage_containers::DeserializeError { body })?;
+                list_storage_containers::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_storage_containers {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get_storage_container(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        storage_account_name: &str,
+        container_name: &str,
+    ) -> std::result::Result<StorageContainer, get_storage_container::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/storageAccounts/{}/containers/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, storage_account_name, container_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_storage_container::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get_storage_container::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_storage_container::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_storage_container::ResponseBytesError)?;
+                let rsp_value: StorageContainer =
+                    serde_json::from_slice(&body).context(get_storage_container::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_storage_container::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_storage_container::DeserializeError { body })?;
+                get_storage_container::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_storage_container {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_sas_tokens(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        storage_account_name: &str,
+        container_name: &str,
+    ) -> std::result::Result<SasTokenInformationListResult, list_sas_tokens::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/storageAccounts/{}/containers/{}/listSasTokens" , & operation_config . base_path , subscription_id , resource_group_name , account_name , storage_account_name , container_name) ;
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_sas_tokens::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
+        let req = req_builder.build().context(list_sas_tokens::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_sas_tokens::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_sas_tokens::ResponseBytesError)?;
+                let rsp_value: SasTokenInformationListResult =
+                    serde_json::from_slice(&body).context(list_sas_tokens::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_sas_tokens::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_sas_tokens::DeserializeError { body })?;
+                list_sas_tokens::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_sas_tokens {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod compute_policies {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list_by_account(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+    ) -> std::result::Result<ComputePolicyListResult, list_by_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/computePolicies",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list_by_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_account::ResponseBytesError)?;
+                let rsp_value: ComputePolicyListResult =
+                    serde_json::from_slice(&body).context(list_by_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_account::DeserializeError { body })?;
+                list_by_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        compute_policy_name: &str,
+    ) -> std::result::Result<ComputePolicy, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/computePolicies/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, compute_policy_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ComputePolicy = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn create_or_update(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        compute_policy_name: &str,
+        parameters: &CreateOrUpdateComputePolicyParameters,
+    ) -> std::result::Result<ComputePolicy, create_or_update::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/computePolicies/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, compute_policy_name
+        );
+        let mut req_builder = client.put(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(parameters);
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ComputePolicy = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn update(
         operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        name: &str,
-        parameters: &DataLakeAnalyticsAccount,
         subscription_id: &str,
-    ) -> std::result::Result<update::Response, update::Error> {
+        resource_group_name: &str,
+        account_name: &str,
+        compute_policy_name: &str,
+        parameters: Option<&UpdateComputePolicyParameters>,
+    ) -> std::result::Result<ComputePolicy, update::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, name
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/computePolicies/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, compute_policy_name
         );
         let mut req_builder = client.patch(uri_str);
         if let Some(token_credential) = &operation_config.token_credential {
@@ -1037,23 +1629,25 @@ pub mod account {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
+        if let Some(parameters) = parameters {
+            req_builder = req_builder.json(parameters);
+        }
         let req = req_builder.build().context(update::BuildRequestError)?;
         let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
-                let rsp_value: DataLakeAnalyticsAccount = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
-                Ok(update::Response::Ok200(rsp_value))
-            }
-            StatusCode::CREATED => {
-                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
-                let rsp_value: DataLakeAnalyticsAccount = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
-                Ok(update::Response::Created201(rsp_value))
+                let rsp_value: ComputePolicy = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
-                update::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -1061,20 +1655,670 @@ pub mod account {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        compute_policy_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/computePolicies/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, compute_policy_name
+        );
+        let mut req_builder = client.delete(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DataLakeAnalyticsAccount),
-            Created201(DataLakeAnalyticsAccount),
+            Ok200,
+            NoContent204,
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod firewall_rules {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list_by_account(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+    ) -> std::result::Result<FirewallRuleListResult, list_by_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/firewallRules",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list_by_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_account::ResponseBytesError)?;
+                let rsp_value: FirewallRuleListResult =
+                    serde_json::from_slice(&body).context(list_by_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_account::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_account::DeserializeError { body })?;
+                list_by_account::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        firewall_rule_name: &str,
+    ) -> std::result::Result<FirewallRule, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/firewallRules/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, firewall_rule_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: FirewallRule = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn create_or_update(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        firewall_rule_name: &str,
+        parameters: &CreateOrUpdateFirewallRuleParameters,
+    ) -> std::result::Result<FirewallRule, create_or_update::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/firewallRules/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, firewall_rule_name
+        );
+        let mut req_builder = client.put(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(parameters);
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: FirewallRule = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn update(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        firewall_rule_name: &str,
+        parameters: Option<&UpdateFirewallRuleParameters>,
+    ) -> std::result::Result<FirewallRule, update::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/firewallRules/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, firewall_rule_name
+        );
+        let mut req_builder = client.patch(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(parameters) = parameters {
+            req_builder = req_builder.json(parameters);
+        }
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: FirewallRule = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        firewall_rule_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/firewallRules/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, firewall_rule_name
+        );
+        let mut req_builder = client.delete(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod operations {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!("{}/providers/Microsoft.DataLakeAnalytics/operations", &operation_config.base_path,);
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: OperationListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod locations {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn get_capability(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        location: &str,
+    ) -> std::result::Result<CapabilityInformation, get_capability::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.DataLakeAnalytics/locations/{}/capability",
+            &operation_config.base_path, subscription_id, location
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_capability::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get_capability::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_capability::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_capability::ResponseBytesError)?;
+                let rsp_value: CapabilityInformation = serde_json::from_slice(&body).context(get_capability::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_capability::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_capability::DeserializeError { body })?;
+                get_capability::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_capability {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod accounts {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn check_name_availability(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        location: &str,
+        parameters: &CheckNameAvailabilityParameters,
+    ) -> std::result::Result<NameAvailabilityInformation, check_name_availability::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.DataLakeAnalytics/locations/{}/checkNameAvailability",
+            &operation_config.base_path, subscription_id, location
+        );
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(check_name_availability::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(parameters);
+        let req = req_builder.build().context(check_name_availability::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(check_name_availability::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
+                let rsp_value: NameAvailabilityInformation =
+                    serde_json::from_slice(&body).context(check_name_availability::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(check_name_availability::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(check_name_availability::DeserializeError { body })?;
+                check_name_availability::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod check_name_availability {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }

@@ -17220,6 +17220,383 @@ pub mod policy_description {
         }
     }
 }
+pub mod portal_revision {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list_by_service(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        service_name: &str,
+        filter: Option<&str>,
+        top: Option<i32>,
+        skip: Option<i32>,
+        subscription_id: &str,
+    ) -> std::result::Result<PortalRevisionCollection, list_by_service::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/portalRevisions",
+            &operation_config.base_path, subscription_id, resource_group_name, service_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_service::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        if let Some(skip) = skip {
+            req_builder = req_builder.query(&[("$skip", skip)]);
+        }
+        let req = req_builder.build().context(list_by_service::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_service::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_service::ResponseBytesError)?;
+                let rsp_value: PortalRevisionCollection =
+                    serde_json::from_slice(&body).context(list_by_service::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_service::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_service::DeserializeError { body })?;
+                list_by_service::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_service {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        service_name: &str,
+        portal_revision_id: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<PortalRevisionContract, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/portalRevisions/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, service_name, portal_revision_id
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: PortalRevisionContract = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn create_or_update(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        service_name: &str,
+        portal_revision_id: &str,
+        parameters: &PortalRevisionContract,
+        subscription_id: &str,
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/portalRevisions/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, service_name, portal_revision_id
+        );
+        let mut req_builder = client.put(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(parameters);
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: PortalRevisionContract =
+                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            Created201(PortalRevisionContract),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn update(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        service_name: &str,
+        portal_revision_id: &str,
+        parameters: &PortalRevisionContract,
+        if_match: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<update::Response, update::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/portalRevisions/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, service_name, portal_revision_id
+        );
+        let mut req_builder = client.patch(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(parameters);
+        req_builder = req_builder.header("If-Match", if_match);
+        let req = req_builder.build().context(update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: PortalRevisionContract = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            Ok200(PortalRevisionContract),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get_entity_tag(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        service_name: &str,
+        portal_revision_id: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<(), get_entity_tag::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/portalRevisions/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, service_name, portal_revision_id
+        );
+        let mut req_builder = client.head(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_entity_tag::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get_entity_tag::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_entity_tag::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(()),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_entity_tag::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get_entity_tag::DeserializeError { body })?;
+                get_entity_tag::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_entity_tag {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
 pub mod sign_in_settings {
     use crate::models::*;
     use reqwest::StatusCode;
@@ -20612,6 +20989,153 @@ pub mod reports {
         }
     }
 }
+pub mod tenant_settings {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list_by_service(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        service_name: &str,
+        filter: Option<&str>,
+        subscription_id: &str,
+    ) -> std::result::Result<TenantSettingsCollection, list_by_service::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/settings",
+            &operation_config.base_path, subscription_id, resource_group_name, service_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_service::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        let req = req_builder.build().context(list_by_service::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_service::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_service::ResponseBytesError)?;
+                let rsp_value: TenantSettingsCollection =
+                    serde_json::from_slice(&body).context(list_by_service::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_service::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_service::DeserializeError { body })?;
+                list_by_service::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_service {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        service_name: &str,
+        subscription_id: &str,
+        settings_type: &str,
+    ) -> std::result::Result<TenantSettingsContract, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/settings/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, service_name, settings_type
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: TenantSettingsContract = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
 pub mod subscription {
     use crate::models::*;
     use reqwest::StatusCode;
@@ -21370,6 +21894,79 @@ pub mod tenant_access {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
+    pub async fn list_by_service(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        service_name: &str,
+        filter: Option<&str>,
+        subscription_id: &str,
+    ) -> std::result::Result<AccessInformationCollection, list_by_service::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/tenant",
+            &operation_config.base_path, subscription_id, resource_group_name, service_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_service::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        let req = req_builder.build().context(list_by_service::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_service::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_service::ResponseBytesError)?;
+                let rsp_value: AccessInformationCollection =
+                    serde_json::from_slice(&body).context(list_by_service::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_service::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_service::DeserializeError { body })?;
+                list_by_service::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_service {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -21411,6 +22008,79 @@ pub mod tenant_access {
         }
     }
     pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn create(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        service_name: &str,
+        parameters: &AccessInformationCreateParameters,
+        access_name: &str,
+        if_match: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<AccessInformationContract, create::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/tenant/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, service_name, access_name
+        );
+        let mut req_builder = client.put(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(parameters);
+        req_builder = req_builder.header("If-Match", if_match);
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: AccessInformationContract = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                create::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
@@ -21716,7 +22386,7 @@ pub mod tenant_access {
         service_name: &str,
         subscription_id: &str,
         access_name: &str,
-    ) -> std::result::Result<AccessInformationContract, list_secrets::Error> {
+    ) -> std::result::Result<AccessInformationSecretsContract, list_secrets::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/tenant/{}/listSecrets",
@@ -21737,7 +22407,7 @@ pub mod tenant_access {
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_secrets::ResponseBytesError)?;
-                let rsp_value: AccessInformationContract =
+                let rsp_value: AccessInformationSecretsContract =
                     serde_json::from_slice(&body).context(list_secrets::DeserializeError { body })?;
                 Ok(rsp_value)
             }
@@ -21786,75 +22456,6 @@ pub mod tenant_access_git {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        service_name: &str,
-        subscription_id: &str,
-        access_name: &str,
-    ) -> std::result::Result<AccessInformationContract, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/tenant/{}/git",
-            &operation_config.base_path, subscription_id, resource_group_name, service_name, access_name
-        );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: AccessInformationContract = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
-                get::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod get {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorResponse,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
     pub async fn regenerate_primary_key(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -21960,77 +22561,6 @@ pub mod tenant_access_git {
         }
     }
     pub mod regenerate_secondary_key {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::ErrorResponse,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-    pub async fn list_secrets(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        service_name: &str,
-        subscription_id: &str,
-        access_name: &str,
-    ) -> std::result::Result<AccessInformationContract, list_secrets::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/tenant/{}/git/listSecrets",
-            &operation_config.base_path, subscription_id, resource_group_name, service_name, access_name
-        );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(list_secrets::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(list_secrets::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_secrets::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_secrets::ResponseBytesError)?;
-                let rsp_value: AccessInformationContract =
-                    serde_json::from_slice(&body).context(list_secrets::DeserializeError { body })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_secrets::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_secrets::DeserializeError { body })?;
-                list_secrets::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod list_secrets {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;

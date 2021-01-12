@@ -2416,6 +2416,11 @@ pub mod deployments {
                 let rsp_value: DeploymentResource = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
+            StatusCode::ACCEPTED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: DeploymentResource = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Accepted202(rsp_value))
+            }
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
                 let rsp_value: DeploymentResource = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
@@ -2439,6 +2444,7 @@ pub mod deployments {
         #[derive(Debug)]
         pub enum Response {
             Created201(DeploymentResource),
+            Accepted202(DeploymentResource),
             Ok200(DeploymentResource),
         }
         #[derive(Debug, Snafu)]

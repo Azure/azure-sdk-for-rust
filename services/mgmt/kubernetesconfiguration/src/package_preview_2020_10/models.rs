@@ -101,13 +101,6 @@ pub enum OperatorScopeDefinition {
     Namespace,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum EnableHelmOperatorDefinition {
-    #[serde(rename = "true")]
-    True,
-    #[serde(rename = "false")]
-    False,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceControlConfiguration {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -137,7 +130,7 @@ pub mod source_control_configuration {
         #[serde(rename = "sshKnownHostsContents", skip_serializing_if = "Option::is_none")]
         pub ssh_known_hosts_contents: Option<String>,
         #[serde(rename = "enableHelmOperator", skip_serializing_if = "Option::is_none")]
-        pub enable_helm_operator: Option<EnableHelmOperatorDefinition>,
+        pub enable_helm_operator: Option<bool>,
         #[serde(rename = "helmOperatorProperties", skip_serializing_if = "Option::is_none")]
         pub helm_operator_properties: Option<HelmOperatorProperties>,
         #[serde(rename = "provisioningState", skip_serializing)]

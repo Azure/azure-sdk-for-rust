@@ -17,7 +17,7 @@ pub mod apps {
     ) -> std::result::Result<App, get::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTCentral/IoTApps/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTCentral/iotApps/{}",
             &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.get(uri_str);
@@ -86,7 +86,7 @@ pub mod apps {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTCentral/IoTApps/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTCentral/iotApps/{}",
             &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.put(uri_str);
@@ -168,7 +168,7 @@ pub mod apps {
     ) -> std::result::Result<update::Response, update::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTCentral/IoTApps/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTCentral/iotApps/{}",
             &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.patch(uri_str);
@@ -243,7 +243,7 @@ pub mod apps {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTCentral/IoTApps/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTCentral/iotApps/{}",
             &operation_config.base_path, subscription_id, resource_group_name, resource_name
         );
         let mut req_builder = client.delete(uri_str);
@@ -313,7 +313,7 @@ pub mod apps {
     ) -> std::result::Result<AppListResult, list_by_subscription::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.IoTCentral/IoTApps",
+            "{}/subscriptions/{}/providers/Microsoft.IoTCentral/iotApps",
             &operation_config.base_path, subscription_id
         );
         let mut req_builder = client.get(uri_str);
@@ -380,7 +380,7 @@ pub mod apps {
     ) -> std::result::Result<AppListResult, list_by_resource_group::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTCentral/IoTApps",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTCentral/iotApps",
             &operation_config.base_path, subscription_id, resource_group_name
         );
         let mut req_builder = client.get(uri_str);

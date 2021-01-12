@@ -50,6 +50,10 @@ pub struct DataLakeAnalyticsAccountProperties {
     pub storage_accounts: Vec<StorageAccountInformation>,
     #[serde(rename = "computePolicies", skip_serializing)]
     pub compute_policies: Vec<ComputePolicy>,
+    #[serde(rename = "hiveMetastores", skip_serializing)]
+    pub hive_metastores: Vec<HiveMetastore>,
+    #[serde(rename = "virtualNetworkRules", skip_serializing)]
+    pub virtual_network_rules: Vec<VirtualNetworkRule>,
     #[serde(rename = "firewallRules", skip_serializing)]
     pub firewall_rules: Vec<FirewallRule>,
     #[serde(rename = "firewallState", skip_serializing)]
@@ -60,11 +64,11 @@ pub struct DataLakeAnalyticsAccountProperties {
     pub new_tier: Option<data_lake_analytics_account_properties::NewTier>,
     #[serde(rename = "currentTier", skip_serializing)]
     pub current_tier: Option<data_lake_analytics_account_properties::CurrentTier>,
-    #[serde(rename = "maxJobCount", skip_serializing)]
+    #[serde(rename = "maxJobCount", skip_serializing_if = "Option::is_none")]
     pub max_job_count: Option<i32>,
     #[serde(rename = "systemMaxJobCount", skip_serializing)]
     pub system_max_job_count: Option<i32>,
-    #[serde(rename = "maxDegreeOfParallelism", skip_serializing)]
+    #[serde(rename = "maxDegreeOfParallelism", skip_serializing_if = "Option::is_none")]
     pub max_degree_of_parallelism: Option<i32>,
     #[serde(rename = "systemMaxDegreeOfParallelism", skip_serializing)]
     pub system_max_degree_of_parallelism: Option<i32>,
@@ -72,8 +76,10 @@ pub struct DataLakeAnalyticsAccountProperties {
     pub max_degree_of_parallelism_per_job: Option<i32>,
     #[serde(rename = "minPriorityPerJob", skip_serializing)]
     pub min_priority_per_job: Option<i32>,
-    #[serde(rename = "queryStoreRetention", skip_serializing)]
+    #[serde(rename = "queryStoreRetention", skip_serializing_if = "Option::is_none")]
     pub query_store_retention: Option<i32>,
+    #[serde(rename = "debugDataAccessLevel", skip_serializing)]
+    pub debug_data_access_level: Option<data_lake_analytics_account_properties::DebugDataAccessLevel>,
 }
 pub mod data_lake_analytics_account_properties {
     use super::*;
@@ -126,6 +132,12 @@ pub mod data_lake_analytics_account_properties {
         Commitment100000auHours,
         #[serde(rename = "Commitment_500000AUHours")]
         Commitment500000auHours,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DebugDataAccessLevel {
+        All,
+        Customer,
+        None,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -297,11 +309,75 @@ pub struct FirewallRuleListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum VirtualNetworkRuleState {
+    Active,
+    NetworkSourceDeleted,
+    Failed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualNetworkRule {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualNetworkRuleProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualNetworkRuleProperties {
+    #[serde(rename = "subnetId", skip_serializing)]
+    pub subnet_id: Option<String>,
+    #[serde(rename = "virtualNetworkRuleState", skip_serializing)]
+    pub virtual_network_rule_state: Option<VirtualNetworkRuleState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualNetworkRuleListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<VirtualNetworkRule>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HiveMetastore {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<HiveMetastoreProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HiveMetastoreProperties {
+    #[serde(rename = "serverUri", skip_serializing)]
+    pub server_uri: Option<String>,
+    #[serde(rename = "databaseName", skip_serializing)]
+    pub database_name: Option<String>,
+    #[serde(rename = "runtimeVersion", skip_serializing)]
+    pub runtime_version: Option<String>,
+    #[serde(rename = "userName", skip_serializing)]
+    pub user_name: Option<String>,
+    #[serde(skip_serializing)]
+    pub password: Option<String>,
+    #[serde(rename = "nestedResourceProvisioningState", skip_serializing)]
+    pub nested_resource_provisioning_state: Option<NestedResourceProvisioningState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HiveMetastoreListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<HiveMetastore>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum NestedResourceProvisioningState {
+    Succeeded,
+    Canceled,
+    Failed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OperationMetaPropertyInfo>,
     #[serde(skip_serializing)]
     pub origin: Option<operation::Origin>,
 }
@@ -334,6 +410,47 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationMetaMetricAvailabilitiesSpecification {
+    #[serde(rename = "timeGrain", skip_serializing_if = "Option::is_none")]
+    pub time_grain: Option<String>,
+    #[serde(rename = "blobDuration", skip_serializing_if = "Option::is_none")]
+    pub blob_duration: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationMetaMetricSpecification {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+    #[serde(rename = "aggregationType", skip_serializing_if = "Option::is_none")]
+    pub aggregation_type: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub availabilities: Vec<OperationMetaMetricAvailabilitiesSpecification>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationMetaLogSpecification {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "blobDuration", skip_serializing_if = "Option::is_none")]
+    pub blob_duration: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationMetaServiceSpecification {
+    #[serde(rename = "metricSpecifications", skip_serializing_if = "Vec::is_empty")]
+    pub metric_specifications: Vec<OperationMetaMetricSpecification>,
+    #[serde(rename = "logSpecifications", skip_serializing_if = "Vec::is_empty")]
+    pub log_specifications: Vec<OperationMetaLogSpecification>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationMetaPropertyInfo {
+    #[serde(rename = "serviceSpecification", skip_serializing_if = "Option::is_none")]
+    pub service_specification: Option<OperationMetaServiceSpecification>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CapabilityInformation {
@@ -672,4 +789,29 @@ pub mod check_name_availability_parameters {
         #[serde(rename = "Microsoft.DataLakeAnalytics/accounts")]
         MicrosoftDataLakeAnalyticsAccounts,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(skip_serializing)]
+    pub code: Option<String>,
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+    #[serde(skip_serializing)]
+    pub target: Option<String>,
+    #[serde(skip_serializing)]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", skip_serializing)]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing)]
+    pub info: Option<serde_json::Value>,
 }

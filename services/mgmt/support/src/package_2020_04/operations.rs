@@ -412,7 +412,7 @@ pub mod support_tickets {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        top: Option<i64>,
+        top: Option<i32>,
         filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<SupportTicketsListResult, list::Error> {
@@ -774,7 +774,7 @@ pub mod communications {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         support_ticket_name: &str,
-        top: Option<i64>,
+        top: Option<i32>,
         filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<CommunicationsListResult, list::Error> {

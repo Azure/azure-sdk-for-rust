@@ -45,7 +45,7 @@ pub struct JobDetails {
     #[serde(rename = "shippingInformation", skip_serializing_if = "Option::is_none")]
     pub shipping_information: Option<ShippingInformation>,
     #[serde(rename = "deliveryPackage", skip_serializing_if = "Option::is_none")]
-    pub delivery_package: Option<PackageInformation>,
+    pub delivery_package: Option<DeliveryPackageInformation>,
     #[serde(rename = "returnPackage", skip_serializing_if = "Option::is_none")]
     pub return_package: Option<PackageInformation>,
     #[serde(rename = "diagnosticsPath", skip_serializing_if = "Option::is_none")]
@@ -126,7 +126,7 @@ pub mod update_job_parameters {
         #[serde(rename = "returnShipping", skip_serializing_if = "Option::is_none")]
         pub return_shipping: Option<ReturnShipping>,
         #[serde(rename = "deliveryPackage", skip_serializing_if = "Option::is_none")]
-        pub delivery_package: Option<PackageInformation>,
+        pub delivery_package: Option<DeliveryPackageInformation>,
         #[serde(rename = "logLevel", skip_serializing_if = "Option::is_none")]
         pub log_level: Option<String>,
         #[serde(rename = "backupDriveManifest", skip_serializing_if = "Option::is_none")]
@@ -270,6 +270,17 @@ pub struct PackageInformation {
     pub drive_count: i64,
     #[serde(rename = "shipDate")]
     pub ship_date: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeliveryPackageInformation {
+    #[serde(rename = "carrierName")]
+    pub carrier_name: String,
+    #[serde(rename = "trackingNumber")]
+    pub tracking_number: String,
+    #[serde(rename = "driveCount", skip_serializing_if = "Option::is_none")]
+    pub drive_count: Option<i64>,
+    #[serde(rename = "shipDate", skip_serializing_if = "Option::is_none")]
+    pub ship_date: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DriveStatus {

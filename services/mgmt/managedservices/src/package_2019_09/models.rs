@@ -221,19 +221,22 @@ pub struct OperationList {
 pub struct Authorization {
     #[serde(rename = "principalId")]
     pub principal_id: String,
+    #[serde(rename = "principalIdDisplayName", skip_serializing_if = "Option::is_none")]
+    pub principal_id_display_name: Option<String>,
     #[serde(rename = "roleDefinitionId")]
     pub role_definition_id: String,
+    #[serde(rename = "delegatedRoleDefinitionIds", skip_serializing_if = "Vec::is_empty")]
+    pub delegated_role_definition_ids: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDefinition {
+    pub code: String,
+    pub message: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing)]
-    pub error: Option<error_response::Error>,
-}
-pub mod error_response {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Error {
-        pub code: String,
-        pub message: String,
-    }
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDefinition>,
 }

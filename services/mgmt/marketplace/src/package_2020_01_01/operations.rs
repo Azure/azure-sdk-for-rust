@@ -205,6 +205,70 @@ pub mod private_store_offer {
             },
         }
     }
+    pub async fn post(
+        operation_config: &crate::OperationConfig,
+        payload: Option<&PrivateStoreOperation>,
+    ) -> std::result::Result<(), post::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/providers/Microsoft.Marketplace/privateStores/{}/offers/{}",
+            &operation_config.base_path, private_store_id, offer_id
+        );
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(post::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        if let Some(payload) = payload {
+            req_builder = req_builder.json(payload);
+        }
+        let req = req_builder.build().context(post::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(post::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(()),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(post::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(post::DeserializeError { body })?;
+                post::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod post {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         payload: Option<&Offer>,

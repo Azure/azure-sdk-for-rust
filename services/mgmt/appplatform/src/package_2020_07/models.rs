@@ -85,6 +85,22 @@ pub struct Sku {
     pub capacity: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConfigServerSettingsValidateResult {
+    #[serde(rename = "isValid", skip_serializing_if = "Option::is_none")]
+    pub is_valid: Option<bool>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ConfigServerSettingsErrorRecord>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConfigServerSettingsErrorRecord {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub messages: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigServerResource {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,

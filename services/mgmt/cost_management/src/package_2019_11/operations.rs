@@ -9,7 +9,7 @@ pub mod views {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ViewListResult, list::Error> {
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<list::Response, list::Error> {
         let client = &operation_config.client;
         let uri_str = &format!("{}/providers/Microsoft.CostManagement/views", &operation_config.base_path,);
         let mut req_builder = client.get(uri_str);
@@ -27,8 +27,9 @@ pub mod views {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
                 let rsp_value: ViewListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
-                Ok(rsp_value)
+                Ok(list::Response::Ok200(rsp_value))
             }
+            StatusCode::NO_CONTENT => Ok(list::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
                 let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
@@ -44,6 +45,11 @@ pub mod views {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ViewListResult),
+            NoContent204,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
@@ -991,7 +997,7 @@ pub mod dimensions {
         expand: Option<&str>,
         skiptoken: Option<&str>,
         top: Option<i64>,
-    ) -> std::result::Result<DimensionsListResult, list::Error> {
+    ) -> std::result::Result<list::Response, list::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
             "{}/{}/providers/Microsoft.CostManagement/dimensions",
@@ -1024,8 +1030,9 @@ pub mod dimensions {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
                 let rsp_value: DimensionsListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
-                Ok(rsp_value)
+                Ok(list::Response::Ok200(rsp_value))
             }
+            StatusCode::NO_CONTENT => Ok(list::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
                 let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
@@ -1041,6 +1048,11 @@ pub mod dimensions {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(DimensionsListResult),
+            NoContent204,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
@@ -1163,7 +1175,7 @@ pub mod query {
         operation_config: &crate::OperationConfig,
         scope: &str,
         parameters: &QueryDefinition,
-    ) -> std::result::Result<QueryResult, usage::Error> {
+    ) -> std::result::Result<usage::Response, usage::Error> {
         let client = &operation_config.client;
         let uri_str = &format!("{}/{}/providers/Microsoft.CostManagement/query", &operation_config.base_path, scope);
         let mut req_builder = client.post(uri_str);
@@ -1182,8 +1194,9 @@ pub mod query {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(usage::ResponseBytesError)?;
                 let rsp_value: QueryResult = serde_json::from_slice(&body).context(usage::DeserializeError { body })?;
-                Ok(rsp_value)
+                Ok(usage::Response::Ok200(rsp_value))
             }
+            StatusCode::NO_CONTENT => Ok(usage::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(usage::ResponseBytesError)?;
                 let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(usage::DeserializeError { body })?;
@@ -1199,6 +1212,11 @@ pub mod query {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(QueryResult),
+            NoContent204,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {

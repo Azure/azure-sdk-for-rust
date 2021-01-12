@@ -157,9 +157,9 @@ pub struct ResourceSku {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tier: Option<SignalRSkuTier>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub size: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub family: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
@@ -204,7 +204,7 @@ pub enum ProvisioningState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignalRCreateOrUpdateProperties {
-    #[serde(rename = "hostNamePrefix", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "hostNamePrefix", skip_serializing)]
     pub host_name_prefix: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub features: Vec<SignalRFeature>,

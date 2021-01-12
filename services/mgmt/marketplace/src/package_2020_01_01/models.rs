@@ -25,6 +25,11 @@ pub struct PrivateStoreList {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum PrivateStoreOperation {
+    DeletePrivateStoreOffer,
+    Ping,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateStore {
     #[serde(flatten)]
     pub resource: Resource,
@@ -98,26 +103,10 @@ pub struct OfferProperties {
     pub specific_plan_ids_limitation: Vec<String>,
     #[serde(rename = "updateSuppressedDueIdempotence", skip_serializing_if = "Option::is_none")]
     pub update_suppressed_due_idempotence: Option<bool>,
-    #[serde(rename = "iconFileUris", skip_serializing_if = "Vec::is_empty")]
-    pub icon_file_uris: Vec<Icon>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Icon {
-    #[serde(rename = "iconKind", skip_serializing_if = "Option::is_none")]
-    pub icon_kind: Option<icon::IconKind>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-}
-pub mod icon {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum IconKind {
-        Small,
-        Medium,
-        Large,
-        Wide,
-        Hero,
-    }
+    #[serde(rename = "iconFileUris", skip_serializing_if = "Option::is_none")]
+    pub icon_file_uris: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub plans: Vec<Plan>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Plan {
@@ -127,6 +116,22 @@ pub struct Plan {
     pub plan_id: Option<String>,
     #[serde(rename = "planDisplayName", skip_serializing)]
     pub plan_display_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub accessibility: Option<plan::Accessibility>,
+    #[serde(rename = "altStackReference", skip_serializing)]
+    pub alt_stack_reference: Option<String>,
+    #[serde(rename = "stackType", skip_serializing)]
+    pub stack_type: Option<String>,
+}
+pub mod plan {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Accessibility {
+        Unknown,
+        Public,
+        PrivateTenantOnLevel,
+        PrivateSubscriptionOnLevel,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {

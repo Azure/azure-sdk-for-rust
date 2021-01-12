@@ -21,7 +21,7 @@ pub mod metric_baseline {
     ) -> std::result::Result<BaselineResponse, get::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/{}/providers/microsoft.insights/baseline/{}",
+            "{}/{}/providers/Microsoft.Insights/baseline/{}",
             &operation_config.base_path, resource_uri, metric_name
         );
         let mut req_builder = client.get(uri_str);

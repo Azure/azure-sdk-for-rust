@@ -1601,6 +1601,8 @@ pub struct FileShareProperties {
     pub access_tier_status: Option<String>,
     #[serde(rename = "shareUsageBytes", skip_serializing)]
     pub share_usage_bytes: Option<i64>,
+    #[serde(rename = "snapshotTime", skip_serializing)]
+    pub snapshot_time: Option<String>,
 }
 pub mod file_share_properties {
     use super::*;

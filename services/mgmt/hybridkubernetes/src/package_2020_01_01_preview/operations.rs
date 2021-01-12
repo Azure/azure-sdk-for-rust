@@ -304,6 +304,7 @@ pub mod connected_cluster {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
+        client_proxy: Option<bool>,
         client_authentication_details: Option<&AuthenticationDetails>,
     ) -> std::result::Result<CredentialResults, list_cluster_user_credentials::Error> {
         let client = &operation_config.client;
@@ -320,6 +321,9 @@ pub mod connected_cluster {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(client_proxy) = client_proxy {
+            req_builder = req_builder.query(&[("ClientProxy", client_proxy)]);
+        }
         if let Some(client_authentication_details) = client_authentication_details {
             req_builder = req_builder.json(client_authentication_details);
         }

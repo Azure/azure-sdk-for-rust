@@ -159,9 +159,9 @@ pub struct ResourceSku {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tier: Option<SignalRSkuTier>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub size: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub family: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,

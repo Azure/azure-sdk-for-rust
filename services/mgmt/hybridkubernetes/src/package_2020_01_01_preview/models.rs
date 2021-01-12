@@ -71,13 +71,39 @@ pub struct ConnectedClusterProperties {
     pub kubernetes_version: Option<String>,
     #[serde(rename = "totalNodeCount", skip_serializing)]
     pub total_node_count: Option<i64>,
+    #[serde(rename = "totalCoreCount", skip_serializing)]
+    pub total_core_count: Option<i32>,
     #[serde(rename = "agentVersion", skip_serializing)]
     pub agent_version: Option<String>,
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ConnectedClusterProvisioningState>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub distribution: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub infrastructure: Option<String>,
+    #[serde(skip_serializing)]
+    pub offering: Option<String>,
+    #[serde(rename = "managedIdentityCertificateExpirationTime", skip_serializing)]
+    pub managed_identity_certificate_expiration_time: Option<String>,
+    #[serde(rename = "lastConnectivityTime", skip_serializing)]
+    pub last_connectivity_time: Option<String>,
+    #[serde(rename = "connectivityStatus", skip_serializing_if = "Option::is_none")]
+    pub connectivity_status: Option<connected_cluster_properties::ConnectivityStatus>,
+}
+pub mod connected_cluster_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ConnectivityStatus {
+        Connecting,
+        Connected,
+        Offline,
+        Expired,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CredentialResults {
+    #[serde(rename = "hybridConnectionConfig", skip_serializing_if = "Option::is_none")]
+    pub hybrid_connection_config: Option<HybridConnectionConfig>,
     #[serde(skip_serializing)]
     pub kubeconfigs: Vec<CredentialResult>,
 }
@@ -136,6 +162,17 @@ pub struct ConnectedClusterPatch {
 pub struct ConnectedClusterPatchProperties {
     #[serde(rename = "agentPublicKeyCertificate", skip_serializing_if = "Option::is_none")]
     pub agent_public_key_certificate: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HybridConnectionConfig {
+    #[serde(rename = "expirationTime", skip_serializing)]
+    pub expiration_time: Option<i64>,
+    #[serde(rename = "hybridConnectionName", skip_serializing)]
+    pub hybrid_connection_name: Option<String>,
+    #[serde(skip_serializing)]
+    pub relay: Option<String>,
+    #[serde(skip_serializing)]
+    pub token: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {

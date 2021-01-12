@@ -71,6 +71,8 @@ pub struct DataPoolBaseProperties {
     pub provisioning_state: Option<data_pool_base_properties::ProvisioningState>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<DataPoolLocation>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 pub mod data_pool_base_properties {
     use super::*;
@@ -106,6 +108,8 @@ pub struct Operation {
     pub name: Option<String>,
     #[serde(rename = "isDataAction", skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[serde(rename = "actionType", skip_serializing_if = "Option::is_none")]
+    pub action_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -946,11 +946,6 @@ pub mod databases {
             },
         }
     }
-}
-pub mod redis_enterprise_database {
-    use crate::models::*;
-    use reqwest::StatusCode;
-    use snafu::{ResultExt, Snafu};
     pub async fn list_keys(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
