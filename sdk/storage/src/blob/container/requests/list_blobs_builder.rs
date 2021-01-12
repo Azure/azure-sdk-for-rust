@@ -146,7 +146,7 @@ impl<'a> ListBlobsBuilder<'a> {
         enum States {
             Init,
             NextMarker(NextMarker),
-        };
+        }
 
         unfold(Some(States::Init), move |next_marker: Option<States>| {
             let req = self.clone();

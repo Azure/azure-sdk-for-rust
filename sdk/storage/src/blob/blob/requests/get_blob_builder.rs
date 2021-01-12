@@ -101,7 +101,7 @@ impl<'a> GetBlobBuilder<'a> {
             Init,
             Progress(Range),
             End,
-        };
+        }
 
         let complete_range = Range::new(0, u64::MAX);
 
