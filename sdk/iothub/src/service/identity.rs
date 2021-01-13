@@ -8,15 +8,19 @@ use serde::{Deserialize, Serialize};
 
 use crate::service::{ServiceClient, API_VERSION};
 
+
 /// Representation of a desired device capability
 pub enum DesiredCapability {
+    /// The IoT Edge device capability
     IotEdge,
 }
 
 /// The connection state of a module or device
 #[derive(Serialize, Debug, Deserialize, PartialEq)]
 pub enum ConnectionState {
+    /// The device or module is connected
     Connected,
+    /// The device or module is disconnected
     Disconnected,
 }
 
@@ -24,73 +28,100 @@ pub enum ConnectionState {
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum Status {
+    /// The device or module is disabled
     Disabled,
+    /// The device or module is enabled
     Enabled,
 }
 
-/// Representation of device capabilities
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+/// Representation of device capabilities.
+#[derive(Default, Serialize, Deserialize, Debug, PartialEq)]
 pub struct DeviceCapabilities {
     #[serde(rename = "iotEdge")]
+    /// Whether the device has the IoT Edge capability or not.
     pub iotedge: bool,
 }
 
-/// Representation of a symmetric key for authentication
+/// Representation of a symmetric key for authentication.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct SymmetricKey {
     primary_key: Option<String>,
     secondary_key: Option<String>,
 }
 
-/// Representation of a x509 thumbprint for authentication
+/// Representation of a x509 thumbprint for authentication.
 #[derive(Default, Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct X509ThumbPrint {
+    /// The primary thumbprint.
     pub primary_thumbprint: Option<String>,
+    /// The secondary thumbprint.
     pub secondary_thumbprint: Option<String>,
 }
 
-/// AuthenticationType of a module or device
+/// AuthenticationType of a module or device.
 #[derive(Serialize, Debug, Deserialize, PartialEq)]
 pub enum AuthenticationType {
+    /// Authentication using certificate
     #[serde(rename = "certificate")]
     Certificate,
+    /// Authentication using a certificate authority.
     #[serde(rename = "Authority")]
     Authority,
+    /// The device or module is not authenticated.
     #[serde(rename = "none")]
     None,
+    /// Authentication using symmetric keys
     #[serde(rename = "sas")]
     SAS,
+    /// Authentication using self signed certificates
     #[serde(rename = "selfSigned")]
     SelfSigned,
 }
 
-/// The authentication mechanism for a device or module identity
+/// The authentication mechanism for a device or module identity.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticationMechanism {
+    /// The symmetric key pair used for authentication.
     pub symmetric_key: SymmetricKey,
+    /// The type of authentication that is being used.
     #[serde(rename = "type")]
     pub authentication_type: AuthenticationType,
+    /// The primary and secondary x509 thumbprints used for x509 based authentication.
     pub x509_thumbprint: X509ThumbPrint,
 }
 
-/// The representation of a device identity
+/// The representation of a device identity.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Device {
+    /// The authentication mechanism of the device.
     pub authentication: AuthenticationMechanism,
+    /// The capabilities of the device.
     pub capabilities: DeviceCapabilities,
+    /// The amount of queued cloud to device messages.
     pub cloud_to_device_message_count: u64,
+    /// The connection state of the device
     pub connection_state: ConnectionState,
+    /// The date and time the connection state was last updated.
     pub connection_state_updated_time: String,
+    /// The unique identifier of the device.
     pub device_id: String,
+    /// The scope of the device.
     pub device_scope: Option<String>,
+    /// The string representing a weak Etag for the device identity, as per RFC7232.
     pub etag: String,
+    /// An IoT-Hub generated, case sensitive string which is used to distinguish devices
+    /// with the same deviceId, when they have been deleted and re-created.
     pub generation_id: String,
+    /// The date and time the device last connected, or sent or received a message.
     pub last_activity_time: String,
+    /// The status of the device.
     pub status: Status,
+    /// The reason for the device status.
     pub status_reason: Option<String>,
+    /// The date and time the status was last updated.
     pub status_updated_time: String,
 }
 
@@ -98,15 +129,26 @@ pub struct Device {
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Module {
+    /// The authentication mechanism of the module.
     pub authentication: AuthenticationMechanism,
+    /// The amount of queued cloud to module messages.
     pub cloud_to_device_message_count: u64,
+    /// The connection state of the module.
     pub connection_state: ConnectionState,
+    /// The date and time the connection state was last updated.
     pub connection_state_updated_time: String,
+    /// The unique identifier of the device.
     pub device_id: String,
+    /// The string representing a weak Etag for the device identity, as per RFC7232.
     pub etag: String,
+    /// An IoT-Hub generated, case sensitive string which is used to distinguish modules
+    /// with the same deviceId, when they have been deleted and re-created.
     pub generation_id: String,
+    /// The date and time the module last connected, or sent or received a message.
     pub last_activity_time: String,
+    /// The entity that manages this module.
     pub managed_by: String,
+    /// The unique identifier of the module
     pub module_id: String,
 }
 
@@ -137,7 +179,7 @@ impl<'a> DeviceIdentityBuilder<'a> {
         Self {
             service_client,
             authentication: None,
-            capabilities: DeviceCapabilities { iotedge: false },
+            capabilities: DeviceCapabilities::default(),
             device_id: None,
             status: None,
             etag,
