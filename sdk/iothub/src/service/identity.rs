@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::service::{ServiceClient, API_VERSION};
 
-
 /// Representation of a desired device capability
 pub enum DesiredCapability {
     /// The IoT Edge device capability
