@@ -131,6 +131,8 @@ pub struct MoveResourceProperties {
     pub depends_on: Vec<MoveResourceDependency>,
     #[serde(rename = "dependsOnOverrides", skip_serializing_if = "Vec::is_empty")]
     pub depends_on_overrides: Vec<MoveResourceDependencyOverride>,
+    #[serde(rename = "isResolveRequired", skip_serializing)]
+    pub is_resolve_required: Option<bool>,
     #[serde(skip_serializing)]
     pub errors: Option<serde_json::Value>,
 }
@@ -146,11 +148,18 @@ pub struct MoveResource {
     pub properties: Option<MoveResourceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SummaryItem {
+pub struct Summary {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub item: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SummaryCollection {
+    #[serde(rename = "fieldName", skip_serializing_if = "Option::is_none")]
+    pub field_name: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub summary: Vec<Summary>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MoveCollectionProperties {
@@ -160,6 +169,8 @@ pub struct MoveCollectionProperties {
     pub target_region: String,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<ProvisioningState>,
+    #[serde(skip_serializing)]
+    pub errors: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MoveCollection {
@@ -169,6 +180,8 @@ pub struct MoveCollection {
     pub name: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
+    #[serde(skip_serializing)]
+    pub etag: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -246,8 +259,10 @@ pub struct MoveResourceCollection {
     pub value: Vec<MoveResource>,
     #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub summary: Vec<SummaryItem>,
+    #[serde(rename = "summaryCollection", skip_serializing_if = "Option::is_none")]
+    pub summary_collection: Option<SummaryCollection>,
+    #[serde(rename = "totalCount", skip_serializing)]
+    pub total_count: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MoveCollectionResultList {

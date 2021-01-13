@@ -9,8 +9,10 @@ pub struct ReportConfigDefinition {
     pub timeframe: report_config_definition::Timeframe,
     #[serde(rename = "timePeriod", skip_serializing_if = "Option::is_none")]
     pub time_period: Option<ReportConfigTimePeriod>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dataset: Option<ReportConfigDataset>,
+    #[serde(rename = "dataSet", skip_serializing_if = "Option::is_none")]
+    pub data_set: Option<ReportConfigDataset>,
+    #[serde(rename = "includeMonetaryCommitment", skip_serializing)]
+    pub include_monetary_commitment: Option<bool>,
 }
 pub mod report_config_definition {
     use super::*;
@@ -97,8 +99,6 @@ pub struct ReportConfigFilter {
     pub and: Vec<ReportConfigFilter>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub or: Vec<ReportConfigFilter>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub not: Option<ReportConfigFilter>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dimension: Option<ReportConfigComparisonExpression>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -644,11 +644,9 @@ pub struct QueryFilter {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub or: Vec<QueryFilter>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub not: Option<QueryFilter>,
+    pub dimensions: Option<QueryComparisonExpression>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub dimension: Option<QueryComparisonExpression>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tag: Option<QueryComparisonExpression>,
+    pub tags: Option<QueryComparisonExpression>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QueryColumnType {
@@ -669,6 +667,34 @@ pub mod query_comparison_expression {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExportDefinition {
+    #[serde(rename = "type")]
+    pub type_: export_definition::Type,
+    pub timeframe: export_definition::Timeframe,
+    #[serde(rename = "timePeriod", skip_serializing_if = "Option::is_none")]
+    pub time_period: Option<QueryTimePeriod>,
+    #[serde(rename = "dataSet", skip_serializing_if = "Option::is_none")]
+    pub data_set: Option<QueryDataset>,
+}
+pub mod export_definition {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Usage,
+        ActualCost,
+        AmortizedCost,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Timeframe {
+        MonthToDate,
+        BillingMonthToDate,
+        TheLastMonth,
+        TheLastBillingMonth,
+        WeekToDate,
+        Custom,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportListResult {
     #[serde(skip_serializing)]
     pub value: Vec<Export>,
@@ -676,7 +702,7 @@ pub struct ExportListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Export {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExportProperties>,
 }
@@ -693,7 +719,7 @@ pub struct CommonExportProperties {
     pub format: Option<common_export_properties::Format>,
     #[serde(rename = "deliveryInfo")]
     pub delivery_info: ExportDeliveryInfo,
-    pub definition: QueryDefinition,
+    pub definition: ExportDefinition,
 }
 pub mod common_export_properties {
     use super::*;

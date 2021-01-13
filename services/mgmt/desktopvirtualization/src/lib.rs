@@ -23,6 +23,10 @@ pub use package_2020_10_19_preview::{models, operations, API_VERSION};
 mod package_2020_11_02_preview;
 #[cfg(feature = "package-2020-11-02-preview")]
 pub use package_2020_11_02_preview::{models, operations, API_VERSION};
+#[cfg(feature = "package-2020-11-10-preview")]
+mod package_2020_11_10_preview;
+#[cfg(feature = "package-2020-11-10-preview")]
+pub use package_2020_11_10_preview::{models, operations, API_VERSION};
 pub struct OperationConfig {
     pub api_version: String,
     pub client: reqwest::Client,

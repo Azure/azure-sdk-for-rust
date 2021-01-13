@@ -1433,6 +1433,32 @@ pub struct NotebookWorkspaceConnectionInfoResult {
     pub notebook_server_endpoint: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkResourceListResult {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PrivateLinkResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkResource {
+    #[serde(flatten)]
+    pub arm_proxy_resource: ArmProxyResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PrivateLinkResourceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkResourceProperties {
+    #[serde(rename = "groupId", skip_serializing)]
+    pub group_id: Option<String>,
+    #[serde(rename = "requiredMembers", skip_serializing)]
+    pub required_members: Vec<String>,
+    #[serde(rename = "requiredZoneNames", skip_serializing)]
+    pub required_zone_names: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionListResult {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PrivateEndpointConnection>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,

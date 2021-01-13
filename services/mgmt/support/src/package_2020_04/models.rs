@@ -224,7 +224,7 @@ pub struct ServiceLevelAgreement {
     #[serde(rename = "expirationTime", skip_serializing)]
     pub expiration_time: Option<String>,
     #[serde(rename = "slaMinutes", skip_serializing)]
-    pub sla_minutes: Option<i64>,
+    pub sla_minutes: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SupportEngineer {

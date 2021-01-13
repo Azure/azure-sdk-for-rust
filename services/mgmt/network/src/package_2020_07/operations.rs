@@ -2566,6 +2566,255 @@ pub mod network_interfaces {
             },
         }
     }
+    pub async fn list_cloud_service_role_instance_network_interfaces(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        cloud_service_name: &str,
+        role_instance_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<NetworkInterfaceListResult, list_cloud_service_role_instance_network_interfaces::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/cloudServices/{}/roleInstances/{}/networkInterfaces",
+            &operation_config.base_path, subscription_id, resource_group_name, cloud_service_name, role_instance_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_cloud_service_role_instance_network_interfaces::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder
+            .build()
+            .context(list_cloud_service_role_instance_network_interfaces::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_cloud_service_role_instance_network_interfaces::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_cloud_service_role_instance_network_interfaces::ResponseBytesError)?;
+                let rsp_value: NetworkInterfaceListResult = serde_json::from_slice(&body)
+                    .context(list_cloud_service_role_instance_network_interfaces::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_cloud_service_role_instance_network_interfaces::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body)
+                    .context(list_cloud_service_role_instance_network_interfaces::DeserializeError { body })?;
+                list_cloud_service_role_instance_network_interfaces::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_cloud_service_role_instance_network_interfaces {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_cloud_service_network_interfaces(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        cloud_service_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<NetworkInterfaceListResult, list_cloud_service_network_interfaces::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/cloudServices/{}/networkInterfaces",
+            &operation_config.base_path, subscription_id, resource_group_name, cloud_service_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_cloud_service_network_interfaces::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder
+            .build()
+            .context(list_cloud_service_network_interfaces::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_cloud_service_network_interfaces::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_cloud_service_network_interfaces::ResponseBytesError)?;
+                let rsp_value: NetworkInterfaceListResult =
+                    serde_json::from_slice(&body).context(list_cloud_service_network_interfaces::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_cloud_service_network_interfaces::ResponseBytesError)?;
+                let rsp_value: CloudError =
+                    serde_json::from_slice(&body).context(list_cloud_service_network_interfaces::DeserializeError { body })?;
+                list_cloud_service_network_interfaces::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_cloud_service_network_interfaces {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get_cloud_service_network_interface(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        cloud_service_name: &str,
+        role_instance_name: &str,
+        network_interface_name: &str,
+        subscription_id: &str,
+        expand: Option<&str>,
+    ) -> std::result::Result<NetworkInterface, get_cloud_service_network_interface::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/cloudServices/{}/roleInstances/{}/networkInterfaces/{}",
+            &operation_config.base_path,
+            subscription_id,
+            resource_group_name,
+            cloud_service_name,
+            role_instance_name,
+            network_interface_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_cloud_service_network_interface::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(expand) = expand {
+            req_builder = req_builder.query(&[("$expand", expand)]);
+        }
+        let req = req_builder
+            .build()
+            .context(get_cloud_service_network_interface::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(get_cloud_service_network_interface::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_cloud_service_network_interface::ResponseBytesError)?;
+                let rsp_value: NetworkInterface =
+                    serde_json::from_slice(&body).context(get_cloud_service_network_interface::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_cloud_service_network_interface::ResponseBytesError)?;
+                let rsp_value: CloudError =
+                    serde_json::from_slice(&body).context(get_cloud_service_network_interface::DeserializeError { body })?;
+                get_cloud_service_network_interface::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_cloud_service_network_interface {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
 }
 pub mod network_interface_ip_configurations {
     use crate::models::*;
@@ -14908,6 +15157,248 @@ pub mod public_ip_addresses {
         }
     }
     pub mod get_virtual_machine_scale_set_public_ip_address {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_cloud_service_public_ip_addresses(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        cloud_service_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<PublicIpAddressListResult, list_cloud_service_public_ip_addresses::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/cloudServices/{}/publicipaddresses",
+            &operation_config.base_path, subscription_id, resource_group_name, cloud_service_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_cloud_service_public_ip_addresses::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder
+            .build()
+            .context(list_cloud_service_public_ip_addresses::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_cloud_service_public_ip_addresses::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_cloud_service_public_ip_addresses::ResponseBytesError)?;
+                let rsp_value: PublicIpAddressListResult =
+                    serde_json::from_slice(&body).context(list_cloud_service_public_ip_addresses::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_cloud_service_public_ip_addresses::ResponseBytesError)?;
+                let rsp_value: CloudError =
+                    serde_json::from_slice(&body).context(list_cloud_service_public_ip_addresses::DeserializeError { body })?;
+                list_cloud_service_public_ip_addresses::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_cloud_service_public_ip_addresses {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_cloud_service_role_instance_public_ip_addresses(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        cloud_service_name: &str,
+        role_instance_name: &str,
+        network_interface_name: &str,
+        ip_configuration_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<PublicIpAddressListResult, list_cloud_service_role_instance_public_ip_addresses::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/cloudServices/{}/roleInstances/{}/networkInterfaces/{}/ipconfigurations/{}/publicipaddresses" , & operation_config . base_path , subscription_id , resource_group_name , cloud_service_name , role_instance_name , network_interface_name , ip_configuration_name) ;
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_cloud_service_role_instance_public_ip_addresses::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder
+            .build()
+            .context(list_cloud_service_role_instance_public_ip_addresses::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(list_cloud_service_role_instance_public_ip_addresses::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_cloud_service_role_instance_public_ip_addresses::ResponseBytesError)?;
+                let rsp_value: PublicIpAddressListResult = serde_json::from_slice(&body)
+                    .context(list_cloud_service_role_instance_public_ip_addresses::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp
+                    .bytes()
+                    .await
+                    .context(list_cloud_service_role_instance_public_ip_addresses::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body)
+                    .context(list_cloud_service_role_instance_public_ip_addresses::DeserializeError { body })?;
+                list_cloud_service_role_instance_public_ip_addresses::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_cloud_service_role_instance_public_ip_addresses {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get_cloud_service_public_ip_address(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        cloud_service_name: &str,
+        role_instance_name: &str,
+        network_interface_name: &str,
+        ip_configuration_name: &str,
+        public_ip_address_name: &str,
+        subscription_id: &str,
+        expand: Option<&str>,
+    ) -> std::result::Result<PublicIpAddress, get_cloud_service_public_ip_address::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/cloudServices/{}/roleInstances/{}/networkInterfaces/{}/ipconfigurations/{}/publicipaddresses/{}" , & operation_config . base_path , subscription_id , resource_group_name , cloud_service_name , role_instance_name , network_interface_name , ip_configuration_name , public_ip_address_name) ;
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_cloud_service_public_ip_address::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        if let Some(expand) = expand {
+            req_builder = req_builder.query(&[("$expand", expand)]);
+        }
+        let req = req_builder
+            .build()
+            .context(get_cloud_service_public_ip_address::BuildRequestError)?;
+        let rsp = client
+            .execute(req)
+            .await
+            .context(get_cloud_service_public_ip_address::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_cloud_service_public_ip_address::ResponseBytesError)?;
+                let rsp_value: PublicIpAddress =
+                    serde_json::from_slice(&body).context(get_cloud_service_public_ip_address::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_cloud_service_public_ip_address::ResponseBytesError)?;
+                let rsp_value: CloudError =
+                    serde_json::from_slice(&body).context(get_cloud_service_public_ip_address::DeserializeError { body })?;
+                get_cloud_service_public_ip_address::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_cloud_service_public_ip_address {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;

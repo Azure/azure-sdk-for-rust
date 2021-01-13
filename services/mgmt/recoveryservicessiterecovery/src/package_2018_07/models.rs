@@ -3763,6 +3763,15 @@ pub mod new_protection_profile {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NewRecoveryVirtualNetwork {
+    #[serde(flatten)]
+    pub recovery_virtual_network_custom_details: RecoveryVirtualNetworkCustomDetails,
+    #[serde(rename = "recoveryVirtualNetworkResourceGroupName", skip_serializing_if = "Option::is_none")]
+    pub recovery_virtual_network_resource_group_name: Option<String>,
+    #[serde(rename = "recoveryVirtualNetworkName", skip_serializing_if = "Option::is_none")]
+    pub recovery_virtual_network_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Object {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsDiscovery {

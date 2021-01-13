@@ -341,6 +341,8 @@ pub struct FactoryProperties {
     pub repo_configuration: Option<FactoryRepoConfiguration>,
     #[serde(rename = "globalParameters", skip_serializing_if = "Option::is_none")]
     pub global_parameters: Option<GlobalParameterDefinitionSpecification>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub encryption: Option<EncryptionConfiguration>,
     #[serde(rename = "publicNetworkAccess", skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<factory_properties::PublicNetworkAccess>,
 }
@@ -351,6 +353,22 @@ pub mod factory_properties {
         Enabled,
         Disabled,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EncryptionConfiguration {
+    #[serde(rename = "keyName")]
+    pub key_name: String,
+    #[serde(rename = "vaultBaseUrl")]
+    pub vault_base_url: String,
+    #[serde(rename = "keyVersion", skip_serializing_if = "Option::is_none")]
+    pub key_version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity: Option<CmkIdentityDefinition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CmkIdentityDefinition {
+    #[serde(rename = "userAssignedIdentity", skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identity: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GlobalParameterDefinitionSpecification {}
@@ -431,6 +449,8 @@ pub struct FactoryIdentity {
     pub principal_id: Option<String>,
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
+    #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<UserAssignedIdentitiesDefinitionSpecification>,
 }
 pub mod factory_identity {
     use super::*;
@@ -439,6 +459,10 @@ pub mod factory_identity {
         SystemAssigned,
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserAssignedIdentitiesDefinitionSpecification {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserAssignedIdentitySpecification {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetReference {
     #[serde(rename = "type")]
@@ -1017,6 +1041,20 @@ pub struct ManagedVirtualNetworkListResponse {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedVirtualNetworkReference {
+    #[serde(rename = "type")]
+    pub type_: managed_virtual_network_reference::Type,
+    #[serde(rename = "referenceName")]
+    pub reference_name: String,
+}
+pub mod managed_virtual_network_reference {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        ManagedVirtualNetworkReference,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedVirtualNetworkResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -1042,6 +1080,8 @@ pub struct ManagedIntegrationRuntime {
     pub state: Option<IntegrationRuntimeState>,
     #[serde(rename = "typeProperties")]
     pub type_properties: ManagedIntegrationRuntimeTypeProperties,
+    #[serde(rename = "managedVirtualNetwork", skip_serializing_if = "Option::is_none")]
+    pub managed_virtual_network: Option<ManagedVirtualNetworkReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedIntegrationRuntimeTypeProperties {
@@ -1132,6 +1172,8 @@ pub struct IntegrationRuntimeSsisCatalogInfo {
     pub catalog_admin_password: Option<SecureString>,
     #[serde(rename = "catalogPricingTier", skip_serializing_if = "Option::is_none")]
     pub catalog_pricing_tier: Option<integration_runtime_ssis_catalog_info::CatalogPricingTier>,
+    #[serde(rename = "dualStandbyPairName", skip_serializing_if = "Option::is_none")]
+    pub dual_standby_pair_name: Option<String>,
 }
 pub mod integration_runtime_ssis_catalog_info {
     use super::*;
@@ -2582,18 +2624,9 @@ pub struct SapHanaSource {
     #[serde(rename = "packetSize", skip_serializing_if = "Option::is_none")]
     pub packet_size: Option<serde_json::Value>,
     #[serde(rename = "partitionOption", skip_serializing_if = "Option::is_none")]
-    pub partition_option: Option<sap_hana_source::PartitionOption>,
+    pub partition_option: Option<serde_json::Value>,
     #[serde(rename = "partitionSettings", skip_serializing_if = "Option::is_none")]
     pub partition_settings: Option<SapHanaPartitionSettings>,
-}
-pub mod sap_hana_source {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PartitionOption {
-        None,
-        PhysicalPartitionsOfTable,
-        SapHanaDynamicRange,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapHanaPartitionSettings {
@@ -2632,21 +2665,9 @@ pub struct SapTableSource {
     #[serde(rename = "sapDataColumnDelimiter", skip_serializing_if = "Option::is_none")]
     pub sap_data_column_delimiter: Option<serde_json::Value>,
     #[serde(rename = "partitionOption", skip_serializing_if = "Option::is_none")]
-    pub partition_option: Option<sap_table_source::PartitionOption>,
+    pub partition_option: Option<serde_json::Value>,
     #[serde(rename = "partitionSettings", skip_serializing_if = "Option::is_none")]
     pub partition_settings: Option<SapTablePartitionSettings>,
-}
-pub mod sap_table_source {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PartitionOption {
-        None,
-        PartitionOnInt,
-        PartitionOnCalendarYear,
-        PartitionOnCalendarMonth,
-        PartitionOnCalendarDate,
-        PartitionOnTime,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapTablePartitionSettings {
@@ -2706,7 +2727,7 @@ pub struct SqlSource {
     #[serde(rename = "isolationLevel", skip_serializing_if = "Option::is_none")]
     pub isolation_level: Option<serde_json::Value>,
     #[serde(rename = "partitionOption", skip_serializing_if = "Option::is_none")]
-    pub partition_option: Option<SqlPartitionOption>,
+    pub partition_option: Option<serde_json::Value>,
     #[serde(rename = "partitionSettings", skip_serializing_if = "Option::is_none")]
     pub partition_settings: Option<SqlPartitionSettings>,
 }
@@ -2723,7 +2744,7 @@ pub struct SqlServerSource {
     #[serde(rename = "produceAdditionalTypes", skip_serializing_if = "Option::is_none")]
     pub produce_additional_types: Option<serde_json::Value>,
     #[serde(rename = "partitionOption", skip_serializing_if = "Option::is_none")]
-    pub partition_option: Option<SqlPartitionOption>,
+    pub partition_option: Option<serde_json::Value>,
     #[serde(rename = "partitionSettings", skip_serializing_if = "Option::is_none")]
     pub partition_settings: Option<SqlPartitionSettings>,
 }
@@ -2740,7 +2761,7 @@ pub struct AzureSqlSource {
     #[serde(rename = "produceAdditionalTypes", skip_serializing_if = "Option::is_none")]
     pub produce_additional_types: Option<serde_json::Value>,
     #[serde(rename = "partitionOption", skip_serializing_if = "Option::is_none")]
-    pub partition_option: Option<SqlPartitionOption>,
+    pub partition_option: Option<serde_json::Value>,
     #[serde(rename = "partitionSettings", skip_serializing_if = "Option::is_none")]
     pub partition_settings: Option<SqlPartitionSettings>,
 }
@@ -2757,7 +2778,7 @@ pub struct SqlMiSource {
     #[serde(rename = "produceAdditionalTypes", skip_serializing_if = "Option::is_none")]
     pub produce_additional_types: Option<serde_json::Value>,
     #[serde(rename = "partitionOption", skip_serializing_if = "Option::is_none")]
-    pub partition_option: Option<SqlPartitionOption>,
+    pub partition_option: Option<serde_json::Value>,
     #[serde(rename = "partitionSettings", skip_serializing_if = "Option::is_none")]
     pub partition_settings: Option<SqlPartitionSettings>,
 }
@@ -2772,7 +2793,7 @@ pub struct SqlDwSource {
     #[serde(rename = "storedProcedureParameters", skip_serializing_if = "Option::is_none")]
     pub stored_procedure_parameters: Option<serde_json::Value>,
     #[serde(rename = "partitionOption", skip_serializing_if = "Option::is_none")]
-    pub partition_option: Option<SqlPartitionOption>,
+    pub partition_option: Option<serde_json::Value>,
     #[serde(rename = "partitionSettings", skip_serializing_if = "Option::is_none")]
     pub partition_settings: Option<SqlPartitionSettings>,
 }
@@ -2784,12 +2805,6 @@ pub struct SqlPartitionSettings {
     pub partition_upper_bound: Option<serde_json::Value>,
     #[serde(rename = "partitionLowerBound", skip_serializing_if = "Option::is_none")]
     pub partition_lower_bound: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SqlPartitionOption {
-    None,
-    PhysicalPartitionsOfTable,
-    DynamicRange,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileSystemSource {
@@ -2846,20 +2861,11 @@ pub struct OracleSource {
     #[serde(rename = "queryTimeout", skip_serializing_if = "Option::is_none")]
     pub query_timeout: Option<serde_json::Value>,
     #[serde(rename = "partitionOption", skip_serializing_if = "Option::is_none")]
-    pub partition_option: Option<oracle_source::PartitionOption>,
+    pub partition_option: Option<serde_json::Value>,
     #[serde(rename = "partitionSettings", skip_serializing_if = "Option::is_none")]
     pub partition_settings: Option<OraclePartitionSettings>,
     #[serde(rename = "additionalColumns", skip_serializing_if = "Vec::is_empty")]
     pub additional_columns: Vec<AdditionalColumns>,
-}
-pub mod oracle_source {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PartitionOption {
-        None,
-        PhysicalPartitionsOfTable,
-        DynamicRange,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OraclePartitionSettings {
@@ -2879,18 +2885,9 @@ pub struct TeradataSource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub query: Option<serde_json::Value>,
     #[serde(rename = "partitionOption", skip_serializing_if = "Option::is_none")]
-    pub partition_option: Option<teradata_source::PartitionOption>,
+    pub partition_option: Option<serde_json::Value>,
     #[serde(rename = "partitionSettings", skip_serializing_if = "Option::is_none")]
     pub partition_settings: Option<TeradataPartitionSettings>,
-}
-pub mod teradata_source {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PartitionOption {
-        None,
-        Hash,
-        DynamicRange,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TeradataPartitionSettings {
@@ -3260,18 +3257,9 @@ pub struct NetezzaSource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub query: Option<serde_json::Value>,
     #[serde(rename = "partitionOption", skip_serializing_if = "Option::is_none")]
-    pub partition_option: Option<netezza_source::PartitionOption>,
+    pub partition_option: Option<serde_json::Value>,
     #[serde(rename = "partitionSettings", skip_serializing_if = "Option::is_none")]
     pub partition_settings: Option<NetezzaPartitionSettings>,
-}
-pub mod netezza_source {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PartitionOption {
-        None,
-        DataSlice,
-        DynamicRange,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetezzaPartitionSettings {
@@ -4718,6 +4706,12 @@ pub struct ExecuteDataFlowActivityTypeProperties {
     pub integration_runtime: Option<IntegrationRuntimeReference>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub compute: Option<execute_data_flow_activity_type_properties::Compute>,
+    #[serde(rename = "traceLevel", skip_serializing_if = "Option::is_none")]
+    pub trace_level: Option<serde_json::Value>,
+    #[serde(rename = "continueOnError", skip_serializing_if = "Option::is_none")]
+    pub continue_on_error: Option<serde_json::Value>,
+    #[serde(rename = "runConcurrently", skip_serializing_if = "Option::is_none")]
+    pub run_concurrently: Option<serde_json::Value>,
 }
 pub mod execute_data_flow_activity_type_properties {
     use super::*;
@@ -4737,6 +4731,45 @@ pub struct SharePointOnlineListSource {
     pub query: Option<serde_json::Value>,
     #[serde(rename = "httpRequestTimeout", skip_serializing_if = "Option::is_none")]
     pub http_request_timeout: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SqlPartitionOption {
+    None,
+    PhysicalPartitionsOfTable,
+    DynamicRange,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SapHanaPartitionOption {
+    None,
+    PhysicalPartitionsOfTable,
+    SapHanaDynamicRange,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SapTablePartitionOption {
+    None,
+    PartitionOnInt,
+    PartitionOnCalendarYear,
+    PartitionOnCalendarMonth,
+    PartitionOnCalendarDate,
+    PartitionOnTime,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OraclePartitionOption {
+    None,
+    PhysicalPartitionsOfTable,
+    DynamicRange,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum TeradataPartitionOption {
+    None,
+    Hash,
+    DynamicRange,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum NetezzaPartitionOption {
+    None,
+    DataSlice,
+    DynamicRange,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Trigger {

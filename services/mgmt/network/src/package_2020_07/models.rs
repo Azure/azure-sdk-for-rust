@@ -2085,16 +2085,10 @@ pub struct VirtualNetworkPeeringPropertiesFormat {
     pub remote_virtual_network: Option<SubResource>,
     #[serde(rename = "remoteAddressSpace", skip_serializing_if = "Option::is_none")]
     pub remote_address_space: Option<AddressSpace>,
-    #[serde(rename = "remoteVirtualNetworkAddressSpace", skip_serializing_if = "Option::is_none")]
-    pub remote_virtual_network_address_space: Option<AddressSpace>,
     #[serde(rename = "remoteBgpCommunities", skip_serializing_if = "Option::is_none")]
     pub remote_bgp_communities: Option<VirtualNetworkBgpCommunities>,
     #[serde(rename = "peeringState", skip_serializing_if = "Option::is_none")]
     pub peering_state: Option<virtual_network_peering_properties_format::PeeringState>,
-    #[serde(rename = "peeringSyncLevel", skip_serializing_if = "Option::is_none")]
-    pub peering_sync_level: Option<virtual_network_peering_properties_format::PeeringSyncLevel>,
-    #[serde(rename = "syncRemoteAddressSpace", skip_serializing_if = "Option::is_none")]
-    pub sync_remote_address_space: Option<bool>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -2105,13 +2099,6 @@ pub mod virtual_network_peering_properties_format {
         Initiated,
         Connected,
         Disconnected,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PeeringSyncLevel {
-        FullySynced,
-        RemoteUnsynced,
-        LocalUnsynced,
-        LocalAndRemoteUnsynced,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -6192,8 +6179,6 @@ pub struct ExpressRouteConnectionProperties {
     pub routing_weight: Option<i64>,
     #[serde(rename = "enableInternetSecurity", skip_serializing_if = "Option::is_none")]
     pub enable_internet_security: Option<bool>,
-    #[serde(rename = "expressRouteGatewayBypass", skip_serializing_if = "Option::is_none")]
-    pub express_route_gateway_bypass: Option<bool>,
     #[serde(rename = "routingConfiguration", skip_serializing_if = "Option::is_none")]
     pub routing_configuration: Option<RoutingConfiguration>,
 }

@@ -280,6 +280,7 @@ pub mod app_resource_properties {
         Failed,
         Creating,
         Updating,
+        Deleting,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -437,6 +438,8 @@ pub struct DeploymentResource {
     pub proxy_resource: ProxyResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeploymentResourceProperties>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentResourceProperties {
@@ -465,6 +468,7 @@ pub mod deployment_resource_properties {
         Updating,
         Succeeded,
         Failed,
+        Deleting,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -638,6 +642,8 @@ pub struct MetricDimension {
     pub name: Option<String>,
     #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[serde(rename = "toBeExportedForShoebox", skip_serializing_if = "Option::is_none")]
+    pub to_be_exported_for_shoebox: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSkuCollection {

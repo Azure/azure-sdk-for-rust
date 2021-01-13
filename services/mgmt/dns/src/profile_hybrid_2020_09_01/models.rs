@@ -73,6 +73,8 @@ pub struct RecordSetProperties {
     pub metadata: Option<serde_json::Value>,
     #[serde(rename = "TTL", skip_serializing_if = "Option::is_none")]
     pub ttl: Option<i64>,
+    #[serde(skip_serializing)]
+    pub fqdn: Option<String>,
     #[serde(rename = "ARecords", skip_serializing_if = "Vec::is_empty")]
     pub a_records: Vec<ARecord>,
     #[serde(rename = "AAAARecords", skip_serializing_if = "Vec::is_empty")]
@@ -121,6 +123,8 @@ pub struct RecordSetListResult {
 pub struct ZoneProperties {
     #[serde(rename = "maxNumberOfRecordSets", skip_serializing_if = "Option::is_none")]
     pub max_number_of_record_sets: Option<i64>,
+    #[serde(rename = "maxNumberOfRecordsPerRecordSet", skip_serializing)]
+    pub max_number_of_records_per_record_set: Option<i64>,
     #[serde(rename = "numberOfRecordSets", skip_serializing_if = "Option::is_none")]
     pub number_of_record_sets: Option<i64>,
     #[serde(rename = "nameServers", skip_serializing)]

@@ -1231,7 +1231,7 @@ pub mod managed_hsms {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedHsm, get::Error> {
+    ) -> std::result::Result<get::Response, get::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/managedHSMs/{}",
@@ -1252,8 +1252,10 @@ pub mod managed_hsms {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
                 let rsp_value: ManagedHsm = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
-                Ok(rsp_value)
+                Ok(get::Response::Ok200(rsp_value))
             }
+            StatusCode::ACCEPTED => Ok(get::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(get::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
                 let rsp_value: ManagedHsmError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
@@ -1269,6 +1271,12 @@ pub mod managed_hsms {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ManagedHsm),
+            Accepted202,
+            NoContent204,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {

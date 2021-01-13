@@ -264,3 +264,462 @@ pub mod enable_console {
         },
     }
 }
+pub mod serial_ports {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        resource_provider_namespace: &str,
+        parent_resource_type: &str,
+        parent_resource: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<SerialPortListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts",
+            &operation_config.base_path,
+            subscription_id,
+            resource_group_name,
+            resource_provider_namespace,
+            parent_resource_type,
+            parent_resource
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: SerialPortListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        resource_provider_namespace: &str,
+        parent_resource_type: &str,
+        parent_resource: &str,
+        serial_port: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<SerialPort, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts/{}",
+            &operation_config.base_path,
+            subscription_id,
+            resource_group_name,
+            resource_provider_namespace,
+            parent_resource_type,
+            parent_resource,
+            serial_port
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: SerialPort = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn create(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        resource_provider_namespace: &str,
+        parent_resource_type: &str,
+        parent_resource: &str,
+        serial_port: &str,
+        parameters: &SerialPort,
+        subscription_id: &str,
+    ) -> std::result::Result<SerialPort, create::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts/{}",
+            &operation_config.base_path,
+            subscription_id,
+            resource_group_name,
+            resource_provider_namespace,
+            parent_resource_type,
+            parent_resource,
+            serial_port
+        );
+        let mut req_builder = client.put(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(parameters);
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: SerialPort = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                create::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        resource_provider_namespace: &str,
+        parent_resource_type: &str,
+        parent_resource: &str,
+        serial_port: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts/{}",
+            &operation_config.base_path,
+            subscription_id,
+            resource_group_name,
+            resource_provider_namespace,
+            parent_resource_type,
+            parent_resource,
+            serial_port
+        );
+        let mut req_builder = client.delete(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list_by_subscriptions(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+    ) -> std::result::Result<SerialPortListResult, list_by_subscriptions::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.SerialConsole/serialPorts",
+            &operation_config.base_path, subscription_id
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_subscriptions::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        let req = req_builder.build().context(list_by_subscriptions::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_subscriptions::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscriptions::ResponseBytesError)?;
+                let rsp_value: SerialPortListResult =
+                    serde_json::from_slice(&body).context(list_by_subscriptions::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscriptions::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_subscriptions::DeserializeError { body })?;
+                list_by_subscriptions::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_subscriptions {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn connect(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        resource_provider_namespace: &str,
+        parent_resource_type: &str,
+        parent_resource: &str,
+        serial_port: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<SerialPortConnectResult, connect::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts/{}/connect",
+            &operation_config.base_path,
+            subscription_id,
+            resource_group_name,
+            resource_provider_namespace,
+            parent_resource_type,
+            parent_resource,
+            serial_port
+        );
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(connect::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
+        let req = req_builder.build().context(connect::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(connect::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(connect::ResponseBytesError)?;
+                let rsp_value: SerialPortConnectResult = serde_json::from_slice(&body).context(connect::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(connect::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(connect::DeserializeError { body })?;
+                connect::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod connect {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}

@@ -39,7 +39,12 @@ pub mod servers {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                get::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -50,12 +55,26 @@ pub mod servers {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create(
@@ -96,7 +115,12 @@ pub mod servers {
             StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
-                create::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                create::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -113,12 +137,26 @@ pub mod servers {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn update(
@@ -154,7 +192,12 @@ pub mod servers {
             StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
-                update::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -170,12 +213,26 @@ pub mod servers {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -206,7 +263,12 @@ pub mod servers {
             StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                delete::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -223,12 +285,26 @@ pub mod servers {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_resource_group(
@@ -261,7 +337,12 @@ pub mod servers {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
-                list_by_resource_group::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                list_by_resource_group::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -272,12 +353,26 @@ pub mod servers {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list(
@@ -308,7 +403,12 @@ pub mod servers {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                list::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -319,12 +419,26 @@ pub mod servers {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn restart(
@@ -433,7 +547,12 @@ pub mod replicas {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
-                list_by_server::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                list_by_server::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -444,12 +563,26 @@ pub mod replicas {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -488,7 +621,12 @@ pub mod firewall_rules {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                get::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -499,12 +637,26 @@ pub mod firewall_rules {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update(
@@ -546,7 +698,12 @@ pub mod firewall_rules {
             StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                create_or_update::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -563,12 +720,26 @@ pub mod firewall_rules {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -600,7 +771,12 @@ pub mod firewall_rules {
             StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                delete::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -617,12 +793,26 @@ pub mod firewall_rules {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_server(
@@ -655,7 +845,12 @@ pub mod firewall_rules {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
-                list_by_server::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                list_by_server::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -666,12 +861,26 @@ pub mod firewall_rules {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -921,7 +1130,12 @@ pub mod databases {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                get::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -932,12 +1146,26 @@ pub mod databases {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update(
@@ -979,7 +1207,12 @@ pub mod databases {
             StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                create_or_update::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -996,12 +1229,26 @@ pub mod databases {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete(
@@ -1033,7 +1280,12 @@ pub mod databases {
             StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                delete::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -1050,12 +1302,26 @@ pub mod databases {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_server(
@@ -1088,7 +1354,12 @@ pub mod databases {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
-                list_by_server::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                list_by_server::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -1099,12 +1370,26 @@ pub mod databases {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1143,7 +1428,12 @@ pub mod configurations {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                get::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -1154,12 +1444,26 @@ pub mod configurations {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update(
@@ -1196,7 +1500,12 @@ pub mod configurations {
             StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                create_or_update::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -1212,12 +1521,26 @@ pub mod configurations {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_server(
@@ -1251,7 +1574,12 @@ pub mod configurations {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
-                list_by_server::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                list_by_server::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -1262,12 +1590,108 @@ pub mod configurations {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod server_parameters {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list_update_configurations(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        server_name: &str,
+        value: &ConfigurationListResult,
+    ) -> std::result::Result<list_update_configurations::Response, list_update_configurations::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/updateConfigurations",
+            &operation_config.base_path, subscription_id, resource_group_name, server_name
+        );
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_update_configurations::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(value);
+        let req = req_builder.build().context(list_update_configurations::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_update_configurations::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_update_configurations::ResponseBytesError)?;
+                let rsp_value: ConfigurationListResult =
+                    serde_json::from_slice(&body).context(list_update_configurations::DeserializeError { body })?;
+                Ok(list_update_configurations::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => Ok(list_update_configurations::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_update_configurations::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_update_configurations::DeserializeError { body })?;
+                list_update_configurations::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_update_configurations {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ConfigurationListResult),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1305,7 +1729,12 @@ pub mod log_files {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
-                list_by_server::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                list_by_server::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -1316,12 +1745,26 @@ pub mod log_files {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1337,7 +1780,7 @@ pub mod server_administrators {
     ) -> std::result::Result<ServerAdministratorResource, get::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/Administrators/activeDirectory",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/administrators/activeDirectory",
             &operation_config.base_path, subscription_id, resource_group_name, server_name
         );
         let mut req_builder = client.get(uri_str);
@@ -1406,7 +1849,7 @@ pub mod server_administrators {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/Administrators/activeDirectory",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/administrators/activeDirectory",
             &operation_config.base_path, subscription_id, resource_group_name, server_name
         );
         let mut req_builder = client.put(uri_str);
@@ -1487,7 +1930,7 @@ pub mod server_administrators {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/Administrators/activeDirectory",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/administrators/activeDirectory",
             &operation_config.base_path, subscription_id, resource_group_name, server_name
         );
         let mut req_builder = client.delete(uri_str);
@@ -1621,6 +2064,152 @@ pub mod server_administrators {
         }
     }
 }
+pub mod recoverable_servers {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        server_name: &str,
+    ) -> std::result::Result<RecoverableServerResource, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/recoverableServers",
+            &operation_config.base_path, subscription_id, resource_group_name, server_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: RecoverableServerResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod server_based_performance_tier {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        server_name: &str,
+    ) -> std::result::Result<PerformanceTierListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/performanceTiers",
+            &operation_config.base_path, subscription_id, resource_group_name, server_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: PerformanceTierListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
 pub mod location_based_performance_tier {
     use crate::models::*;
     use reqwest::StatusCode;
@@ -1654,7 +2243,12 @@ pub mod location_based_performance_tier {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                list::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -1665,12 +2259,26 @@ pub mod location_based_performance_tier {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1708,7 +2316,12 @@ pub mod check_name_availability {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(execute::ResponseBytesError)?;
-                execute::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(execute::DeserializeError { body })?;
+                execute::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -1719,12 +2332,26 @@ pub mod check_name_availability {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1754,7 +2381,12 @@ pub mod operations {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                list::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -1765,12 +2397,26 @@ pub mod operations {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1917,7 +2563,12 @@ pub mod query_texts {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                get::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -1928,12 +2579,26 @@ pub mod query_texts {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_server(
@@ -1970,7 +2635,12 @@ pub mod query_texts {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
-                list_by_server::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                list_by_server::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -1981,12 +2651,26 @@ pub mod query_texts {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -2025,7 +2709,12 @@ pub mod top_query_statistics {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                get::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -2036,12 +2725,26 @@ pub mod top_query_statistics {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_server(
@@ -2077,7 +2780,12 @@ pub mod top_query_statistics {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
-                list_by_server::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                list_by_server::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -2088,12 +2796,26 @@ pub mod top_query_statistics {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -2132,7 +2854,12 @@ pub mod wait_statistics {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                get::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -2143,12 +2870,26 @@ pub mod wait_statistics {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_server(
@@ -2184,7 +2925,12 @@ pub mod wait_statistics {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
-                list_by_server::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                list_by_server::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -2195,13 +2941,167 @@ pub mod wait_statistics {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
+    }
+}
+pub async fn reset_query_performance_insight_data(
+    operation_config: &crate::OperationConfig,
+    subscription_id: &str,
+    resource_group_name: &str,
+    server_name: &str,
+) -> std::result::Result<QueryPerformanceInsightResetDataResult, reset_query_performance_insight_data::Error> {
+    let client = &operation_config.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/resetQueryPerformanceInsightData",
+        &operation_config.base_path, subscription_id, resource_group_name, server_name
+    );
+    let mut req_builder = client.post(uri_str);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(reset_query_performance_insight_data::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    }
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
+    let req = req_builder
+        .build()
+        .context(reset_query_performance_insight_data::BuildRequestError)?;
+    let rsp = client
+        .execute(req)
+        .await
+        .context(reset_query_performance_insight_data::ExecuteRequestError)?;
+    match rsp.status() {
+        StatusCode::OK => {
+            let body: bytes::Bytes = rsp
+                .bytes()
+                .await
+                .context(reset_query_performance_insight_data::ResponseBytesError)?;
+            let rsp_value: QueryPerformanceInsightResetDataResult =
+                serde_json::from_slice(&body).context(reset_query_performance_insight_data::DeserializeError { body })?;
+            Ok(rsp_value)
+        }
+        status_code => {
+            let body: bytes::Bytes = rsp
+                .bytes()
+                .await
+                .context(reset_query_performance_insight_data::ResponseBytesError)?;
+            let rsp_value: CloudError =
+                serde_json::from_slice(&body).context(reset_query_performance_insight_data::DeserializeError { body })?;
+            reset_query_performance_insight_data::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            }
+            .fail()
+        }
+    }
+}
+pub mod reset_query_performance_insight_data {
+    use crate::{models, models::*};
+    use reqwest::StatusCode;
+    use snafu::Snafu;
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        DefaultResponse {
+            status_code: StatusCode,
+            value: models::CloudError,
+        },
+        BuildRequestError {
+            source: reqwest::Error,
+        },
+        ExecuteRequestError {
+            source: reqwest::Error,
+        },
+        ResponseBytesError {
+            source: reqwest::Error,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
+    }
+}
+pub async fn create_recommended_action_session(
+    operation_config: &crate::OperationConfig,
+    subscription_id: &str,
+    resource_group_name: &str,
+    server_name: &str,
+    advisor_name: &str,
+    database_name: &str,
+) -> std::result::Result<create_recommended_action_session::Response, create_recommended_action_session::Error> {
+    let client = &operation_config.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/advisors/{}/createRecommendedActionSession",
+        &operation_config.base_path, subscription_id, resource_group_name, server_name, advisor_name
+    );
+    let mut req_builder = client.post(uri_str);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(create_recommended_action_session::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    }
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    req_builder = req_builder.query(&[("databaseName", database_name)]);
+    req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
+    let req = req_builder.build().context(create_recommended_action_session::BuildRequestError)?;
+    let rsp = client
+        .execute(req)
+        .await
+        .context(create_recommended_action_session::ExecuteRequestError)?;
+    match rsp.status() {
+        StatusCode::OK => Ok(create_recommended_action_session::Response::Ok200),
+        StatusCode::ACCEPTED => Ok(create_recommended_action_session::Response::Accepted202),
+        status_code => {
+            let body: bytes::Bytes = rsp.bytes().await.context(create_recommended_action_session::ResponseBytesError)?;
+            create_recommended_action_session::UnexpectedResponse { status_code, body: body }.fail()
+        }
+    }
+}
+pub mod create_recommended_action_session {
+    use crate::{models, models::*};
+    use reqwest::StatusCode;
+    use snafu::Snafu;
+    #[derive(Debug)]
+    pub enum Response {
+        Ok200,
+        Accepted202,
+    }
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+        BuildRequestError { source: reqwest::Error },
+        ExecuteRequestError { source: reqwest::Error },
+        ResponseBytesError { source: reqwest::Error },
+        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub mod advisors {
@@ -2306,64 +3206,6 @@ pub mod advisors {
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             GetTokenError { source: azure_core::errors::AzureError },
         }
-    }
-}
-pub async fn create_recommended_action_session(
-    operation_config: &crate::OperationConfig,
-    subscription_id: &str,
-    resource_group_name: &str,
-    server_name: &str,
-    advisor_name: &str,
-    database_name: &str,
-) -> std::result::Result<create_recommended_action_session::Response, create_recommended_action_session::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/advisors/{}/createRecommendedActionSession",
-        &operation_config.base_path, subscription_id, resource_group_name, server_name, advisor_name
-    );
-    let mut req_builder = client.post(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(create_recommended_action_session::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
-    }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-    req_builder = req_builder.query(&[("databaseName", database_name)]);
-    req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-    let req = req_builder.build().context(create_recommended_action_session::BuildRequestError)?;
-    let rsp = client
-        .execute(req)
-        .await
-        .context(create_recommended_action_session::ExecuteRequestError)?;
-    match rsp.status() {
-        StatusCode::OK => Ok(create_recommended_action_session::Response::Ok200),
-        StatusCode::ACCEPTED => Ok(create_recommended_action_session::Response::Accepted202),
-        status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(create_recommended_action_session::ResponseBytesError)?;
-            create_recommended_action_session::UnexpectedResponse { status_code, body: body }.fail()
-        }
-    }
-}
-pub mod create_recommended_action_session {
-    use crate::{models, models::*};
-    use reqwest::StatusCode;
-    use snafu::Snafu;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200,
-        Accepted202,
-    }
-    #[derive(Debug, Snafu)]
-    #[snafu(visibility(pub(crate)))]
-    pub enum Error {
-        UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-        BuildRequestError { source: reqwest::Error },
-        ExecuteRequestError { source: reqwest::Error },
-        ResponseBytesError { source: reqwest::Error },
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub mod recommended_actions {

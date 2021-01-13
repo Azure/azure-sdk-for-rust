@@ -138,6 +138,8 @@ pub struct RecordSetListResult {
 pub struct ZoneProperties {
     #[serde(rename = "maxNumberOfRecordSets", skip_serializing)]
     pub max_number_of_record_sets: Option<i64>,
+    #[serde(rename = "maxNumberOfRecordsPerRecordSet", skip_serializing)]
+    pub max_number_of_records_per_record_set: Option<i64>,
     #[serde(rename = "numberOfRecordSets", skip_serializing)]
     pub number_of_record_sets: Option<i64>,
     #[serde(rename = "nameServers", skip_serializing)]

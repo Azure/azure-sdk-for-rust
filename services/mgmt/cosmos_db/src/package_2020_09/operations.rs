@@ -7584,3 +7584,362 @@ pub mod notebook_workspaces {
         }
     }
 }
+pub mod private_link_resources {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list_by_database_account(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+    ) -> std::result::Result<PrivateLinkResourceListResult, list_by_database_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/privateLinkResources",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_database_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list_by_database_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_database_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_database_account::ResponseBytesError)?;
+                let rsp_value: PrivateLinkResourceListResult =
+                    serde_json::from_slice(&body).context(list_by_database_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_database_account::ResponseBytesError)?;
+                list_by_database_account::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_by_database_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        group_name: &str,
+    ) -> std::result::Result<PrivateLinkResource, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/privateLinkResources/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, group_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: PrivateLinkResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                get::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+}
+pub mod private_endpoint_connections {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list_by_database_account(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_database_account::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/privateEndpointConnections",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_by_database_account::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list_by_database_account::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_by_database_account::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_database_account::ResponseBytesError)?;
+                let rsp_value: PrivateEndpointConnectionListResult =
+                    serde_json::from_slice(&body).context(list_by_database_account::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_by_database_account::ResponseBytesError)?;
+                list_by_database_account::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod list_by_database_account {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        private_endpoint_connection_name: &str,
+    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/privateEndpointConnections/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, private_endpoint_connection_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                get::UnexpectedResponse { status_code, body: body }.fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+            BuildRequestError { source: reqwest::Error },
+            ExecuteRequestError { source: reqwest::Error },
+            ResponseBytesError { source: reqwest::Error },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn create_or_update(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        private_endpoint_connection_name: &str,
+        parameters: &PrivateEndpointConnection,
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/privateEndpointConnections/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, private_endpoint_connection_name
+        );
+        let mut req_builder = client.put(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_or_update::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(parameters);
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: PrivateEndpointConnection =
+                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(PrivateEndpointConnection),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        account_name: &str,
+        private_endpoint_connection_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/privateEndpointConnections/{}",
+            &operation_config.base_path, subscription_id, resource_group_name, account_name, private_endpoint_connection_name
+        );
+        let mut req_builder = client.delete(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}

@@ -940,7 +940,7 @@ pub struct StreamingJobProperties {
     pub etag: Option<String>,
     #[serde(rename = "jobStorageAccount", skip_serializing_if = "Option::is_none")]
     pub job_storage_account: Option<JobStorageAccount>,
-    #[serde(rename = "contentStoragePolicy", skip_serializing)]
+    #[serde(rename = "contentStoragePolicy", skip_serializing_if = "Option::is_none")]
     pub content_storage_policy: Option<streaming_job_properties::ContentStoragePolicy>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub externals: Option<External>,

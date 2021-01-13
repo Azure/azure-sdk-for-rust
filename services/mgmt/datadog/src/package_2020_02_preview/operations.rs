@@ -5,6 +5,148 @@
 use crate::models::*;
 use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
+pub mod marketplace_agreements {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+    ) -> std::result::Result<DatadogAgreementResourceListResponse, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.Datadog/agreements",
+            &operation_config.base_path, subscription_id
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: DatadogAgreementResourceListResponse =
+                    serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ResourceProviderDefaultErrorResponse =
+                    serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ResourceProviderDefaultErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn create(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        body: Option<&DatadogAgreementResource>,
+    ) -> std::result::Result<DatadogAgreementResource, create::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.Datadog/agreements/default",
+            &operation_config.base_path, subscription_id
+        );
+        let mut req_builder = client.put(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        if let Some(body) = body {
+            req_builder = req_builder.json(body);
+        }
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: DatadogAgreementResource = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ResourceProviderDefaultErrorResponse =
+                    serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                create::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::ResourceProviderDefaultErrorResponse,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
 pub mod api_keys {
     use crate::models::*;
     use reqwest::StatusCode;

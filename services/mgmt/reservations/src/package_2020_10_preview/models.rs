@@ -318,30 +318,12 @@ pub struct CalculateExchangeRequestProperties {
     #[serde(rename = "reservationsToPurchase", skip_serializing_if = "Vec::is_empty")]
     pub reservations_to_purchase: Vec<PurchaseRequest>,
     #[serde(rename = "reservationsToExchange", skip_serializing_if = "Vec::is_empty")]
-    pub reservations_to_exchange: Vec<ReturnRequest>,
+    pub reservations_to_exchange: Vec<ReservationToReturn>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExchangeRequestProperties {
     #[serde(rename = "sessionId", skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReturnRequest {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ReturnRequestProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReturnRequestProperties {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub scope: Option<ReturnRequestScope>,
-    #[serde(rename = "reservationToReturn", skip_serializing_if = "Option::is_none")]
-    pub reservation_to_return: Option<ReservationToReturn>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReturnRequestScope {
-    Reservation,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservationToReturn {
@@ -510,7 +492,7 @@ pub struct ExchangeResponseProperties {
     #[serde(rename = "reservationsToPurchase", skip_serializing_if = "Vec::is_empty")]
     pub reservations_to_purchase: Vec<ReservationToPurchaseExchange>,
     #[serde(rename = "reservationsToExchange", skip_serializing_if = "Vec::is_empty")]
-    pub reservations_to_exchange: Vec<ReservationToExchange>,
+    pub reservations_to_exchange: Vec<ReservationToReturnForExchange>,
     #[serde(rename = "policyResult", skip_serializing_if = "Option::is_none")]
     pub policy_result: Option<ExchangePolicyErrors>,
 }
@@ -538,6 +520,19 @@ pub struct ReservationToExchange {
     pub billing_information: Option<BillingInformation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReservationToReturnForExchange {
+    #[serde(rename = "reservationId", skip_serializing_if = "Option::is_none")]
+    pub reservation_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<i32>,
+    #[serde(rename = "billingRefundAmount", skip_serializing_if = "Option::is_none")]
+    pub billing_refund_amount: Option<Price>,
+    #[serde(rename = "billingInformation", skip_serializing_if = "Option::is_none")]
+    pub billing_information: Option<BillingInformation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<OperationStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BillingInformation {
     #[serde(rename = "billingCurrencyTotalPaidAmount", skip_serializing_if = "Option::is_none")]
     pub billing_currency_total_paid_amount: Option<Price>,
@@ -548,6 +543,8 @@ pub struct BillingInformation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservationToPurchaseCalculateExchange {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PurchaseRequest>,
     #[serde(rename = "billingCurrencyTotal", skip_serializing_if = "Option::is_none")]
     pub billing_currency_total: Option<Price>,
 }
@@ -555,8 +552,14 @@ pub struct ReservationToPurchaseCalculateExchange {
 pub struct ReservationToPurchaseExchange {
     #[serde(rename = "reservationOrderId", skip_serializing_if = "Option::is_none")]
     pub reservation_order_id: Option<String>,
+    #[serde(rename = "reservationId", skip_serializing_if = "Option::is_none")]
+    pub reservation_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PurchaseRequest>,
     #[serde(rename = "billingCurrencyTotal", skip_serializing_if = "Option::is_none")]
     pub billing_currency_total: Option<Price>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<OperationStatus>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Catalog {
@@ -1051,4 +1054,11 @@ pub struct Price {
     pub currency_code: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub amount: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OperationStatus {
+    Succeeded,
+    Failed,
+    Cancelled,
+    Pending,
 }

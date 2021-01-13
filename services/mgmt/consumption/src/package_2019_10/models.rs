@@ -543,7 +543,7 @@ pub struct ReservationRecommendationDetailsSavingsProperties {
     #[serde(rename = "calculatedSavings", skip_serializing_if = "Vec::is_empty")]
     pub calculated_savings: Vec<ReservationRecommendationDetailsCalculatedSavingsProperties>,
     #[serde(rename = "lookBackPeriod", skip_serializing)]
-    pub look_back_period: Option<i64>,
+    pub look_back_period: Option<i32>,
     #[serde(rename = "recommendedQuantity", skip_serializing)]
     pub recommended_quantity: Option<f64>,
     #[serde(rename = "reservationOrderTerm", skip_serializing)]
@@ -602,7 +602,7 @@ pub struct LegacyReservationRecommendationProperties {
     #[serde(rename = "lookBackPeriod", skip_serializing)]
     pub look_back_period: Option<String>,
     #[serde(rename = "instanceFlexibilityRatio", skip_serializing)]
-    pub instance_flexibility_ratio: Option<i64>,
+    pub instance_flexibility_ratio: Option<f64>,
     #[serde(rename = "instanceFlexibilityGroup", skip_serializing)]
     pub instance_flexibility_group: Option<String>,
     #[serde(rename = "normalizedSize", skip_serializing)]
@@ -646,7 +646,7 @@ pub struct ModernReservationRecommendationProperties {
     #[serde(rename = "lookBackPeriod", skip_serializing)]
     pub look_back_period: Option<String>,
     #[serde(rename = "instanceFlexibilityRatio", skip_serializing)]
-    pub instance_flexibility_ratio: Option<i64>,
+    pub instance_flexibility_ratio: Option<f64>,
     #[serde(rename = "instanceFlexibilityGroup", skip_serializing)]
     pub instance_flexibility_group: Option<String>,
     #[serde(rename = "normalizedSize", skip_serializing)]
@@ -802,6 +802,10 @@ pub struct TagsResult {
 pub struct TagProperties {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<Tag>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+    #[serde(rename = "previousLink", skip_serializing)]
+    pub previous_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Tag {

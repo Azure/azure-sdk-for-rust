@@ -528,6 +528,11 @@ pub mod caches {
                 let rsp_value: Cache = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
+            StatusCode::ACCEPTED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: Cache = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Accepted202(rsp_value))
+            }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
                 let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
@@ -547,6 +552,7 @@ pub mod caches {
         pub enum Response {
             Ok200(Cache),
             Created201(Cache),
+            Accepted202(Cache),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -1249,6 +1255,11 @@ pub mod storage_targets {
                 let rsp_value: StorageTarget = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
+            StatusCode::ACCEPTED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: StorageTarget = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Accepted202(rsp_value))
+            }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
                 let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
@@ -1268,6 +1279,7 @@ pub mod storage_targets {
         pub enum Response {
             Ok200(StorageTarget),
             Created201(StorageTarget),
+            Accepted202(StorageTarget),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]

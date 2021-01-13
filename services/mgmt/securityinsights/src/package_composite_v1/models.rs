@@ -611,6 +611,8 @@ pub struct OfficeDataConnectorDataTypes {
     pub exchange: Option<serde_json::Value>,
     #[serde(rename = "sharePoint", skip_serializing_if = "Option::is_none")]
     pub share_point: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub teams: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeDataConnectorProperties {

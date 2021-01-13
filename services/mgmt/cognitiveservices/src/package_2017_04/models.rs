@@ -17,6 +17,7 @@ pub mod sku {
         Free,
         Standard,
         Premium,
+        Enterprise,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -75,6 +76,8 @@ pub struct CognitiveServicesAccountProperties {
     pub public_network_access: Option<cognitive_services_account_properties::PublicNetworkAccess>,
     #[serde(rename = "apiProperties", skip_serializing_if = "Option::is_none")]
     pub api_properties: Option<CognitiveServicesAccountApiProperties>,
+    #[serde(rename = "dateCreated", skip_serializing)]
+    pub date_created: Option<String>,
 }
 pub mod cognitive_services_account_properties {
     use super::*;

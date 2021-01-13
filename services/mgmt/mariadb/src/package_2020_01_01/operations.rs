@@ -1755,6 +1755,88 @@ pub mod configurations {
         }
     }
 }
+pub mod server_parameters {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list_update_configurations(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        server_name: &str,
+        value: &ConfigurationListResult,
+    ) -> std::result::Result<list_update_configurations::Response, list_update_configurations::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/updateConfigurations",
+            &operation_config.base_path, subscription_id, resource_group_name, server_name
+        );
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list_update_configurations::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(value);
+        let req = req_builder.build().context(list_update_configurations::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list_update_configurations::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_update_configurations::ResponseBytesError)?;
+                let rsp_value: ConfigurationListResult =
+                    serde_json::from_slice(&body).context(list_update_configurations::DeserializeError { body })?;
+                Ok(list_update_configurations::Response::Ok200(rsp_value))
+            }
+            StatusCode::ACCEPTED => Ok(list_update_configurations::Response::Accepted202),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list_update_configurations::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_update_configurations::DeserializeError { body })?;
+                list_update_configurations::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_update_configurations {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ConfigurationListResult),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
 pub mod log_files {
     use crate::models::*;
     use reqwest::StatusCode;
@@ -1799,6 +1881,152 @@ pub mod log_files {
         }
     }
     pub mod list_by_server {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod recoverable_servers {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        server_name: &str,
+    ) -> std::result::Result<RecoverableServerResource, get::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/recoverableServers",
+            &operation_config.base_path, subscription_id, resource_group_name, server_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(get::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: RecoverableServerResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod server_based_performance_tier {
+    use crate::models::*;
+    use reqwest::StatusCode;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        server_name: &str,
+    ) -> std::result::Result<PerformanceTierListResult, list::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/performanceTiers",
+            &operation_config.base_path, subscription_id, resource_group_name, server_name
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: PerformanceTierListResult = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
@@ -2073,7 +2301,12 @@ pub mod query_texts {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                get::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -2084,12 +2317,26 @@ pub mod query_texts {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_server(
@@ -2126,7 +2373,12 @@ pub mod query_texts {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
-                list_by_server::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                list_by_server::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -2137,12 +2389,26 @@ pub mod query_texts {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -2181,7 +2447,12 @@ pub mod top_query_statistics {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                get::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -2192,12 +2463,26 @@ pub mod top_query_statistics {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_server(
@@ -2233,7 +2518,12 @@ pub mod top_query_statistics {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
-                list_by_server::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                list_by_server::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -2244,12 +2534,26 @@ pub mod top_query_statistics {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -2288,7 +2592,12 @@ pub mod wait_statistics {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                get::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -2299,12 +2608,26 @@ pub mod wait_statistics {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_server(
@@ -2340,7 +2663,12 @@ pub mod wait_statistics {
             }
             status_code => {
                 let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
-                list_by_server::UnexpectedResponse { status_code, body: body }.fail()
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                list_by_server::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
             }
         }
     }
@@ -2351,13 +2679,167 @@ pub mod wait_statistics {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
+    }
+}
+pub async fn reset_query_performance_insight_data(
+    operation_config: &crate::OperationConfig,
+    subscription_id: &str,
+    resource_group_name: &str,
+    server_name: &str,
+) -> std::result::Result<QueryPerformanceInsightResetDataResult, reset_query_performance_insight_data::Error> {
+    let client = &operation_config.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/resetQueryPerformanceInsightData",
+        &operation_config.base_path, subscription_id, resource_group_name, server_name
+    );
+    let mut req_builder = client.post(uri_str);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(reset_query_performance_insight_data::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    }
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
+    let req = req_builder
+        .build()
+        .context(reset_query_performance_insight_data::BuildRequestError)?;
+    let rsp = client
+        .execute(req)
+        .await
+        .context(reset_query_performance_insight_data::ExecuteRequestError)?;
+    match rsp.status() {
+        StatusCode::OK => {
+            let body: bytes::Bytes = rsp
+                .bytes()
+                .await
+                .context(reset_query_performance_insight_data::ResponseBytesError)?;
+            let rsp_value: QueryPerformanceInsightResetDataResult =
+                serde_json::from_slice(&body).context(reset_query_performance_insight_data::DeserializeError { body })?;
+            Ok(rsp_value)
+        }
+        status_code => {
+            let body: bytes::Bytes = rsp
+                .bytes()
+                .await
+                .context(reset_query_performance_insight_data::ResponseBytesError)?;
+            let rsp_value: CloudError =
+                serde_json::from_slice(&body).context(reset_query_performance_insight_data::DeserializeError { body })?;
+            reset_query_performance_insight_data::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            }
+            .fail()
+        }
+    }
+}
+pub mod reset_query_performance_insight_data {
+    use crate::{models, models::*};
+    use reqwest::StatusCode;
+    use snafu::Snafu;
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        DefaultResponse {
+            status_code: StatusCode,
+            value: models::CloudError,
+        },
+        BuildRequestError {
+            source: reqwest::Error,
+        },
+        ExecuteRequestError {
+            source: reqwest::Error,
+        },
+        ResponseBytesError {
+            source: reqwest::Error,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
+    }
+}
+pub async fn create_recommended_action_session(
+    operation_config: &crate::OperationConfig,
+    subscription_id: &str,
+    resource_group_name: &str,
+    server_name: &str,
+    advisor_name: &str,
+    database_name: &str,
+) -> std::result::Result<create_recommended_action_session::Response, create_recommended_action_session::Error> {
+    let client = &operation_config.client;
+    let uri_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/advisors/{}/createRecommendedActionSession",
+        &operation_config.base_path, subscription_id, resource_group_name, server_name, advisor_name
+    );
+    let mut req_builder = client.post(uri_str);
+    if let Some(token_credential) = &operation_config.token_credential {
+        let token_response = token_credential
+            .get_token(&operation_config.token_credential_resource)
+            .await
+            .context(create_recommended_action_session::GetTokenError)?;
+        req_builder = req_builder.bearer_auth(token_response.token.secret());
+    }
+    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    req_builder = req_builder.query(&[("databaseName", database_name)]);
+    req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
+    let req = req_builder.build().context(create_recommended_action_session::BuildRequestError)?;
+    let rsp = client
+        .execute(req)
+        .await
+        .context(create_recommended_action_session::ExecuteRequestError)?;
+    match rsp.status() {
+        StatusCode::OK => Ok(create_recommended_action_session::Response::Ok200),
+        StatusCode::ACCEPTED => Ok(create_recommended_action_session::Response::Accepted202),
+        status_code => {
+            let body: bytes::Bytes = rsp.bytes().await.context(create_recommended_action_session::ResponseBytesError)?;
+            create_recommended_action_session::UnexpectedResponse { status_code, body: body }.fail()
+        }
+    }
+}
+pub mod create_recommended_action_session {
+    use crate::{models, models::*};
+    use reqwest::StatusCode;
+    use snafu::Snafu;
+    #[derive(Debug)]
+    pub enum Response {
+        Ok200,
+        Accepted202,
+    }
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
+        BuildRequestError { source: reqwest::Error },
+        ExecuteRequestError { source: reqwest::Error },
+        ResponseBytesError { source: reqwest::Error },
+        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub mod advisors {
@@ -2462,64 +2944,6 @@ pub mod advisors {
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             GetTokenError { source: azure_core::errors::AzureError },
         }
-    }
-}
-pub async fn create_recommended_action_session(
-    operation_config: &crate::OperationConfig,
-    subscription_id: &str,
-    resource_group_name: &str,
-    server_name: &str,
-    advisor_name: &str,
-    database_name: &str,
-) -> std::result::Result<create_recommended_action_session::Response, create_recommended_action_session::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/advisors/{}/createRecommendedActionSession",
-        &operation_config.base_path, subscription_id, resource_group_name, server_name, advisor_name
-    );
-    let mut req_builder = client.post(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(create_recommended_action_session::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
-    }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-    req_builder = req_builder.query(&[("databaseName", database_name)]);
-    req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-    let req = req_builder.build().context(create_recommended_action_session::BuildRequestError)?;
-    let rsp = client
-        .execute(req)
-        .await
-        .context(create_recommended_action_session::ExecuteRequestError)?;
-    match rsp.status() {
-        StatusCode::OK => Ok(create_recommended_action_session::Response::Ok200),
-        StatusCode::ACCEPTED => Ok(create_recommended_action_session::Response::Accepted202),
-        status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(create_recommended_action_session::ResponseBytesError)?;
-            create_recommended_action_session::UnexpectedResponse { status_code, body: body }.fail()
-        }
-    }
-}
-pub mod create_recommended_action_session {
-    use crate::{models, models::*};
-    use reqwest::StatusCode;
-    use snafu::Snafu;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200,
-        Accepted202,
-    }
-    #[derive(Debug, Snafu)]
-    #[snafu(visibility(pub(crate)))]
-    pub enum Error {
-        UnexpectedResponse { status_code: StatusCode, body: bytes::Bytes },
-        BuildRequestError { source: reqwest::Error },
-        ExecuteRequestError { source: reqwest::Error },
-        ResponseBytesError { source: reqwest::Error },
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        GetTokenError { source: azure_core::errors::AzureError },
     }
 }
 pub mod recommended_actions {

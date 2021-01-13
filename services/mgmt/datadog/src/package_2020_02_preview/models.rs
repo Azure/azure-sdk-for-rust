@@ -3,6 +3,43 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatadogAgreementProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub publisher: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub product: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub plan: Option<String>,
+    #[serde(rename = "licenseTextLink", skip_serializing_if = "Option::is_none")]
+    pub license_text_link: Option<String>,
+    #[serde(rename = "privacyPolicyLink", skip_serializing_if = "Option::is_none")]
+    pub privacy_policy_link: Option<String>,
+    #[serde(rename = "retrieveDatetime", skip_serializing_if = "Option::is_none")]
+    pub retrieve_datetime: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signature: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub accepted: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatadogAgreementResource {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DatadogAgreementProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatadogAgreementResourceListResponse {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DatadogAgreementResource>,
+    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatadogApiKey {
     #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -192,9 +229,9 @@ pub enum LiftrResourceCategories {
 pub struct MonitorProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "monitoringStatus", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "monitoringStatus", skip_serializing)]
     pub monitoring_status: Option<MonitoringStatus>,
-    #[serde(rename = "marketplaceSubscriptionStatus", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "marketplaceSubscriptionStatus", skip_serializing)]
     pub marketplace_subscription_status: Option<MarketplaceSubscriptionStatus>,
     #[serde(rename = "datadogOrganizationProperties", skip_serializing_if = "Option::is_none")]
     pub datadog_organization_properties: Option<DatadogOrganizationProperties>,
@@ -246,7 +283,7 @@ pub struct DatadogMonitorResourceListResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorUpdateProperties {
-    #[serde(rename = "monitoringStatus", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "monitoringStatus", skip_serializing)]
     pub monitoring_status: Option<MonitoringStatus>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -329,7 +366,7 @@ pub struct DatadogSingleSignOnProperties {
     pub single_sign_on_state: Option<SingleSignOnStates>,
     #[serde(rename = "enterpriseAppId", skip_serializing_if = "Option::is_none")]
     pub enterprise_app_id: Option<String>,
-    #[serde(rename = "singleSignOnUrl", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "singleSignOnUrl", skip_serializing)]
     pub single_sign_on_url: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

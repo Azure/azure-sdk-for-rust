@@ -289,6 +289,8 @@ pub struct PatchVault {
     pub properties: Option<VaultProperties>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity: Option<IdentityData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VaultExtendedInfo {

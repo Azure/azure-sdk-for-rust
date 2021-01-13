@@ -36,6 +36,17 @@ pub mod identity_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxyResource {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportPipelineProperties {
     pub target: ExportPipelineTargetProperties,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -667,6 +678,10 @@ pub struct KeyVaultProperties {
     pub versioned_key_identifier: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identity: Option<String>,
+    #[serde(rename = "keyRotationEnabled", skip_serializing)]
+    pub key_rotation_enabled: Option<bool>,
+    #[serde(rename = "lastKeyRotationTimestamp", skip_serializing)]
+    pub last_key_rotation_timestamp: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistryUpdateParameters {
@@ -1066,15 +1081,6 @@ pub struct Source {
     pub instance_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProxyResource {
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
-    #[serde(skip_serializing)]
-    pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
     #[serde(skip_serializing)]
     pub id: Option<String>,
@@ -1085,6 +1091,40 @@ pub struct Resource {
     pub location: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentPool {

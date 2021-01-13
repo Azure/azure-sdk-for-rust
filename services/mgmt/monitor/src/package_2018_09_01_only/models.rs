@@ -218,6 +218,8 @@ pub struct Baseline {
     pub low_thresholds: Vec<f64>,
     #[serde(rename = "highThresholds")]
     pub high_thresholds: Vec<f64>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub timestamps: Vec<String>,
 }
 pub mod baseline {
     use super::*;
@@ -242,4 +244,18 @@ pub struct CalculateBaselineResponse {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
     pub baseline: Vec<Baseline>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub statistics: Option<calculate_baseline_response::Statistics>,
+}
+pub mod calculate_baseline_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Statistics {
+        #[serde(rename = "isEligible", skip_serializing_if = "Option::is_none")]
+        pub is_eligible: Option<String>,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub status: Vec<String>,
+        #[serde(rename = "seasonalityPeriod", skip_serializing_if = "Option::is_none")]
+        pub seasonality_period: Option<i32>,
+    }
 }

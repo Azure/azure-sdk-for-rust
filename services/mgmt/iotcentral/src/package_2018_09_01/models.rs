@@ -129,8 +129,8 @@ pub struct AppTemplate {
     pub manifest_id: Option<String>,
     #[serde(rename = "manifestVersion", skip_serializing)]
     pub manifest_version: Option<String>,
-    #[serde(rename = "appTemplateName", skip_serializing)]
-    pub app_template_name: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
     #[serde(skip_serializing)]
     pub title: Option<String>,
     #[serde(skip_serializing)]

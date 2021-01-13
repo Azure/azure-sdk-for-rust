@@ -1490,6 +1490,31 @@ pub struct RestorableDatabaseAccountProperties {
     pub creation_time: Option<String>,
     #[serde(rename = "deletionTime", skip_serializing_if = "Option::is_none")]
     pub deletion_time: Option<String>,
+    #[serde(rename = "apiType", skip_serializing)]
+    pub api_type: Option<ApiType>,
+    #[serde(rename = "restorableLocations", skip_serializing)]
+    pub restorable_locations: Vec<RestorableLocationResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ApiType {
+    #[serde(rename = "MongoDB")]
+    MongoDb,
+    Gremlin,
+    Cassandra,
+    Table,
+    Sql,
+    GremlinV2,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableLocationResource {
+    #[serde(rename = "locationName", skip_serializing)]
+    pub location_name: Option<String>,
+    #[serde(rename = "regionalDatabaseAccountInstanceId", skip_serializing)]
+    pub regional_database_account_instance_id: Option<String>,
+    #[serde(rename = "creationTime", skip_serializing)]
+    pub creation_time: Option<String>,
+    #[serde(rename = "deletionTime", skip_serializing)]
+    pub deletion_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NotebookWorkspaceCreateUpdateParameters {
@@ -1590,6 +1615,187 @@ pub struct SqlRoleAssignmentGetResults {
 pub struct SqlRoleAssignmentListResult {
     #[serde(skip_serializing)]
     pub value: Vec<SqlRoleAssignmentGetResults>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableSqlDatabasesListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<RestorableSqlDatabaseGetResult>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableSqlDatabaseGetResult {
+    #[serde(flatten)]
+    pub arm_resource_properties: ArmResourceProperties,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RestorableSqlDatabaseProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableSqlDatabaseProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resource: Option<restorable_sql_database_properties::Resource>,
+}
+pub mod restorable_sql_database_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Resource {
+        #[serde(rename = "_rid", skip_serializing)]
+        pub rid: Option<String>,
+        #[serde(rename = "operationType", skip_serializing)]
+        pub operation_type: Option<OperationType>,
+        #[serde(rename = "eventTimestamp", skip_serializing)]
+        pub event_timestamp: Option<String>,
+        #[serde(rename = "ownerId", skip_serializing)]
+        pub owner_id: Option<String>,
+        #[serde(rename = "ownerResourceId", skip_serializing)]
+        pub owner_resource_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub database: Option<resource::Database>,
+    }
+    pub mod resource {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub struct Database {
+            #[serde(flatten)]
+            pub sql_database_resource: SqlDatabaseResource,
+            #[serde(flatten)]
+            pub extended_resource_properties: ExtendedResourceProperties,
+            #[serde(rename = "_colls", skip_serializing)]
+            pub colls: Option<String>,
+            #[serde(rename = "_users", skip_serializing)]
+            pub users: Option<String>,
+            #[serde(rename = "_self", skip_serializing)]
+            pub self_: Option<String>,
+        }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableSqlContainersListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<RestorableSqlContainerGetResult>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableSqlContainerGetResult {
+    #[serde(flatten)]
+    pub arm_resource_properties: ArmResourceProperties,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RestorableSqlContainerProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableSqlContainerProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resource: Option<restorable_sql_container_properties::Resource>,
+}
+pub mod restorable_sql_container_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Resource {
+        #[serde(rename = "_rid", skip_serializing)]
+        pub rid: Option<String>,
+        #[serde(rename = "operationType", skip_serializing)]
+        pub operation_type: Option<OperationType>,
+        #[serde(rename = "eventTimestamp", skip_serializing)]
+        pub event_timestamp: Option<String>,
+        #[serde(rename = "ownerId", skip_serializing)]
+        pub owner_id: Option<String>,
+        #[serde(rename = "ownerResourceId", skip_serializing)]
+        pub owner_resource_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub container: Option<resource::Container>,
+    }
+    pub mod resource {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub struct Container {
+            #[serde(flatten)]
+            pub sql_container_resource: SqlContainerResource,
+            #[serde(flatten)]
+            pub extended_resource_properties: ExtendedResourceProperties,
+            #[serde(rename = "_self", skip_serializing)]
+            pub self_: Option<String>,
+        }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableSqlResourcesListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<DatabaseRestoreResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableMongodbDatabasesListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<RestorableMongodbDatabaseGetResult>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableMongodbDatabaseGetResult {
+    #[serde(flatten)]
+    pub arm_resource_properties: ArmResourceProperties,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RestorableMongodbDatabaseProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableMongodbDatabaseProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resource: Option<restorable_mongodb_database_properties::Resource>,
+}
+pub mod restorable_mongodb_database_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Resource {
+        #[serde(rename = "_rid", skip_serializing)]
+        pub rid: Option<String>,
+        #[serde(rename = "operationType", skip_serializing)]
+        pub operation_type: Option<OperationType>,
+        #[serde(rename = "eventTimestamp", skip_serializing)]
+        pub event_timestamp: Option<String>,
+        #[serde(rename = "ownerId", skip_serializing)]
+        pub owner_id: Option<String>,
+        #[serde(rename = "ownerResourceId", skip_serializing)]
+        pub owner_resource_id: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableMongodbCollectionsListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<RestorableMongodbCollectionGetResult>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableMongodbCollectionGetResult {
+    #[serde(flatten)]
+    pub arm_resource_properties: ArmResourceProperties,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RestorableMongodbCollectionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableMongodbCollectionProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resource: Option<restorable_mongodb_collection_properties::Resource>,
+}
+pub mod restorable_mongodb_collection_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Resource {
+        #[serde(rename = "_rid", skip_serializing)]
+        pub rid: Option<String>,
+        #[serde(rename = "operationType", skip_serializing)]
+        pub operation_type: Option<OperationType>,
+        #[serde(rename = "eventTimestamp", skip_serializing)]
+        pub event_timestamp: Option<String>,
+        #[serde(rename = "ownerId", skip_serializing)]
+        pub owner_id: Option<String>,
+        #[serde(rename = "ownerResourceId", skip_serializing)]
+        pub owner_resource_id: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableMongodbResourcesListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<DatabaseRestoreResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OperationType {
+    Create,
+    Replace,
+    Delete,
+    SystemOperation,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkResourceListResult {

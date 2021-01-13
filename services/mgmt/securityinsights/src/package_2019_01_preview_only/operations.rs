@@ -3062,6 +3062,161 @@ pub mod entities {
             },
         }
     }
+    pub async fn queries(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        operational_insights_resource_provider: &str,
+        workspace_name: &str,
+        entity_id: &str,
+        kind: &str,
+    ) -> std::result::Result<GetQueriesResponse, queries::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/queries",
+            &operation_config.base_path,
+            subscription_id,
+            resource_group_name,
+            operational_insights_resource_provider,
+            workspace_name,
+            entity_id
+        );
+        let mut req_builder = client.get(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(queries::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.query(&[("kind", kind)]);
+        let req = req_builder.build().context(queries::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(queries::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(queries::ResponseBytesError)?;
+                let rsp_value: GetQueriesResponse = serde_json::from_slice(&body).context(queries::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(queries::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(queries::DeserializeError { body })?;
+                queries::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod queries {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get_insights(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        operational_insights_resource_provider: &str,
+        workspace_name: &str,
+        entity_id: &str,
+        parameters: &EntityGetInsightsParameters,
+    ) -> std::result::Result<EntityGetInsightsResponse, get_insights::Error> {
+        let client = &operation_config.client;
+        let uri_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/getInsights",
+            &operation_config.base_path,
+            subscription_id,
+            resource_group_name,
+            operational_insights_resource_provider,
+            workspace_name,
+            entity_id
+        );
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(get_insights::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(parameters);
+        let req = req_builder.build().context(get_insights::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(get_insights::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_insights::ResponseBytesError)?;
+                let rsp_value: EntityGetInsightsResponse =
+                    serde_json::from_slice(&body).context(get_insights::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(get_insights::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_insights::DeserializeError { body })?;
+                get_insights::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get_insights {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
 }
 pub mod entities_get_timeline {
     use crate::models::*;
@@ -5572,136 +5727,49 @@ pub mod watchlists {
         }
     }
 }
-pub async fn create_threat_intelligence(
-    operation_config: &crate::OperationConfig,
-    subscription_id: &str,
-    resource_group_name: &str,
-    operational_insights_resource_provider: &str,
-    workspace_name: &str,
-    threat_intelligence_indicator_object_to_upsert: &ThreatIntelligenceIndicatorWithoutReadOnlyFields,
-) -> std::result::Result<create_threat_intelligence::Response, create_threat_intelligence::Error> {
-    let client = &operation_config.client;
-    let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/createIndicator" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
-    let mut req_builder = client.post(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
-        let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
-            .await
-            .context(create_threat_intelligence::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
-    }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-    req_builder = req_builder.json(threat_intelligence_indicator_object_to_upsert);
-    let req = req_builder.build().context(create_threat_intelligence::BuildRequestError)?;
-    let rsp = client.execute(req).await.context(create_threat_intelligence::ExecuteRequestError)?;
-    match rsp.status() {
-        StatusCode::OK => {
-            let body: bytes::Bytes = rsp.bytes().await.context(create_threat_intelligence::ResponseBytesError)?;
-            let rsp_value: ThreatIntelligenceResource =
-                serde_json::from_slice(&body).context(create_threat_intelligence::DeserializeError { body })?;
-            Ok(create_threat_intelligence::Response::Ok200(rsp_value))
-        }
-        StatusCode::CREATED => {
-            let body: bytes::Bytes = rsp.bytes().await.context(create_threat_intelligence::ResponseBytesError)?;
-            let rsp_value: ThreatIntelligenceResource =
-                serde_json::from_slice(&body).context(create_threat_intelligence::DeserializeError { body })?;
-            Ok(create_threat_intelligence::Response::Created201(rsp_value))
-        }
-        status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(create_threat_intelligence::ResponseBytesError)?;
-            let rsp_value: CloudError = serde_json::from_slice(&body).context(create_threat_intelligence::DeserializeError { body })?;
-            create_threat_intelligence::DefaultResponse {
-                status_code,
-                value: rsp_value,
-            }
-            .fail()
-        }
-    }
-}
-pub mod create_threat_intelligence {
-    use crate::{models, models::*};
-    use reqwest::StatusCode;
-    use snafu::Snafu;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(ThreatIntelligenceResource),
-        Created201(ThreatIntelligenceResource),
-    }
-    #[derive(Debug, Snafu)]
-    #[snafu(visibility(pub(crate)))]
-    pub enum Error {
-        DefaultResponse {
-            status_code: StatusCode,
-            value: models::CloudError,
-        },
-        BuildRequestError {
-            source: reqwest::Error,
-        },
-        ExecuteRequestError {
-            source: reqwest::Error,
-        },
-        ResponseBytesError {
-            source: reqwest::Error,
-        },
-        DeserializeError {
-            source: serde_json::Error,
-            body: bytes::Bytes,
-        },
-        GetTokenError {
-            source: azure_core::errors::AzureError,
-        },
-    }
-}
-pub mod threat_intelligence_indicators {
+pub mod watchlist_item {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn list(
+    pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip_token: Option<&str>,
-        orderby: Option<&str>,
-    ) -> std::result::Result<ThreatIntelligenceResourceList, list::Error> {
+        watchlist_alias: &str,
+        watchlist_item_id: &str,
+        watchlist_item: &WatchlistItem,
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
-        let mut req_builder = client.get(uri_str);
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}/watchlistItems/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , watchlist_alias , watchlist_item_id) ;
+        let mut req_builder = client.put(uri_str);
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
-                .context(list::GetTokenError)?;
+                .context(create_or_update::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        if let Some(filter) = filter {
-            req_builder = req_builder.query(&[("$filter", filter)]);
-        }
-        if let Some(top) = top {
-            req_builder = req_builder.query(&[("$top", top)]);
-        }
-        if let Some(skip_token) = skip_token {
-            req_builder = req_builder.query(&[("$skipToken", skip_token)]);
-        }
-        if let Some(orderby) = orderby {
-            req_builder = req_builder.query(&[("$orderby", orderby)]);
-        }
-        let req = req_builder.build().context(list::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        req_builder = req_builder.json(watchlist_item);
+        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
         match rsp.status() {
             StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: ThreatIntelligenceResourceList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
-                Ok(rsp_value)
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: WatchlistItem = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: WatchlistItem = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
-                list::DefaultResponse {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 }
@@ -5709,10 +5777,85 @@ pub mod threat_intelligence_indicators {
             }
         }
     }
-    pub mod list {
+    pub mod create_or_update {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(WatchlistItem),
+            Created201(WatchlistItem),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        operational_insights_resource_provider: &str,
+        workspace_name: &str,
+        watchlist_alias: &str,
+        watchlist_item_id: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}/watchlistItems/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , watchlist_alias , watchlist_item_id) ;
+        let mut req_builder = client.delete(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(delete::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        let req = req_builder.build().context(delete::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => Ok(delete::Response::Ok200),
+            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                delete::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
@@ -5743,6 +5886,86 @@ pub mod threat_intelligence_indicator {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
+    pub async fn create_indicator(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        operational_insights_resource_provider: &str,
+        workspace_name: &str,
+        threat_intelligence_properties: &ThreatIntelligenceIndicatorModelForRequestBody,
+    ) -> std::result::Result<create_indicator::Response, create_indicator::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/createIndicator" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create_indicator::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(threat_intelligence_properties);
+        let req = req_builder.build().context(create_indicator::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create_indicator::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_indicator::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceInformation =
+                    serde_json::from_slice(&body).context(create_indicator::DeserializeError { body })?;
+                Ok(create_indicator::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_indicator::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceInformation =
+                    serde_json::from_slice(&body).context(create_indicator::DeserializeError { body })?;
+                Ok(create_indicator::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create_indicator::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_indicator::DeserializeError { body })?;
+                create_indicator::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create_indicator {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ThreatIntelligenceInformation),
+            Created201(ThreatIntelligenceInformation),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -5750,7 +5973,7 @@ pub mod threat_intelligence_indicator {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         name: &str,
-    ) -> std::result::Result<ThreatIntelligenceResource, get::Error> {
+    ) -> std::result::Result<ThreatIntelligenceInformation, get::Error> {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut req_builder = client.get(uri_str);
@@ -5767,7 +5990,7 @@ pub mod threat_intelligence_indicator {
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ThreatIntelligenceResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_value: ThreatIntelligenceInformation = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
@@ -5785,6 +6008,85 @@ pub mod threat_intelligence_indicator {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn create(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        operational_insights_resource_provider: &str,
+        workspace_name: &str,
+        name: &str,
+        threat_intelligence_properties: &ThreatIntelligenceIndicatorModelForRequestBody,
+    ) -> std::result::Result<create::Response, create::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
+        let mut req_builder = client.put(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(create::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(threat_intelligence_properties);
+        let req = req_builder.build().context(create::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceInformation = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            StatusCode::CREATED => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceInformation = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                create::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ThreatIntelligenceInformation),
+            Created201(ThreatIntelligenceInformation),
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
@@ -5879,6 +6181,75 @@ pub mod threat_intelligence_indicator {
             },
         }
     }
+    pub async fn query_indicators(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        operational_insights_resource_provider: &str,
+        workspace_name: &str,
+        threat_intelligence_filtering_criteria: &ThreatIntelligenceFilteringCriteria,
+    ) -> std::result::Result<ThreatIntelligenceInformationList, query_indicators::Error> {
+        let client = &operation_config.client;
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/queryIndicators" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
+        let mut req_builder = client.post(uri_str);
+        if let Some(token_credential) = &operation_config.token_credential {
+            let token_response = token_credential
+                .get_token(&operation_config.token_credential_resource)
+                .await
+                .context(query_indicators::GetTokenError)?;
+            req_builder = req_builder.bearer_auth(token_response.token.secret());
+        }
+        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        req_builder = req_builder.json(threat_intelligence_filtering_criteria);
+        let req = req_builder.build().context(query_indicators::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(query_indicators::ExecuteRequestError)?;
+        match rsp.status() {
+            StatusCode::OK => {
+                let body: bytes::Bytes = rsp.bytes().await.context(query_indicators::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceInformationList =
+                    serde_json::from_slice(&body).context(query_indicators::DeserializeError { body })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let body: bytes::Bytes = rsp.bytes().await.context(query_indicators::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(query_indicators::DeserializeError { body })?;
+                query_indicators::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod query_indicators {
+        use crate::{models, models::*};
+        use reqwest::StatusCode;
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: StatusCode,
+                value: models::CloudError,
+            },
+            BuildRequestError {
+                source: reqwest::Error,
+            },
+            ExecuteRequestError {
+                source: reqwest::Error,
+            },
+            ResponseBytesError {
+                source: reqwest::Error,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
     pub async fn append_tags(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -5886,7 +6257,7 @@ pub mod threat_intelligence_indicator {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         name: &str,
-        threat_intelligence_append_tags_request_body: &ThreatIntelligenceAppendTagsRequestBody,
+        threat_intelligence_append_tags: &ThreatIntelligenceAppendTags,
     ) -> std::result::Result<(), append_tags::Error> {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}/appendTags" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
@@ -5899,7 +6270,7 @@ pub mod threat_intelligence_indicator {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(threat_intelligence_append_tags_request_body);
+        req_builder = req_builder.json(threat_intelligence_append_tags);
         let req = req_builder.build().context(append_tags::BuildRequestError)?;
         let rsp = client.execute(req).await.context(append_tags::ExecuteRequestError)?;
         match rsp.status() {
@@ -5951,8 +6322,8 @@ pub mod threat_intelligence_indicator {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         name: &str,
-        threat_intelligence_replace_tags_model: &ThreatIntelligenceIndicatorWithoutReadOnlyFields,
-    ) -> std::result::Result<ThreatIntelligenceResource, replace_tags::Error> {
+        threat_intelligence_replace_tags: &ThreatIntelligenceIndicatorModelForRequestBody,
+    ) -> std::result::Result<ThreatIntelligenceInformation, replace_tags::Error> {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}/replaceTags" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut req_builder = client.post(uri_str);
@@ -5964,13 +6335,13 @@ pub mod threat_intelligence_indicator {
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(threat_intelligence_replace_tags_model);
+        req_builder = req_builder.json(threat_intelligence_replace_tags);
         let req = req_builder.build().context(replace_tags::BuildRequestError)?;
         let rsp = client.execute(req).await.context(replace_tags::ExecuteRequestError)?;
         match rsp.status() {
             StatusCode::OK => {
                 let body: bytes::Bytes = rsp.bytes().await.context(replace_tags::ResponseBytesError)?;
-                let rsp_value: ThreatIntelligenceResource =
+                let rsp_value: ThreatIntelligenceInformation =
                     serde_json::from_slice(&body).context(replace_tags::DeserializeError { body })?;
                 Ok(rsp_value)
             }
@@ -6015,126 +6386,57 @@ pub mod threat_intelligence_indicator {
         }
     }
 }
-pub mod threat_intelligence_indicator_upsert {
+pub mod threat_intelligence_indicators {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn create(
+    pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-        name: &str,
-        threat_intelligence_indicator_object_to_upsert: &ThreatIntelligenceIndicatorWithoutReadOnlyFields,
-    ) -> std::result::Result<create::Response, create::Error> {
+        filter: Option<&str>,
+        top: Option<i32>,
+        skip_token: Option<&str>,
+        orderby: Option<&str>,
+    ) -> std::result::Result<ThreatIntelligenceInformationList, list::Error> {
         let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
-        let mut req_builder = client.put(uri_str);
+        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
+        let mut req_builder = client.get(uri_str);
         if let Some(token_credential) = &operation_config.token_credential {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
-                .context(create::GetTokenError)?;
+                .context(list::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(threat_intelligence_indicator_object_to_upsert);
-        let req = req_builder.build().context(create::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        if let Some(filter) = filter {
+            req_builder = req_builder.query(&[("$filter", filter)]);
+        }
+        if let Some(top) = top {
+            req_builder = req_builder.query(&[("$top", top)]);
+        }
+        if let Some(skip_token) = skip_token {
+            req_builder = req_builder.query(&[("$skipToken", skip_token)]);
+        }
+        if let Some(orderby) = orderby {
+            req_builder = req_builder.query(&[("$orderby", orderby)]);
+        }
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
             StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
-                let rsp_value: ThreatIntelligenceResource = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
-                Ok(create::Response::Ok200(rsp_value))
-            }
-            StatusCode::CREATED => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
-                let rsp_value: ThreatIntelligenceResource = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
-                Ok(create::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
-                create::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod create {
-        use crate::{models, models::*};
-        use reqwest::StatusCode;
-        use snafu::Snafu;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(ThreatIntelligenceResource),
-            Created201(ThreatIntelligenceResource),
-        }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: StatusCode,
-                value: models::CloudError,
-            },
-            BuildRequestError {
-                source: reqwest::Error,
-            },
-            ExecuteRequestError {
-                source: reqwest::Error,
-            },
-            ResponseBytesError {
-                source: reqwest::Error,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-}
-pub mod threat_intelligence_indicators_list {
-    use crate::models::*;
-    use reqwest::StatusCode;
-    use snafu::{ResultExt, Snafu};
-    pub async fn query(
-        operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-        resource_group_name: &str,
-        operational_insights_resource_provider: &str,
-        workspace_name: &str,
-        threat_intelligence_arm_stix_query: &ThreatIntelligenceArmStixQuery,
-    ) -> std::result::Result<ThreatIntelligenceResourceList, query::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/queryIndicators" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
-            let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
-                .await
-                .context(query::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
-        }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(threat_intelligence_arm_stix_query);
-        let req = req_builder.build().context(query::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(query::ExecuteRequestError)?;
-        match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query::ResponseBytesError)?;
-                let rsp_value: ThreatIntelligenceResourceList = serde_json::from_slice(&body).context(query::DeserializeError { body })?;
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceInformationList =
+                    serde_json::from_slice(&body).context(list::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(query::DeserializeError { body })?;
-                query::DefaultResponse {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 }
@@ -6142,7 +6444,7 @@ pub mod threat_intelligence_indicators_list {
             }
         }
     }
-    pub mod query {
+    pub mod list {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;
@@ -6176,14 +6478,13 @@ pub mod threat_intelligence_indicator_metrics {
     use crate::models::*;
     use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
-    pub async fn get(
+    pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-        cti_entity_kind: Option<&str>,
-    ) -> std::result::Result<ThreatIntelligenceMetricResourceList, get::Error> {
+    ) -> std::result::Result<ThreatIntelligenceMetricsList, list::Error> {
         let client = &operation_config.client;
         let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/metrics" , & operation_config . base_path , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
         let mut req_builder = client.get(uri_str);
@@ -6191,26 +6492,22 @@ pub mod threat_intelligence_indicator_metrics {
             let token_response = token_credential
                 .get_token(&operation_config.token_credential_resource)
                 .await
-                .context(get::GetTokenError)?;
+                .context(list::GetTokenError)?;
             req_builder = req_builder.bearer_auth(token_response.token.secret());
         }
         req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        if let Some(cti_entity_kind) = cti_entity_kind {
-            req_builder = req_builder.query(&[("ctiEntityKind", cti_entity_kind)]);
-        }
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        let req = req_builder.build().context(list::BuildRequestError)?;
+        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
             StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ThreatIntelligenceMetricResourceList =
-                    serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: ThreatIntelligenceMetricsList = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
-                get::DefaultResponse {
+                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
+                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                list::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 }
@@ -6218,7 +6515,7 @@ pub mod threat_intelligence_indicator_metrics {
             }
         }
     }
-    pub mod get {
+    pub mod list {
         use crate::{models, models::*};
         use reqwest::StatusCode;
         use snafu::Snafu;

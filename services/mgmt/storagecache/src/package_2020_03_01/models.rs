@@ -7,7 +7,13 @@ pub struct ApiOperation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<api_operation::Display>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+    #[serde(rename = "isDataAction", skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<api_operation::Properties>,
 }
 pub mod api_operation {
     use super::*;
@@ -19,6 +25,21 @@ pub mod api_operation {
         pub provider: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "serviceSpecification", skip_serializing_if = "Option::is_none")]
+        pub service_specification: Option<properties::ServiceSpecification>,
+    }
+    pub mod properties {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub struct ServiceSpecification {
+            #[serde(rename = "metricSpecifications", skip_serializing_if = "Vec::is_empty")]
+            pub metric_specifications: Vec<MetricSpecification>,
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -80,6 +101,8 @@ pub struct Cache {
     pub type_: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identity: Option<CacheIdentity>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<cache::Properties>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -244,6 +267,10 @@ pub struct StorageTargetResource {
     pub id: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
+    #[serde(skip_serializing)]
+    pub location: Option<String>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageTargetProperties {
@@ -409,4 +436,66 @@ pub struct UsageModelsResult {
     pub next_link: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<UsageModel>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricSpecification {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "displayDescription", skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+    #[serde(rename = "aggregationType", skip_serializing_if = "Option::is_none")]
+    pub aggregation_type: Option<String>,
+    #[serde(rename = "supportedAggregationTypes", skip_serializing_if = "Vec::is_empty")]
+    pub supported_aggregation_types: Vec<String>,
+    #[serde(rename = "metricClass", skip_serializing_if = "Option::is_none")]
+    pub metric_class: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub dimensions: Vec<MetricDimension>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricDimension {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "internalName", skip_serializing_if = "Option::is_none")]
+    pub internal_name: Option<String>,
+    #[serde(rename = "toBeExportedForShoebox", skip_serializing_if = "Option::is_none")]
+    pub to_be_exported_for_shoebox: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }

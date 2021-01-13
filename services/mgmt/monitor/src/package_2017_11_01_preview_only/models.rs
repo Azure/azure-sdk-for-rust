@@ -55,6 +55,8 @@ pub struct Baseline {
     pub low_thresholds: Vec<f64>,
     #[serde(rename = "highThresholds")]
     pub high_thresholds: Vec<f64>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub timestamps: Vec<String>,
 }
 pub mod baseline {
     use super::*;

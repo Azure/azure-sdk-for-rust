@@ -696,7 +696,8 @@ pub mod common_export_properties {
 pub struct ExportSchedule {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<export_schedule::Status>,
-    pub recurrence: export_schedule::Recurrence,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub recurrence: Option<export_schedule::Recurrence>,
     #[serde(rename = "recurrencePeriod", skip_serializing_if = "Option::is_none")]
     pub recurrence_period: Option<ExportRecurrencePeriod>,
 }
@@ -793,7 +794,7 @@ pub struct ExportExecutionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportExecution {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExportExecutionProperties>,
 }

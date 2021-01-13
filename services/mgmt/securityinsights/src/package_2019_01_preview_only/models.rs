@@ -213,6 +213,8 @@ pub struct AlertRuleTemplateDataSource {
 pub struct AlertRuleTemplatePropertiesBase {
     #[serde(rename = "alertRulesCreatedByTemplateCount", skip_serializing_if = "Option::is_none")]
     pub alert_rules_created_by_template_count: Option<i64>,
+    #[serde(rename = "lastUpdatedDateUTC", skip_serializing)]
+    pub last_updated_date_utc: Option<String>,
     #[serde(rename = "createdDateUTC", skip_serializing)]
     pub created_date_utc: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -672,6 +674,7 @@ pub mod data_connector_kind {
         AmazonWebServicesCloudTrail,
         AzureAdvancedThreatProtection,
         MicrosoftDefenderAdvancedThreatProtection,
+        Dynamics365,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -716,6 +719,37 @@ pub struct DnsEntityProperties {
     pub host_ip_address_entity_id: Option<String>,
     #[serde(rename = "ipAddressEntityIds", skip_serializing)]
     pub ip_address_entity_ids: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Dynamics365DataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<Dynamics365DataConnectorProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Dynamics365DataConnectorDataTypes {
+    #[serde(rename = "dynamics365CdsActivities", skip_serializing_if = "Option::is_none")]
+    pub dynamics365_cds_activities: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Dynamics365DataConnectorProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+    #[serde(rename = "dataTypes", skip_serializing_if = "Option::is_none")]
+    pub data_types: Option<Dynamics365DataConnectorDataTypes>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Dynamics365CheckRequirements {
+    #[serde(flatten)]
+    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<Dynamics365CheckRequirementsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Dynamics365CheckRequirementsProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Entity {
@@ -774,6 +808,11 @@ pub struct EntityTimelineResponse {
     pub value: Vec<EntityTimelineItem>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GetQueriesResponse {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<EntityQueryItem>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EntityInnerKind {
     Account,
     Host,
@@ -827,11 +866,30 @@ pub struct EntityList {
     pub value: Vec<Entity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQueryKind {
+    pub kind: entity_query_kind::Kind,
+}
+pub mod entity_query_kind {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        Expansion,
+        Insight,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EntityQuery {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(flatten)]
+    pub entity_query_kind: EntityQueryKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExpansionEntityQuery {
+    #[serde(flatten)]
+    pub entity_query: EntityQuery,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<EntityQueryProperties>,
+    pub properties: Option<ExpansionEntityQueriesProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EntityTimelineKind {
@@ -846,7 +904,7 @@ pub struct EntityQueryList {
     pub value: Vec<EntityQuery>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityQueryProperties {
+pub struct ExpansionEntityQueriesProperties {
     #[serde(rename = "dataSources", skip_serializing_if = "Vec::is_empty")]
     pub data_sources: Vec<String>,
     #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
@@ -949,6 +1007,63 @@ pub mod file_hash_entity_properties {
         Sha256,
         #[serde(rename = "SHA256AC")]
         Sha256ac,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InsightQueryItem {
+    #[serde(flatten)]
+    pub entity_query_item: EntityQueryItem,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<InsightQueryItemProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InsightQueryItemProperties {
+    #[serde(flatten)]
+    pub entity_query_item_properties: EntityQueryItemProperties,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "baseQuery", skip_serializing_if = "Option::is_none")]
+    pub base_query: Option<String>,
+    #[serde(rename = "tableQuery", skip_serializing_if = "Option::is_none")]
+    pub table_query: Option<insight_query_item_properties::TableQuery>,
+    #[serde(rename = "chartQuery", skip_serializing_if = "Option::is_none")]
+    pub chart_query: Option<serde_json::Value>,
+    #[serde(rename = "additionalQuery", skip_serializing_if = "Option::is_none")]
+    pub additional_query: Option<insight_query_item_properties::AdditionalQuery>,
+    #[serde(rename = "defaultTimeRange", skip_serializing_if = "Option::is_none")]
+    pub default_time_range: Option<insight_query_item_properties::DefaultTimeRange>,
+    #[serde(rename = "referenceTimeRange", skip_serializing_if = "Option::is_none")]
+    pub reference_time_range: Option<insight_query_item_properties::ReferenceTimeRange>,
+}
+pub mod insight_query_item_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct TableQuery {
+        #[serde(rename = "columnsDefinitions", skip_serializing_if = "Vec::is_empty")]
+        pub columns_definitions: Vec<serde_json::Value>,
+        #[serde(rename = "queriesDefinitions", skip_serializing_if = "Vec::is_empty")]
+        pub queries_definitions: Vec<serde_json::Value>,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct AdditionalQuery {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub query: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub text: Option<String>,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct DefaultTimeRange {
+        #[serde(rename = "beforeRange", skip_serializing_if = "Option::is_none")]
+        pub before_range: Option<String>,
+        #[serde(rename = "afterRange", skip_serializing_if = "Option::is_none")]
+        pub after_range: Option<String>,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct ReferenceTimeRange {
+        #[serde(rename = "beforeRange", skip_serializing_if = "Option::is_none")]
+        pub before_range: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2224,13 +2339,43 @@ pub mod watchlist_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreatIntelligenceResourceList {
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-    pub value: Vec<ThreatIntelligenceResource>,
+pub struct WatchlistItem {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<WatchlistItemProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreatIntelligenceResource {
+pub struct WatchlistItemProperties {
+    #[serde(rename = "watchlistItemType", skip_serializing_if = "Option::is_none")]
+    pub watchlist_item_type: Option<String>,
+    #[serde(rename = "watchlistItemId", skip_serializing_if = "Option::is_none")]
+    pub watchlist_item_id: Option<String>,
+    #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "isDeleted", skip_serializing_if = "Option::is_none")]
+    pub is_deleted: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated: Option<String>,
+    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<UserInfo>,
+    #[serde(rename = "updatedBy", skip_serializing_if = "Option::is_none")]
+    pub updated_by: Option<UserInfo>,
+    #[serde(rename = "itemsKeyValue")]
+    pub items_key_value: serde_json::Value,
+    #[serde(rename = "entityMapping", skip_serializing_if = "Option::is_none")]
+    pub entity_mapping: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ThreatIntelligenceInformationList {
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+    pub value: Vec<ThreatIntelligenceInformation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ThreatIntelligenceInformation {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
     #[serde(flatten)]
@@ -2239,12 +2384,12 @@ pub struct ThreatIntelligenceResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligenceIndicatorModel {
     #[serde(flatten)]
-    pub threat_intelligence_resource: ThreatIntelligenceResource,
+    pub threat_intelligence_information: ThreatIntelligenceInformation,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<ThreatIntelligenceIndicatorProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreatIntelligenceIndicatorWithoutReadOnlyFields {
+pub struct ThreatIntelligenceIndicatorModelForRequestBody {
     #[serde(flatten)]
     pub threat_intelligence_resource_kind: ThreatIntelligenceResourceKind,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -2325,7 +2470,7 @@ pub struct ThreatIntelligenceGranularMarkingModel {
     pub selectors: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreatIntelligenceArmStixQuery {
+pub struct ThreatIntelligenceFilteringCriteria {
     #[serde(rename = "pageSize", skip_serializing_if = "Option::is_none")]
     pub page_size: Option<i32>,
     #[serde(rename = "minConfidence", skip_serializing_if = "Option::is_none")]
@@ -2339,7 +2484,7 @@ pub struct ThreatIntelligenceArmStixQuery {
     #[serde(rename = "includeDisabled", skip_serializing_if = "Option::is_none")]
     pub include_disabled: Option<bool>,
     #[serde(rename = "sortBy", skip_serializing_if = "Vec::is_empty")]
-    pub sort_by: Vec<ThreatIntelligenceArmStixSortBy>,
+    pub sort_by: Vec<ThreatIntelligenceSortingCriteria>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub sources: Vec<String>,
     #[serde(rename = "patternTypes", skip_serializing_if = "Vec::is_empty")]
@@ -2354,14 +2499,14 @@ pub struct ThreatIntelligenceArmStixQuery {
     pub skip_token: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreatIntelligenceArmStixSortBy {
+pub struct ThreatIntelligenceSortingCriteria {
     #[serde(rename = "itemKey", skip_serializing_if = "Option::is_none")]
     pub item_key: Option<String>,
     #[serde(rename = "sortOrder", skip_serializing_if = "Option::is_none")]
-    pub sort_order: Option<ThreatIntelligenceArmStixSortOrder>,
+    pub sort_order: Option<ThreatIntelligenceSortingOrder>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ThreatIntelligenceArmStixSortOrder {
+pub enum ThreatIntelligenceSortingOrder {
     #[serde(rename = "unsorted")]
     Unsorted,
     #[serde(rename = "ascending")]
@@ -2370,16 +2515,16 @@ pub enum ThreatIntelligenceArmStixSortOrder {
     Descending,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreatIntelligenceAppendTagsRequestBody {
+pub struct ThreatIntelligenceAppendTags {
     #[serde(rename = "threatIntelligenceTags", skip_serializing_if = "Vec::is_empty")]
     pub threat_intelligence_tags: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreatIntelligenceMetricResourceList {
-    pub value: Vec<ThreatIntelligenceMetricResource>,
+pub struct ThreatIntelligenceMetricsList {
+    pub value: Vec<ThreatIntelligenceMetrics>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreatIntelligenceMetricResource {
+pub struct ThreatIntelligenceMetrics {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<ThreatIntelligenceMetric>,
 }
@@ -2400,4 +2545,93 @@ pub struct ThreatIntelligenceMetricEntity {
     pub metric_name: Option<String>,
     #[serde(rename = "metricValue", skip_serializing_if = "Option::is_none")]
     pub metric_value: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityGetInsightsParameters {
+    #[serde(rename = "startTime")]
+    pub start_time: String,
+    #[serde(rename = "endTime")]
+    pub end_time: String,
+    #[serde(rename = "addDefaultExtendedTimeRange", skip_serializing_if = "Option::is_none")]
+    pub add_default_extended_time_range: Option<bool>,
+    #[serde(rename = "insightQueryIds", skip_serializing_if = "Vec::is_empty")]
+    pub insight_query_ids: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityGetInsightsResponse {
+    #[serde(rename = "metaData", skip_serializing_if = "Option::is_none")]
+    pub meta_data: Option<GetInsightsResultsMetadata>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<EntityInsightItem>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GetInsightsResultsMetadata {
+    #[serde(rename = "totalCount")]
+    pub total_count: i32,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub errors: Vec<GetInsightsError>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GetInsightsError {
+    pub kind: get_insights_error::Kind,
+    #[serde(rename = "queryId", skip_serializing_if = "Option::is_none")]
+    pub query_id: Option<String>,
+    #[serde(rename = "errorMessage")]
+    pub error_message: String,
+}
+pub mod get_insights_error {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        Insight,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQueryItem {
+    pub kind: EntityQueryKind,
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQueryItemProperties {
+    #[serde(rename = "dataTypes", skip_serializing_if = "Vec::is_empty")]
+    pub data_types: Vec<serde_json::Value>,
+    #[serde(rename = "inputEntityType", skip_serializing_if = "Option::is_none")]
+    pub input_entity_type: Option<EntityInnerType>,
+    #[serde(rename = "requiredInputFieldsSets", skip_serializing_if = "Vec::is_empty")]
+    pub required_input_fields_sets: Vec<Vec<String>>,
+    #[serde(rename = "entitiesFilter", skip_serializing_if = "Option::is_none")]
+    pub entities_filter: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityInsightItem {
+    #[serde(rename = "queryId", skip_serializing_if = "Option::is_none")]
+    pub query_id: Option<String>,
+    #[serde(rename = "queryTimeInterval", skip_serializing_if = "Option::is_none")]
+    pub query_time_interval: Option<entity_insight_item::QueryTimeInterval>,
+    #[serde(rename = "tableQueryResults", skip_serializing_if = "Option::is_none")]
+    pub table_query_results: Option<InsightsTableResult>,
+    #[serde(rename = "chartQueryResults", skip_serializing_if = "Vec::is_empty")]
+    pub chart_query_results: Vec<InsightsTableResult>,
+}
+pub mod entity_insight_item {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct QueryTimeInterval {
+        #[serde(rename = "startTime", skip_serializing_if = "Option::is_none")]
+        pub start_time: Option<String>,
+        #[serde(rename = "endTime", skip_serializing_if = "Option::is_none")]
+        pub end_time: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InsightsTableResult {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub columns: Vec<serde_json::Value>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub rows: Vec<Vec<String>>,
 }

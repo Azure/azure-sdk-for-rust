@@ -53,9 +53,50 @@ pub struct Resource {
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccessInformationCollection {
+    #[serde(skip_serializing)]
+    pub value: Vec<AccessInformationContract>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessInformationContract {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AccessInformationContractProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccessInformationContractProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[serde(rename = "principalId", skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccessInformationSecretsContract {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "principalId", skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "primaryKey", skip_serializing_if = "Option::is_none")]
+    pub primary_key: Option<String>,
+    #[serde(rename = "secondaryKey", skip_serializing_if = "Option::is_none")]
+    pub secondary_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccessInformationCreateParameters {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AccessInformationCreateParameterProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccessInformationCreateParameterProperties {
+    #[serde(rename = "principalId", skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
     #[serde(rename = "primaryKey", skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
     #[serde(rename = "secondaryKey", skip_serializing_if = "Option::is_none")]
@@ -72,6 +113,25 @@ pub struct AccessInformationUpdateParameters {
 pub struct AccessInformationUpdateParameterProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TenantSettingsCollection {
+    #[serde(skip_serializing)]
+    pub value: Vec<TenantSettingsContract>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TenantSettingsContract {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TenantSettingsContractProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TenantSettingsContractProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub settings: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiCollection {
@@ -2648,6 +2708,49 @@ pub struct DeletedServiceContractProperties {
     pub scheduled_purge_date: Option<String>,
     #[serde(rename = "deletionDate", skip_serializing_if = "Option::is_none")]
     pub deletion_date: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PortalRevisionCollection {
+    #[serde(skip_serializing)]
+    pub value: Vec<PortalRevisionContract>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PortalRevisionContract {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PortalRevisionContractProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PortalRevisionContractProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "statusDetails", skip_serializing)]
+    pub status_details: Option<String>,
+    #[serde(skip_serializing)]
+    pub status: Option<portal_revision_contract_properties::Status>,
+    #[serde(rename = "isCurrent", skip_serializing_if = "Option::is_none")]
+    pub is_current: Option<bool>,
+    #[serde(rename = "createdDateTime", skip_serializing)]
+    pub created_date_time: Option<String>,
+    #[serde(rename = "updatedDateTime", skip_serializing)]
+    pub updated_date_time: Option<String>,
+}
+pub mod portal_revision_contract_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        #[serde(rename = "pending")]
+        Pending,
+        #[serde(rename = "publishing")]
+        Publishing,
+        #[serde(rename = "completed")]
+        Completed,
+        #[serde(rename = "failed")]
+        Failed,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSkuResults {

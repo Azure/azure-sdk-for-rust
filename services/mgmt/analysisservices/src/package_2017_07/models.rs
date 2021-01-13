@@ -3,6 +3,35 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationDisplay {
+    #[serde(skip_serializing)]
+    pub provider: Option<String>,
+    #[serde(skip_serializing)]
+    pub resource: Option<String>,
+    #[serde(skip_serializing)]
+    pub operation: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationDetail {
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "isDataAction", skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display: Option<OperationDisplay>,
+    #[serde(skip_serializing)]
+    pub origin: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<OperationDetail>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
     #[serde(skip_serializing)]
     pub id: Option<String>,
@@ -102,6 +131,17 @@ pub struct AnalysisServicesServerMutableProperties {
     pub backup_blob_container_uri: Option<String>,
     #[serde(rename = "gatewayDetails", skip_serializing_if = "Option::is_none")]
     pub gateway_details: Option<GatewayDetails>,
+    #[serde(rename = "managedMode", skip_serializing_if = "Option::is_none")]
+    pub managed_mode: Option<analysis_services_server_mutable_properties::ManagedMode>,
+    #[serde(rename = "serverMonitorMode", skip_serializing_if = "Option::is_none")]
+    pub server_monitor_mode: Option<analysis_services_server_mutable_properties::ServerMonitorMode>,
+}
+pub mod analysis_services_server_mutable_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ManagedMode {}
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ServerMonitorMode {}
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerAdministrators {
@@ -125,9 +165,7 @@ pub struct GatewayListStatusLive {
 pub mod gateway_list_status_live {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Live,
-    }
+    pub enum Status {}
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GatewayListStatusError {
@@ -186,11 +224,26 @@ pub struct SkuEnumerationForExistingResourceResult {
 pub struct SkuDetailsForExistingResource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sku: Option<ResourceSku>,
+    #[serde(rename = "resourceType", skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationsErrorResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+    pub error: Option<error_response::Error>,
+}
+pub mod error_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Error {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub code: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub message: Option<String>,
+    }
 }

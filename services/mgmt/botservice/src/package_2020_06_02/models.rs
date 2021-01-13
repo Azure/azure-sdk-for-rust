@@ -85,6 +85,10 @@ pub struct BotProperties {
     pub luis_app_ids: Vec<String>,
     #[serde(rename = "luisKey", skip_serializing_if = "Option::is_none")]
     pub luis_key: Option<String>,
+    #[serde(rename = "isCmekEnabled", skip_serializing_if = "Option::is_none")]
+    pub is_cmek_enabled: Option<bool>,
+    #[serde(rename = "cmekKeyVaultUrl", skip_serializing_if = "Option::is_none")]
+    pub cmek_key_vault_url: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BotResponseList {
@@ -138,8 +142,8 @@ pub struct FacebookChannelProperties {
     pub pages: Vec<FacebookPage>,
     #[serde(rename = "appId")]
     pub app_id: String,
-    #[serde(rename = "appSecret")]
-    pub app_secret: String,
+    #[serde(rename = "appSecret", skip_serializing_if = "Option::is_none")]
+    pub app_secret: Option<String>,
     #[serde(rename = "callbackUrl", skip_serializing)]
     pub callback_url: Option<String>,
     #[serde(rename = "isEnabled")]
@@ -148,8 +152,8 @@ pub struct FacebookChannelProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacebookPage {
     pub id: String,
-    #[serde(rename = "accessToken")]
-    pub access_token: String,
+    #[serde(rename = "accessToken", skip_serializing_if = "Option::is_none")]
+    pub access_token: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailChannel {
@@ -162,7 +166,8 @@ pub struct EmailChannel {
 pub struct EmailChannelProperties {
     #[serde(rename = "emailAddress")]
     pub email_address: String,
-    pub password: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
@@ -221,8 +226,8 @@ pub struct KikChannel {
 pub struct KikChannelProperties {
     #[serde(rename = "userName")]
     pub user_name: String,
-    #[serde(rename = "apiKey")]
-    pub api_key: String,
+    #[serde(rename = "apiKey", skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
     #[serde(rename = "isValidated", skip_serializing_if = "Option::is_none")]
     pub is_validated: Option<bool>,
     #[serde(rename = "isEnabled")]
@@ -263,8 +268,8 @@ pub struct TelegramChannel {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TelegramChannelProperties {
-    #[serde(rename = "accessToken")]
-    pub access_token: String,
+    #[serde(rename = "accessToken", skip_serializing_if = "Option::is_none")]
+    pub access_token: Option<String>,
     #[serde(rename = "isValidated", skip_serializing_if = "Option::is_none")]
     pub is_validated: Option<bool>,
     #[serde(rename = "isEnabled")]
@@ -282,8 +287,8 @@ pub struct SmsChannelProperties {
     pub phone: String,
     #[serde(rename = "accountSID")]
     pub account_sid: String,
-    #[serde(rename = "authToken")]
-    pub auth_token: String,
+    #[serde(rename = "authToken", skip_serializing_if = "Option::is_none")]
+    pub auth_token: Option<String>,
     #[serde(rename = "isValidated", skip_serializing_if = "Option::is_none")]
     pub is_validated: Option<bool>,
     #[serde(rename = "isEnabled")]
@@ -298,12 +303,12 @@ pub struct SlackChannel {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SlackChannelProperties {
-    #[serde(rename = "clientId")]
-    pub client_id: String,
-    #[serde(rename = "clientSecret")]
-    pub client_secret: String,
-    #[serde(rename = "verificationToken")]
-    pub verification_token: String,
+    #[serde(rename = "clientId", skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+    #[serde(rename = "clientSecret", skip_serializing_if = "Option::is_none")]
+    pub client_secret: Option<String>,
+    #[serde(rename = "verificationToken", skip_serializing_if = "Option::is_none")]
+    pub verification_token: Option<String>,
     #[serde(rename = "landingPageUrl", skip_serializing_if = "Option::is_none")]
     pub landing_page_url: Option<String>,
     #[serde(rename = "redirectAction", skip_serializing)]

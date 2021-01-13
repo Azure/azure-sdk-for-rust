@@ -992,6 +992,8 @@ pub struct Baseline {
     pub low_thresholds: Vec<f64>,
     #[serde(rename = "highThresholds")]
     pub high_thresholds: Vec<f64>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub timestamps: Vec<String>,
 }
 pub mod baseline {
     use super::*;
@@ -1026,8 +1028,9 @@ pub struct MetricAlertAction {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertProperties {
-    pub description: String,
-    pub severity: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    pub severity: i32,
     pub enabled: bool,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub scopes: Vec<String>,
@@ -1048,6 +1051,33 @@ pub struct MetricAlertProperties {
     pub last_updated_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricAlertPropertiesPatch {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub severity: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub scopes: Vec<String>,
+    #[serde(rename = "evaluationFrequency", skip_serializing_if = "Option::is_none")]
+    pub evaluation_frequency: Option<String>,
+    #[serde(rename = "windowSize", skip_serializing_if = "Option::is_none")]
+    pub window_size: Option<String>,
+    #[serde(rename = "targetResourceType", skip_serializing_if = "Option::is_none")]
+    pub target_resource_type: Option<String>,
+    #[serde(rename = "targetResourceRegion", skip_serializing_if = "Option::is_none")]
+    pub target_resource_region: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub criteria: Option<MetricAlertCriteria>,
+    #[serde(rename = "autoMitigate", skip_serializing_if = "Option::is_none")]
+    pub auto_mitigate: Option<bool>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub actions: Vec<MetricAlertAction>,
+    #[serde(rename = "lastUpdatedTime", skip_serializing)]
+    pub last_updated_time: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertResource {
     #[serde(flatten)]
     pub resource: Resource,
@@ -1058,7 +1088,7 @@ pub struct MetricAlertResourcePatch {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MetricAlertProperties>,
+    pub properties: Option<MetricAlertPropertiesPatch>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertResourceCollection {

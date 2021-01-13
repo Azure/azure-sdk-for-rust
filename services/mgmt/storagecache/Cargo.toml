@@ -17,7 +17,8 @@ azure_identity = { path = "../../../sdk/identity", version = "0.1.0" }
 tokio = { version = "0.2", features = ["macros"] }
 
 [features]
-default = ["package-2020-03-01"]
+default = ["package-2020-10-01"]
+"package-2020-10-01" = []
 "package-2020-03-01" = []
 "package-2019-11-01" = []
 "package-2019-08" = []

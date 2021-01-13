@@ -34,7 +34,7 @@ pub struct DomainServiceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainServiceProperties {
     #[serde(skip_serializing)]
-    pub version: Option<i64>,
+    pub version: Option<i32>,
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
     #[serde(rename = "domainName", skip_serializing_if = "Option::is_none")]
@@ -63,6 +63,8 @@ pub struct DomainServiceProperties {
     pub health_alerts: Vec<HealthAlert>,
     #[serde(rename = "notificationSettings", skip_serializing_if = "Option::is_none")]
     pub notification_settings: Option<NotificationSettings>,
+    #[serde(rename = "migrationProperties", skip_serializing_if = "Option::is_none")]
+    pub migration_properties: Option<MigrationProperties>,
     #[serde(rename = "filteredSync", skip_serializing_if = "Option::is_none")]
     pub filtered_sync: Option<domain_service_properties::FilteredSync>,
     #[serde(rename = "domainControllerIpAddress", skip_serializing)]
@@ -179,6 +181,22 @@ pub struct ForestTrust {
     pub remote_dns_ips: Option<String>,
     #[serde(rename = "trustPassword", skip_serializing_if = "Option::is_none")]
     pub trust_password: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MigrationProperties {
+    #[serde(rename = "oldSubnetId", skip_serializing)]
+    pub old_subnet_id: Option<String>,
+    #[serde(rename = "oldVnetSiteId", skip_serializing)]
+    pub old_vnet_site_id: Option<String>,
+    #[serde(rename = "migrationProgress", skip_serializing_if = "Option::is_none")]
+    pub migration_progress: Option<MigrationProgress>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MigrationProgress {
+    #[serde(rename = "completionPercentage", skip_serializing_if = "Option::is_none")]
+    pub completion_percentage: Option<f64>,
+    #[serde(rename = "progressMessage", skip_serializing_if = "Option::is_none")]
+    pub progress_message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainSecuritySettings {

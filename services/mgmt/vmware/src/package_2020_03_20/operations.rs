@@ -1243,7 +1243,7 @@ pub mod hcx_enterprise_sites {
         resource_group_name: &str,
         private_cloud_name: &str,
         hcx_enterprise_site_name: &str,
-        hcx_enterprise_site: &serde_json::Value,
+        hcx_enterprise_site: &HcxEnterpriseSite,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(
@@ -1537,7 +1537,7 @@ pub mod authorizations {
         resource_group_name: &str,
         private_cloud_name: &str,
         authorization_name: &str,
-        authorization: &serde_json::Value,
+        authorization: &ExpressRouteAuthorization,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let client = &operation_config.client;
         let uri_str = &format!(

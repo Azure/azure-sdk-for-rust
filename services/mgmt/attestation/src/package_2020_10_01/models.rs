@@ -43,6 +43,8 @@ pub struct StatusResult {
     pub status: Option<status_result::Status>,
     #[serde(rename = "attestUri", skip_serializing_if = "Option::is_none")]
     pub attest_uri: Option<String>,
+    #[serde(rename = "privateEndpointConnections", skip_serializing)]
+    pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
 }
 pub mod status_result {
     use super::*;
@@ -88,6 +90,13 @@ pub struct AttestationServiceCreationParams {
 pub struct AttestationServiceCreationSpecificParams {
     #[serde(rename = "policySigningCertificates", skip_serializing_if = "Option::is_none")]
     pub policy_signing_certificates: Option<JsonWebKeySet>,
+    #[serde(rename = "privateEndpointConnections", skip_serializing)]
+    pub private_endpoint_connections: Vec<PrivateLinkServiceConnectionState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionProperties {
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
@@ -137,6 +146,40 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnection {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PrivateEndpointConnectionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpoint {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkServiceConnectionState {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<PrivateEndpointServiceConnectionStatus>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "actionsRequired", skip_serializing_if = "Option::is_none")]
+    pub actions_required: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum PrivateEndpointServiceConnectionStatus {
+    Pending,
+    Approved,
+    Rejected,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum PrivateEndpointConnectionProvisioningState {
+    Succeeded,
+    Creating,
+    Deleting,
+    Failed,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonWebKeySet {

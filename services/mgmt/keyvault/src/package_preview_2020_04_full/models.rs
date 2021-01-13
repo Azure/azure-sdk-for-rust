@@ -511,7 +511,7 @@ pub struct ManagedHsmProperties {
     pub tenant_id: Option<String>,
     #[serde(rename = "initialAdminObjectIds", skip_serializing_if = "Vec::is_empty")]
     pub initial_admin_object_ids: Vec<String>,
-    #[serde(rename = "hsmUri", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "hsmUri", skip_serializing)]
     pub hsm_uri: Option<String>,
     #[serde(rename = "enableSoftDelete", skip_serializing_if = "Option::is_none")]
     pub enable_soft_delete: Option<bool>,
