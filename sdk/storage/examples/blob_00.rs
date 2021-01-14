@@ -45,9 +45,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("received {:?} bytes", value?.len());
     }
 
-    //let s_content = String::from_utf8(response.data)?;
-    ////println!("blob == {:?}", blob);
-    ////println!("s_content == {}", s_content);
+    let s_content = String::from_utf8(response.data)?;
+    println!("blob == {:?}", blob);
+    println!("s_content == {}", s_content);
 
     Ok(())
 }

@@ -111,7 +111,13 @@ impl Container {
         }
     }
 
-    pub(crate) fn from_response(name: &str, headers: &HeaderMap) -> Result<Container, AzureError> {
+    pub(crate) fn from_response<NAME>(
+        name: NAME,
+        headers: &HeaderMap,
+    ) -> Result<Container, AzureError>
+    where
+        NAME: Into<String>,
+    {
         let last_modified = match headers.get(header::LAST_MODIFIED) {
             Some(last_modified) => last_modified.to_str()?,
             None => {
@@ -171,7 +177,7 @@ impl Container {
         }
 
         Ok(Container {
-            name: name.to_owned(),
+            name: name.into(),
             last_modified,
             e_tag,
             lease_status,

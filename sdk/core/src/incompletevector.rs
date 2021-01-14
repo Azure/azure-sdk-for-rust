@@ -20,7 +20,7 @@ impl<T> IncompleteVector<T> {
     }
 
     pub fn next_marker(&self) -> Option<&NextMarker> {
-        if let Some(ref t) = self.next_marker {
+        if let Some(ref t) = self.next_marker.as_ref() {
             Some(t)
         } else {
             None

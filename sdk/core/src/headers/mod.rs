@@ -3,7 +3,7 @@ mod utilities;
 use http::request::Builder;
 pub use utilities::*;
 
-pub const MS_DATE: &str = "x-ms-date"; //=> [String] }
+pub const MS_DATE: &str = "x-ms-date";
 
 #[must_use]
 pub fn add_optional_header_ref<T: crate::AddAsHeader>(

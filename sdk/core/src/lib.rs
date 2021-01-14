@@ -1030,7 +1030,3 @@ where
         }
     }
 }
-
-#[doc(hidden)]
-/// Reexport paste for use in macros
-pub use paste;
