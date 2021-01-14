@@ -32,8 +32,10 @@ async fn permission_token_usage() {
     };
 
     let create_collection_response = database_client
-        .create_collection(COLLECTION_NAME)
-        .execute("/id", Offer::Throughput(400), indexing_policy)
+        .create_collection("/id")
+        .offer(Offer::Throughput(400))
+        .indexing_policy(indexing_policy)
+        .execute(COLLECTION_NAME)
         .await
         .unwrap();
 

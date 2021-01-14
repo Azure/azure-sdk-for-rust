@@ -70,8 +70,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         };
 
         let create_collection_response = db_client
-            .create_collection("panzadoro")
-            .execute("/id", Offer::Throughput(400), ip)
+            .create_collection("/id")
+            .indexing_policy(ip)
+            .offer(Offer::Throughput(400))
+            .execute("panzadoro")
             .await?;
 
         println!(

@@ -1,6 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_cosmos::prelude::*;
-use collection::*;
 
 mod setup;
 
@@ -33,27 +32,9 @@ async fn permissions() {
 
     // create a temp collection
     let create_collection_response = {
-        let indexes = IncludedPathIndex {
-            kind: KeyKind::Hash,
-            data_type: DataType::String,
-            precision: Some(3),
-        };
-
-        let ip = IncludedPath {
-            path: "/*".to_owned(),
-            indexes: Some(vec![indexes]),
-        };
-
-        let ip = IndexingPolicy {
-            automatic: true,
-            indexing_mode: IndexingMode::Consistent,
-            included_paths: vec![ip],
-            excluded_paths: vec![],
-        };
-
         database_client
-            .create_collection(COLLECTION_NAME)
-            .execute("/id", Offer::Throughput(400), ip)
+            .create_collection("/id")
+            .execute(COLLECTION_NAME)
             .await
             .unwrap()
     };

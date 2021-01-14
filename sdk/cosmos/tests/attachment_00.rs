@@ -57,8 +57,10 @@ async fn attachment() -> Result<(), CosmosError> {
         };
 
         database_client
-            .create_collection(COLLECTION_NAME)
-            .execute("/id", Offer::Throughput(400), ip)
+            .create_collection("/id")
+            .offer(Offer::Throughput(400))
+            .indexing_policy(ip)
+            .execute(COLLECTION_NAME)
             .await
             .unwrap()
     };

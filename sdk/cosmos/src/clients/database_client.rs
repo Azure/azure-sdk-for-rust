@@ -1,5 +1,6 @@
 use super::*;
 use crate::requests;
+use crate::resources::collection::PartitionKey;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
 use azure_core::HttpClient;
@@ -46,11 +47,11 @@ impl DatabaseClient {
         requests::DeleteDatabaseBuilder::new(self)
     }
 
-    pub fn create_collection<'a, C: Into<&'a str>>(
+    pub fn create_collection<'a, P: Into<PartitionKey>>(
         &'a self,
-        collection_name: C,
+        partition_key: P,
     ) -> requests::CreateCollectionBuilder<'a> {
-        requests::CreateCollectionBuilder::new(self, collection_name.into())
+        requests::CreateCollectionBuilder::new(self, partition_key.into())
     }
 
     pub fn list_users(&self) -> requests::ListUsersBuilder<'_, '_> {

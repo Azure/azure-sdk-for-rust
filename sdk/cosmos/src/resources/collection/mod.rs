@@ -2,9 +2,8 @@
 
 mod offer;
 
-pub use offer::Offer;
-
 use super::Resource;
+pub use offer::Offer;
 
 /// A container of JSON documents and associated JavaScript application logic.
 ///
@@ -12,8 +11,8 @@ use super::Resource;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub struct Collection {
     pub id: String,
-    #[serde(rename = "indexingPolicy")]
-    pub indexing_policy: IndexingPolicy,
+    #[serde(rename = "indexingPolicy", skip_serializing_if = "Option::is_none")]
+    pub indexing_policy: Option<IndexingPolicy>,
     #[serde(rename = "partitionKey")]
     pub parition_key: PartitionKey,
     #[serde(rename = "_rid")]
@@ -37,7 +36,7 @@ pub struct Collection {
 }
 
 impl Collection {
-    pub fn new(id: &str, indexing_policy: IndexingPolicy) -> Collection {
+    pub fn new(id: &str, indexing_policy: Option<IndexingPolicy>) -> Collection {
         Collection {
             id: id.to_owned(),
             indexing_policy,
@@ -146,13 +145,10 @@ where
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct IndexingPolicy {
-    #[serde(rename = "automatic")]
     pub automatic: bool,
-    #[serde(rename = "indexingMode")]
     pub indexing_mode: IndexingMode,
-    #[serde(rename = "includedPaths")]
     pub included_paths: Vec<IncludedPath>,
-    #[serde(rename = "excludedPaths")]
     pub excluded_paths: Vec<ExcludedPath>,
 }
