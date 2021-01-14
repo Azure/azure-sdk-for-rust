@@ -132,8 +132,6 @@ async fn replace_collection() {
     assert_eq!(collections.collections.len(), 1);
     let eps: Vec<&ExcludedPath> = collections.collections[0]
         .indexing_policy
-        .as_ref()
-        .unwrap()
         .excluded_paths
         .iter()
         .filter(|excluded_path| excluded_path.path == "/\"excludeme\"/?")

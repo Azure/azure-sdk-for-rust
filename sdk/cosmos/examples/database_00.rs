@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 println!("resp == {:?}", resp);
 
                 // call replace collection
-                let mut indexing_policy_new = collection.indexing_policy.clone().unwrap();
+                let mut indexing_policy_new = collection.indexing_policy.clone();
                 indexing_policy_new
                     .excluded_paths
                     .push("/\"collo2\"/?".to_owned().into());

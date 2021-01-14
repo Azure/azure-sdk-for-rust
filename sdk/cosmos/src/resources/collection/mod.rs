@@ -11,8 +11,8 @@ pub use offer::Offer;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub struct Collection {
     pub id: String,
-    #[serde(rename = "indexingPolicy", skip_serializing_if = "Option::is_none")]
-    pub indexing_policy: Option<IndexingPolicy>,
+    #[serde(rename = "indexingPolicy")]
+    pub indexing_policy: IndexingPolicy,
     #[serde(rename = "partitionKey")]
     pub parition_key: PartitionKey,
     #[serde(rename = "_rid")]
@@ -33,25 +33,6 @@ pub struct Collection {
     pub udfs: String,
     #[serde(rename = "_conflicts")]
     pub conflicts: String,
-}
-
-impl Collection {
-    pub fn new(id: &str, indexing_policy: Option<IndexingPolicy>) -> Collection {
-        Collection {
-            id: id.to_owned(),
-            indexing_policy,
-            parition_key: PartitionKey::default(),
-            rid: String::new(),
-            ts: 0,
-            _self: String::new(),
-            etag: String::new(),
-            docs: String::new(),
-            sprocs: String::new(),
-            triggers: String::new(),
-            udfs: String::new(),
-            conflicts: String::new(),
-        }
-    }
 }
 
 impl Resource for Collection {
@@ -111,7 +92,7 @@ pub struct ExcludedPath {
     pub path: String,
 }
 
-impl std::convert::From<String> for ExcludedPath {
+impl From<String> for ExcludedPath {
     fn from(s: String) -> Self {
         Self { path: s }
     }
@@ -132,7 +113,7 @@ impl std::default::Default for PartitionKey {
     }
 }
 
-impl<T> std::convert::From<T> for PartitionKey
+impl<T> From<T> for PartitionKey
 where
     T: AsRef<str>,
 {

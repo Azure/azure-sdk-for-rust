@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use crate::resources::collection::{Collection, IndexingPolicy, PartitionKey};
+use crate::resources::collection::{IndexingPolicy, PartitionKey};
 use crate::resources::ResourceType;
 use crate::responses::CreateCollectionResponse;
 use azure_core::prelude::*;
@@ -63,9 +63,11 @@ impl<'a> CreateCollectionBuilder<'a> {
         let req = azure_core::headers::add_optional_header(&self.activity_id, req);
         let req = azure_core::headers::add_optional_header(&self.consistency_level, req);
 
-        let mut collection =
-            Collection::new(collection_name.as_ref(), self.indexing_policy.clone());
-        collection.parition_key = self.partition_key.clone();
+        let collection = CreateCollectionBody {
+            id: collection_name.as_ref(),
+            indexing_policy: &self.indexing_policy,
+            partition_key: &self.partition_key,
+        };
 
         let body = serde_json::to_string(&collection)?;
         debug!("body == {}", body);
@@ -80,4 +82,14 @@ impl<'a> CreateCollectionBuilder<'a> {
             .await?
             .try_into()?)
     }
+}
+
+/// Body for the create collection request
+#[derive(Serialize, Debug)]
+struct CreateCollectionBody<'a> {
+    pub id: &'a str,
+    #[serde(rename = "indexingPolicy", skip_serializing_if = "Option::is_none")]
+    pub indexing_policy: &'a Option<IndexingPolicy>,
+    #[serde(rename = "partitionKey")]
+    pub partition_key: &'a PartitionKey,
 }
