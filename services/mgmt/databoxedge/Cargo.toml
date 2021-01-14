@@ -8,13 +8,13 @@ edition = "2018"
 azure_core = { path = "../../../sdk/core", version = "0.1.0" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-reqwest = { version = "0.10", features = ["json"] }
-bytes = "0.5"
+reqwest = { version = "0.11", features = ["json"] }
+bytes = "1.0"
 snafu = "0.6"
 
 [dev-dependencies]
 azure_identity = { path = "../../../sdk/identity", version = "0.1.0" }
-tokio = { version = "0.2", features = ["macros"] }
+tokio = { version = "1.0", features = ["macros"] }
 
 [features]
 default = ["package-2019-08"]
