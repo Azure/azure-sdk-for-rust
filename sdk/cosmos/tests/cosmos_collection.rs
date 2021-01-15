@@ -21,19 +21,9 @@ async fn create_and_delete_collection() {
     let database_client = client.into_database_client(DATABASE_NAME);
 
     // create a new collection
-    let indexing_policy = IndexingPolicy {
-        automatic: true,
-        indexing_mode: IndexingMode::Consistent,
-        included_paths: vec![],
-        excluded_paths: vec![],
-    };
     let collection = database_client
-        .create_collection()
-        .collection_name(&COLLECTION_NAME)
-        .offer(Offer::S2)
-        .partition_key("/id")
-        .indexing_policy(&indexing_policy)
-        .execute()
+        .create_collection("/id")
+        .execute(COLLECTION_NAME)
         .await
         .unwrap();
     let collections = database_client.list_collections().execute().await.unwrap();
@@ -89,12 +79,10 @@ async fn replace_collection() {
         excluded_paths: vec![],
     };
     let collection = database_client
-        .create_collection()
-        .collection_name(&COLLECTION_NAME)
+        .create_collection("/id")
         .offer(Offer::S2)
-        .partition_key("/id")
-        .indexing_policy(&indexing_policy)
-        .execute()
+        .indexing_policy(indexing_policy)
+        .execute(COLLECTION_NAME)
         .await
         .unwrap();
 

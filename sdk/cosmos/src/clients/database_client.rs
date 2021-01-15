@@ -1,8 +1,9 @@
 use super::*;
 use crate::requests;
+use crate::resources::collection::PartitionKey;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
-use azure_core::{HttpClient, No};
+use azure_core::HttpClient;
 
 /// A client for Cosmos database resources.
 #[derive(Debug, Clone)]
@@ -46,8 +47,11 @@ impl DatabaseClient {
         requests::DeleteDatabaseBuilder::new(self)
     }
 
-    pub fn create_collection(&self) -> requests::CreateCollectionBuilder<'_, No, No, No, No> {
-        requests::CreateCollectionBuilder::new(self)
+    pub fn create_collection<'a, P: Into<PartitionKey>>(
+        &'a self,
+        partition_key: P,
+    ) -> requests::CreateCollectionBuilder<'a> {
+        requests::CreateCollectionBuilder::new(self, partition_key.into())
     }
 
     pub fn list_users(&self) -> requests::ListUsersBuilder<'_, '_> {

@@ -116,12 +116,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             client
                 .clone()
                 .into_database_client(database.id.clone())
-                .create_collection()
-                .collection_name(&COLLECTION)
+                .create_collection("/id")
+                .indexing_policy(ip)
                 .offer(Offer::Throughput(400))
-                .indexing_policy(&ip)
-                .partition_key("/id")
-                .execute()
+                .execute(COLLECTION)
                 .await?
                 .collection
         }

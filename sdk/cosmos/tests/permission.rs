@@ -1,6 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_cosmos::prelude::*;
-use collection::*;
 
 mod setup;
 
@@ -32,35 +31,11 @@ async fn permissions() {
     let _create_user_response = user2_client.create_user().execute().await.unwrap();
 
     // create a temp collection
-    let create_collection_response = {
-        let indexes = IncludedPathIndex {
-            kind: KeyKind::Hash,
-            data_type: DataType::String,
-            precision: Some(3),
-        };
-
-        let ip = IncludedPath {
-            path: "/*".to_owned(),
-            indexes: Some(vec![indexes]),
-        };
-
-        let ip = IndexingPolicy {
-            automatic: true,
-            indexing_mode: IndexingMode::Consistent,
-            included_paths: vec![ip],
-            excluded_paths: vec![],
-        };
-
-        database_client
-            .create_collection()
-            .collection_name(&COLLECTION_NAME)
-            .partition_key("/id")
-            .offer(Offer::Throughput(400))
-            .indexing_policy(&ip)
-            .execute()
-            .await
-            .unwrap()
-    };
+    let create_collection_response = database_client
+        .create_collection("/id")
+        .execute(COLLECTION_NAME)
+        .await
+        .unwrap();
 
     // create two permissions
     let permission_client_user1 = user1_client.clone().into_permission_client(PERMISSION1);
