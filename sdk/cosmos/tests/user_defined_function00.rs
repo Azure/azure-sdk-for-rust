@@ -73,8 +73,7 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
 
     let ret = user_defined_function_client
         .create_user_defined_function()
-        .body("body")
-        .execute()
+        .execute("body")
         .await?;
 
     let stream = collection_client
@@ -90,8 +89,7 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
     let ret = user_defined_function_client
         .replace_user_defined_function()
         .consistency_level(&ret)
-        .body(FN_BODY)
-        .execute()
+        .execute(FN_BODY)
         .await?;
 
     let query_stmt = format!("SELECT udf.{}(100)", USER_DEFINED_FUNCTION_NAME);
