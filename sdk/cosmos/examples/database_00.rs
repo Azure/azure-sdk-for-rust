@@ -72,9 +72,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 println!("\nReplacing collection");
                 let replace_collection_response = collection_client
                     .replace_collection()
-                    .partition_key("/age")
                     .indexing_policy(&indexing_policy_new)
-                    .execute()
+                    .execute("/age")
                     .await?;
                 println!(
                     "replace_collection_response == {:#?}",

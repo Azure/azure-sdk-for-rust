@@ -47,7 +47,7 @@ impl CollectionClient {
         requests::DeleteCollectionBuilder::new(self)
     }
 
-    pub fn replace_collection(&self) -> requests::ReplaceCollectionBuilder<'_, '_, No, No> {
+    pub fn replace_collection(&self) -> requests::ReplaceCollectionBuilder<'_, '_> {
         requests::ReplaceCollectionBuilder::new(self)
     }
 

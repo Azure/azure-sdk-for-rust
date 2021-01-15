@@ -121,8 +121,7 @@ async fn replace_collection() {
     let _replace_collection_reponse = collection_client
         .replace_collection()
         .indexing_policy(&new_ip)
-        .partition_key("/id")
-        .execute()
+        .execute("/id")
         .await
         .unwrap();
 
