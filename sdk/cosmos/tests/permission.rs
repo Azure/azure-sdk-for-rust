@@ -17,8 +17,7 @@ async fn permissions() {
     // create a temp database
     let _create_database_response = client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
 

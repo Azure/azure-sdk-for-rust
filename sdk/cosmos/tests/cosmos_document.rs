@@ -24,8 +24,7 @@ async fn create_and_delete_document() {
 
     client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
 
@@ -113,8 +112,7 @@ async fn query_documents() {
 
     client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
     let database_client = client.into_database_client(DATABASE_NAME);
@@ -188,8 +186,7 @@ async fn replace_document() {
 
     client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
     let database_client = client.into_database_client(DATABASE_NAME);
