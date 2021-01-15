@@ -1,7 +1,7 @@
 use crate::requests;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
-use azure_core::{HttpClient, No};
+use azure_core::HttpClient;
 
 use super::*;
 
@@ -69,7 +69,7 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to replace an attachment.
-    pub fn replace_slug(&self) -> requests::ReplaceSlugAttachmentBuilder<'_, '_, No, No> {
+    pub fn replace_slug(&self) -> requests::ReplaceSlugAttachmentBuilder<'_, '_> {
         requests::ReplaceSlugAttachmentBuilder::new(self)
     }
 
