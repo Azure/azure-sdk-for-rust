@@ -1,30 +1,21 @@
 use crate::prelude::*;
 use crate::responses::CreateStoredProcedureResponse;
 use azure_core::prelude::*;
-use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
-use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct CreateStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
+pub struct CreateStoredProcedureBuilder<'a, 'b> {
     stored_procedure_client: &'a StoredProcedureClient,
-    p_body: PhantomData<BodySet>,
-    body: Option<&'a str>,
     user_agent: Option<UserAgent<'b>>,
     activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, No> {
+impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b> {
     pub(crate) fn new(stored_procedure_client: &'a StoredProcedureClient) -> Self {
         Self {
             stored_procedure_client,
-            p_body: PhantomData,
-            body: None,
             user_agent: None,
             activity_id: None,
             consistency_level: None,
@@ -32,10 +23,7 @@ impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, No> {
     }
 }
 
-impl<'a, 'b, BodySet> CreateStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
+impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b> {
     setters! {
         user_agent: &'b str => Some(UserAgent::new(user_agent)),
         activity_id: &'b str => Some(ActivityId::new(activity_id)),
@@ -43,35 +31,17 @@ where
     }
 }
 
-impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, Yes> {
-    fn body(&self) -> &'a str {
-        self.body.unwrap()
-    }
-}
-
-impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, No> {
-    pub fn body(self, body: &'a str) -> CreateStoredProcedureBuilder<'a, 'b, Yes> {
-        CreateStoredProcedureBuilder {
-            body: Some(body),
-            stored_procedure_client: self.stored_procedure_client,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            p_body: PhantomData,
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, Yes> {
-    pub async fn execute(&self) -> Result<CreateStoredProcedureResponse, CosmosError> {
+impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b> {
+    pub async fn execute<B: AsRef<str>>(
+        &self,
+        body: B,
+    ) -> Result<CreateStoredProcedureResponse, CosmosError> {
         trace!("CreateStoredProcedureBuilder::execute called");
 
         let req = self
             .stored_procedure_client
             .prepare_request(http::Method::POST);
 
-        // add trait headers
         let req = azure_core::headers::add_optional_header(&self.user_agent, req);
         let req = azure_core::headers::add_optional_header(&self.activity_id, req);
         let req = azure_core::headers::add_optional_header(&self.consistency_level, req);
@@ -84,7 +54,7 @@ impl<'a, 'b> CreateStoredProcedureBuilder<'a, 'b, Yes> {
             id: &'a str,
         }
         let request = Request {
-            body: self.body(),
+            body: body.as_ref(),
             id: self.stored_procedure_client.stored_procedure_name(),
         };
 

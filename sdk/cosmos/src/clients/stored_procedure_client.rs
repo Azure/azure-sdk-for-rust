@@ -41,7 +41,7 @@ impl StoredProcedureClient {
         &self.stored_procedure_name
     }
 
-    pub fn create_stored_procedure(&self) -> requests::CreateStoredProcedureBuilder<'_, '_, No> {
+    pub fn create_stored_procedure(&self) -> requests::CreateStoredProcedureBuilder<'_, '_> {
         requests::CreateStoredProcedureBuilder::new(self)
     }
 
