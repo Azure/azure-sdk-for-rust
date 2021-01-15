@@ -31,13 +31,11 @@ async fn permissions() {
     let _create_user_response = user2_client.create_user().execute().await.unwrap();
 
     // create a temp collection
-    let create_collection_response = {
-        database_client
-            .create_collection("/id")
-            .execute(COLLECTION_NAME)
-            .await
-            .unwrap()
-    };
+    let create_collection_response = database_client
+        .create_collection("/id")
+        .execute(COLLECTION_NAME)
+        .await
+        .unwrap();
 
     // create two permissions
     let permission_client_user1 = user1_client.clone().into_permission_client(PERMISSION1);
