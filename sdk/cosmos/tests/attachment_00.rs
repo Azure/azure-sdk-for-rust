@@ -103,9 +103,7 @@ async fn attachment() -> Result<(), CosmosError> {
     let resp = attachment_client
         .create_reference()
         .consistency_level(&ret)
-        .content_type("image/jpeg")
-        .media("https://www.bing.com")
-        .execute()
+        .execute("https://www.bing.com", "image/jpeg")
         .await?;
 
     // replace reference attachment

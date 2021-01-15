@@ -80,11 +80,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp = attachment_client
         .create_reference()
         .consistency_level(ret)
-        .content_type("image/jpeg")
-        .media(
+        .execute(
             "https://cdn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
+            "image/jpeg",
         )
-        .execute()
         .await?;
     println!("create reference == {:#?}", resp);
 

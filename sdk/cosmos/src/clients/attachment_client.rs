@@ -74,7 +74,7 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to create an attachment.
-    pub fn create_reference(&self) -> requests::CreateReferenceAttachmentBuilder<'_, '_, No, No> {
+    pub fn create_reference(&self) -> requests::CreateReferenceAttachmentBuilder<'_, '_> {
         requests::CreateReferenceAttachmentBuilder::new(self)
     }
 

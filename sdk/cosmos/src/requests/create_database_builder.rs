@@ -44,7 +44,7 @@ impl<'a> CreateDatabaseBuilder<'a> {
             pub id: &'a str,
         }
 
-        let req = serde_json::to_string(&CreateDatabaseRequest {
+        let req = azure_core::to_json(&CreateDatabaseRequest {
             id: database_name.as_ref(),
         })?;
 
