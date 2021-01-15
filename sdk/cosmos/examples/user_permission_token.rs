@@ -118,7 +118,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_document()
         .is_upsert(true)
         .partition_keys(["Gianluigi Bombatomica"])
-        .execute_with_document(&document)
+        .execute(&document)
         .await
     {
         Ok(_) => panic!("this should not happen!"),
@@ -158,7 +158,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_document()
         .is_upsert(true)
         .partition_keys(["Gianluigi Bombatomica"])
-        .execute_with_document(&document)
+        .execute(&document)
         .await?;
     println!(
         "create_document_response == {:#?}",

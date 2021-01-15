@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_document()
         .partition_keys(partition_keys.clone())
         .is_upsert(true)
-        .execute_with_document(&doc)
+        .execute(&doc)
         .await?;
 
     println!(
@@ -107,7 +107,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .consistency_level(&query_documents_response)
         .document_id(&doc.document.id)
         .partition_keys(partition_keys)
-        .execute_with_document(&doc)
+        .execute(&doc)
         .await?;
     println!(
         "replace_document_response == {:#?}",

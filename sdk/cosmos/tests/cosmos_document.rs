@@ -58,7 +58,7 @@ async fn create_and_delete_document() {
     collection_client
         .create_document()
         .partition_keys([&DOCUMENT_NAME])
-        .execute_with_document(&document_data)
+        .execute(&document_data)
         .await
         .unwrap();
 
@@ -145,7 +145,7 @@ async fn query_documents() {
     collection_client
         .create_document()
         .partition_keys([&document_data.document.id])
-        .execute_with_document(&document_data)
+        .execute(&document_data)
         .await
         .unwrap();
 
@@ -219,7 +219,7 @@ async fn replace_document() {
     collection_client
         .create_document()
         .partition_keys([&document_data.document.id])
-        .execute_with_document(&document_data)
+        .execute(&document_data)
         .await
         .unwrap();
 
@@ -240,7 +240,7 @@ async fn replace_document() {
         .if_match_condition(IfMatchCondition::Match(
             &documents.documents[0].document_attributes.etag(),
         ))
-        .execute_with_document(&document_data)
+        .execute(&document_data)
         .await
         .unwrap();
 

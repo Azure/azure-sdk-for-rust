@@ -55,7 +55,7 @@ impl CollectionClient {
         requests::ListDocumentsBuilder::new(self)
     }
 
-    pub fn create_document(&self) -> requests::CreateDocumentBuilder<'_, '_, No> {
+    pub fn create_document(&self) -> requests::CreateDocumentBuilder<'_, '_> {
         requests::CreateDocumentBuilder::new(self)
     }
 

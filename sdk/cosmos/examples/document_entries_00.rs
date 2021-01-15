@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             client
                 .create_document()
                 .partition_keys([&doc.document.id])
-                .execute_with_document(&doc)
+                .execute(&doc)
                 .await?,
         );
     }
@@ -149,7 +149,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .document_id(&id)
         .consistency_level(ConsistencyLevel::from(&response))
         .if_match_condition(IfMatchCondition::Match(&doc.etag)) // use optimistic concurrency check
-        .execute_with_document(&doc.document)
+        .execute(&doc.document)
         .await?;
 
     println!(

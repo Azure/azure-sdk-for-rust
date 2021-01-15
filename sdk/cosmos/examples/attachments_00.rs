@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     match client
         .create_document()
         .partition_keys([&doc.document.id])
-        .execute_with_document(&doc)
+        .execute(&doc)
         .await
     {
         Ok(_) => {

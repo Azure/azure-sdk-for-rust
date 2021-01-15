@@ -66,10 +66,7 @@ where
 }
 
 impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
-    pub async fn execute_with_document<T>(
-        &self,
-        document: &T,
-    ) -> Result<ReplaceDocumentResponse, CosmosError>
+    pub async fn execute<T>(&self, document: &T) -> Result<ReplaceDocumentResponse, CosmosError>
     where
         T: Serialize,
     {

@@ -142,7 +142,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_document_response = collection_client
         .create_document()
         .partition_keys([&doc.document.id])
-        .execute_with_document(&doc)
+        .execute(&doc)
         .await?;
     println!(
         "create_document_response == {:#?}",
@@ -186,7 +186,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .document_id(&doc.document.id)
             .partition_keys([&doc.document.id])
             .if_match_condition(IfMatchCondition::Match(&document.etag))
-            .execute_with_document(&doc)
+            .execute(&doc)
             .await?;
         println!(
             "replace_document_response == {:#?}",

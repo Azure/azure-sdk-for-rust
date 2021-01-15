@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                     .create_document()
                     .partition_keys([43u32])
                     .is_upsert(true)
-                    .execute_with_document(&document)
+                    .execute(&document)
                     .await?;
 
                 println!("resp == {:?}", resp);

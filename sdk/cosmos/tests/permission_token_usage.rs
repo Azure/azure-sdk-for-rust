@@ -89,7 +89,7 @@ async fn permission_token_usage() {
         .create_document()
         .is_upsert(true)
         .partition_keys(["Gianluigi Bombatomica"])
-        .execute_with_document(&document)
+        .execute(&document)
         .await
         .unwrap_err();
 
@@ -122,7 +122,7 @@ async fn permission_token_usage() {
         .create_document()
         .is_upsert(true)
         .partition_keys(["Gianluigi Bombatomica"])
-        .execute_with_document(&document)
+        .execute(&document)
         .await
         .unwrap();
     println!(

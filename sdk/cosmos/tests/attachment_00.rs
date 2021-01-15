@@ -82,7 +82,7 @@ async fn attachment() -> Result<(), CosmosError> {
     let session_token: ConsistencyLevel = collection_client
         .create_document()
         .partition_keys([&doc.document.id])
-        .execute_with_document(&doc)
+        .execute(&doc)
         .await?
         .into();
 
