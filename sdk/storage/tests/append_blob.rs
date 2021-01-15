@@ -4,9 +4,8 @@ extern crate log;
 
 use azure_core::prelude::*;
 use azure_storage::blob::container::PublicAccess;
-use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
-use std::collections::HashMap;
+use std::sync::Arc;
 
 #[tokio::test]
 async fn put_append_blob() {
@@ -15,15 +14,20 @@ async fn put_append_blob() {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let client = client::with_access_key(&account, &master_key);
-
     let blob_name: &'static str = "append_blob.txt";
     let container_name: &'static str = "rust-upload-test";
-    let data = b"abcdef";
+    let _data = b"abcdef";
 
-    if client
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+
+    let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+        .as_storage_client();
+    let container = storage.as_container_client(container_name);
+    let blob = container.as_blob_client(blob_name);
+
+    if storage
         .list_containers()
-        .finalize()
+        .execute()
         .await
         .unwrap()
         .incomplete_vector
@@ -31,29 +35,22 @@ async fn put_append_blob() {
         .find(|x| x.name == container_name)
         .is_none()
     {
-        client
-            .create_container()
-            .with_container_name(container_name)
-            .with_public_access(PublicAccess::Blob)
-            .finalize()
+        container
+            .create()
+            .public_access(PublicAccess::Blob)
+            .execute()
             .await
             .unwrap();
     }
 
-    let mut metadata = HashMap::new();
+    let mut metadata = Metadata::new();
     metadata.insert("attrib", "value");
     metadata.insert("second", "something");
 
-    // calculate md5 too!
-    let _digest = md5::compute(&data[..]);
-
-    client
-        .put_append_blob()
-        .with_container_name(&container_name)
-        .with_blob_name(&blob_name)
-        .with_content_type("text/plain")
-        .with_metadata(&metadata)
-        .finalize()
+    blob.put_append_blob()
+        .content_type("text/plain")
+        .metadata(&metadata)
+        .execute()
         .await
         .unwrap();
 

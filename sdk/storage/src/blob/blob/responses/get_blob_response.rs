@@ -11,6 +11,7 @@ pub struct GetBlobResponse {
     pub request_id: RequestId,
     pub data: Vec<u8>,
     pub date: DateTime<Utc>,
+    pub content_range: Option<String>,
 }
 
 impl GetBlobResponse {
@@ -24,11 +25,16 @@ impl GetBlobResponse {
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
 
+        let content_range = headers
+            .get(http::header::CONTENT_RANGE)
+            .map(|h| h.to_str().unwrap().to_owned());
+
         Ok(GetBlobResponse {
             blob,
             request_id,
             data: body.to_vec(),
             date,
+            content_range,
         })
     }
 }

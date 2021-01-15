@@ -49,22 +49,9 @@ impl<'a, C> DeleteMessageBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn with_timeout(self, timeout: Timeout) -> Self {
-        Self {
-            queue_client: self.queue_client,
-            pop_receipt: self.pop_receipt,
-            timeout: Some(timeout),
-            client_request_id: self.client_request_id,
-        }
-    }
-
-    pub fn with_client_request_id(self, client_request_id: ClientRequestId<'a>) -> Self {
-        Self {
-            queue_client: self.queue_client,
-            pop_receipt: self.pop_receipt,
-            timeout: self.timeout,
-            client_request_id: Some(client_request_id),
-        }
+    setters! {
+        timeout: Timeout => Some(timeout),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
     pub async fn execute(self) -> Result<DeleteMessageResponse, AzureError> {

@@ -1,7 +1,7 @@
 use crate::core::Client;
 use crate::queue::clients::QueueAccountClient;
+use crate::queue::requests::*;
 use crate::queue::PopReceipt;
-use crate::requests;
 use crate::HasStorageClient;
 use azure_core::Metadata;
 use std::borrow::Cow;
@@ -46,44 +46,41 @@ where
         &self.queue_account_client
     }
 
-    pub fn create_queue(&self) -> requests::CreateQueueBuilder<'_, C> {
-        crate::requests::CreateQueueBuilder::new(self)
+    pub fn create_queue(&self) -> CreateQueueBuilder<'_, C> {
+        CreateQueueBuilder::new(self)
     }
 
-    pub fn delete_queue(&self) -> requests::DeleteQueueBuilder<'_, C> {
-        crate::requests::DeleteQueueBuilder::new(self)
+    pub fn delete_queue(&self) -> DeleteQueueBuilder<'_, C> {
+        DeleteQueueBuilder::new(self)
     }
 
-    pub fn put_message<'a, MB>(&'a self, message_body: MB) -> requests::PutMessageBuilder<'a, C>
+    pub fn put_message<'a, MB>(&'a self, message_body: MB) -> PutMessageBuilder<'a, C>
     where
         MB: Into<Cow<'a, str>>,
     {
-        requests::PutMessageBuilder::new(self, message_body)
+        PutMessageBuilder::new(self, message_body)
     }
 
-    pub fn get_messages(&self) -> requests::GetMessagesBuilder<'_, C> {
-        requests::GetMessagesBuilder::new(self)
+    pub fn get_messages(&self) -> GetMessagesBuilder<'_, C> {
+        GetMessagesBuilder::new(self)
     }
 
-    pub fn peek_messages(&self) -> requests::PeekMessagesBuilder<'_, C> {
-        requests::PeekMessagesBuilder::new(self)
+    pub fn peek_messages(&self) -> PeekMessagesBuilder<'_, C> {
+        PeekMessagesBuilder::new(self)
     }
 
-    pub fn delete_message(
-        &self,
-        pop_receipt: Box<dyn PopReceipt>,
-    ) -> requests::DeleteMessageBuilder<'_, C> {
-        requests::DeleteMessageBuilder::new(self, pop_receipt)
+    pub fn delete_message(&self, pop_receipt: Box<dyn PopReceipt>) -> DeleteMessageBuilder<'_, C> {
+        DeleteMessageBuilder::new(self, pop_receipt)
     }
 
-    pub fn clear_messages(&self) -> requests::ClearMessagesBuilder<'_, C> {
-        requests::ClearMessagesBuilder::new(self)
+    pub fn clear_messages(&self) -> ClearMessagesBuilder<'_, C> {
+        ClearMessagesBuilder::new(self)
     }
 
     pub fn set_queue_metadata<'a>(
         &'a self,
         metadata: &'a Metadata,
-    ) -> requests::SetQueueMetadataBuilder<'a, C> {
-        requests::SetQueueMetadataBuilder::new(self, metadata)
+    ) -> SetQueueMetadataBuilder<'a, C> {
+        SetQueueMetadataBuilder::new(self, metadata)
     }
 }

@@ -1,14 +1,15 @@
+use azure_core::prelude::*;
 use azure_identity::device_code_flow::{self, DeviceCodeResponse};
 use azure_identity::refresh_token;
-use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
 use oauth2::ClientId;
 use std::env;
 use std::error::Error;
+use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let client_id =
         ClientId::new(env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable."));
     let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
@@ -76,14 +77,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // we can now spend the access token in other crates. In
     // this example we are creating an Azure Storage client
     // using the access token.
-    let storage_client = client::with_bearer_token(
+
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let storage_client = StorageAccountClient::new_bearer_token(
+        http_client.clone(),
         &storage_account_name,
         &authorization.access_token().secret() as &str,
-    );
+    )
+    .as_storage_client();
 
     // now we enumerate the containers in the
     // specified storage account.
-    let containers = storage_client.list_containers().finalize().await?;
+    let containers = storage_client.list_containers().execute().await?;
     println!("\nList containers completed succesfully: {:?}", containers);
 
     // now let's refresh the token, if available

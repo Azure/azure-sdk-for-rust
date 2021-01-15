@@ -2,13 +2,12 @@
 extern crate log;
 
 use azure_core::prelude::*;
-use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
-use std::collections::HashMap;
 use std::error::Error;
+use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     env_logger::init();
 
     // First we retrieve the account name and master key from environment variables.
@@ -24,32 +23,37 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let client = client::with_access_key(&account, &master_key);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
 
-    let data = b"something";
+    let storage_account_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+    let storage_client = storage_account_client.as_storage_client();
+    let blob = storage_client
+        .as_container_client(&container)
+        .as_blob_client(&blob_name);
 
-    let mut metadata = HashMap::new();
+    //let data = b"something";
 
-    metadata.insert("pollo", "arrosto");
-    metadata.insert("milk", "shake");
+    let mut metadata = Metadata::new();
+
+    metadata.insert("pollo".to_owned(), "arrosto".to_owned());
+    metadata.insert("milk".to_owned(), "shake".to_owned());
 
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
-    let _digest = md5::compute(&data[..]);
+    //let _hash = md5::compute(data).into();
 
     // The required parameters are container_name, blob_name and body.
     // The builder supports many more optional
     // parameters (such as LeaseID, or ContentDisposition, etc...)
     // so make sure to check with the documentation.
     trace!("before put_append_blob");
-    let res = client
+    let res = blob
         .put_append_blob()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_content_type("text/plain")
-        .with_content_language("en/us")
-        .with_metadata(&metadata)
-        .finalize()
+        .content_type("text/plain")
+        .content_language("en/us")
+        .metadata(&metadata)
+        .execute()
         .await?;
 
     println!("{:?}", res);

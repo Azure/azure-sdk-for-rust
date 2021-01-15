@@ -37,22 +37,9 @@ impl<'a, C> SetQueueMetadataBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn with_timeout(self, timeout: Timeout) -> Self {
-        Self {
-            queue_client: self.queue_client,
-            timeout: Some(timeout),
-            metadata: self.metadata,
-            client_request_id: self.client_request_id,
-        }
-    }
-
-    pub fn with_client_request_id(self, client_request_id: ClientRequestId<'a>) -> Self {
-        Self {
-            queue_client: self.queue_client,
-            timeout: self.timeout,
-            metadata: self.metadata,
-            client_request_id: Some(client_request_id),
-        }
+    setters! {
+        timeout: Timeout => Some(timeout),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
     pub async fn execute(self) -> Result<SetQueueMetadataResponse, AzureError> {
@@ -63,7 +50,7 @@ where
         ))?;
 
         url.query_pairs_mut().append_pair("comp", "metadata");
-        AppendToUrlQuery::append_to_url_query(&self.timeout, &mut url);
+        self.timeout.append_to_url_query(&mut url);
 
         debug!("url == {}", url);
 

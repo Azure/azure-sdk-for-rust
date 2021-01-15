@@ -1,16 +1,17 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::prelude::*;
-use azure_core::{range::Range, DeleteSnapshotsMethod};
+use azure_core::range::Range;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
+use std::sync::Arc;
 
 #[tokio::test]
 async fn create_blob_and_stream_back() {
     code().await.unwrap();
 }
 
-async fn code() -> Result<(), Box<dyn std::error::Error>> {
+async fn code() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let container_name = "azuresdkforrust";
     let file_name = "azure_sdk_for_rust_stream_test.txt";
 
@@ -20,34 +21,34 @@ async fn code() -> Result<(), Box<dyn std::error::Error>> {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let client = client::with_access_key(&account, &master_key);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
 
-    if client
+    let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+        .as_storage_client();
+    let container = storage.as_container_client(container_name);
+    let blob = container.as_blob_client(file_name);
+
+    if storage
         .list_containers()
-        .finalize()
+        .execute()
         .await?
         .incomplete_vector
         .iter()
         .find(|x| x.name == container_name)
         .is_none()
     {
-        client
-            .create_container()
-            .with_container_name(container_name)
-            .with_public_access(PublicAccess::Blob)
-            .finalize()
+        container
+            .create()
+            .public_access(PublicAccess::Blob)
+            .execute()
             .await?;
     }
 
     let string = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
 
-    client
-        .put_block_blob()
-        .with_container_name(&container_name)
-        .with_blob_name(file_name)
-        .with_content_type("text/plain")
-        .with_body(string.as_ref())
-        .finalize()
+    blob.put_block_blob(string.as_ref())
+        .content_type("text/plain")
+        .execute()
         .await?;
 
     println!("{}/{} blob created!", container_name, file_name);
@@ -63,17 +64,9 @@ async fn code() -> Result<(), Box<dyn std::error::Error>> {
         let expected_string = &string[slice_range.clone()];
         let range: Range = slice_range.into();
 
-        let chunk_size: usize = 4;
+        let chunk_size = 8;
 
-        let mut stream = Box::pin(
-            client
-                .stream_blob()
-                .with_container_name(&container_name)
-                .with_blob_name(file_name)
-                .with_range(&range)
-                .with_chunk_size(chunk_size as u64)
-                .finalize(),
-        );
+        let mut stream = Box::pin(blob.get().range(range).stream(chunk_size));
 
         let result = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
 
@@ -81,7 +74,7 @@ async fn code() -> Result<(), Box<dyn std::error::Error>> {
             let mut res_closure = result.borrow_mut();
             while let Some(value) = stream.next().await {
                 let mut value = value?;
-                assert!(value.len() <= chunk_size);
+                assert!(value.len() as u64 <= chunk_size);
                 println!("received {:?} bytes", value.len());
                 res_closure.append(&mut value);
             }
@@ -100,12 +93,9 @@ async fn code() -> Result<(), Box<dyn std::error::Error>> {
         assert_eq!(expected_string, returned_string);
     }
 
-    client
-        .delete_blob()
-        .with_container_name(&container_name)
-        .with_blob_name(file_name)
-        .with_delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .finalize()
+    blob.delete()
+        .delete_snapshots_method(DeleteSnapshotsMethod::Include)
+        .execute()
         .await?;
 
     println!("{}/{} blob deleted!", container_name, file_name);

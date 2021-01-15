@@ -1,4 +1,6 @@
 use crate::ba512_range::BA512Range;
+use crate::AddAsHeader;
+use http::request::Builder;
 use std::convert::From;
 use std::fmt;
 use std::num::ParseIntError;
@@ -93,6 +95,19 @@ impl FromStr for Range {
 impl fmt::Display for Range {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "bytes={}-{}", self.start, self.end - 1)
+    }
+}
+
+impl<'a> AddAsHeader for Range {
+    // here we ask for the CRC64 value if we can (that is,
+    // the range is smaller than 4MB).
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        let builder = builder.header("x-ms-range", &format!("{}", self));
+        if self.len() < 1024 * 1024 * 4 {
+            builder.header("x-ms-range-get-content-crc64", "true")
+        } else {
+            builder
+        }
     }
 }
 

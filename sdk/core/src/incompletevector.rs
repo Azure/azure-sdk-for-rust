@@ -1,24 +1,26 @@
+use crate::prelude::*;
 use std::ops::{Deref, DerefMut};
-
-pub type ContinuationToken = String;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct IncompleteVector<T> {
-    pub token: Option<String>,
+    pub next_marker: Option<NextMarker>,
     pub vector: Vec<T>,
 }
 
 impl<T> IncompleteVector<T> {
-    pub fn new(token: Option<String>, vector: Vec<T>) -> IncompleteVector<T> {
-        IncompleteVector { token, vector }
+    pub fn new(next_marker: Option<NextMarker>, vector: Vec<T>) -> IncompleteVector<T> {
+        IncompleteVector {
+            next_marker,
+            vector,
+        }
     }
 
     pub fn is_complete(&self) -> bool {
-        self.token().is_none()
+        self.next_marker().is_none()
     }
 
-    pub fn token(&self) -> Option<&str> {
-        if let Some(ref t) = self.token {
+    pub fn next_marker(&self) -> Option<&NextMarker> {
+        if let Some(ref t) = self.next_marker.as_ref() {
             Some(t)
         } else {
             None
@@ -56,7 +58,7 @@ mod test {
     #[test]
     fn test_incomplete_vector_incomplete() {
         let v = vec![0, 1, 2, 3, 4, 5];
-        let ic = IncompleteVector::new(Some("aaa".to_owned()), v);
+        let ic = IncompleteVector::new(Some("aaa".into()), v);
 
         assert_eq!(ic.is_complete(), false);
     }

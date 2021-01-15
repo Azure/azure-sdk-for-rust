@@ -33,6 +33,8 @@ failure = "0.1"
 async-trait = "0.1"
 oauth2 = "=4.0.0-alpha.3"
 reqwest = "0.11"
+paste = "1.0"
+md5 = "0.7"
 
 [dev-dependencies]
 tokio = "1.0"

@@ -33,21 +33,23 @@ async fn create_and_delete() {
         .await
         .unwrap();
 
-    let properties1_response = client
-        .get_filesystem_properties()
-        .with_filesystem(filesystem_name1)
-        .finalize()
-        .await
-        .unwrap();
-    let properties2_response = client
-        .get_filesystem_properties()
-        .with_filesystem(filesystem_name2)
-        .finalize()
-        .await
-        .unwrap();
+    // TODO: Reenable test after the with_properties
+    // setters have been reenabled.
+    //let properties1_response = client
+    //    .get_filesystem_properties()
+    //    .with_filesystem(filesystem_name1)
+    //    .finalize()
+    //    .await
+    //    .unwrap();
+    //let properties2_response = client
+    //    .get_filesystem_properties()
+    //    .with_filesystem(filesystem_name2)
+    //    .finalize()
+    //    .await
+    //    .unwrap();
 
-    assert_eq!(properties1, properties1_response.properties);
-    assert_eq!(properties2, properties2_response.properties);
+    //assert_eq!(properties1, properties1_response.properties);
+    //assert_eq!(properties2, properties2_response.properties);
 
     let file_systems = client.list_filesystems().finalize().await.unwrap();
 

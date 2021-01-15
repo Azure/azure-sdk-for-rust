@@ -5,7 +5,7 @@ use azure_core::{RequestId, StoredAccessPolicyList};
 use chrono::{DateTime, FixedOffset};
 use http::header;
 use http::HeaderMap;
-use hyper::body;
+use std::convert::TryFrom;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -18,14 +18,21 @@ pub struct GetACLResponse {
     pub stored_access_policy_list: StoredAccessPolicyList,
 }
 
+impl TryFrom<(&str, &HeaderMap)> for GetACLResponse {
+    type Error = AzureError;
+
+    fn try_from((body, header_map): (&str, &HeaderMap)) -> Result<Self, Self::Error> {
+        GetACLResponse::from_response(body, header_map)
+    }
+}
+
 impl GetACLResponse {
     // this should be named into and be consuming
     pub(crate) fn from_response(
-        body: &body::Bytes,
+        body: &str,
         headers: &HeaderMap,
     ) -> Result<GetACLResponse, AzureError> {
         let public_access = public_access_from_header(&headers)?;
-        let body = String::from_utf8(body.to_vec())?;
 
         let etag = match headers.get(header::ETAG) {
             Some(etag) => etag.to_str()?,

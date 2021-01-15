@@ -86,27 +86,27 @@ impl<'a> ConnectionStringBuilder<'a> {
         kv_pairs.join(";")
     }
 
-    pub fn with_account_name(&'a mut self, account_name: &'a str) -> &'a mut Self {
+    pub fn account_name(&'a mut self, account_name: &'a str) -> &'a mut Self {
         self.0.account_name = Some(account_name);
         self
     }
 
-    pub fn with_account_key(&'a mut self, account_key: &'a str) -> &'a mut Self {
+    pub fn account_key(&'a mut self, account_key: &'a str) -> &'a mut Self {
         self.0.account_key = Some(account_key);
         self
     }
 
-    pub fn with_sas(&'a mut self, sas: &'a str) -> &'a mut Self {
+    pub fn sas(&'a mut self, sas: &'a str) -> &'a mut Self {
         self.0.sas = Some(sas);
         self
     }
 
-    pub fn with_endpoint_suffix(&'a mut self, endpoint_suffix: &'a str) -> &'a mut Self {
+    pub fn endpoint_suffix(&'a mut self, endpoint_suffix: &'a str) -> &'a mut Self {
         self.0.endpoint_suffix = Some(endpoint_suffix);
         self
     }
 
-    pub fn with_default_endpoints_protocol(
+    pub fn default_endpoints_protocol(
         &'a mut self,
         default_endpoints_protocol: EndpointProtocol,
     ) -> &'a mut Self {
@@ -114,15 +114,12 @@ impl<'a> ConnectionStringBuilder<'a> {
         self
     }
 
-    pub fn with_use_development_storage(
-        &'a mut self,
-        use_development_storage: bool,
-    ) -> &'a mut Self {
+    pub fn use_development_storage(&'a mut self, use_development_storage: bool) -> &'a mut Self {
         self.0.use_development_storage = Some(use_development_storage);
         self
     }
 
-    pub fn with_development_storage_proxy_uri(
+    pub fn development_storage_proxy_uri(
         &'a mut self,
         development_storage_proxy_uri: &'a str,
     ) -> &'a mut Self {
@@ -130,25 +127,22 @@ impl<'a> ConnectionStringBuilder<'a> {
         self
     }
 
-    pub fn with_blob_endpoint(&'a mut self, blob_endpoint: &'a str) -> &'a mut Self {
+    pub fn blob_endpoint(&'a mut self, blob_endpoint: &'a str) -> &'a mut Self {
         self.0.blob_endpoint = Some(blob_endpoint);
         self
     }
 
-    pub fn with_blob_secondary_endpoint(
-        &'a mut self,
-        blob_secondary_endpoint: &'a str,
-    ) -> &'a mut Self {
+    pub fn blob_secondary_endpoint(&'a mut self, blob_secondary_endpoint: &'a str) -> &'a mut Self {
         self.0.blob_secondary_endpoint = Some(blob_secondary_endpoint);
         self
     }
 
-    pub fn with_table_endpoint(&'a mut self, table_endpoint: &'a str) -> &'a mut Self {
+    pub fn table_endpoint(&'a mut self, table_endpoint: &'a str) -> &'a mut Self {
         self.0.table_endpoint = Some(table_endpoint);
         self
     }
 
-    pub fn with_table_secondary_endpoint(
+    pub fn table_secondary_endpoint(
         &'a mut self,
         table_secondary_endpoint: &'a str,
     ) -> &'a mut Self {
@@ -156,12 +150,12 @@ impl<'a> ConnectionStringBuilder<'a> {
         self
     }
 
-    pub fn with_queue_endpoint(&'a mut self, queue_endpoint: &'a str) -> &'a mut Self {
+    pub fn queue_endpoint(&'a mut self, queue_endpoint: &'a str) -> &'a mut Self {
         self.0.queue_endpoint = Some(queue_endpoint);
         self
     }
 
-    pub fn with_queue_secondary_endpoint(
+    pub fn queue_secondary_endpoint(
         &'a mut self,
         queue_secondary_endpoint: &'a str,
     ) -> &'a mut Self {
@@ -169,15 +163,12 @@ impl<'a> ConnectionStringBuilder<'a> {
         self
     }
 
-    pub fn with_file_endpoint(&'a mut self, file_endpoint: &'a str) -> &'a mut Self {
+    pub fn file_endpoint(&'a mut self, file_endpoint: &'a str) -> &'a mut Self {
         self.0.file_endpoint = Some(file_endpoint);
         self
     }
 
-    pub fn with_file_secondary_endpoint(
-        &'a mut self,
-        file_secondary_endpoint: &'a str,
-    ) -> &'a mut Self {
+    pub fn file_secondary_endpoint(&'a mut self, file_secondary_endpoint: &'a str) -> &'a mut Self {
         self.0.file_secondary_endpoint = Some(file_secondary_endpoint);
         self
     }
@@ -193,17 +184,17 @@ mod tests {
         assert_eq!(ConnectionStringBuilder::new().build(), "");
         assert_eq!(
             ConnectionStringBuilder::new()
-                .with_account_name("a")
-                .with_account_key("b")
+                .account_name("a")
+                .account_key("b")
                 .build(),
             "AccountName=a;AccountKey=b"
         );
         assert_eq!(
             ConnectionStringBuilder::new()
-                .with_account_name("a")
-                .with_sas("b")
-                .with_default_endpoints_protocol(EndpointProtocol::Https)
-                .with_blob_endpoint("c")
+                .account_name("a")
+                .sas("b")
+                .default_endpoints_protocol(EndpointProtocol::Https)
+                .blob_endpoint("c")
                 .build(),
             "AccountName=a;SharedAccessSignature=b;DefaultEndpointsProtocol=https;BlobEndpoint=c"
         );
@@ -213,14 +204,14 @@ mod tests {
     fn it_builds_endpoints_with_development_storage() {
         assert_eq!(
             ConnectionStringBuilder::new()
-                .with_use_development_storage(true)
-                .with_development_storage_proxy_uri("a")
+                .use_development_storage(true)
+                .development_storage_proxy_uri("a")
                 .build(),
             "UseDevelopmentStorage=true;DevelopmentStorageProxyUri=a"
         );
         assert_eq!(
             ConnectionStringBuilder::new()
-                .with_use_development_storage(false)
+                .use_development_storage(false)
                 .build(),
             "UseDevelopmentStorage=false"
         );
@@ -230,14 +221,14 @@ mod tests {
     fn it_builds_all_endpoints() {
         assert_eq!(
             ConnectionStringBuilder::new()
-                .with_blob_endpoint("b1")
-                .with_blob_secondary_endpoint("b2")
-                .with_table_endpoint("t1")
-                .with_table_secondary_endpoint("t2")
-                .with_queue_endpoint("q1")
-                .with_queue_secondary_endpoint("q2")
-                .with_file_endpoint("f1")
-                .with_file_secondary_endpoint("f2")
+                .blob_endpoint("b1")
+                .blob_secondary_endpoint("b2")
+                .table_endpoint("t1")
+                .table_secondary_endpoint("t2")
+                .queue_endpoint("q1")
+                .queue_secondary_endpoint("q2")
+                .file_endpoint("f1")
+                .file_secondary_endpoint("f2")
                 .build(),
             "BlobEndpoint=b1;BlobSecondaryEndpoint=b2;TableEndpoint=t1;TableSecondaryEndpoint=t2;QueueEndpoint=q1;QueueSecondaryEndpoint=q2;FileEndpoint=f1;FileSecondaryEndpoint=f2"
         );

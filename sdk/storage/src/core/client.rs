@@ -274,7 +274,7 @@ pub fn with_emulator(blob_storage_url: &Url, table_storage_url: &Url) -> KeyClie
     )
 }
 
-fn get_endpoint_uri(url: Option<&str>, account: &str, endpoint_type: &str) -> String {
+pub(crate) fn get_endpoint_uri(url: Option<&str>, account: &str, endpoint_type: &str) -> String {
     match url {
         Some(value) => value.to_string(),
         None => format!("https://{}.{}.core.windows.net", account, endpoint_type),

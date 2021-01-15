@@ -157,28 +157,9 @@ impl<'a, C> ListQueuesBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn with_timeout(self, timeout: Timeout) -> Self {
-        Self {
-            queue_account_client: self.queue_account_client,
-            prefix: self.prefix,
-            next_marker: self.next_marker,
-            max_results: self.max_results,
-            include_metadata: self.include_metadata,
-            timeout: Some(timeout),
-            client_request_id: self.client_request_id,
-        }
-    }
-
-    pub fn with_client_request_id(self, client_request_id: ClientRequestId<'a>) -> Self {
-        Self {
-            queue_account_client: self.queue_account_client,
-            prefix: self.prefix,
-            next_marker: self.next_marker,
-            max_results: self.max_results,
-            include_metadata: self.include_metadata,
-            timeout: self.timeout,
-            client_request_id: Some(client_request_id),
-        }
+    setters! {
+        timeout: Timeout => Some(timeout),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
     pub async fn execute(self) -> Result<ListQueuesResponse, AzureError> {

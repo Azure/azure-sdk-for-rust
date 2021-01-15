@@ -1,7 +1,7 @@
+use azure_core::AddAsHeader;
 pub mod requests;
 pub mod responses;
 
-use crate::core::prelude::*;
 use azure_core::incompletevector::IncompleteVector;
 use azure_core::StoredAccessPolicyList;
 use azure_core::{
@@ -18,7 +18,6 @@ use http::request::Builder;
 use http::HeaderMap;
 use hyper::header;
 use hyper::header::HeaderName;
-use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use std::collections::HashMap;
 use std::str::FromStr;
 use xml::{Element, Xml};
@@ -29,6 +28,16 @@ create_enum!(
     (Container, "container"),
     (Blob, "blob")
 );
+
+impl AddAsHeader for PublicAccess {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        match self {
+            PublicAccess::Blob => builder.header(BLOB_PUBLIC_ACCESS, "blob"),
+            PublicAccess::Container => builder.header(BLOB_PUBLIC_ACCESS, "container"),
+            PublicAccess::None => builder,
+        }
+    }
+}
 
 pub(crate) fn public_access_from_header(
     header_map: &HeaderMap,
@@ -102,10 +111,13 @@ impl Container {
         }
     }
 
-    pub(crate) fn from_response(
-        name: String,
+    pub(crate) fn from_response<NAME>(
+        name: NAME,
         headers: &HeaderMap,
-    ) -> Result<Container, AzureError> {
+    ) -> Result<Container, AzureError>
+    where
+        NAME: Into<String>,
+    {
         let last_modified = match headers.get(header::LAST_MODIFIED) {
             Some(last_modified) => last_modified.to_str()?,
             None => {
@@ -165,7 +177,7 @@ impl Container {
         }
 
         Ok(Container {
-            name,
+            name: name.into(),
             last_modified,
             e_tag,
             lease_status,
@@ -269,29 +281,9 @@ pub(crate) fn incomplete_vector_from_container_response(
 
     let next_marker = match cast_optional::<String>(&elem, &["NextMarker"])? {
         Some(ref nm) if nm == "" => None,
-        Some(nm) => Some(nm),
+        Some(nm) => Some(nm.into()),
         None => None,
     };
 
     Ok(IncompleteVector::new(next_marker, v))
-}
-
-#[inline]
-pub(crate) fn generate_container_uri<C>(c: &C, container_name: &str, params: Option<&str>) -> String
-where
-    C: Client,
-{
-    match params {
-        Some(ref params) => format!(
-            "{}/{}?{}",
-            c.blob_uri(),
-            utf8_percent_encode(container_name, NON_ALPHANUMERIC),
-            params
-        ),
-        None => format!(
-            "{}/{}",
-            c.blob_uri(),
-            utf8_percent_encode(container_name, NON_ALPHANUMERIC),
-        ),
-    }
 }

@@ -11,3 +11,4 @@ pub use continuation_token::ContinuationToken;
 pub use paginated_response::PaginatedResponse;
 pub use table_client::*;
 pub use table_entity::*;
+pub mod requests;

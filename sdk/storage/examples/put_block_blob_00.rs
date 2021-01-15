@@ -5,9 +5,11 @@ use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use std::error::Error;
+use std::sync::Arc;
+use std::time::Duration;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     env_logger::init();
     debug!("log initialized");
     // First we retrieve the account name and master key from environment variables.
@@ -23,26 +25,30 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let client = client::with_access_key(&account, &master_key);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+
+    let storage_account_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+    let storage_client = storage_account_client.as_storage_client();
+    let blob = storage_client
+        .as_container_client(&container)
+        .as_blob_client(&blob_name);
 
     let data = b"something";
 
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
-    let digest = md5::compute(&data[..]);
+    let hash = md5::compute(&data[..]).into();
 
     // The required parameters are container_name, blob_name and body.
     // The builder supports many more optional
     // parameters (such as LeaseID, or ContentDisposition, MD5 etc...)
     // so make sure to check with the documentation.
-    let res = client
-        .put_block_blob()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_content_type("text/plain")
-        .with_body(&data[..])
-        .with_content_md5(&digest[..])
-        .finalize()
+    let res = blob
+        .put_block_blob(data)
+        .content_type("text/plain")
+        .hash(&hash)
+        .execute()
         .await?;
     println!("1-put_block_blob {:?}", res);
 
@@ -54,32 +60,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .blocks
         .push(BlobBlockType::Uncommitted(b"pollastro" as &[u8]));
 
-    let res = client
-        .put_block()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_body(&data[..])
-        .with_block_id(b"satanasso" as &[u8])
-        .finalize()
+    let res = blob
+        .put_block(&("satanasso".into()), data)
+        .execute()
         .await?;
     println!("2-put_block {:?}", res);
 
-    let res = client
-        .put_block()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_body(&data[..])
-        .with_block_id(b"pollastro" as &[u8])
-        .finalize()
+    let res = blob
+        .put_block(&("pollastro".into()), data)
+        .execute()
         .await?;
     println!("3-put_block {:?}", res);
 
-    let ret = client
+    let ret = blob
         .get_block_list()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_block_list_type(BlockListType::All)
-        .finalize()
+        .block_list_type(BlockListType::All)
+        .execute()
         .await?;
 
     println!("GetBlockList == {:?}", ret);
@@ -87,59 +83,34 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let bl = ret.block_with_size_list.into();
     println!("bl == {:?}", bl);
 
-    let res = client
-        .put_block_list()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_block_list(&bl)
-        .finalize()
-        .await?;
+    let res = blob.put_block_list(&bl).execute().await?;
     println!("PutBlockList == {:?}", res);
 
-    let res = client
-        .acquire_blob_lease()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_lease_duration(60)
-        .finalize()
+    let res = blob
+        .acquire_lease(Duration::from_secs(60))
+        .execute()
         .await?;
     println!("Acquire lease == {:?}", res);
 
-    let lease_id = res.lease_id;
+    let lease = blob.as_blob_lease_client(res.lease_id);
 
-    let res = client
-        .renew_blob_lease()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_lease_id(&lease_id)
-        .finalize()
-        .await?;
+    let res = lease.renew().execute().await?;
     println!("Renew lease == {:?}", res);
 
-    let res = client
-        .break_blob_lease()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_lease_break_period(15)
-        .finalize()
+    let res = blob
+        .break_lease()
+        .lease_break_period(Duration::from_secs(15))
+        .execute()
         .await?;
     println!("Break lease == {:?}", res);
 
-    let res = client
-        .release_blob_lease()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_lease_id(&lease_id)
-        .finalize()
-        .await?;
+    let res = lease.release().execute().await?;
     println!("Release lease == {:?}", res);
 
-    let res = client
-        .delete_blob()
-        .with_container_name(&container)
-        .with_blob_name(&blob_name)
-        .with_delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .finalize()
+    let res = blob
+        .delete()
+        .delete_snapshots_method(DeleteSnapshotsMethod::Include)
+        .execute()
         .await?;
     println!("Delete blob == {:?}", res);
 

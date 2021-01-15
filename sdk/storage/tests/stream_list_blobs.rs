@@ -3,6 +3,8 @@ use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
+use std::sync::Arc;
+use std::time::Duration;
 
 #[tokio::test]
 async fn stream_list_blobs() {
@@ -13,9 +15,14 @@ async fn stream_list_blobs() {
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
     let container_name = "streamlistblobs235xx752zdve";
-    let client = client::with_access_key(&account, &master_key);
 
-    let iv = client.list_containers().finalize().await.unwrap();
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+
+    let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+        .as_storage_client();
+    let container = storage.as_container_client(container_name);
+
+    let iv = storage.list_containers().execute().await.unwrap();
 
     if iv
         .incomplete_vector
@@ -27,37 +34,33 @@ async fn stream_list_blobs() {
     }
 
     // create the container
-    client
-        .create_container()
-        .with_container_name(&container_name)
-        .with_public_access(PublicAccess::None)
-        .with_timeout(100)
-        .finalize()
+    container
+        .create()
+        .public_access(PublicAccess::None)
+        .timeout(Duration::from_secs(100))
+        .execute()
         .await
         .unwrap();
 
     // create 10 blobs
     for i in 0..10u8 {
-        client
-            .put_block_blob()
-            .with_container_name(&container_name)
-            .with_blob_name(&format!("blob{}.txt", i))
-            .with_content_type("text/plain")
-            .with_body("somedata".as_bytes())
-            .finalize()
+        container
+            .as_blob_client(format!("blob{}.txt", i))
+            .put_block_blob("somedata".as_bytes())
+            .content_type("text/plain")
+            .execute()
             .await
             .unwrap();
     }
 
     let mut stream = Box::pin(
-        client
+        container
             .list_blobs()
-            .with_max_results(3)
-            .with_container_name(&container_name)
+            .max_results(std::num::NonZeroU32::new(3u32).unwrap())
             .stream(),
     );
 
-    let mut cnt = 0;
+    let mut cnt = 0u32;
     while let Some(value) = stream.next().await {
         let len = value.unwrap().incomplete_vector.len();
         println!("received {} blobs", len);
@@ -69,10 +72,5 @@ async fn stream_list_blobs() {
         cnt += 1;
     }
 
-    client
-        .delete_container()
-        .with_container_name(&container_name)
-        .finalize()
-        .await
-        .unwrap();
+    container.delete().execute().await.unwrap();
 }

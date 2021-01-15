@@ -1,389 +1,170 @@
 use crate::blob::blob::responses::GetBlobResponse;
-use crate::blob::blob::{generate_blob_uri, Blob};
-use crate::core::prelude::*;
-use azure_core::errors::AzureError;
-use azure_core::headers::RANGE_GET_CONTENT_MD5;
+use crate::blob::prelude::*;
+use crate::clients::BlobClient;
+use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use azure_core::range::Range;
-use azure_core::util::RequestBuilderExt;
-use azure_core::{No, ToAssign, Yes};
-use chrono::{DateTime, Utc};
-use hyper::{Method, StatusCode};
-use std::marker::PhantomData;
+use futures::stream::Stream;
 
-#[derive(Debug, Clone)]
-pub struct GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    client: &'a C,
-    p_container_name: PhantomData<ContainerNameSet>,
-    p_blob_name: PhantomData<BlobNameSet>,
-    container_name: Option<&'a str>,
-    blob_name: Option<&'a str>,
-    snapshot: Option<DateTime<Utc>>,
-    timeout: Option<u64>,
-    range: Option<&'a Range>,
+#[derive(Debug, Clone, Copy)]
+pub struct GetBlobBuilder<'a> {
+    blob_client: &'a BlobClient,
+    range: Option<Range>,
+    blob_versioning: Option<&'a BlobVersioning>,
+    client_request_id: Option<ClientRequestId<'a>>,
+    timeout: Option<Timeout>,
     lease_id: Option<&'a LeaseId>,
-    client_request_id: Option<&'a str>,
 }
 
-impl<'a, C> GetBlobBuilder<'a, C, No, No>
-where
-    C: Client,
-{
-    #[inline]
-    pub(crate) fn new(client: &'a C) -> GetBlobBuilder<'a, C, No, No> {
-        GetBlobBuilder {
-            client,
-            p_container_name: PhantomData {},
-            container_name: None,
-            p_blob_name: PhantomData {},
-            blob_name: None,
-            snapshot: None,
+impl<'a> GetBlobBuilder<'a> {
+    pub(crate) fn new(blob_client: &'a BlobClient) -> Self {
+        Self {
+            blob_client,
+            blob_versioning: None,
             timeout: None,
             range: None,
             lease_id: None,
             client_request_id: None,
         }
     }
-}
 
-impl<'a, C, ContainerNameSet, BlobNameSet> ClientRequired<'a, C>
-    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn client(&self) -> &'a C {
-        self.client
+    setters! {
+        range: Range => Some(range),
+        blob_versioning: &'a BlobVersioning => Some(blob_versioning),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        timeout: Timeout => Some(timeout),
+        lease_id: &'a LeaseId => Some(lease_id),
     }
-}
 
-//get mandatory no traits methods
+    pub async fn execute(
+        &self,
+    ) -> Result<GetBlobResponse, Box<dyn std::error::Error + Send + Sync>> {
+        let mut url = self
+            .blob_client
+            .storage_account_client()
+            .blob_storage_url()
+            .to_owned();
+        url.path_segments_mut()
+            .map_err(|_| "Invalid blob URL")?
+            .push(self.blob_client.container_client().container_name())
+            .push(self.blob_client.blob_name());
 
-//set mandatory no traits methods
-impl<'a, C, BlobNameSet> ContainerNameRequired<'a> for GetBlobBuilder<'a, C, Yes, BlobNameSet>
-where
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn container_name(&self) -> &'a str {
-        self.container_name.unwrap()
-    }
-}
+        self.blob_versioning.append_to_url_query(&mut url);
+        self.timeout.append_to_url_query(&mut url);
 
-impl<'a, C, ContainerNameSet> BlobNameRequired<'a> for GetBlobBuilder<'a, C, ContainerNameSet, Yes>
-where
-    ContainerNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn blob_name(&self) -> &'a str {
-        self.blob_name.unwrap()
-    }
-}
+        trace!("url == {:?}", url);
 
-impl<'a, C, ContainerNameSet, BlobNameSet> SnapshotOption
-    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn snapshot(&self) -> Option<DateTime<Utc>> {
-        self.snapshot
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet> TimeoutOption
-    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn timeout(&self) -> Option<u64> {
-        self.timeout
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet> RangeOption<'a>
-    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn range(&self) -> Option<&'a Range> {
-        self.range
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet> LeaseIdOption<'a>
-    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn lease_id(&self) -> Option<&'a LeaseId> {
-        self.lease_id
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet> ClientRequestIdOption<'a>
-    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn client_request_id(&self) -> Option<&'a str> {
-        self.client_request_id
-    }
-}
-
-impl<'a, C, BlobNameSet> ContainerNameSupport<'a> for GetBlobBuilder<'a, C, No, BlobNameSet>
-where
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    type O = GetBlobBuilder<'a, C, Yes, BlobNameSet>;
-
-    #[inline]
-    fn with_container_name(self, container_name: &'a str) -> Self::O {
-        GetBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            container_name: Some(container_name),
-            blob_name: self.blob_name,
-            snapshot: self.snapshot,
-            timeout: self.timeout,
-            range: self.range,
-            lease_id: self.lease_id,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet> BlobNameSupport<'a> for GetBlobBuilder<'a, C, ContainerNameSet, No>
-where
-    ContainerNameSet: ToAssign,
-    C: Client,
-{
-    type O = GetBlobBuilder<'a, C, ContainerNameSet, Yes>;
-
-    #[inline]
-    fn with_blob_name(self, blob_name: &'a str) -> Self::O {
-        GetBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            container_name: self.container_name,
-            blob_name: Some(blob_name),
-            snapshot: self.snapshot,
-            timeout: self.timeout,
-            range: self.range,
-            lease_id: self.lease_id,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet> SnapshotSupport
-    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    type O = GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>;
-
-    #[inline]
-    fn with_snapshot(self, snapshot: DateTime<Utc>) -> Self::O {
-        GetBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            snapshot: Some(snapshot),
-            timeout: self.timeout,
-            range: self.range,
-            lease_id: self.lease_id,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet> TimeoutSupport
-    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    type O = GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>;
-
-    #[inline]
-    fn with_timeout(self, timeout: u64) -> Self::O {
-        GetBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            snapshot: self.snapshot,
-            timeout: Some(timeout),
-            range: self.range,
-            lease_id: self.lease_id,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet> RangeSupport<'a>
-    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    type O = GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>;
-
-    #[inline]
-    fn with_range(self, range: &'a Range) -> Self::O {
-        GetBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            snapshot: self.snapshot,
-            timeout: self.timeout,
-            range: Some(range),
-            lease_id: self.lease_id,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet> LeaseIdSupport<'a>
-    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    type O = GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>;
-
-    #[inline]
-    fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
-        GetBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            snapshot: self.snapshot,
-            timeout: self.timeout,
-            range: self.range,
-            lease_id: Some(lease_id),
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet> ClientRequestIdSupport<'a>
-    for GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    type O = GetBlobBuilder<'a, C, ContainerNameSet, BlobNameSet>;
-
-    #[inline]
-    fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
-        GetBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            snapshot: self.snapshot,
-            timeout: self.timeout,
-            range: self.range,
-            lease_id: self.lease_id,
-            client_request_id: Some(client_request_id),
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
-impl<'a, C> GetBlobBuilder<'a, C, Yes, Yes>
-where
-    C: Client,
-{
-    pub async fn finalize(self) -> Result<GetBlobResponse, AzureError> {
-        let container_name = self.container_name().to_owned();
-        let blob_name = self.blob_name().to_owned();
-        let snapshot_time = self.snapshot();
-
-        let mut uri =
-            generate_blob_uri(self.client(), self.container_name(), self.blob_name(), None);
-
-        let mut f_first = true;
-        if let Some(snapshot) = SnapshotOption::to_uri_parameter(&self) {
-            uri = format!("{}?{}", uri, snapshot);
-            f_first = false;
-        }
-        if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}{}{}", uri, if f_first { "?" } else { "&" }, timeout);
-        }
-
-        trace!("uri == {:?}", uri);
-
-        let perform_request_response = self.client().perform_request(
-            &uri,
-            &Method::GET,
+        let (request, _url) = self.blob_client.prepare_request(
+            url.as_str(),
+            &http::Method::GET,
             &|mut request| {
-                if let Some(r) = self.range() {
-                    request = LeaseIdOption::add_optional_header(&self, request);
-                    request = RangeOption::add_optional_header(&self, request);
-
-                    if r.len() <= 4 * 1024 * 1024 {
-                        request = request.header_static(RANGE_GET_CONTENT_MD5, "true");
-                    }
-                }
+                request = add_optional_header(&self.range, request);
+                request = add_optional_header(&self.client_request_id, request);
+                request = add_optional_header_ref(&self.lease_id, request);
                 request
             },
             None,
         )?;
 
-        let expected_status_code = if self.range().is_some() {
-            StatusCode::PARTIAL_CONTENT
+        let expected_status_code = if self.range.is_some() {
+            http::StatusCode::PARTIAL_CONTENT
         } else {
-            StatusCode::OK
+            http::StatusCode::OK
         };
 
-        let (headers, body) = perform_request_response
-            .check_status_extract_headers_and_body(expected_status_code)
+        let response = self
+            .blob_client
+            .http_client()
+            .execute_request_check_status(request, expected_status_code)
             .await?;
-        let blob = Blob::from_headers(&blob_name, &container_name, snapshot_time, &headers)?;
-        GetBlobResponse::from_response(&headers, blob, &body)
+
+        debug!("response.headers() == {:#?}", response.headers());
+
+        let blob = Blob::from_headers(
+            self.blob_client.blob_name(),
+            self.blob_client.container_client().container_name(),
+            response.headers(),
+        )?;
+        Ok(GetBlobResponse::from_response(
+            response.headers(),
+            blob,
+            response.body(),
+        )?)
+    }
+
+    pub fn stream(
+        self,
+        chunk_size: u64,
+    ) -> impl Stream<Item = Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>>> + 'a {
+        enum States {
+            Init,
+            Progress(Range),
+            End,
+        }
+
+        let complete_range = Range::new(0, u64::MAX);
+
+        futures::stream::unfold(States::Init, move |state| async move {
+            let remaining = match state {
+                States::Init => self.range.unwrap_or(complete_range),
+                States::Progress(range) => range,
+                States::End => return None,
+            };
+
+            let range = if remaining.start + chunk_size > remaining.end {
+                Range::new(remaining.start, remaining.end)
+            } else {
+                Range::new(remaining.start, remaining.start + chunk_size)
+            };
+
+            let req = self.range(range);
+
+            let response = match req.execute().await {
+                Ok(response) => response,
+                Err(err) => return Some((Err(err), States::End)),
+            };
+
+            Some((
+                Ok(response.data),
+                if remaining.end > range.end {
+                    if self.range.is_some() {
+                        States::Progress(Range::new(range.end, remaining.end))
+                    } else {
+                        // if we are here it means the user have not specified a
+                        // range and we didn't get the whole blob in one passing.
+                        // We specified u64::MAX as the first range but now
+                        // we need to find the correct size to avoid requesting data
+                        // outside the valid range.
+                        debug!("content-range == {:?}", response.content_range);
+                        // this unwrap should always be safe since we did not
+                        // get the whole blob in the previous call.
+                        let content_range = response.content_range.unwrap();
+                        let ridx =
+                            match content_range.find('/') {
+                                Some(ridx) => ridx,
+                                None => return Some((
+                                    Err("The returned content-range is invalid: / is not present"
+                                        .into()),
+                                    States::End,
+                                )),
+                            };
+                        let total =
+                            match str::parse(&content_range[ridx + 1..]) {
+                                Ok(total) => total,
+                                Err(_err) => return Some((
+                                    Err("The returned content-range is invalid: after / there is a non valid number"
+                                        .into()),
+                                    States::End,
+                                )),
+                            };
+
+                        States::Progress(Range::new(range.end, total))
+                    }
+                } else {
+                    States::End
+                },
+            ))
+        })
     }
 }
