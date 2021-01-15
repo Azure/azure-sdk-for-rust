@@ -102,10 +102,10 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
         let req = azure_core::headers::add_optional_header(&self.partition_keys, req);
         let req = azure_core::headers::add_mandatory_header(&self.query_cross_partition, req);
 
-        let body = serde_json::to_string(self.query.unwrap())?;
-        debug!("body == {}", body);
+        let body = azure_core::to_json(self.query.unwrap())?;
+        debug!("body == {:?}", body);
 
-        let req = req.body(body.as_bytes())?;
+        let req = req.body(body)?;
         debug!("{:?}", req);
 
         Ok(self
@@ -126,7 +126,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
         enum States {
             Init,
             Continuation(String),
-        };
+        }
 
         unfold(
             Some(States::Init),

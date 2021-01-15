@@ -113,8 +113,8 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
         req = azure_core::headers::add_mandatory_header(&self.indexing_directive, req);
         req = azure_core::headers::add_mandatory_header(&self.allow_tentative_writes, req);
 
-        let serialized = serde_json::to_string(document)?;
-        let req = req.body(serialized.as_bytes())?;
+        let serialized = azure_core::to_json(document)?;
+        let req = req.body(serialized)?;
 
         let response = self
             .collection_client

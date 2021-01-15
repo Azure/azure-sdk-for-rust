@@ -594,7 +594,7 @@ where
         enum States {
             Init,
             NextMarker(String),
-        };
+        }
 
         unfold(Some(States::Init), move |next_marker: Option<States>| {
             let req = self.clone();

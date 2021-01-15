@@ -47,7 +47,7 @@ impl<'a, 'b> GetAttachmentBuilder<'a, 'b> {
             req,
         );
 
-        let req = req.body(EMPTY_BODY.as_ref())?;
+        let req = req.body(EMPTY_BODY.clone())?;
 
         debug!("req == {:#?}", req);
 

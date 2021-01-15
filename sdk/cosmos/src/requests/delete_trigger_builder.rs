@@ -41,7 +41,7 @@ impl<'a, 'b> DeleteTriggerBuilder<'a, 'b> {
         let req = azure_core::headers::add_optional_header(&self.activity_id, req);
         let req = azure_core::headers::add_optional_header(&self.consistency_level, req);
 
-        let request = req.body(EMPTY_BODY.as_ref())?;
+        let request = req.body(EMPTY_BODY.clone())?;
 
         Ok(self
             .trigger_client

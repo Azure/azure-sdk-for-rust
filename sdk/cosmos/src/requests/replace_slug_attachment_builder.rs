@@ -2,6 +2,7 @@ use crate::prelude::*;
 use crate::responses::CreateSlugAttachmentResponse;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
+use bytes::Bytes;
 use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
@@ -15,7 +16,7 @@ where
     attachment_client: &'a AttachmentClient,
     p_body: PhantomData<BodySet>,
     p_content_type: PhantomData<ContentTypeSet>,
-    body: Option<&'b [u8]>,
+    body: Option<Bytes>,
     content_type: Option<ContentType<'b>>,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<UserAgent<'b>>,
@@ -54,7 +55,7 @@ where
 
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
-    pub async fn execute(&self) -> Result<CreateSlugAttachmentResponse, CosmosError> {
+    pub async fn execute(self) -> Result<CreateSlugAttachmentResponse, CosmosError> {
         let mut req = self.attachment_client.prepare_request(http::Method::PUT);
 
         // add trait headers
@@ -71,9 +72,10 @@ impl<'a, 'b> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
         req = azure_core::headers::add_mandatory_header(&self.content_type.unwrap(), req);
 
         req = req.header("Slug", self.attachment_client.attachment_name());
-        req = req.header(http::header::CONTENT_LENGTH, self.body.unwrap().len());
+        let body = self.body.unwrap();
+        req = req.header(http::header::CONTENT_LENGTH, body.len());
 
-        let req = req.body(self.body.unwrap())?;
+        let req = req.body(body)?;
 
         debug!("req == {:#?}", req);
 
@@ -90,7 +92,7 @@ impl<'a, 'b, ContentTypeSet> ReplaceSlugAttachmentBuilder<'a, 'b, No, ContentTyp
 where
     ContentTypeSet: ToAssign,
 {
-    pub fn body(self, body: &'b [u8]) -> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
+    pub fn body(self, body: Bytes) -> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
         ReplaceSlugAttachmentBuilder {
             attachment_client: self.attachment_client,
             p_body: PhantomData,

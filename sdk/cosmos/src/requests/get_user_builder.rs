@@ -39,7 +39,7 @@ impl<'a, 'b> GetUserBuilder<'a, 'b> {
         let req = azure_core::headers::add_optional_header(&self.activity_id, req);
         let req = azure_core::headers::add_optional_header(&self.consistency_level, req);
 
-        let req = req.body(EMPTY_BODY.as_ref())?;
+        let req = req.body(EMPTY_BODY.clone())?;
         debug!("\nreq == {:?}", req);
 
         let response = self

@@ -2,6 +2,7 @@ use crate::prelude::*;
 use crate::resources::stored_procedure::Parameters;
 use crate::responses::ExecuteStoredProcedureResponse;
 use azure_core::prelude::*;
+use bytes::Bytes;
 use http::StatusCode;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
@@ -68,10 +69,11 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         let body = if let Some(parameters) = self.parameters.as_ref() {
             parameters.to_json()
         } else {
-            String::from("[]")
+            "[]".to_owned()
         };
+        let body = Bytes::from(body);
 
-        let request = request.body(body.as_bytes())?;
+        let request = request.body(body)?;
 
         Ok(self
             .stored_procedure_client

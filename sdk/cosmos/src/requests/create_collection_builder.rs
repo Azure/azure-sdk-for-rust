@@ -207,10 +207,10 @@ impl<'a> CreateCollectionBuilder<'a, Yes, Yes, Yes, Yes> {
         );
         collection.parition_key = self.partition_key.as_ref().unwrap().clone();
 
-        let body = serde_json::to_string(&collection)?;
-        debug!("body == {}", body);
+        let body = azure_core::to_json(&collection)?;
+        debug!("body == {:?}", body);
 
-        let req = req.body(body.as_bytes())?;
+        let req = req.body(body)?;
         debug!("\nreq == {:?}", req);
 
         Ok(self

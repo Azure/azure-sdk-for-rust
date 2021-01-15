@@ -103,8 +103,8 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
                 .user_defined_function_name(),
         };
 
-        let request = serde_json::to_string(&request)?;
-        let request = req.body(request.as_bytes())?;
+        let request = azure_core::to_json(&request)?;
+        let request = req.body(request)?;
 
         Ok(if self.is_create {
             self.user_defined_function_client

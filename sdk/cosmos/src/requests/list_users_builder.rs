@@ -47,7 +47,7 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
             ResourceType::Users,
         );
 
-        let req = req.body(EMPTY_BODY.as_ref())?;
+        let req = req.body(EMPTY_BODY.clone())?;
         debug!("\nreq == {:?}", req);
 
         Ok(self
@@ -63,7 +63,7 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
         enum States {
             Init,
             Continuation(String),
-        };
+        }
 
         unfold(
             Some(States::Init),

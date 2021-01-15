@@ -68,8 +68,8 @@ impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
             id: self.stored_procedure_client.stored_procedure_name(),
         };
 
-        let request = serde_json::to_string(&request)?;
-        let request = req.body(request.as_bytes())?;
+        let request = azure_core::to_json(&request)?;
+        let request = req.body(request)?;
 
         Ok(self
             .stored_procedure_client
