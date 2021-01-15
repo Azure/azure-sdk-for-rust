@@ -90,10 +90,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let query_documents_response = client
         .query_documents()
-        .query(&("SELECT * FROM c WHERE c.a_number = 600".into()))
         .consistency_level(&list_documents_response)
         .query_cross_partition(true)
-        .execute::<serde_json::Value>()
+        .execute::<serde_json::Value, _>("SELECT * FROM c WHERE c.a_number = 600")
         .await?;
     println!(
         "query_documents_response == {:#?}",

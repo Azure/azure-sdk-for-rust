@@ -68,10 +68,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let ret = collection_client
         .query_documents()
-        .query(&"SELECT udf.test15(100)".into())
         .consistency_level(&ret)
-        .max_item_count(2)
-        .execute::<serde_json::Value>()
+        .max_item_count(2i32)
+        .execute::<serde_json::Value, _>("SELECT udf.test15(100)")
         .await?
         .into_raw();
     println!("Query response object:\n{:#?}", ret);

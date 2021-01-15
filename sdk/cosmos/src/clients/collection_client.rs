@@ -3,7 +3,7 @@ use crate::clients::*;
 use crate::requests;
 use crate::resources::ResourceType;
 use crate::{PartitionKeys, ReadonlyString};
-use azure_core::{HttpClient, No};
+use azure_core::HttpClient;
 
 /// A client for Cosmos collection resources.
 #[derive(Debug, Clone)]
@@ -63,7 +63,7 @@ impl CollectionClient {
         requests::ReplaceDocumentBuilder::new(self)
     }
 
-    pub fn query_documents(&self) -> requests::QueryDocumentsBuilder<'_, '_, No> {
+    pub fn query_documents(&self) -> requests::QueryDocumentsBuilder<'_, '_> {
         requests::QueryDocumentsBuilder::new(self)
     }
 

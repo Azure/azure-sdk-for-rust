@@ -160,9 +160,8 @@ async fn query_documents() {
     // now query all documents and see if we get the correct result
     let query_result = collection_client
         .query_documents()
-        .query(&Query::new("SELECT * FROM c"))
         .query_cross_partition(true)
-        .execute::<MyDocument>()
+        .execute::<MyDocument, _>("SELECT * FROM c")
         .await
         .unwrap()
         .into_documents()

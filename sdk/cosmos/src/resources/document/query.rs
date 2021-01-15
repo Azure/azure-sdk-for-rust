@@ -3,7 +3,7 @@ use serde_json::Value;
 /// A SQL Query
 ///
 /// You can learn more about how SQL queries work in Cosmos [here](https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-getting-started).
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct Query<'a> {
     query: &'a str,
     parameters: Vec<Param<'a>>,
@@ -40,9 +40,15 @@ impl<'a> From<&'a str> for Query<'a> {
     }
 }
 
-impl<'a> AsRef<Query<'a>> for Query<'a> {
-    fn as_ref(&self) -> &Query<'a> {
-        &self
+impl<'a> From<&'a Query<'a>> for Query<'a> {
+    fn from(query: &'a Query<'a>) -> Query<'a> {
+        query.clone()
+    }
+}
+
+impl<'a> From<&'a String> for Query<'a> {
+    fn from(query: &'a String) -> Query<'a> {
+        query.as_str().into()
     }
 }
 
