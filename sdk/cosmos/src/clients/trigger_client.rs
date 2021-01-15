@@ -1,7 +1,7 @@
 use super::*;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
-use azure_core::{HttpClient, No};
+use azure_core::HttpClient;
 
 /// A client for Cosmos trigger resources.
 #[derive(Debug, Clone)]
@@ -69,11 +69,11 @@ impl TriggerClient {
         &self.trigger_name
     }
 
-    pub fn create_trigger(&self) -> requests::CreateOrReplaceTriggerBuilder<'_, No, No, No> {
+    pub fn create_trigger(&self) -> requests::CreateOrReplaceTriggerBuilder<'_> {
         requests::CreateOrReplaceTriggerBuilder::new(self, true)
     }
 
-    pub fn replace_trigger(&self) -> requests::CreateOrReplaceTriggerBuilder<'_, No, No, No> {
+    pub fn replace_trigger(&self) -> requests::CreateOrReplaceTriggerBuilder<'_> {
         requests::CreateOrReplaceTriggerBuilder::new(self, false)
     }
 
