@@ -128,8 +128,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_slug()
         .consistency_level(&resp_delete)
         .content_type("text/plain")
-        .body(Bytes::from_static(b"FFFFF"))
-        .execute()
+        .execute(b"FFFFF")
         .await?;
 
     println!("create slug == {:#?}", resp);

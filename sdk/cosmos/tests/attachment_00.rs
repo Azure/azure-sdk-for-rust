@@ -121,8 +121,7 @@ async fn attachment() -> Result<(), CosmosError> {
         .create_slug()
         .consistency_level(&resp)
         .content_type("text/plain")
-        .body(Bytes::from_static(b"something cool here"))
-        .execute()
+        .execute(b"something cool here")
         .await?;
 
     // list attachments, there must be two.

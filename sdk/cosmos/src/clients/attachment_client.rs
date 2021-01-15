@@ -64,7 +64,7 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to create an attachment with a slug.
-    pub fn create_slug(&self) -> requests::CreateSlugAttachmentBuilder<'_, '_, No, No> {
+    pub fn create_slug(&self) -> requests::CreateSlugAttachmentBuilder<'_, '_> {
         requests::CreateSlugAttachmentBuilder::new(self)
     }
 
