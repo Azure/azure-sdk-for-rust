@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_permission()
         .consistency_level(&create_user_response)
         .expiry_seconds(18000u64) // 5 hours, max!
-        .execute_with_permission(&permission_mode)
+        .execute(&permission_mode)
         .await?;
     println!(
         "create_permission_response == {:#?}",
@@ -75,7 +75,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_permission2_response = permission_client
         .create_permission()
         .consistency_level(&create_user_response)
-        .execute_with_permission(&permission_mode)
+        .execute(&permission_mode)
         .await?;
     println!(
         "create_permission2_response == {:#?}",
@@ -114,7 +114,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .consistency_level(ConsistencyLevel::Session(
             get_permission_response.session_token,
         ))
-        .execute_with_permission(permission_mode)
+        .execute(permission_mode)
         .await?;
     println!(
         "replace_permission_response == {:#?}",
