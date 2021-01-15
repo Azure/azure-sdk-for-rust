@@ -79,7 +79,7 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to replace an attachment.
-    pub fn replace_reference(&self) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_, No, No> {
+    pub fn replace_reference(&self) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_> {
         requests::ReplaceReferenceAttachmentBuilder::new(self)
     }
 

@@ -110,9 +110,7 @@ async fn attachment() -> Result<(), CosmosError> {
     let resp = attachment_client
         .replace_reference()
         .consistency_level(&resp)
-        .content_type("image/jpeg")
-        .media("https://www.microsoft.com")
-        .execute()
+        .execute("https://www.microsoft.com", "image/jpeg")
         .await?;
 
     // create slug attachment

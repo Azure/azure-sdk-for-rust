@@ -105,11 +105,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp = attachment_client
         .replace_reference()
         .consistency_level(session_token)
-        .content_type("image/jpeg")
-        .media(
+        .execute(
             "https://Adn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
+            "image/jpeg",
         )
-        .execute()
         .await?;
     println!("replace reference == {:#?}", resp);
 
