@@ -61,7 +61,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     }
 }
 
-pub static EMPTY_BODY: Bytes = Bytes::from_static(&[]);
+pub static EMPTY_BODY: &[u8; 0] = &[];
 
 #[async_trait]
 impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
@@ -132,5 +132,5 @@ pub fn to_json<T>(value: &T) -> Result<Bytes, Box<dyn std::error::Error + Sync +
 where
     T: ?Sized + Serialize,
 {
-    Ok(serde_json::to_vec(value)?.into())
+    Ok(Bytes::from(serde_json::to_vec(value)?))
 }

@@ -41,7 +41,7 @@ impl<'a, 'b> DeleteUserDefinedFunctionBuilder<'a, 'b> {
         let request = azure_core::headers::add_optional_header(&self.activity_id, request);
         let request = azure_core::headers::add_optional_header(&self.consistency_level, request);
 
-        let request = request.body(EMPTY_BODY.clone())?;
+        let request = request.body(bytes::Bytes::from_static(EMPTY_BODY))?;
 
         Ok(self
             .user_defined_function_client

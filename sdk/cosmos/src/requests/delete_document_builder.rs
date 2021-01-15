@@ -57,7 +57,7 @@ impl<'a> DeleteDocumentBuilder<'a> {
 
         req = crate::headers::add_partition_keys_header(self.document_client.partition_keys(), req);
 
-        let req = req.body(EMPTY_BODY.clone())?;
+        let req = req.body(bytes::Bytes::from_static(EMPTY_BODY))?;
         debug!("{:?}", req);
 
         Ok(self

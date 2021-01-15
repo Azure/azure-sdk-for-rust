@@ -47,7 +47,7 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
             ResourceType::Users,
         );
 
-        let req = req.body(EMPTY_BODY.clone())?;
+        let req = req.body(bytes::Bytes::from_static(EMPTY_BODY))?;
         debug!("\nreq == {:?}", req);
 
         Ok(self

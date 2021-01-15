@@ -55,7 +55,7 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
         let request = azure_core::headers::add_optional_header(&self.continuation, request);
         let request = azure_core::headers::add_mandatory_header(&self.max_item_count, request);
 
-        let request = request.body(EMPTY_BODY.clone())?;
+        let request = request.body(bytes::Bytes::from_static(EMPTY_BODY))?;
         debug!("\nrequest == {:#?}", request);
 
         Ok(self
