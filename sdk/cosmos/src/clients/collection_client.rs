@@ -59,7 +59,7 @@ impl CollectionClient {
         requests::CreateDocumentBuilder::new(self)
     }
 
-    pub fn replace_document(&self) -> requests::ReplaceDocumentBuilder<'_, '_, No, No> {
+    pub fn replace_document(&self) -> requests::ReplaceDocumentBuilder<'_, '_> {
         requests::ReplaceDocumentBuilder::new(self)
     }
 

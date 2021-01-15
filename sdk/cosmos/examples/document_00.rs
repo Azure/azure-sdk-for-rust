@@ -183,10 +183,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // CosmosDB it means something else updated the document before us!
         let replace_document_response = collection_client
             .replace_document()
-            .document_id(&doc.document.id)
             .partition_keys([&doc.document.id])
             .if_match_condition(IfMatchCondition::Match(&document.etag))
-            .execute(&doc)
+            .execute(&doc.document.id, &doc)
             .await?;
         println!(
             "replace_document_response == {:#?}",

@@ -146,10 +146,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let replace_document_response = client
         .replace_document()
         .partition_keys(partition_keys)
-        .document_id(&id)
         .consistency_level(ConsistencyLevel::from(&response))
         .if_match_condition(IfMatchCondition::Match(&doc.etag)) // use optimistic concurrency check
-        .execute(&doc.document)
+        .execute(&id, &doc.document)
         .await?;
 
     println!(

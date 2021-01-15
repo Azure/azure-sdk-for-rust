@@ -105,9 +105,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let replace_document_response = client
         .replace_document()
         .consistency_level(&query_documents_response)
-        .document_id(&doc.document.id)
         .partition_keys(partition_keys)
-        .execute(&doc)
+        .execute(&doc.document.id, &doc)
         .await?;
     println!(
         "replace_document_response == {:#?}",

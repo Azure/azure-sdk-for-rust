@@ -234,13 +234,12 @@ async fn replace_document() {
     document_data.document.hello = 190;
     collection_client
         .replace_document()
-        .document_id(&document_data.document.id)
         .partition_keys([&document_data.document.id])
         .consistency_level(ConsistencyLevel::from(&documents))
         .if_match_condition(IfMatchCondition::Match(
             &documents.documents[0].document_attributes.etag(),
         ))
-        .execute(&document_data)
+        .execute(&document_data.document.id, &document_data)
         .await
         .unwrap();
 
