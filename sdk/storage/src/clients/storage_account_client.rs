@@ -47,7 +47,7 @@ fn get_sas_token_parms(sas_token: &str) -> Vec<(String, String)> {
         // Any base url will do: we just need to parse the SAS token
         // to get its query pairs.
         .base_url(Some(&Url::parse("https://blob.core.windows.net").unwrap()))
-        .parse(sas_token)
+        .parse(&format!("?{}", sas_token))
         .unwrap()
         .query_pairs()
         .map(|p| (String::from(p.0), String::from(p.1)))
