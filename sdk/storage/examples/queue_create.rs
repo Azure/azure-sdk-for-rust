@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let response = queue_client
         .create_queue()
-        .with_metadata(&metadata)
+        .metadata(&metadata)
         .execute()
         .await?;
     println!("response == {:#?}", response);
@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // now let's delete it
     let response = queue_client
         .delete_queue()
-        .with_client_request_id("myclientid".into())
+        .client_request_id("myclientid")
         .execute()
         .await?;
     println!("response == {:#?}", response);

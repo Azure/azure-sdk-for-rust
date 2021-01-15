@@ -3,63 +3,53 @@
 extern crate log;
 
 use azure_core::prelude::*;
-use azure_core::{Consistency, DeleteSnapshotsMethod};
 use azure_storage::blob::{
     blob::BlockListType,
-    container::{Container, PublicAccess, PublicAccessSupport},
+    container::{Container, PublicAccess},
     prelude::*,
 };
 use azure_storage::core::prelude::*;
-use chrono::{Duration, FixedOffset, Utc};
+use chrono::{FixedOffset, Utc};
 use std::ops::Add;
 use std::ops::Deref;
+use std::sync::Arc;
+use std::time::Duration;
 use uuid::Uuid;
 
 #[tokio::test]
 async fn create_and_delete_container() {
     let name: &'static str = "azuresdkrustetoets";
 
-    let client = initialize();
-    client
-        .create_container()
-        .with_container_name(name)
-        .with_public_access(PublicAccess::Container)
-        .finalize()
+    let storage_client = initialize().as_storage_client();
+    let container = storage_client.as_container_client(name);
+
+    container
+        .create()
+        .public_access(PublicAccess::Container)
+        .execute()
         .await
         .unwrap();
 
     // get acl without stored access policy list
-    let _result = client
-        .get_container_acl()
-        .with_container_name(name)
-        .finalize()
-        .await
-        .unwrap();
+    let _result = container.get_acl().execute().await.unwrap();
 
     // set stored acess policy list
     let dt_start = Utc::now().with_timezone(&FixedOffset::east(0));
-    let dt_end = dt_start.add(Duration::days(7));
+    let dt_end = dt_start.add(chrono::Duration::days(7));
 
     let mut sapl = StoredAccessPolicyList::default();
     sapl.stored_access
         .push(StoredAccessPolicy::new("pollo", dt_start, dt_end, "rwd"));
 
-    let _result = client
-        .set_container_acl()
-        .with_container_name(name)
-        .with_public_access(PublicAccess::Blob)
-        .with_stored_access_policy_list(&sapl)
-        .finalize()
+    let _result = container
+        .set_acl(PublicAccess::Blob)
+        .stored_access_policy_list(&sapl)
+        .execute()
         .await
         .unwrap();
 
     // now we get back the acess policy list and compare to the one created
-    let result = client
-        .get_container_acl()
-        .with_container_name(name)
-        .finalize()
-        .await
-        .unwrap();
+    let result = container.get_acl().execute().await.unwrap();
 
     assert!(result.public_access == PublicAccess::Blob);
     // we cannot compare the returned result because Azure will
@@ -75,18 +65,13 @@ async fn create_and_delete_container() {
         assert!(i1.permission == i2.permission);
     }
 
-    let res = client
-        .get_container_properties()
-        .with_container_name(name)
-        .finalize()
-        .await
-        .unwrap();
+    let res = container.get_properties().execute().await.unwrap();
     assert!(res.container.public_access == PublicAccess::Blob);
 
-    let list = client
+    let list = storage_client
         .list_containers()
-        .with_prefix(name)
-        .finalize()
+        .prefix(name)
+        .execute()
         .await
         .unwrap();
     let cont_list: Vec<&Container> = list
@@ -100,28 +85,20 @@ async fn create_and_delete_container() {
         panic!("More than 1 container returned with the same name!");
     }
 
-    let res = client
-        .acquire_container_lease()
-        .with_container_name(&cont_list[0].name)
-        .with_lease_duration(30)
-        .finalize()
+    let res = container
+        .acquire_lease(Duration::from_secs(30))
+        .execute()
         .await
         .unwrap();
     let lease_id = res.lease_id;
+    let lease = container.as_container_lease_client(res.lease_id);
 
-    let _res = client
-        .renew_container_lease()
-        .with_container_name(&cont_list[0].name)
-        .with_lease_id(&lease_id)
-        .finalize()
-        .await
-        .unwrap();
+    let _res = lease.renew().execute().await.unwrap();
 
-    client
-        .delete_container()
-        .with_container_name(&cont_list[0].name)
-        .with_lease_id(&lease_id) // must pass the lease here too
-        .finalize()
+    container
+        .delete()
+        .lease_id(&lease_id) // must pass the lease here too
+        .execute()
         .await
         .unwrap();
 }
@@ -129,16 +106,17 @@ async fn create_and_delete_container() {
 #[tokio::test]
 async fn put_and_get_block_list() {
     let u = Uuid::new_v4();
-    let container = Container::new(&format!("sdkrust{}", u));
+    let container_name = format!("sdkrust{}", u);
     let name = "asd - ()krustputblock.txt";
 
-    let client = initialize();
+    let storage = initialize().as_storage_client();
+    let container = storage.as_container_client(&container_name);
+    let blob = container.as_blob_client(name);
 
-    client
-        .create_container()
-        .with_container_name(&container.name)
-        .with_public_access(PublicAccess::Container)
-        .finalize()
+    container
+        .create()
+        .public_access(PublicAccess::Container)
+        .execute()
         .await
         .expect("container already present");
 
@@ -146,15 +124,11 @@ async fn put_and_get_block_list() {
     let contents2 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
     let contents3 = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
 
-    let digest3 = md5::compute(contents3);
+    let digest3 = md5::compute(contents3).into();
 
-    let put_block_response = client
-        .put_block()
-        .with_container_name(&container.name)
-        .with_blob_name(name)
-        .with_body(&contents1.as_bytes())
-        .with_block_id(b"block1")
-        .finalize()
+    let put_block_response = blob
+        .put_block(&"block1".into(), &contents1.as_bytes())
+        .execute()
         .await
         .unwrap();
 
@@ -163,133 +137,94 @@ async fn put_and_get_block_list() {
         _ => panic!("must receive a content_crc64 header"),
     }
 
-    client
-        .put_block()
-        .with_container_name(&container.name)
-        .with_blob_name(name)
-        .with_body(&contents2.as_bytes())
-        .with_block_id(b"block2")
-        .finalize()
+    blob.put_block(&"block2".into(), &contents2.as_bytes())
+        .execute()
         .await
         .unwrap();
 
-    let put_block_response = client
-        .put_block()
-        .with_container_name(&container.name)
-        .with_blob_name(name)
-        .with_body(&contents3.as_bytes())
-        .with_block_id(b"block3")
-        .with_content_md5(&digest3[..])
-        .finalize()
+    let put_block_response = blob
+        .put_block(&"block3".into(), &contents3.as_bytes())
+        .hash(&digest3)
+        .execute()
         .await
         .unwrap();
 
     match &put_block_response.consistency {
-        Consistency::Md5(_) => {}
-        _ => panic!("must receive a content_md5 header"),
+        Consistency::Crc64(_) => {}
+        _ => panic!("must receive a content_crc64 header"),
     }
 
-    let received_block_list = client
+    let received_block_list = blob
         .get_block_list()
-        .with_container_name(&container.name)
-        .with_blob_name(name)
-        .with_block_list_type(BlockListType::All)
-        .finalize()
+        .block_list_type(BlockListType::All)
+        .execute()
         .await
         .unwrap();
 
-    client
-        .put_block_list()
-        .with_container_name(&container.name)
-        .with_blob_name(name)
-        .with_block_list(&received_block_list.block_with_size_list.into())
-        .finalize()
+    blob.put_block_list(&received_block_list.block_with_size_list.into())
+        .execute()
         .await
         .unwrap();
 
-    let res = client
-        .acquire_blob_lease()
-        .with_container_name(&container.name)
-        .with_blob_name(name)
-        .with_lease_duration(60)
-        .finalize()
+    let res = blob
+        .acquire_lease(Duration::from_secs(60))
+        .execute()
         .await
         .unwrap();
     println!("Acquire lease == {:?}", res);
 
     let lease_id = res.lease_id;
+    let lease = blob.as_blob_lease_client(lease_id);
 
-    let res = client
-        .renew_blob_lease()
-        .with_container_name(&container.name)
-        .with_blob_name(name)
-        .with_lease_id(&lease_id)
-        .finalize()
-        .await
-        .unwrap();
+    let res = lease.renew().execute().await.unwrap();
     println!("Renew lease == {:?}", res);
 
-    let res = client
-        .break_blob_lease()
-        .with_container_name(&container.name)
-        .with_blob_name(name)
-        .with_lease_break_period(15)
-        .finalize()
+    let res = blob
+        .break_lease()
+        .lease_break_period(Duration::from_secs(15))
+        .execute()
         .await
         .unwrap();
     println!("Break lease == {:?}", res);
 
-    let res = client
-        .release_blob_lease()
-        .with_container_name(&container.name)
-        .with_blob_name(name)
-        .with_lease_id(&lease_id)
-        .finalize()
-        .await
-        .unwrap();
+    let res = lease.release().execute().await.unwrap();
     println!("Release lease == {:?}", res);
 
-    let res = client
-        .delete_blob()
-        .with_container_name(&container.name)
-        .with_blob_name(name)
-        .with_delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .finalize()
+    let res = blob
+        .delete()
+        .delete_snapshots_method(DeleteSnapshotsMethod::Include)
+        .execute()
         .await
         .unwrap();
     println!("Delete blob == {:?}", res);
 
-    client
-        .delete_container()
-        .with_container_name(container.as_ref())
-        .finalize()
-        .await
-        .unwrap();
+    container.delete().execute().await.unwrap();
 
-    println!("container {} deleted!", container.name);
+    println!("container {} deleted!", container_name);
 }
 
 #[tokio::test]
 async fn list_containers() {
-    let client = initialize();
-
+    let storage = initialize().as_storage_client();
     trace!("running list_containers");
 
-    let mut next_marker: Option<String> = None;
+    let mut next_marker = None;
 
     loop {
         let ret = {
-            let builder = client.list_containers().with_max_results(2);
+            let builder = storage
+                .list_containers()
+                .max_results(std::num::NonZeroU32::new(2u32).unwrap());
             if let Some(nm) = next_marker {
-                builder.with_next_marker(&nm).finalize().await.unwrap()
+                builder.next_marker(nm).execute().await.unwrap()
             } else {
-                builder.finalize().await.unwrap()
+                builder.execute().await.unwrap()
             }
         };
 
         trace!("ret {:?}\n\n", ret);
         if !ret.is_complete() {
-            next_marker = Some(ret.incomplete_vector.token().unwrap().to_owned());
+            next_marker = Some(ret.incomplete_vector.next_marker().unwrap().to_owned());
         } else {
             break;
         }
@@ -298,15 +233,17 @@ async fn list_containers() {
 
 #[tokio::test]
 async fn put_block_blob() {
-    let client = initialize();
-
     let blob_name: &'static str = "m1";
     let container_name: &'static str = "rust-upload-test";
     let data = b"abcdef";
 
-    if client
+    let storage = initialize().as_storage_client();
+    let container = storage.as_container_client(container_name);
+    let blob = container.as_blob_client(blob_name);
+
+    if storage
         .list_containers()
-        .finalize()
+        .execute()
         .await
         .unwrap()
         .incomplete_vector
@@ -314,26 +251,21 @@ async fn put_block_blob() {
         .find(|x| x.name == container_name)
         .is_none()
     {
-        client
-            .create_container()
-            .with_container_name(container_name)
-            .with_public_access(PublicAccess::Blob)
-            .finalize()
+        container
+            .create()
+            .public_access(PublicAccess::Blob)
+            .execute()
             .await
             .unwrap();
     }
 
     // calculate md5 too!
-    let digest = md5::compute(&data[..]);
+    let digest = md5::compute(&data[..]).into();
 
-    client
-        .put_block_blob()
-        .with_container_name(&container_name)
-        .with_blob_name(&blob_name)
-        .with_content_type("text/plain")
-        .with_body(&data[..])
-        .with_content_md5(&digest[..])
-        .finalize()
+    blob.put_block_blob(data)
+        .content_type("text/plain")
+        .hash(&digest)
+        .execute()
         .await
         .unwrap();
 
@@ -342,15 +274,17 @@ async fn put_block_blob() {
 
 #[tokio::test]
 async fn copy_blob() {
-    let client = initialize();
-
     let blob_name: &'static str = "copysrc";
     let container_name: &'static str = "rust-upload-test";
     let data = b"abcdef";
 
-    if client
+    let storage = initialize().as_storage_client();
+    let container = storage.as_container_client(container_name);
+    let blob = container.as_blob_client(blob_name);
+
+    if storage
         .list_containers()
-        .finalize()
+        .execute()
         .await
         .unwrap()
         .incomplete_vector
@@ -358,42 +292,36 @@ async fn copy_blob() {
         .find(|x| x.name == container_name)
         .is_none()
     {
-        client
-            .create_container()
-            .with_container_name(container_name)
-            .with_public_access(PublicAccess::Blob)
-            .finalize()
+        container
+            .create()
+            .public_access(PublicAccess::Blob)
+            .execute()
             .await
             .unwrap();
     }
 
     // calculate md5 too!
-    let digest = md5::compute(&data[..]);
+    let digest = md5::compute(&data[..]).into();
 
-    client
-        .put_block_blob()
-        .with_container_name(&container_name)
-        .with_blob_name(&blob_name)
-        .with_content_type("text/plain")
-        .with_body(&data[..])
-        .with_content_md5(&digest[..])
-        .finalize()
+    blob.put_block_blob(data)
+        .content_type("text/plain")
+        .hash(&digest)
+        .execute()
         .await
         .unwrap();
 
     trace!("created {:?}", blob_name);
 
-    client
-        .copy_blob()
-        .with_source_url(&format!(
+    let cloned_blob = container.as_blob_client("cloned_blob");
+
+    cloned_blob
+        .copy(&format!(
             "https://{}.blob.core.windows.net/{}/{}",
             &std::env::var("STORAGE_ACCOUNT").unwrap(),
             &container_name,
             &blob_name
         ))
-        .with_container_name(&container_name)
-        .with_blob_name("cloned_blob")
-        .finalize()
+        .execute()
         .await
         .unwrap();
 }
@@ -407,15 +335,17 @@ where
 
 #[tokio::test]
 async fn put_block_blob_and_get_properties() {
-    let client = initialize();
-
     let blob_name: &'static str = "properties";
     let container_name: &'static str = "rust-upload-test";
     let data = b"abcdef";
 
-    if client
+    let storage = initialize().as_storage_client();
+    let container = storage.as_container_client(container_name);
+    let blob = container.as_blob_client(blob_name);
+
+    if storage
         .list_containers()
-        .finalize()
+        .execute()
         .await
         .unwrap()
         .incomplete_vector
@@ -423,96 +353,52 @@ async fn put_block_blob_and_get_properties() {
         .find(|x| x.name == container_name)
         .is_none()
     {
-        client
-            .create_container()
-            .with_container_name(container_name)
-            .with_public_access(PublicAccess::Blob)
-            .finalize()
+        container
+            .create()
+            .public_access(PublicAccess::Blob)
+            .execute()
             .await
             .unwrap();
     }
 
     // calculate md5 too!
-    let digest = md5::compute(&data[..]);
+    let digest = md5::compute(&data[..]).into();
 
-    client
-        .put_block_blob()
-        .with_container_name(&container_name)
-        .with_blob_name(&blob_name)
-        .with_content_type("text/plain")
-        .with_body(&data[..])
-        .with_content_md5(&digest[..])
-        .finalize()
+    blob.put_block_blob(data)
+        .content_type("text/plain")
+        .hash(&digest)
+        .execute()
         .await
         .unwrap();
 
     trace!("created {:?}", blob_name);
 
-    let blob_properties = client
-        .get_blob_properties()
-        .with_container_name(&container_name)
-        .with_blob_name(&blob_name)
-        .finalize()
-        .await
-        .unwrap();
+    let blob_properties = blob.get_properties().execute().await.unwrap();
 
     assert_eq!(blob_properties.blob.content_length, 6);
 
-    let _ = requires_send_future(
-        client
-            .get_blob_properties()
-            .with_container_name(&container_name)
-            .with_blob_name(&blob_name)
-            .finalize(),
-    );
+    let _ = requires_send_future(blob.get_properties().execute());
 }
 
 #[allow(dead_code)]
 fn send_check() {
     let client = initialize();
+    let blob = client
+        .as_storage_client()
+        .as_container_client("a")
+        .as_blob_client("b");
 
-    let _ = requires_send_future(
-        client
-            .acquire_blob_lease()
-            .with_container_name("a")
-            .with_blob_name("b")
-            .with_lease_duration(10)
-            .finalize(),
-    );
-
-    let _ = requires_send_future(
-        client
-            .break_blob_lease()
-            .with_container_name("a")
-            .with_blob_name("b")
-            .with_lease_break_period(10)
-            .finalize(),
-    );
-
-    let _ = requires_send_future(
-        client
-            .clear_page()
-            .with_container_name("a")
-            .with_blob_name("b")
-            .with_ba512_range(&BA512Range::new(0, 1024).unwrap())
-            .finalize(),
-    );
-
-    let _ = requires_send_future(
-        client
-            .copy_blob()
-            .with_container_name("a")
-            .with_blob_name("b")
-            .with_source_url("c")
-            .finalize(),
-    );
+    let _ = requires_send_future(blob.acquire_lease(Duration::from_secs(10)).execute());
+    let _ = requires_send_future(blob.clear_page(BA512Range::new(0, 1024).unwrap()).execute());
 }
 
-fn initialize() -> Box<dyn Client> {
+fn initialize() -> Arc<StorageAccountClient> {
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    Box::new(client::with_access_key(&account, &master_key))
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+
+    StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
 }

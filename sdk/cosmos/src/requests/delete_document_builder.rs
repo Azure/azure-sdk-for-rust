@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::DeleteDocumentResponse;
-use azure_core::modify_conditions::IfMatchCondition;
 use azure_core::prelude::*;
 
 use chrono::{DateTime, Utc};

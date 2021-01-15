@@ -1,817 +1,112 @@
-use crate::blob::blob::generate_blob_uri;
 use crate::blob::blob::responses::CopyBlobResponse;
+use crate::blob::prelude::*;
 use crate::core::prelude::*;
-use crate::{RehydratePriority, RehydratePriorityOption, RehydratePrioritySupport};
-use azure_core::errors::AzureError;
+use crate::RehydratePriority;
+use azure_core::headers::COPY_SOURCE;
+use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
-use azure_core::{No, ToAssign, Yes};
-use hyper::{Method, StatusCode};
-use std::collections::HashMap;
 use std::convert::TryInto;
-use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    client: &'a C,
-    p_container_name: PhantomData<ContainerNameSet>,
-    p_blob_name: PhantomData<BlobNameSet>,
-    p_source_url: PhantomData<SourceUrlNameSet>,
-    container_name: Option<&'a str>,
-    blob_name: Option<&'a str>,
-    source_url: Option<&'a str>,
-    metadata: Option<&'a HashMap<&'a str, &'a str>>,
-    timeout: Option<u64>,
-    if_since_condition: Option<IfSinceCondition>,
-    if_source_since_condition: Option<IfSinceCondition>,
+pub struct CopyBlobBuilder<'a> {
+    blob_client: &'a BlobClient,
+    source_url: &'a str,
+    metadata: Option<&'a Metadata>,
+    sequence_number_condition: Option<SequenceNumberCondition>,
+    if_modified_since_condition: Option<IfModifiedSinceCondition>,
     if_match_condition: Option<IfMatchCondition<'a>>,
-    if_source_match_condition: Option<IfMatchCondition<'a>>,
-    lease_id: Option<&'a LeaseId>,
-    source_lease_id: Option<&'a LeaseId>,
     access_tier: Option<AccessTier>,
-    rehydrate_priority: Option<RehydratePriority>,
-    client_request_id: Option<&'a str>,
+    timeout: Option<Timeout>,
+    lease_id: Option<&'a LeaseId>,
+    client_request_id: Option<ClientRequestId<'a>>,
+    if_source_since_condition: Option<IfSourceModifiedSinceCondition>,
+    if_source_match_condition: Option<IfSourceMatchCondition<'a>>,
+    source_lease_id: Option<&'a SourceLeaseId>,
+    rehydrate_priority: RehydratePriority,
 }
 
-impl<'a, C> CopyBlobBuilder<'a, C, No, No, No>
-where
-    C: Client,
-{
-    #[inline]
-    pub(crate) fn new(client: &'a C) -> CopyBlobBuilder<'a, C, No, No, No> {
-        CopyBlobBuilder {
-            client,
-            p_container_name: PhantomData {},
-            container_name: None,
-            p_blob_name: PhantomData {},
-            blob_name: None,
-            p_source_url: PhantomData {},
-            source_url: None,
+impl<'a> CopyBlobBuilder<'a> {
+    pub(crate) fn new(blob_client: &'a BlobClient, source_url: &'a str) -> Self {
+        Self {
+            blob_client,
+            source_url,
             metadata: None,
-            timeout: None,
-            if_since_condition: None,
-            if_source_since_condition: None,
+            sequence_number_condition: None,
+            if_modified_since_condition: None,
             if_match_condition: None,
-            if_source_match_condition: None,
-            lease_id: None,
-            source_lease_id: None,
             access_tier: None,
-            rehydrate_priority: None,
+            timeout: None,
+            lease_id: None,
             client_request_id: None,
+            if_source_since_condition: None,
+            if_source_match_condition: None,
+            source_lease_id: None,
+            rehydrate_priority: RehydratePriority::Standard,
         }
     }
-}
 
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> ClientRequired<'a, C>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn client(&self) -> &'a C {
-        self.client
+    setters! {
+        metadata: &'a Metadata => Some(metadata),
+        sequence_number_condition: SequenceNumberCondition => Some(sequence_number_condition),
+        if_modified_since_condition: IfModifiedSinceCondition => Some(if_modified_since_condition),
+        if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
+        access_tier: AccessTier => Some(access_tier),
+        timeout: Timeout => Some(timeout),
+        lease_id: &'a LeaseId => Some(lease_id),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        if_source_since_condition: IfSourceModifiedSinceCondition => Some(if_source_since_condition),
+        if_source_match_condition: IfSourceMatchCondition<'a> => Some(if_source_match_condition),
+        source_lease_id: &'a SourceLeaseId => Some(source_lease_id),
+        rehydrate_priority: RehydratePriority => rehydrate_priority,
     }
-}
 
-//get mandatory no traits methods
+    pub async fn execute(
+        &self,
+    ) -> Result<CopyBlobResponse, Box<dyn std::error::Error + Send + Sync>> {
+        let mut url = self
+            .blob_client
+            .storage_account_client()
+            .blob_storage_url()
+            .to_owned();
+        url.path_segments_mut()
+            .map_err(|_| "Invalid blob URL")?
+            .push(self.blob_client.container_client().container_name())
+            .push(self.blob_client.blob_name());
 
-//set mandatory no traits methods
-impl<'a, C, BlobNameSet, SourceUrlNameSet> ContainerNameRequired<'a>
-    for CopyBlobBuilder<'a, C, Yes, BlobNameSet, SourceUrlNameSet>
-where
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn container_name(&self) -> &'a str {
-        self.container_name.unwrap()
-    }
-}
+        self.timeout.append_to_url_query(&mut url);
 
-impl<'a, C, ContainerNameSet, SourceUrlNameSet> BlobNameRequired<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, Yes, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn blob_name(&self) -> &'a str {
-        self.blob_name.unwrap()
-    }
-}
+        trace!("url == {:?}", url);
 
-impl<'a, C, ContainerNameSet, BlobNameSet> SourceUrlRequired<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn source_url(&self) -> &'a str {
-        self.source_url.unwrap()
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> MetadataOption<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn metadata(&self) -> Option<&'a HashMap<&'a str, &'a str>> {
-        self.metadata
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> TimeoutOption
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn timeout(&self) -> Option<u64> {
-        self.timeout
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> IfSinceConditionOption
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn if_since_condition(&self) -> Option<IfSinceCondition> {
-        self.if_since_condition
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> IfSourceSinceConditionOption
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn if_source_since_condition(&self) -> Option<IfSinceCondition> {
-        self.if_source_since_condition
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> IfMatchConditionOption<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn if_match_condition(&self) -> Option<IfMatchCondition<'a>> {
-        self.if_match_condition
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> IfSourceMatchConditionOption<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn if_source_match_condition(&self) -> Option<IfMatchCondition<'a>> {
-        self.if_source_match_condition
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> LeaseIdOption<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn lease_id(&self) -> Option<&'a LeaseId> {
-        self.lease_id
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> SourceLeaseIdOption<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn source_lease_id(&self) -> Option<&'a LeaseId> {
-        self.source_lease_id
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> AccessTierOption
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn access_tier(&self) -> Option<AccessTier> {
-        self.access_tier
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> RehydratePriorityOption
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn rehydrate_priority(&self) -> Option<RehydratePriority> {
-        self.rehydrate_priority
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> ClientRequestIdOption<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn client_request_id(&self) -> Option<&'a str> {
-        self.client_request_id
-    }
-}
-
-impl<'a, C, BlobNameSet, SourceUrlNameSet> ContainerNameSupport<'a>
-    for CopyBlobBuilder<'a, C, No, BlobNameSet, SourceUrlNameSet>
-where
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, Yes, BlobNameSet, SourceUrlNameSet>;
-
-    #[inline]
-    fn with_container_name(self, container_name: &'a str) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: Some(container_name),
-            blob_name: self.blob_name,
-            source_url: self.source_url,
-            metadata: self.metadata,
-            timeout: self.timeout,
-            if_since_condition: self.if_since_condition,
-            if_source_since_condition: self.if_source_since_condition,
-            if_match_condition: self.if_match_condition,
-            if_source_match_condition: self.if_source_match_condition,
-            lease_id: self.lease_id,
-            source_lease_id: self.source_lease_id,
-            access_tier: self.access_tier,
-            rehydrate_priority: self.rehydrate_priority,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, SourceUrlNameSet> BlobNameSupport<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, No, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, ContainerNameSet, Yes, SourceUrlNameSet>;
-
-    #[inline]
-    fn with_blob_name(self, blob_name: &'a str) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: self.container_name,
-            blob_name: Some(blob_name),
-            source_url: self.source_url,
-            metadata: self.metadata,
-            timeout: self.timeout,
-            if_since_condition: self.if_since_condition,
-            if_source_since_condition: self.if_source_since_condition,
-            if_match_condition: self.if_match_condition,
-            if_source_match_condition: self.if_source_match_condition,
-            lease_id: self.lease_id,
-            source_lease_id: self.source_lease_id,
-            access_tier: self.access_tier,
-            rehydrate_priority: self.rehydrate_priority,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet> SourceUrlSupport<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, No>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>;
-
-    #[inline]
-    fn with_source_url(self, source_url: &'a str) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            source_url: Some(source_url),
-            metadata: self.metadata,
-            timeout: self.timeout,
-            if_since_condition: self.if_since_condition,
-            if_source_since_condition: self.if_source_since_condition,
-            if_match_condition: self.if_match_condition,
-            if_source_match_condition: self.if_source_match_condition,
-            lease_id: self.lease_id,
-            source_lease_id: self.source_lease_id,
-            access_tier: self.access_tier,
-            rehydrate_priority: self.rehydrate_priority,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> MetadataSupport<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>;
-
-    #[inline]
-    fn with_metadata(self, metadata: &'a HashMap<&'a str, &'a str>) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            source_url: self.source_url,
-            metadata: Some(metadata),
-            timeout: self.timeout,
-            if_since_condition: self.if_since_condition,
-            if_source_since_condition: self.if_source_since_condition,
-            if_match_condition: self.if_match_condition,
-            if_source_match_condition: self.if_source_match_condition,
-            lease_id: self.lease_id,
-            source_lease_id: self.source_lease_id,
-            access_tier: self.access_tier,
-            rehydrate_priority: self.rehydrate_priority,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> TimeoutSupport
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>;
-
-    #[inline]
-    fn with_timeout(self, timeout: u64) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            source_url: self.source_url,
-            metadata: self.metadata,
-            timeout: Some(timeout),
-            if_since_condition: self.if_since_condition,
-            if_source_since_condition: self.if_source_since_condition,
-            if_match_condition: self.if_match_condition,
-            if_source_match_condition: self.if_source_match_condition,
-            lease_id: self.lease_id,
-            source_lease_id: self.source_lease_id,
-            access_tier: self.access_tier,
-            rehydrate_priority: self.rehydrate_priority,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> IfSinceConditionSupport
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>;
-
-    #[inline]
-    fn with_if_since_condition(self, if_since_condition: IfSinceCondition) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            source_url: self.source_url,
-            metadata: self.metadata,
-            timeout: self.timeout,
-            if_since_condition: Some(if_since_condition),
-            if_source_since_condition: self.if_source_since_condition,
-            if_match_condition: self.if_match_condition,
-            if_source_match_condition: self.if_source_match_condition,
-            lease_id: self.lease_id,
-            source_lease_id: self.source_lease_id,
-            access_tier: self.access_tier,
-            rehydrate_priority: self.rehydrate_priority,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> IfSourceSinceConditionSupport
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>;
-
-    #[inline]
-    fn with_if_source_since_condition(
-        self,
-        if_source_since_condition: IfSinceCondition,
-    ) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            source_url: self.source_url,
-            metadata: self.metadata,
-            timeout: self.timeout,
-            if_since_condition: self.if_since_condition,
-            if_source_since_condition: Some(if_source_since_condition),
-            if_match_condition: self.if_match_condition,
-            if_source_match_condition: self.if_source_match_condition,
-            lease_id: self.lease_id,
-            source_lease_id: self.source_lease_id,
-            access_tier: self.access_tier,
-            rehydrate_priority: self.rehydrate_priority,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> IfMatchConditionSupport<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>;
-
-    #[inline]
-    fn with_if_match_condition(self, if_match_condition: IfMatchCondition<'a>) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            source_url: self.source_url,
-            metadata: self.metadata,
-            timeout: self.timeout,
-            if_since_condition: self.if_since_condition,
-            if_source_since_condition: self.if_source_since_condition,
-            if_match_condition: Some(if_match_condition),
-            if_source_match_condition: self.if_source_match_condition,
-            lease_id: self.lease_id,
-            source_lease_id: self.source_lease_id,
-            access_tier: self.access_tier,
-            rehydrate_priority: self.rehydrate_priority,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> IfSourceMatchConditionSupport<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>;
-
-    #[inline]
-    fn with_if_source_match_condition(
-        self,
-        if_source_match_condition: IfMatchCondition<'a>,
-    ) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            source_url: self.source_url,
-            metadata: self.metadata,
-            timeout: self.timeout,
-            if_since_condition: self.if_since_condition,
-            if_source_since_condition: self.if_source_since_condition,
-            if_match_condition: self.if_match_condition,
-            if_source_match_condition: Some(if_source_match_condition),
-            lease_id: self.lease_id,
-            source_lease_id: self.source_lease_id,
-            access_tier: self.access_tier,
-            rehydrate_priority: self.rehydrate_priority,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> LeaseIdSupport<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>;
-
-    #[inline]
-    fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            source_url: self.source_url,
-            metadata: self.metadata,
-            timeout: self.timeout,
-            if_since_condition: self.if_since_condition,
-            if_source_since_condition: self.if_source_since_condition,
-            if_match_condition: self.if_match_condition,
-            if_source_match_condition: self.if_source_match_condition,
-            lease_id: Some(lease_id),
-            source_lease_id: self.source_lease_id,
-            access_tier: self.access_tier,
-            rehydrate_priority: self.rehydrate_priority,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> SourceLeaseIdSupport<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>;
-
-    #[inline]
-    fn with_source_lease_id(self, source_lease_id: &'a LeaseId) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            source_url: self.source_url,
-            metadata: self.metadata,
-            timeout: self.timeout,
-            if_since_condition: self.if_since_condition,
-            if_source_since_condition: self.if_source_since_condition,
-            if_match_condition: self.if_match_condition,
-            if_source_match_condition: self.if_source_match_condition,
-            lease_id: self.lease_id,
-            source_lease_id: Some(source_lease_id),
-            access_tier: self.access_tier,
-            rehydrate_priority: self.rehydrate_priority,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> AccessTierSupport
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>;
-
-    #[inline]
-    fn with_access_tier(self, access_tier: AccessTier) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            source_url: self.source_url,
-            metadata: self.metadata,
-            timeout: self.timeout,
-            if_since_condition: self.if_since_condition,
-            if_source_since_condition: self.if_source_since_condition,
-            if_match_condition: self.if_match_condition,
-            if_source_match_condition: self.if_source_match_condition,
-            lease_id: self.lease_id,
-            source_lease_id: self.source_lease_id,
-            access_tier: Some(access_tier),
-            rehydrate_priority: self.rehydrate_priority,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> RehydratePrioritySupport
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>;
-
-    #[inline]
-    fn with_rehydrate_priority(self, rehydrate_priority: RehydratePriority) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            source_url: self.source_url,
-            metadata: self.metadata,
-            timeout: self.timeout,
-            if_since_condition: self.if_since_condition,
-            if_source_since_condition: self.if_source_since_condition,
-            if_match_condition: self.if_match_condition,
-            if_source_match_condition: self.if_source_match_condition,
-            lease_id: self.lease_id,
-            source_lease_id: self.source_lease_id,
-            access_tier: self.access_tier,
-            rehydrate_priority: Some(rehydrate_priority),
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet> ClientRequestIdSupport<'a>
-    for CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>
-where
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SourceUrlNameSet: ToAssign,
-    C: Client,
-{
-    type O = CopyBlobBuilder<'a, C, ContainerNameSet, BlobNameSet, SourceUrlNameSet>;
-
-    #[inline]
-    fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
-        CopyBlobBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_blob_name: PhantomData {},
-            p_source_url: PhantomData {},
-            container_name: self.container_name,
-            blob_name: self.blob_name,
-            source_url: self.source_url,
-            metadata: self.metadata,
-            timeout: self.timeout,
-            if_since_condition: self.if_since_condition,
-            if_source_since_condition: self.if_source_since_condition,
-            if_match_condition: self.if_match_condition,
-            if_source_match_condition: self.if_source_match_condition,
-            lease_id: self.lease_id,
-            source_lease_id: self.source_lease_id,
-            access_tier: self.access_tier,
-            rehydrate_priority: self.rehydrate_priority,
-            client_request_id: Some(client_request_id),
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
-impl<'a, C> CopyBlobBuilder<'a, C, Yes, Yes, Yes>
-where
-    C: Client,
-{
-    #[inline]
-    pub async fn finalize(self) -> Result<CopyBlobResponse, AzureError> {
-        let mut uri =
-            generate_blob_uri(self.client(), self.container_name(), self.blob_name(), None);
-
-        if let Some(timeout) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}?{}", uri, timeout);
-        }
-
-        trace!("uri == {:?}", uri);
-
-        let perform_request_response = self.client().perform_request(
-            &uri,
-            &Method::PUT,
+        let (request, _url) = self.blob_client.prepare_request(
+            url.as_str(),
+            &http::Method::PUT,
             &|mut request| {
-                request = SourceUrlRequired::add_mandatory_header(&self, request);
-                request = MetadataOption::add_optional_header(&self, request);
-                request = IfSinceConditionOption::add_optional_header(&self, request);
-                request = IfSourceSinceConditionOption::add_optional_header(&self, request);
-                request = IfMatchConditionOption::add_optional_header(&self, request);
-                request = IfSourceMatchConditionOption::add_optional_header(&self, request);
-                request = LeaseIdOption::add_optional_header(&self, request);
-                request = SourceLeaseIdOption::add_optional_header(&self, request);
-                request = AccessTierOption::add_optional_header(&self, request);
-                request = RehydratePriorityOption::add_optional_header(&self, request);
-                request = ClientRequestIdOption::add_optional_header(&self, request);
-
+                request = request.header(COPY_SOURCE, self.source_url);
+                request = add_optional_header(&self.metadata, request);
+                request = add_optional_header(&self.sequence_number_condition, request);
+                request = add_optional_header(&self.if_modified_since_condition, request);
+                request = add_optional_header(&self.if_match_condition, request);
+                request = add_optional_header(&self.access_tier, request);
+                request = add_optional_header_ref(&self.lease_id, request);
+                request = add_optional_header(&self.client_request_id, request);
+                request = add_optional_header(&self.if_source_since_condition, request);
+                request = add_optional_header(&self.if_source_match_condition, request);
+                request = add_optional_header_ref(&self.source_lease_id, request);
+                request = add_mandatory_header(&self.rehydrate_priority, request);
                 request
             },
             None,
         )?;
 
-        let (headers, _body) = perform_request_response
-            .check_status_extract_headers_and_body(StatusCode::ACCEPTED)
+        let response = self
+            .blob_client
+            .http_client()
+            .execute_request_check_status(request, http::StatusCode::ACCEPTED)
             .await?;
 
-        (&headers).try_into()
+        debug!("response.headers() == {:#?}", response.headers());
+
+        Ok((response.headers()).try_into()?)
     }
 }

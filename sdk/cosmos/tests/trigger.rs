@@ -73,12 +73,10 @@ async fn trigger() -> Result<(), CosmosError> {
         };
 
         database_client
-            .create_collection()
-            .collection_name(&COLLECTION_NAME)
-            .partition_key("/id")
+            .create_collection("/id")
             .offer(Offer::Throughput(400))
-            .indexing_policy(&ip)
-            .execute()
+            .indexing_policy(ip)
+            .execute(COLLECTION_NAME)
             .await
             .unwrap()
     };

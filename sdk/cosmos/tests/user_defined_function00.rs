@@ -57,12 +57,10 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
         };
 
         database_client
-            .create_collection()
-            .collection_name(&COLLECTION_NAME)
-            .partition_key("/id")
+            .create_collection("/id")
             .offer(Offer::Throughput(400))
-            .indexing_policy(&ip)
-            .execute()
+            .indexing_policy(ip)
+            .execute(COLLECTION_NAME)
             .await
             .unwrap()
     };
@@ -100,9 +98,9 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
     let query_stmt = format!("SELECT udf.{}(100)", USER_DEFINED_FUNCTION_NAME);
     let ret: QueryDocumentsResponseRaw<serde_json::Value> = collection_client
         .query_documents()
-        .query(&(&query_stmt as &str).into())
+        .query(&Query::new(&query_stmt))
         .consistency_level(&ret)
-        .max_item_count(2)
+        .max_item_count(2i32)
         .execute()
         .await?
         .into_raw();
@@ -118,7 +116,7 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
         .query_documents()
         .query(&(&query_stmt as &str).into())
         .consistency_level(&ret)
-        .max_item_count(2)
+        .max_item_count(2i32)
         .execute()
         .await?
         .into_raw();

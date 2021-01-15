@@ -1,10 +1,10 @@
 use azure_core::prelude::*;
-use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use std::error::Error;
+use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     env_logger::init();
 
     // First we retrieve the account name and master key from environment variables.
@@ -17,25 +17,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let client = client::with_access_key(&account, &master_key);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let storage_account =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+            .as_storage_client();
+    let container = storage_account.as_container_client(&container_name);
+    let blob = container.as_blob_client("SorgeniaReorganizeRebuildIndexes.zip");
 
-    let _res = client
+    let _res = container
         .list_blobs()
-        .with_container_name(&container_name)
-        .with_include_copy()
-        .with_include_deleted()
-        .with_include_metadata()
-        .with_include_snapshots()
-        .with_include_uncommitted_blobs()
-        .finalize()
+        .include_copy(true)
+        .include_deleted(true)
+        .include_metadata(true)
+        .include_snapshots(true)
+        .include_uncommitted_blobs(true)
+        .execute()
         .await?;
 
-    let result = client
-        .get_blob()
-        .with_container_name(&container_name)
-        .with_blob_name("SorgeniaReorganizeRebuildIndexes.zip")
-        .finalize()
-        .await?;
+    let result = blob.get().execute().await?;
 
     println!("{:?}", result);
 

@@ -37,31 +37,10 @@ impl<'a, C> CreateQueueBuilder<'a, C>
 where
     C: Client + Clone,
 {
-    pub fn with_metadata(self, metadata: &'a Metadata) -> Self {
-        CreateQueueBuilder {
-            queue_client: self.queue_client,
-            timeout: self.timeout,
-            metadata: Some(metadata),
-            client_request_id: self.client_request_id,
-        }
-    }
-
-    pub fn with_timeout(self, timeout: Timeout) -> Self {
-        Self {
-            queue_client: self.queue_client,
-            timeout: Some(timeout),
-            metadata: self.metadata,
-            client_request_id: self.client_request_id,
-        }
-    }
-
-    pub fn with_client_request_id(self, client_request_id: ClientRequestId<'a>) -> Self {
-        Self {
-            queue_client: self.queue_client,
-            timeout: self.timeout,
-            metadata: self.metadata,
-            client_request_id: Some(client_request_id),
-        }
+    setters! {
+        metadata: &'a Metadata => Some(metadata),
+        timeout: Timeout => Some(timeout),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
     pub async fn execute(self) -> Result<CreateQueueResponse, AzureError> {

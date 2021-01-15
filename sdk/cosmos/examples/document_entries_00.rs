@@ -1,5 +1,4 @@
-use azure_core::modify_conditions::IfMatchCondition;
-use azure_core::HttpClient;
+use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use azure_cosmos::responses::GetDocumentResponse;
 use futures::stream::StreamExt;

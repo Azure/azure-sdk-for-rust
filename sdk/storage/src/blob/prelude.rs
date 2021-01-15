@@ -1,5 +1,5 @@
 pub use super::blob::{
-    BlobBlockType, BlockList, BlockListRequired, BlockListSupport, BlockListType,
+    Blob, BlobBlockType, BlockList, BlockListRequired, BlockListSupport, BlockListType,
     BlockListTypeRequired, BlockListTypeSupport,
 };
 pub use super::container::{
@@ -7,5 +7,8 @@ pub use super::container::{
     StoredAccessPolicyListSupport,
 };
 pub use super::Blob as BlobTrait;
-pub use super::Container as ContainerTrait;
-pub use crate::{RehydratePriority, RehydratePriorityOption, RehydratePrioritySupport};
+pub use crate::{
+    AccessTier, BlobVersioning, BlockId, ConditionAppendPosition, ConditionMaxSize,
+    DeleteSnapshotsMethod, Hash, RehydratePriority, RehydratePriorityOption,
+    RehydratePrioritySupport, Snapshot, VersionId,
+};

@@ -2,9 +2,10 @@ use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use std::error::Error;
+use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     env_logger::init();
 
     // First we retrieve the account name and master key from environment variables.
@@ -17,22 +18,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let client = client::with_access_key(&account, &master_key);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+
+    let storage_account_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+    let storage_client = storage_account_client.as_storage_client();
+    let blob = storage_client
+        .as_container_client(&container_name)
+        .as_blob_client("test1");
 
     let data = b"1337 azure blob test";
-    let blob = "test1";
     let mut block_ids = Vec::new();
     for (i, block) in data.chunks(64 * 1024 * 1024 /* 64 MiB */).enumerate() {
         block_ids.push(i.to_be_bytes());
-        let digest = md5::compute(block);
-        let put_block_response = client
-            .put_block()
-            .with_container_name(&container_name)
-            .with_blob_name(blob)
-            .with_body(block)
-            .with_block_id(&i.to_be_bytes()[..])
-            .with_content_md5(&digest[..])
-            .finalize()
+        let hash = md5::compute(block).into();
+        let block_id = (&i.to_be_bytes() as &[u8]).into();
+
+        let put_block_response = blob
+            .put_block(&block_id, block)
+            .hash(&hash)
+            .execute()
             .await?;
 
         println!("put_block_response == {:#?}", put_block_response);

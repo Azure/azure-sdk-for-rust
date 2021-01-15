@@ -268,7 +268,6 @@ impl Blob {
     pub(crate) fn from_headers(
         blob_name: &str,
         container_name: &str,
-        snapshot_time: Option<DateTime<Utc>>,
         h: &header::HeaderMap,
     ) -> Result<Blob, AzureError> {
         trace!("\n{:?}", h);
@@ -395,6 +394,10 @@ impl Blob {
             }
         }
 
+        // TODO: Retrieve the snapshot time from
+        // the headers
+        let snapshot_time = None;
+
         Ok(Blob {
             name: blob_name.to_owned(),
             container_name: container_name.to_owned(),
@@ -444,7 +447,7 @@ pub(crate) fn incomplete_vector_from_response(
 
     let next_marker = match cast_optional::<String>(&elem, &["NextMarker"])? {
         Some(ref nm) if nm == "" => None,
-        Some(nm) => Some(nm),
+        Some(nm) => Some(nm.into()),
         None => None,
     };
 

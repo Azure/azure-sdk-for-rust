@@ -1,5 +1,3 @@
-use super::{KeyClient, KeyClientRequired};
-use crate::core::client_endpoint::ClientEndpoint;
 use azure_core::{No, ToAssign};
 use base64::encode;
 use chrono::{DateTime, Utc};
@@ -144,8 +142,11 @@ pub struct SharedAccessSignature {
 
 impl SharedAccessSignature {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(key_client: &KeyClient) -> SharedAccessSignatureBuilder<No, No, No, No> {
-        SharedAccessSignatureBuilder::new(key_client)
+    pub fn new<'a>(
+        account: &'a str,
+        key: &'a str,
+    ) -> SharedAccessSignatureBuilder<'a, No, No, No, No> {
+        SharedAccessSignatureBuilder::new(account, key)
     }
 
     fn format_date(d: DateTime<Utc>) -> String {
@@ -250,7 +251,8 @@ pub struct SharedAccessSignatureBuilder<
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    key_client: &'a KeyClient,
+    account: &'a str,
+    key: &'a str,
     signed_version: SasVersion,
     p_signed_resource: PhantomData<SasResourceSet>,
     signed_resource: Option<SasResource>,
@@ -266,9 +268,10 @@ pub struct SharedAccessSignatureBuilder<
 }
 
 impl<'a> SharedAccessSignatureBuilder<'a, No, No, No, No> {
-    pub fn new(key_client: &'a KeyClient) -> Self {
+    pub fn new(account: &'a str, key: &'a str) -> Self {
         Self {
-            key_client,
+            account,
+            key,
             signed_version: SasVersion::V20181109,
             p_signed_resource: PhantomData {},
             signed_resource: None,
@@ -286,9 +289,8 @@ impl<'a> SharedAccessSignatureBuilder<'a, No, No, No, No> {
 
     pub fn finalize(&self) -> SharedAccessSignature {
         SharedAccessSignature {
-            account: self.key_client.account().to_string(),
-            key: self.key_client.key().to_string(),
-
+            account: self.account.to_owned(),
+            key: self.key.to_owned(),
             signed_version: self.signed_version,
             signed_resource: self.signed_resource.unwrap(),
             signed_resource_type: self.signed_resource_type.unwrap(),
@@ -301,35 +303,8 @@ impl<'a> SharedAccessSignatureBuilder<'a, No, No, No, No> {
     }
 }
 
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> KeyClientRequired<'a>
-    for SharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >
-where
-    SasResourceSet: ToAssign,
-    SasResourceTypeSet: ToAssign,
-    SasExpirySet: ToAssign,
-    SasPermissionsSet: ToAssign,
-{
-    #[inline]
-    fn key_client(&self) -> &'a KeyClient {
-        self.key_client
-    }
-}
-
 pub trait ClientSharedAccessSignature {
     fn shared_access_signature(&self) -> SharedAccessSignatureBuilder<'_, No, No, No, No>;
-}
-
-impl ClientSharedAccessSignature for KeyClient {
-    /// Grant restricted access rights to Azure Storage resources ([Azure documentation](https://docs.microsoft.com/en-us/rest/api/storageservices/delegate-access-with-shared-access-signature)).
-    fn shared_access_signature(&self) -> SharedAccessSignatureBuilder<'_, No, No, No, No> {
-        SharedAccessSignature::new(self)
-    }
 }
 
 pub trait SasResourceRequired {
@@ -386,7 +361,8 @@ where
     #[inline]
     fn with_resource(self, resource: SasResource) -> Self::O {
         SharedAccessSignatureBuilder {
-            key_client: self.key_client,
+            account: self.account,
+            key: self.key,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: Some(resource),
@@ -459,7 +435,8 @@ where
     #[inline]
     fn with_resource_type(self, resource_type: SasResourceType) -> Self::O {
         SharedAccessSignatureBuilder {
-            key_client: self.key_client,
+            account: self.account,
+            key: self.key,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: self.signed_resource,
@@ -530,7 +507,8 @@ where
     #[inline]
     fn with_expiry(self, expiry: DateTime<Utc>) -> Self::O {
         SharedAccessSignatureBuilder {
-            key_client: self.key_client,
+            account: self.account,
+            key: self.key,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: self.signed_resource,
@@ -602,7 +580,8 @@ where
     #[inline]
     fn with_permissions(self, permissions: SasPermissions) -> Self::O {
         SharedAccessSignatureBuilder {
-            key_client: self.key_client,
+            account: self.account,
+            key: self.key,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: self.signed_resource,
@@ -649,7 +628,8 @@ where
     #[inline]
     fn with_start(self, start: DateTime<Utc>) -> Self::O {
         SharedAccessSignatureBuilder {
-            key_client: self.key_client,
+            account: self.account,
+            key: self.key,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: self.signed_resource,
@@ -696,7 +676,8 @@ where
     #[inline]
     fn with_ip(self, ip: &str) -> Self::O {
         SharedAccessSignatureBuilder {
-            key_client: self.key_client,
+            account: self.account,
+            key: self.key,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: self.signed_resource,
@@ -743,7 +724,8 @@ where
     #[inline]
     fn with_protocol(self, protocol: SasProtocol) -> Self::O {
         SharedAccessSignatureBuilder {
-            key_client: self.key_client,
+            account: self.account,
+            key: self.key,
             signed_version: self.signed_version,
             p_signed_resource: PhantomData {},
             signed_resource: self.signed_resource,

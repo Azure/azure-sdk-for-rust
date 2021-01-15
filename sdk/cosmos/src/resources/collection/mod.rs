@@ -2,9 +2,8 @@
 
 mod offer;
 
-pub use offer::Offer;
-
 use super::Resource;
+pub use offer::Offer;
 
 /// A container of JSON documents and associated JavaScript application logic.
 ///
@@ -34,25 +33,6 @@ pub struct Collection {
     pub udfs: String,
     #[serde(rename = "_conflicts")]
     pub conflicts: String,
-}
-
-impl Collection {
-    pub fn new(id: &str, indexing_policy: IndexingPolicy) -> Collection {
-        Collection {
-            id: id.to_owned(),
-            indexing_policy,
-            parition_key: PartitionKey::default(),
-            rid: String::new(),
-            ts: 0,
-            _self: String::new(),
-            etag: String::new(),
-            docs: String::new(),
-            sprocs: String::new(),
-            triggers: String::new(),
-            udfs: String::new(),
-            conflicts: String::new(),
-        }
-    }
 }
 
 impl Resource for Collection {
@@ -112,7 +92,7 @@ pub struct ExcludedPath {
     pub path: String,
 }
 
-impl std::convert::From<String> for ExcludedPath {
+impl From<String> for ExcludedPath {
     fn from(s: String) -> Self {
         Self { path: s }
     }
@@ -133,7 +113,7 @@ impl std::default::Default for PartitionKey {
     }
 }
 
-impl<T> std::convert::From<T> for PartitionKey
+impl<T> From<T> for PartitionKey
 where
     T: AsRef<str>,
 {
@@ -146,13 +126,10 @@ where
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct IndexingPolicy {
-    #[serde(rename = "automatic")]
     pub automatic: bool,
-    #[serde(rename = "indexingMode")]
     pub indexing_mode: IndexingMode,
-    #[serde(rename = "includedPaths")]
     pub included_paths: Vec<IncludedPath>,
-    #[serde(rename = "excludedPaths")]
     pub excluded_paths: Vec<ExcludedPath>,
 }

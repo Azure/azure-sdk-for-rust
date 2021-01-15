@@ -1,4 +1,4 @@
-#![recursion_limit = "128"]
+#![recursion_limit = "256"]
 #![allow(clippy::needless_lifetimes)]
 
 #[macro_use]
@@ -21,6 +21,8 @@ pub mod core;
 pub mod queue;
 #[cfg(feature = "table")]
 pub mod table;
+
+pub mod clients;
 
 pub use crate::core::*;
 #[cfg(feature = "account")]

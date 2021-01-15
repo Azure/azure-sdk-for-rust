@@ -1,336 +1,80 @@
-use crate::blob::prelude::{
-    PublicAccess, PublicAccessRequired, PublicAccessSupport, StoredAccessPolicyListOption,
-    StoredAccessPolicyListSupport,
-};
+use crate::blob::prelude::PublicAccess;
+use crate::clients::ContainerClient;
 use crate::container::public_access_from_header;
-use crate::core::prelude::*;
-use azure_core::errors::AzureError;
+use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
-use azure_core::{No, StoredAccessPolicyList, ToAssign, Yes};
-use hyper::{Method, StatusCode};
-use std::marker::PhantomData;
+use azure_core::StoredAccessPolicyList;
+use http::method::Method;
+use http::status::StatusCode;
 
 #[derive(Debug, Clone)]
-pub struct SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>
-where
-    ContainerNameSet: ToAssign,
-    PublicAccessSet: ToAssign,
-    C: Client,
-{
-    client: &'a C,
-    p_container_name: PhantomData<ContainerNameSet>,
-    p_public_access: PhantomData<PublicAccessSet>,
-    container_name: Option<&'a str>,
+pub struct SetACLBuilder<'a> {
+    container_client: &'a ContainerClient,
     public_access: PublicAccess,
     stored_access_policy_list: Option<&'a StoredAccessPolicyList>,
-    client_request_id: Option<&'a str>,
-    timeout: Option<u64>,
+    client_request_id: Option<ClientRequestId<'a>>,
+    timeout: Option<Timeout>,
     lease_id: Option<&'a LeaseId>,
 }
 
-impl<'a, C> SetACLBuilder<'a, C, No, No>
-where
-    C: Client,
-{
-    #[inline]
-    pub(crate) fn new(client: &'a C) -> SetACLBuilder<'a, C, No, No> {
-        SetACLBuilder {
-            client,
-            p_container_name: PhantomData {},
-            container_name: None,
-            p_public_access: PhantomData {},
-            public_access: PublicAccess::None,
+impl<'a> SetACLBuilder<'a> {
+    pub(crate) fn new(container_client: &'a ContainerClient, public_access: PublicAccess) -> Self {
+        Self {
+            container_client,
+            public_access,
             stored_access_policy_list: None,
             client_request_id: None,
             timeout: None,
             lease_id: None,
         }
     }
-}
 
-impl<'a, C, ContainerNameSet, PublicAccessSet> ClientRequired<'a, C>
-    for SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>
-where
-    ContainerNameSet: ToAssign,
-    PublicAccessSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn client(&self) -> &'a C {
-        self.client
+    setters! {
+        lease_id: &'a LeaseId => Some(lease_id),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        timeout: Timeout => Some(timeout),
+        stored_access_policy_list: &'a StoredAccessPolicyList => Some(stored_access_policy_list),
     }
-}
 
-//get mandatory no traits methods
+    pub async fn execute(&self) -> Result<PublicAccess, Box<dyn std::error::Error + Sync + Send>> {
+        let mut url = self
+            .container_client
+            .storage_client()
+            .storage_account_client()
+            .blob_storage_url()
+            .join(self.container_client.container_name())?;
 
-//set mandatory no traits methods
-impl<'a, C, PublicAccessSet> ContainerNameRequired<'a>
-    for SetACLBuilder<'a, C, Yes, PublicAccessSet>
-where
-    PublicAccessSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn container_name(&self) -> &'a str {
-        self.container_name.unwrap()
-    }
-}
+        url.query_pairs_mut().append_pair("restype", "container");
+        url.query_pairs_mut().append_pair("comp", "acl");
 
-impl<'a, C, ContainerNameSet> PublicAccessRequired for SetACLBuilder<'a, C, ContainerNameSet, Yes>
-where
-    ContainerNameSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn public_access(&self) -> PublicAccess {
-        self.public_access
-    }
-}
+        self.timeout.append_to_url_query(&mut url);
 
-impl<'a, C, ContainerNameSet, PublicAccessSet> StoredAccessPolicyListOption<'a>
-    for SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>
-where
-    ContainerNameSet: ToAssign,
-    PublicAccessSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn stored_access_policy_list(&self) -> Option<&'a StoredAccessPolicyList> {
-        self.stored_access_policy_list
-    }
-}
+        let xml = self.stored_access_policy_list.map(|xml| xml.to_xml());
 
-impl<'a, C, ContainerNameSet, PublicAccessSet> ClientRequestIdOption<'a>
-    for SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>
-where
-    ContainerNameSet: ToAssign,
-    PublicAccessSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn client_request_id(&self) -> Option<&'a str> {
-        self.client_request_id
-    }
-}
-
-impl<'a, C, ContainerNameSet, PublicAccessSet> TimeoutOption
-    for SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>
-where
-    ContainerNameSet: ToAssign,
-    PublicAccessSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn timeout(&self) -> Option<u64> {
-        self.timeout
-    }
-}
-
-impl<'a, C, ContainerNameSet, PublicAccessSet> LeaseIdOption<'a>
-    for SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>
-where
-    ContainerNameSet: ToAssign,
-    PublicAccessSet: ToAssign,
-    C: Client,
-{
-    #[inline]
-    fn lease_id(&self) -> Option<&'a LeaseId> {
-        self.lease_id
-    }
-}
-
-impl<'a, C, PublicAccessSet> ContainerNameSupport<'a> for SetACLBuilder<'a, C, No, PublicAccessSet>
-where
-    PublicAccessSet: ToAssign,
-    C: Client,
-{
-    type O = SetACLBuilder<'a, C, Yes, PublicAccessSet>;
-
-    #[inline]
-    fn with_container_name(self, container_name: &'a str) -> Self::O {
-        SetACLBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_public_access: PhantomData {},
-            container_name: Some(container_name),
-            public_access: self.public_access,
-            stored_access_policy_list: self.stored_access_policy_list,
-            client_request_id: self.client_request_id,
-            timeout: self.timeout,
-            lease_id: self.lease_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet> PublicAccessSupport for SetACLBuilder<'a, C, ContainerNameSet, No>
-where
-    ContainerNameSet: ToAssign,
-    C: Client,
-{
-    type O = SetACLBuilder<'a, C, ContainerNameSet, Yes>;
-
-    #[inline]
-    fn with_public_access(self, public_access: PublicAccess) -> Self::O {
-        SetACLBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_public_access: PhantomData {},
-            container_name: self.container_name,
-            public_access,
-            stored_access_policy_list: self.stored_access_policy_list,
-            client_request_id: self.client_request_id,
-            timeout: self.timeout,
-            lease_id: self.lease_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, PublicAccessSet> StoredAccessPolicyListSupport<'a>
-    for SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>
-where
-    ContainerNameSet: ToAssign,
-    PublicAccessSet: ToAssign,
-    C: Client,
-{
-    type O = SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>;
-
-    #[inline]
-    fn with_stored_access_policy_list(
-        self,
-        stored_access_policy_list: &'a StoredAccessPolicyList,
-    ) -> Self::O {
-        SetACLBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_public_access: PhantomData {},
-            container_name: self.container_name,
-            public_access: self.public_access,
-            stored_access_policy_list: Some(stored_access_policy_list),
-            client_request_id: self.client_request_id,
-            timeout: self.timeout,
-            lease_id: self.lease_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, PublicAccessSet> ClientRequestIdSupport<'a>
-    for SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>
-where
-    ContainerNameSet: ToAssign,
-    PublicAccessSet: ToAssign,
-    C: Client,
-{
-    type O = SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>;
-
-    #[inline]
-    fn with_client_request_id(self, client_request_id: &'a str) -> Self::O {
-        SetACLBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_public_access: PhantomData {},
-            container_name: self.container_name,
-            public_access: self.public_access,
-            stored_access_policy_list: self.stored_access_policy_list,
-            client_request_id: Some(client_request_id),
-            timeout: self.timeout,
-            lease_id: self.lease_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, PublicAccessSet> TimeoutSupport
-    for SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>
-where
-    ContainerNameSet: ToAssign,
-    PublicAccessSet: ToAssign,
-    C: Client,
-{
-    type O = SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>;
-
-    #[inline]
-    fn with_timeout(self, timeout: u64) -> Self::O {
-        SetACLBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_public_access: PhantomData {},
-            container_name: self.container_name,
-            public_access: self.public_access,
-            stored_access_policy_list: self.stored_access_policy_list,
-            client_request_id: self.client_request_id,
-            timeout: Some(timeout),
-            lease_id: self.lease_id,
-        }
-    }
-}
-
-impl<'a, C, ContainerNameSet, PublicAccessSet> LeaseIdSupport<'a>
-    for SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>
-where
-    ContainerNameSet: ToAssign,
-    PublicAccessSet: ToAssign,
-    C: Client,
-{
-    type O = SetACLBuilder<'a, C, ContainerNameSet, PublicAccessSet>;
-
-    #[inline]
-    fn with_lease_id(self, lease_id: &'a LeaseId) -> Self::O {
-        SetACLBuilder {
-            client: self.client,
-            p_container_name: PhantomData {},
-            p_public_access: PhantomData {},
-            container_name: self.container_name,
-            public_access: self.public_access,
-            stored_access_policy_list: self.stored_access_policy_list,
-            client_request_id: self.client_request_id,
-            timeout: self.timeout,
-            lease_id: Some(lease_id),
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
-impl<'a, C> SetACLBuilder<'a, C, Yes, Yes>
-where
-    C: Client,
-{
-    pub async fn finalize(self) -> Result<PublicAccess, AzureError> {
-        let mut uri = format!(
-            "{}/{}?restype=container&comp=acl",
-            self.client().blob_uri(),
-            self.container_name()
-        );
-
-        if let Some(nm) = TimeoutOption::to_uri_parameter(&self) {
-            uri = format!("{}&{}", uri, nm);
-        }
-
-        let xml = if let Some(sapl) = self.stored_access_policy_list {
-            let xml = sapl.to_xml();
-            Some(xml)
-        } else {
-            None
-        };
-
-        let perform_request_response = self.client().perform_request(
-            &uri,
+        let request = self.container_client.prepare_request(
+            url.as_str(),
             &Method::PUT,
             &|mut request| {
-                request = ClientRequestIdOption::add_optional_header(&self, request);
-                request = LeaseIdOption::add_optional_header(&self, request);
-                request = PublicAccessRequired::add_optional_header(&self, request);
+                request = add_mandatory_header(&self.public_access, request);
+                request = add_optional_header(&self.client_request_id, request);
+                request = add_optional_header_ref(&self.lease_id, request);
                 request
             },
             match xml {
                 Some(ref x) => Some(x.as_bytes()),
-                None => Some(&[]),
+                None => None,
             },
         )?;
 
-        let (headers, _body) = perform_request_response
-            .check_status_extract_headers_and_body(StatusCode::OK)
+        let response = self
+            .container_client
+            .storage_client()
+            .storage_account_client()
+            .http_client()
+            .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        public_access_from_header(&headers)
+        Ok(public_access_from_header(response.headers())?)
     }
 }

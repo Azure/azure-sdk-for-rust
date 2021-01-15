@@ -1,6 +1,6 @@
 use crate::core::Client;
 use crate::queue::clients::QueueClient;
-use crate::requests;
+use crate::queue::requests::*;
 use crate::HasStorageClient;
 use std::fmt::Debug;
 
@@ -31,8 +31,8 @@ where
         Self { storage_client }
     }
 
-    pub fn list_queues(&self) -> requests::ListQueuesBuilder<'_, C> {
-        crate::requests::ListQueuesBuilder::new(self)
+    pub fn list_queues(&self) -> ListQueuesBuilder<'_, C> {
+        ListQueuesBuilder::new(self)
     }
 
     pub fn into_queue_client<QN>(self, queue_name: QN) -> QueueClient<C>

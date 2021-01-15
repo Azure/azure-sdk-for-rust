@@ -4,6 +4,7 @@ pub mod responses;
 use azure_core::errors::AzureError;
 use azure_core::headers::{CONTINUATION, PROPERTIES};
 use azure_core::incompletevector::IncompleteVector;
+use azure_core::prelude::*;
 use azure_core::util::HeaderMapExt;
 use http::{request::Builder, HeaderMap};
 use serde::Deserialize;
@@ -70,7 +71,7 @@ pub(crate) fn incomplete_vector_from_response(
 
     let continuation = match headers.get_as_string(CONTINUATION) {
         Some(ref ct) if ct == "" => None,
-        Some(ct) => Some(ct),
+        Some(ct) => Some(NextMarker::new(ct)),
         None => None,
     };
 
