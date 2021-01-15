@@ -1,7 +1,7 @@
 use super::*;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
-use azure_core::{HttpClient, No};
+use azure_core::HttpClient;
 
 /// A client for Cosmos stored procedure resources.
 #[derive(Debug, Clone)]
@@ -45,7 +45,7 @@ impl StoredProcedureClient {
         requests::CreateStoredProcedureBuilder::new(self)
     }
 
-    pub fn replace_stored_procedure(&self) -> requests::ReplaceStoredProcedureBuilder<'_, '_, No> {
+    pub fn replace_stored_procedure(&self) -> requests::ReplaceStoredProcedureBuilder<'_, '_> {
         requests::ReplaceStoredProcedureBuilder::new(self)
     }
 
