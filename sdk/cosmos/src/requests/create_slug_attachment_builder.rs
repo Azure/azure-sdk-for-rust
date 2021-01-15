@@ -57,9 +57,12 @@ impl<'a, 'b, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, No, ContentType
 where
     ContentTypeSet: ToAssign,
 {
-    pub fn body(self, body: Bytes) -> CreateSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
+    pub fn body(
+        self,
+        body: impl Into<Bytes>,
+    ) -> CreateSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
         CreateSlugAttachmentBuilder {
-            body: Some(body),
+            body: Some(body.into()),
             attachment_client: self.attachment_client,
             content_type: self.content_type,
             if_match_condition: self.if_match_condition,
@@ -95,7 +98,7 @@ where
 }
 
 impl<'a, 'b> CreateSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
-    pub async fn execute(self) -> Result<CreateSlugAttachmentResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<CreateSlugAttachmentResponse, CosmosError> {
         let mut req = self.attachment_client.prepare_request(http::Method::POST);
 
         // add trait headers
@@ -112,7 +115,7 @@ impl<'a, 'b> CreateSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
         req = azure_core::headers::add_mandatory_header(&self.content_type.unwrap(), req);
 
         req = req.header("Slug", self.attachment_client.attachment_name());
-        let body = self.body.unwrap();
+        let body = self.body.clone().unwrap();
         req = req.header(http::header::CONTENT_LENGTH, body.len());
 
         let req = req.body(body)?;

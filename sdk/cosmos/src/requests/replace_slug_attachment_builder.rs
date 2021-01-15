@@ -55,7 +55,7 @@ where
 
 // methods callable only when every mandatory field has been filled
 impl<'a, 'b> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
-    pub async fn execute(self) -> Result<CreateSlugAttachmentResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<CreateSlugAttachmentResponse, CosmosError> {
         let mut req = self.attachment_client.prepare_request(http::Method::PUT);
 
         // add trait headers
@@ -72,7 +72,7 @@ impl<'a, 'b> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
         req = azure_core::headers::add_mandatory_header(&self.content_type.unwrap(), req);
 
         req = req.header("Slug", self.attachment_client.attachment_name());
-        let body = self.body.unwrap();
+        let body = self.body.clone().unwrap();
         req = req.header(http::header::CONTENT_LENGTH, body.len());
 
         let req = req.body(body)?;
@@ -92,12 +92,15 @@ impl<'a, 'b, ContentTypeSet> ReplaceSlugAttachmentBuilder<'a, 'b, No, ContentTyp
 where
     ContentTypeSet: ToAssign,
 {
-    pub fn body(self, body: Bytes) -> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
+    pub fn body(
+        self,
+        body: impl Into<Bytes>,
+    ) -> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
         ReplaceSlugAttachmentBuilder {
             attachment_client: self.attachment_client,
             p_body: PhantomData,
             p_content_type: PhantomData,
-            body: Some(body),
+            body: Some(body.into()),
             content_type: self.content_type,
             if_match_condition: self.if_match_condition,
             user_agent: self.user_agent,

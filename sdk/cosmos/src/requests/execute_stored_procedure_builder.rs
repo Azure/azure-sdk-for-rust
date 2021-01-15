@@ -18,6 +18,8 @@ pub struct ExecuteStoredProcedureBuilder<'a, 'b> {
     partition_keys: Option<&'b PartitionKeys>,
 }
 
+static EMPTY_LIST: &[u8; 2] = b"[]";
+
 impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     pub(crate) fn new(stored_procedure_client: &'a StoredProcedureClient) -> Self {
         Self {
@@ -67,11 +69,10 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         let request = request.header(http::header::CONTENT_TYPE, "application/json");
 
         let body = if let Some(parameters) = self.parameters.as_ref() {
-            parameters.to_json()
+            Bytes::from(parameters.to_json())
         } else {
-            "[]".to_owned()
+            Bytes::from_static(EMPTY_LIST)
         };
-        let body = Bytes::from(body);
 
         let request = request.body(body)?;
 
