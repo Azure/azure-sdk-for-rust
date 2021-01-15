@@ -32,8 +32,7 @@ async fn users() {
 
     let _replace_user_response = user_client
         .replace_user()
-        .user_name(&USER_NAME_REPLACED)
-        .execute()
+        .execute(USER_NAME_REPLACED)
         .await
         .unwrap();
 

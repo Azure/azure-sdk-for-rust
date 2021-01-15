@@ -1,7 +1,7 @@
 use super::*;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
-use azure_core::{HttpClient, No};
+use azure_core::HttpClient;
 
 /// A client for Cosmos user resources.
 #[derive(Debug, Clone)]
@@ -45,7 +45,7 @@ impl UserClient {
         requests::GetUserBuilder::new(self)
     }
 
-    pub fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, '_, No> {
+    pub fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, '_> {
         requests::ReplaceUserBuilder::new(self)
     }
 
