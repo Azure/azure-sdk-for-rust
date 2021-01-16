@@ -1,6 +1,7 @@
 use crate::clients::{ServiceType, StorageAccountClient};
 use crate::table::requests::*;
 use azure_core::errors::AzureError;
+use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
 use std::sync::Arc;
@@ -40,8 +41,8 @@ impl TableServiceClient {
         url: &str,
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
-        request_body: Option<&'a [u8]>,
-    ) -> Result<(Request<&'a [u8]>, url::Url), AzureError> {
+        request_body: Option<Bytes>,
+    ) -> Result<(Request<Bytes>, url::Url), AzureError> {
         self.storage_account_client.prepare_request(
             url,
             method,

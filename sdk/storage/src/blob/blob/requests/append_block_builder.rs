@@ -3,11 +3,12 @@ use crate::blob::prelude::*;
 use crate::core::prelude::*;
 use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
+use bytes::Bytes;
 
 #[derive(Debug, Clone)]
 pub struct AppendBlockBuilder<'a> {
     blob_client: &'a BlobClient,
-    body: &'a [u8],
+    body: Bytes,
     hash: Option<&'a Hash>,
     condition_max_size: Option<ConditionMaxSize>,
     condition_append_position: Option<ConditionAppendPosition>,
@@ -17,10 +18,10 @@ pub struct AppendBlockBuilder<'a> {
 }
 
 impl<'a> AppendBlockBuilder<'a> {
-    pub(crate) fn new(blob_client: &'a BlobClient, body: &'a [u8]) -> Self {
+    pub(crate) fn new(blob_client: &'a BlobClient, body: impl Into<Bytes>) -> Self {
         Self {
             blob_client,
-            body,
+            body: body.into(),
             hash: None,
             condition_max_size: None,
             condition_append_position: None,
@@ -68,7 +69,7 @@ impl<'a> AppendBlockBuilder<'a> {
                 request = add_optional_header(&self.client_request_id, request);
                 request
             },
-            Some(self.body),
+            Some(self.body.clone()),
         )?;
 
         let response = self
