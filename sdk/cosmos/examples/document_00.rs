@@ -182,10 +182,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // changes every time the document is updated. If the passed etag is different in
         // CosmosDB it means something else updated the document before us!
         let replace_document_response = collection_client
-            .replace_document()
+            .replace_document(&doc.document.id)
             .partition_keys([&doc.document.id])
             .if_match_condition(IfMatchCondition::Match(&document.etag))
-            .execute(&doc.document.id, &doc)
+            .execute(&doc)
             .await?;
         println!(
             "replace_document_response == {:#?}",

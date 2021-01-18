@@ -10,6 +10,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ReplaceDocumentBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
+    document_id: &'a str,
     partition_keys: Option<PartitionKeys>,
     indexing_directive: IndexingDirective,
     if_match_condition: Option<IfMatchCondition<'b>>,
@@ -21,9 +22,10 @@ pub struct ReplaceDocumentBuilder<'a, 'b> {
 }
 
 impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b> {
-    pub(crate) fn new(collection_client: &'a CollectionClient) -> Self {
+    pub(crate) fn new(collection_client: &'a CollectionClient, document_id: &'a str) -> Self {
         Self {
             collection_client,
+            document_id,
             partition_keys: None,
             indexing_directive: IndexingDirective::Default,
             if_match_condition: None,
@@ -50,11 +52,7 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b> {
 }
 
 impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b> {
-    pub async fn execute<T>(
-        &self,
-        document_id: &str,
-        document: &T,
-    ) -> Result<ReplaceDocumentResponse, CosmosError>
+    pub async fn execute<T>(&self, document: &T) -> Result<ReplaceDocumentResponse, CosmosError>
     where
         T: Serialize,
     {
@@ -65,7 +63,7 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b> {
                 "dbs/{}/colls/{}/docs/{}",
                 self.collection_client.database_client().database_name(),
                 self.collection_client.collection_name(),
-                document_id
+                self.document_id
             ),
             http::Method::PUT,
             ResourceType::Documents,

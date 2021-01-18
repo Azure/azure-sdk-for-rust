@@ -55,11 +55,11 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b> {
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 
         #[derive(Debug, Clone, Serialize)]
+        #[serde(rename_all = "camelCase")]
         struct Request<'k> {
             id: &'k str,
-            #[serde(rename = "indexingPolicy", skip_serializing_if = "Option::is_none")]
+            #[serde(skip_serializing_if = "Option::is_none")]
             indexing_policy: Option<&'k IndexingPolicy>,
-            #[serde(rename = "partitionKey")]
             partition_key: PartitionKey,
         };
 

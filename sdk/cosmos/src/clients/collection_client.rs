@@ -59,8 +59,11 @@ impl CollectionClient {
         requests::CreateDocumentBuilder::new(self)
     }
 
-    pub fn replace_document(&self) -> requests::ReplaceDocumentBuilder<'_, '_> {
-        requests::ReplaceDocumentBuilder::new(self)
+    pub fn replace_document<'a>(
+        &'a self,
+        document_id: &'a str,
+    ) -> requests::ReplaceDocumentBuilder<'a, '_> {
+        requests::ReplaceDocumentBuilder::new(self, document_id)
     }
 
     pub fn query_documents(&self) -> requests::QueryDocumentsBuilder<'_, '_> {
