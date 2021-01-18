@@ -5,24 +5,6 @@ pub struct BlockList {
     pub blocks: Vec<BlobBlockType>,
 }
 
-impl BlockList {
-    pub fn to_owned(&self) -> Self {
-        let mut bl: BlockList = BlockList {
-            blocks: Vec::with_capacity(self.blocks.len()),
-        };
-
-        for entry in &self.blocks {
-            bl.blocks.push(match entry {
-                BlobBlockType::Committed(id) => BlobBlockType::Committed(id.clone()),
-                BlobBlockType::Uncommitted(id) => BlobBlockType::Uncommitted(id.clone()),
-                BlobBlockType::Latest(id) => BlobBlockType::Latest(id.clone()),
-            });
-        }
-
-        bl
-    }
-}
-
 impl From<BlockWithSizeList> for BlockList {
     fn from(b: BlockWithSizeList) -> BlockList {
         let mut bl = BlockList::default();
@@ -75,19 +57,11 @@ mod test {
             .push(BlobBlockType::new_committed(Bytes::from_static(b"numero1")));
         blocks
             .blocks
-            .push(BlobBlockType::new_uncommitted(Bytes::from_static(
-                b"numero2" as &[u8],
-            )));
+            .push(BlobBlockType::new_uncommitted("numero2"));
         blocks
             .blocks
-            .push(BlobBlockType::new_uncommitted(Bytes::from_static(
-                b"numero3" as &[u8],
-            )));
-        blocks
-            .blocks
-            .push(BlobBlockType::new_latest(Bytes::from_static(
-                b"numero4" as &[u8],
-            )));
+            .push(BlobBlockType::new_uncommitted("numero3"));
+        blocks.blocks.push(BlobBlockType::new_latest("numero4"));
 
         let _retu: &str = &blocks.to_xml();
 

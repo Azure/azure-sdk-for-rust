@@ -29,7 +29,7 @@ impl GetBlockListResponse {
         let date = date_from_headers(headers)?;
 
         let body = from_utf8(body)?;
-        let block_with_size_list = BlockWithSizeList::try_from(&body[3..] as &str)?;
+        let block_with_size_list = BlockWithSizeList::try_from_xml(&body[3..] as &str)?;
 
         Ok(GetBlockListResponse {
             etag,

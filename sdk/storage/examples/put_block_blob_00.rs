@@ -56,10 +56,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut block_list = BlockList::default();
     block_list
         .blocks
-        .push(BlobBlockType::new_uncommitted(b"satanasso" as &[u8]));
+        .push(BlobBlockType::new_uncommitted("satanasso"));
     block_list
         .blocks
-        .push(BlobBlockType::new_uncommitted(b"pollastro" as &[u8]));
+        .push(BlobBlockType::new_uncommitted("pollastro"));
 
     let res = blob.put_block("satanasso", data.clone()).execute().await?;
     println!("2-put_block {:?}", res);
