@@ -62,20 +62,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let ret = trigger_client
         .create_trigger()
-        .trigger_type(TriggerType::Post)
-        .trigger_operation(TriggerOperation::All)
-        .body(&"something")
-        .execute()
+        .execute("something", TriggerType::Post, TriggerOperation::All)
         .await?;
     println!("Creeate response object:\n{:#?}", ret);
 
     let ret = trigger_client
         .replace_trigger()
         .consistency_level(ret)
-        .trigger_type(TriggerType::Post)
-        .trigger_operation(TriggerOperation::All)
-        .body(&TRIGGER_BODY)
-        .execute()
+        .execute(TRIGGER_BODY, TriggerType::Post, TriggerOperation::All)
         .await?;
     println!("Replace response object:\n{:#?}", ret);
 

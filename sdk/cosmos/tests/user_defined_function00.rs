@@ -29,8 +29,7 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
     // create a temp database
     let _create_database_response = client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
 
@@ -74,8 +73,7 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
 
     let ret = user_defined_function_client
         .create_user_defined_function()
-        .body("body")
-        .execute()
+        .execute("body")
         .await?;
 
     let stream = collection_client
@@ -91,17 +89,15 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
     let ret = user_defined_function_client
         .replace_user_defined_function()
         .consistency_level(&ret)
-        .body(FN_BODY)
-        .execute()
+        .execute(FN_BODY)
         .await?;
 
     let query_stmt = format!("SELECT udf.{}(100)", USER_DEFINED_FUNCTION_NAME);
     let ret: QueryDocumentsResponseRaw<serde_json::Value> = collection_client
         .query_documents()
-        .query(&Query::new(&query_stmt))
         .consistency_level(&ret)
         .max_item_count(2i32)
-        .execute()
+        .execute(&query_stmt)
         .await?
         .into_raw();
 
@@ -114,10 +110,9 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
     let query_stmt = format!("SELECT udf.{}(10000)", USER_DEFINED_FUNCTION_NAME);
     let ret: QueryDocumentsResponseRaw<serde_json::Value> = collection_client
         .query_documents()
-        .query(&(&query_stmt as &str).into())
         .consistency_level(&ret)
         .max_item_count(2i32)
-        .execute()
+        .execute(&query_stmt)
         .await?
         .into_raw();
 

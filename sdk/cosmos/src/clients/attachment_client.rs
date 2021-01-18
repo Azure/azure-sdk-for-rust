@@ -1,7 +1,7 @@
 use crate::requests;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
-use azure_core::{HttpClient, No};
+use azure_core::HttpClient;
 
 use super::*;
 
@@ -64,22 +64,22 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to create an attachment with a slug.
-    pub fn create_slug(&self) -> requests::CreateSlugAttachmentBuilder<'_, '_, No, No> {
+    pub fn create_slug(&self) -> requests::CreateSlugAttachmentBuilder<'_, '_> {
         requests::CreateSlugAttachmentBuilder::new(self)
     }
 
     /// Initiate a request to replace an attachment.
-    pub fn replace_slug(&self) -> requests::ReplaceSlugAttachmentBuilder<'_, '_, No, No> {
+    pub fn replace_slug(&self) -> requests::ReplaceSlugAttachmentBuilder<'_, '_> {
         requests::ReplaceSlugAttachmentBuilder::new(self)
     }
 
     /// Initiate a request to create an attachment.
-    pub fn create_reference(&self) -> requests::CreateReferenceAttachmentBuilder<'_, '_, No, No> {
+    pub fn create_reference(&self) -> requests::CreateReferenceAttachmentBuilder<'_, '_> {
         requests::CreateReferenceAttachmentBuilder::new(self)
     }
 
     /// Initiate a request to replace an attachment.
-    pub fn replace_reference(&self) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_, No, No> {
+    pub fn replace_reference(&self) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_> {
         requests::ReplaceReferenceAttachmentBuilder::new(self)
     }
 

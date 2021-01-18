@@ -1,6 +1,5 @@
 use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
-use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::error::Error;
@@ -55,7 +54,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     match client
         .create_document()
         .partition_keys([&doc.document.id])
-        .execute_with_document(&doc)
+        .execute(&doc)
         .await
     {
         Ok(_) => {
@@ -80,11 +79,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp = attachment_client
         .create_reference()
         .consistency_level(ret)
-        .content_type("image/jpeg")
-        .media(
+        .execute(
             "https://cdn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
+            "image/jpeg",
         )
-        .execute()
         .await?;
     println!("create reference == {:#?}", resp);
 
@@ -106,11 +104,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp = attachment_client
         .replace_reference()
         .consistency_level(session_token)
-        .content_type("image/jpeg")
-        .media(
+        .execute(
             "https://Adn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
+            "image/jpeg",
         )
-        .execute()
         .await?;
     println!("replace reference == {:#?}", resp);
 
@@ -129,8 +126,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_slug()
         .consistency_level(&resp_delete)
         .content_type("text/plain")
-        .body(Bytes::from_static(b"FFFFF"))
-        .execute()
+        .execute("FFFFF")
         .await?;
 
     println!("create slug == {:#?}", resp);

@@ -24,8 +24,7 @@ async fn create_and_delete_document() {
 
     client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
 
@@ -59,7 +58,7 @@ async fn create_and_delete_document() {
     collection_client
         .create_document()
         .partition_keys([&DOCUMENT_NAME])
-        .execute_with_document(&document_data)
+        .execute(&document_data)
         .await
         .unwrap();
 
@@ -113,8 +112,7 @@ async fn query_documents() {
 
     client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
     let database_client = client.into_database_client(DATABASE_NAME);
@@ -147,7 +145,7 @@ async fn query_documents() {
     collection_client
         .create_document()
         .partition_keys([&document_data.document.id])
-        .execute_with_document(&document_data)
+        .execute(&document_data)
         .await
         .unwrap();
 
@@ -162,9 +160,8 @@ async fn query_documents() {
     // now query all documents and see if we get the correct result
     let query_result = collection_client
         .query_documents()
-        .query(&Query::new("SELECT * FROM c"))
         .query_cross_partition(true)
-        .execute::<MyDocument>()
+        .execute::<MyDocument, _>("SELECT * FROM c")
         .await
         .unwrap()
         .into_documents()
@@ -188,8 +185,7 @@ async fn replace_document() {
 
     client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
     let database_client = client.into_database_client(DATABASE_NAME);
@@ -222,7 +218,7 @@ async fn replace_document() {
     collection_client
         .create_document()
         .partition_keys([&document_data.document.id])
-        .execute_with_document(&document_data)
+        .execute(&document_data)
         .await
         .unwrap();
 
@@ -236,14 +232,13 @@ async fn replace_document() {
     // replace document with optimistic concurrency and session token
     document_data.document.hello = 190;
     collection_client
-        .replace_document()
-        .document_id(&document_data.document.id)
+        .replace_document(&document_data.document.id)
         .partition_keys([&document_data.document.id])
         .consistency_level(ConsistencyLevel::from(&documents))
         .if_match_condition(IfMatchCondition::Match(
             &documents.documents[0].document_attributes.etag(),
         ))
-        .execute_with_document(&document_data)
+        .execute(&document_data)
         .await
         .unwrap();
 

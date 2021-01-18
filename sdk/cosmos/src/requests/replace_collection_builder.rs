@@ -2,28 +2,20 @@ use crate::prelude::*;
 use crate::resources::collection::{IndexingPolicy, PartitionKey};
 use crate::responses::CreateCollectionResponse;
 use azure_core::prelude::*;
-use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
-use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
-where
-    PartitionKeysSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-{
+pub struct ReplaceCollectionBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
     partition_key: Option<PartitionKey>,
     indexing_policy: Option<&'a IndexingPolicy>,
     user_agent: Option<UserAgent<'b>>,
     activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    p_partition_key: PhantomData<PartitionKeysSet>,
-    p_indexing_policy: PhantomData<IndexingPolicySet>,
 }
 
-impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, No, No> {
+impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b> {
     pub(crate) fn new(collection_client: &'a CollectionClient) -> Self {
         Self {
             collection_client,
@@ -32,28 +24,24 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, No, No> {
             user_agent: None,
             activity_id: None,
             consistency_level: None,
-            p_partition_key: PhantomData,
-            p_indexing_policy: PhantomData,
         }
     }
 }
 
-impl<'a, 'b, PartitionKeysSet, IndexingPolicySet>
-    ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, IndexingPolicySet>
-where
-    PartitionKeysSet: ToAssign,
-    IndexingPolicySet: ToAssign,
-{
+impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b> {
     setters! {
         user_agent: &'b str => Some(UserAgent::new(user_agent)),
         activity_id: &'b str => Some(ActivityId::new(activity_id)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
+        indexing_policy: &'a IndexingPolicy => Some(indexing_policy),
     }
 }
 
-// methods callable only when every mandatory field has been filled
-impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
-    pub async fn execute(&self) -> Result<CreateCollectionResponse, CosmosError> {
+impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b> {
+    pub async fn execute<P: Into<PartitionKey>>(
+        &self,
+        partition_key: P,
+    ) -> Result<CreateCollectionResponse, CosmosError> {
         trace!("ReplaceCollectionBuilder::execute called");
 
         let req = self
@@ -67,18 +55,18 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
         let req = req.header(http::header::CONTENT_TYPE, "application/json");
 
         #[derive(Debug, Clone, Serialize)]
+        #[serde(rename_all = "camelCase")]
         struct Request<'k> {
             id: &'k str,
-            #[serde(rename = "indexingPolicy")]
-            indexing_policy: &'k IndexingPolicy,
-            #[serde(rename = "partitionKey")]
-            partition_key: &'k PartitionKey,
-        }
+            #[serde(skip_serializing_if = "Option::is_none")]
+            indexing_policy: Option<&'k IndexingPolicy>,
+            partition_key: PartitionKey,
+        };
 
         let request = Request {
             id: self.collection_client.collection_name(),
-            indexing_policy: self.indexing_policy.unwrap(),
-            partition_key: self.partition_key.as_ref().unwrap(),
+            indexing_policy: self.indexing_policy,
+            partition_key: partition_key.into(),
         };
 
         let body = azure_core::to_json(&request)?;
@@ -97,47 +85,5 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
             .execute_request_check_status(req, StatusCode::OK)
             .await?
             .try_into()?)
-    }
-}
-
-impl<'a, 'b, IndexingPolicySet> ReplaceCollectionBuilder<'a, 'b, No, IndexingPolicySet>
-where
-    IndexingPolicySet: ToAssign,
-{
-    pub fn partition_key<P: Into<PartitionKey>>(
-        self,
-        partition_key: P,
-    ) -> ReplaceCollectionBuilder<'a, 'b, Yes, IndexingPolicySet> {
-        ReplaceCollectionBuilder {
-            collection_client: self.collection_client,
-            p_partition_key: PhantomData,
-            p_indexing_policy: PhantomData,
-            partition_key: Some(partition_key.into()),
-            indexing_policy: self.indexing_policy,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-        }
-    }
-}
-
-impl<'a, 'b, PartitionKeysSet> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, No>
-where
-    PartitionKeysSet: ToAssign,
-{
-    pub fn indexing_policy(
-        self,
-        indexing_policy: &'a IndexingPolicy,
-    ) -> ReplaceCollectionBuilder<'a, 'b, PartitionKeysSet, Yes> {
-        ReplaceCollectionBuilder {
-            collection_client: self.collection_client,
-            p_partition_key: PhantomData,
-            p_indexing_policy: PhantomData,
-            partition_key: self.partition_key,
-            indexing_policy: Some(indexing_policy),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-        }
     }
 }

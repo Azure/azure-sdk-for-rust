@@ -13,8 +13,7 @@ async fn create_and_delete_collection() {
 
     client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
 
@@ -64,8 +63,7 @@ async fn replace_collection() {
 
     client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
 
@@ -123,8 +121,7 @@ async fn replace_collection() {
     let _replace_collection_reponse = collection_client
         .replace_collection()
         .indexing_policy(&new_ip)
-        .partition_key("/id")
-        .execute()
+        .execute("/id")
         .await
         .unwrap();
 

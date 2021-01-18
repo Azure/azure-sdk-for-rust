@@ -1,7 +1,7 @@
 use super::*;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
-use azure_core::{HttpClient, No};
+use azure_core::HttpClient;
 
 /// A client for Cosmos user defined function resources.
 #[derive(Debug, Clone)]
@@ -43,13 +43,13 @@ impl UserDefinedFunctionClient {
 
     pub fn create_user_defined_function(
         &self,
-    ) -> requests::CreateOrReplaceUserDefinedFunctionBuilder<'_, '_, No> {
+    ) -> requests::CreateOrReplaceUserDefinedFunctionBuilder<'_, '_> {
         requests::CreateOrReplaceUserDefinedFunctionBuilder::new(self, true)
     }
 
     pub fn replace_user_defined_function(
         &self,
-    ) -> requests::CreateOrReplaceUserDefinedFunctionBuilder<'_, '_, No> {
+    ) -> requests::CreateOrReplaceUserDefinedFunctionBuilder<'_, '_> {
         requests::CreateOrReplaceUserDefinedFunctionBuilder::new(self, false)
     }
 

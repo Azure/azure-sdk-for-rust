@@ -39,7 +39,7 @@ impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
 }
 
 impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
-    pub async fn execute_with_permission(
+    pub async fn execute(
         &self,
         permission_mode: &PermissionMode<'a>,
     ) -> Result<CreatePermissionResponse<'a>, CosmosError> {

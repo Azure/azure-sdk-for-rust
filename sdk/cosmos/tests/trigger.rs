@@ -45,8 +45,7 @@ async fn trigger() -> Result<(), CosmosError> {
     // create a temp database
     let _create_database_response = client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
 
@@ -88,19 +87,21 @@ async fn trigger() -> Result<(), CosmosError> {
 
     let ret = trigger_client
         .create_trigger()
-        .trigger_type(trigger::TriggerType::Post)
-        .trigger_operation(trigger::TriggerOperation::All)
-        .body(&"something")
-        .execute()
+        .execute(
+            "something",
+            trigger::TriggerType::Post,
+            trigger::TriggerOperation::All,
+        )
         .await?;
 
     let ret = trigger_client
         .replace_trigger()
         .consistency_level(ret)
-        .trigger_type(trigger::TriggerType::Post)
-        .trigger_operation(trigger::TriggerOperation::All)
-        .body(&TRIGGER_BODY)
-        .execute()
+        .execute(
+            TRIGGER_BODY,
+            trigger::TriggerType::Post,
+            trigger::TriggerOperation::All,
+        )
         .await?;
 
     let mut last_session_token: Option<ConsistencyLevel> = None;

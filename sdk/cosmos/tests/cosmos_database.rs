@@ -15,8 +15,7 @@ async fn create_and_delete_database() {
     // create a new database and check if the number of DBs increased
     let database = client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
     let databases = client.list_databases().execute().await.unwrap();

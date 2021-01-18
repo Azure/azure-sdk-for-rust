@@ -4,7 +4,7 @@ use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 
-use azure_core::{HttpClient, No};
+use azure_core::HttpClient;
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};
 use ring::hmac;
@@ -112,7 +112,7 @@ impl CosmosClient {
             .header(header::AUTHORIZATION, signature)
     }
 
-    pub fn create_database(&self) -> requests::CreateDatabaseBuilder<'_, No> {
+    pub fn create_database(&self) -> requests::CreateDatabaseBuilder<'_> {
         requests::CreateDatabaseBuilder::new(self)
     }
 

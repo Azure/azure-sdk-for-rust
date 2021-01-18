@@ -33,7 +33,7 @@ impl<'a, 'b> ReplacePermissionBuilder<'a, 'b> {
         expiry_seconds: u64 => ExpirySeconds::new(expiry_seconds),
     }
 
-    pub async fn execute_with_permission(
+    pub async fn execute(
         &self,
         permission_mode: &PermissionMode<'a>,
     ) -> Result<ReplacePermissionResponse<'a>, CosmosError> {

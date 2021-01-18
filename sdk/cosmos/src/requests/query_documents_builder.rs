@@ -3,21 +3,15 @@ use crate::resources::document::Query;
 use crate::resources::ResourceType;
 use crate::responses::QueryDocumentsResponse;
 use azure_core::prelude::*;
-use azure_core::{No, ToAssign, Yes};
 use chrono::{DateTime, Utc};
 use futures::stream::{unfold, Stream};
 use http::StatusCode;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
-use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
+pub struct QueryDocumentsBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
-    query: Option<&'b Query<'b>>,
     if_match_condition: Option<IfMatchCondition<'b>>,
     if_modified_since: Option<IfModifiedSince<'b>>,
     user_agent: Option<UserAgent<'b>>,
@@ -28,14 +22,12 @@ where
     partition_keys: Option<&'b PartitionKeys>,
     query_cross_partition: QueryCrossPartition,
     parallelize_cross_partition_query: ParallelizeCrossPartition,
-    p_query: PhantomData<QuerySet>,
 }
 
-impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
+impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
     pub(crate) fn new(collection_client: &'a CollectionClient) -> Self {
         Self {
             collection_client,
-            query: None,
             if_match_condition: None,
             if_modified_since: None,
             user_agent: None,
@@ -47,15 +39,11 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
             query_cross_partition: QueryCrossPartition::No,
             // TODO: use this in request
             parallelize_cross_partition_query: ParallelizeCrossPartition::No,
-            p_query: PhantomData,
         }
     }
 }
 
-impl<'a, 'b, QuerySet> QueryDocumentsBuilder<'a, 'b, QuerySet>
-where
-    QuerySet: ToAssign,
-{
+impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
     setters! {
         user_agent: &'b str => Some(UserAgent::new(user_agent)),
         activity_id: &'b str => Some(ActivityId::new(activity_id)),
@@ -70,10 +58,11 @@ where
     }
 }
 
-impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
-    pub async fn execute<T>(&self) -> Result<QueryDocumentsResponse<T>, CosmosError>
+impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
+    pub async fn execute<T, Q>(&self, query: Q) -> Result<QueryDocumentsResponse<T>, CosmosError>
     where
         T: DeserializeOwned,
+        Q: Into<Query<'a>>,
     {
         trace!("QueryDocumentBuilder::execute called");
 
@@ -102,7 +91,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
         let req = azure_core::headers::add_optional_header(&self.partition_keys, req);
         let req = azure_core::headers::add_mandatory_header(&self.query_cross_partition, req);
 
-        let body = azure_core::to_json(self.query.unwrap())?;
+        let body = azure_core::to_json(&query.into())?;
         debug!("body == {:?}", body);
 
         let req = req.body(body)?;
@@ -116,11 +105,13 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
             .try_into()?)
     }
 
-    pub fn stream<T>(
-        &self,
-    ) -> impl Stream<Item = Result<QueryDocumentsResponse<T>, CosmosError>> + '_
+    pub fn stream<T, Q>(
+        &'a self,
+        query: Q,
+    ) -> impl Stream<Item = Result<QueryDocumentsResponse<T>, CosmosError>> + 'a
     where
         T: DeserializeOwned,
+        Q: Into<Query<'a>> + 'a + Copy,
     {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
@@ -133,11 +124,11 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
             move |continuation_token: Option<States>| async move {
                 debug!("continuation_token == {:?}", &continuation_token);
                 let response = match continuation_token {
-                    Some(States::Init) => self.execute().await,
+                    Some(States::Init) => self.execute(query).await,
                     Some(States::Continuation(continuation_token)) => {
                         self.clone()
                             .continuation(continuation_token.as_str())
-                            .execute()
+                            .execute(query)
                             .await
                     }
                     None => return None,
@@ -156,25 +147,5 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, Yes> {
                 Some((Ok(response), continuation_token))
             },
         )
-    }
-}
-
-impl<'a, 'b> QueryDocumentsBuilder<'a, 'b, No> {
-    pub fn query(self, query: &'b Query<'b>) -> QueryDocumentsBuilder<'a, 'b, Yes> {
-        QueryDocumentsBuilder {
-            query: Some(query),
-            collection_client: self.collection_client,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            continuation: self.continuation,
-            max_item_count: self.max_item_count,
-            partition_keys: self.partition_keys,
-            query_cross_partition: self.query_cross_partition,
-            parallelize_cross_partition_query: self.parallelize_cross_partition_query,
-            p_query: PhantomData,
-        }
     }
 }

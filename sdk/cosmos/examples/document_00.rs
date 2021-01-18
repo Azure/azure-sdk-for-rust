@@ -60,14 +60,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // If the requested database is not found we create it.
     let database = match db {
         Some(db) => db,
-        None => {
-            client
-                .create_database()
-                .database_name(&DATABASE)
-                .execute()
-                .await?
-                .database
-        }
+        None => client.create_database().execute(DATABASE).await?.database,
     };
     println!("database == {:?}", database);
 
@@ -149,7 +142,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_document_response = collection_client
         .create_document()
         .partition_keys([&doc.document.id])
-        .execute_with_document(&doc)
+        .execute(&doc)
         .await?;
     println!(
         "create_document_response == {:#?}",
@@ -189,11 +182,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // changes every time the document is updated. If the passed etag is different in
         // CosmosDB it means something else updated the document before us!
         let replace_document_response = collection_client
-            .replace_document()
-            .document_id(&doc.document.id)
+            .replace_document(&doc.document.id)
             .partition_keys([&doc.document.id])
             .if_match_condition(IfMatchCondition::Match(&document.etag))
-            .execute_with_document(&doc)
+            .execute(&doc)
             .await?;
         println!(
             "replace_document_response == {:#?}",

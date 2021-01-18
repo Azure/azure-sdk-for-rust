@@ -1,6 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_cosmos::prelude::*;
-use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
@@ -30,8 +29,7 @@ async fn attachment() -> Result<(), CosmosError> {
     // create a temp database
     let _create_database_response = client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
 
@@ -83,7 +81,7 @@ async fn attachment() -> Result<(), CosmosError> {
     let session_token: ConsistencyLevel = collection_client
         .create_document()
         .partition_keys([&doc.document.id])
-        .execute_with_document(&doc)
+        .execute(&doc)
         .await?
         .into();
 
@@ -104,18 +102,14 @@ async fn attachment() -> Result<(), CosmosError> {
     let resp = attachment_client
         .create_reference()
         .consistency_level(&ret)
-        .content_type("image/jpeg")
-        .media("https://www.bing.com")
-        .execute()
+        .execute("https://www.bing.com", "image/jpeg")
         .await?;
 
     // replace reference attachment
     let resp = attachment_client
         .replace_reference()
         .consistency_level(&resp)
-        .content_type("image/jpeg")
-        .media("https://www.microsoft.com")
-        .execute()
+        .execute("https://www.microsoft.com", "image/jpeg")
         .await?;
 
     // create slug attachment
@@ -124,8 +118,7 @@ async fn attachment() -> Result<(), CosmosError> {
         .create_slug()
         .consistency_level(&resp)
         .content_type("text/plain")
-        .body(Bytes::from_static(b"something cool here"))
-        .execute()
+        .execute("something cool here")
         .await?;
 
     // list attachments, there must be two.

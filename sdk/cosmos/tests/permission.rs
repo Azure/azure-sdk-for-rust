@@ -17,8 +17,7 @@ async fn permissions() {
     // create a temp database
     let _create_database_response = client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
 
@@ -44,14 +43,14 @@ async fn permissions() {
     let _create_permission_user1_response = permission_client_user1
         .create_permission()
         .expiry_seconds(18000u64) // 5 hours, max!
-        .execute_with_permission(&create_collection_response.collection.all_permission())
+        .execute(&create_collection_response.collection.all_permission())
         .await
         .unwrap();
 
     let _create_permission_user2_response = permission_client_user2
         .create_permission()
         .expiry_seconds(18000u64) // 5 hours, max!
-        .execute_with_permission(&create_collection_response.collection.read_permission())
+        .execute(&create_collection_response.collection.read_permission())
         .await
         .unwrap();
 

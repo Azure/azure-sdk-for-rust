@@ -39,13 +39,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         allow_tentative_writes: TenativeWritesAllowance,
         partition_keys: &'b PartitionKeys => Some(partition_keys),
-    }
-
-    pub fn parameters<P: Into<Parameters>>(self, p: P) -> Self {
-        Self {
-            parameters: Some(p.into()),
-            ..self
-        }
+        parameters: Parameters => Some(parameters),
     }
 
     pub async fn execute<T>(&self) -> Result<ExecuteStoredProcedureResponse<T>, CosmosError>
@@ -58,7 +52,6 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
             .stored_procedure_client
             .prepare_request_with_stored_procedure_name(http::Method::POST);
 
-        // add trait headers
         let request = azure_core::headers::add_optional_header(&self.user_agent, request);
         let request = azure_core::headers::add_optional_header(&self.activity_id, request);
         let request = azure_core::headers::add_optional_header(&self.consistency_level, request);

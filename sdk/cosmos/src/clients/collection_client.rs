@@ -3,7 +3,7 @@ use crate::clients::*;
 use crate::requests;
 use crate::resources::ResourceType;
 use crate::{PartitionKeys, ReadonlyString};
-use azure_core::{HttpClient, No};
+use azure_core::HttpClient;
 
 /// A client for Cosmos collection resources.
 #[derive(Debug, Clone)]
@@ -47,7 +47,7 @@ impl CollectionClient {
         requests::DeleteCollectionBuilder::new(self)
     }
 
-    pub fn replace_collection(&self) -> requests::ReplaceCollectionBuilder<'_, '_, No, No> {
+    pub fn replace_collection(&self) -> requests::ReplaceCollectionBuilder<'_, '_> {
         requests::ReplaceCollectionBuilder::new(self)
     }
 
@@ -55,15 +55,18 @@ impl CollectionClient {
         requests::ListDocumentsBuilder::new(self)
     }
 
-    pub fn create_document(&self) -> requests::CreateDocumentBuilder<'_, '_, No> {
+    pub fn create_document(&self) -> requests::CreateDocumentBuilder<'_, '_> {
         requests::CreateDocumentBuilder::new(self)
     }
 
-    pub fn replace_document(&self) -> requests::ReplaceDocumentBuilder<'_, '_, No, No> {
-        requests::ReplaceDocumentBuilder::new(self)
+    pub fn replace_document<'a>(
+        &'a self,
+        document_id: &'a str,
+    ) -> requests::ReplaceDocumentBuilder<'a, '_> {
+        requests::ReplaceDocumentBuilder::new(self, document_id)
     }
 
-    pub fn query_documents(&self) -> requests::QueryDocumentsBuilder<'_, '_, No> {
+    pub fn query_documents(&self) -> requests::QueryDocumentsBuilder<'_, '_> {
         requests::QueryDocumentsBuilder::new(self)
     }
 

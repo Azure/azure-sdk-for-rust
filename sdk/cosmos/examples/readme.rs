@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 .create_document()
                 .partition_keys([&document_to_insert.document.a_number])
                 .is_upsert(true) // this option will overwrite a preexisting document (if any)
-                .execute_with_document(&document_to_insert)
+                .execute(&document_to_insert)
                 .await?
                 .session_token, // get only the session token, if everything else was ok!
         );
@@ -106,10 +106,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("\nQuerying documents");
     let query_documents_response = collection_client
         .query_documents()
-        .query(&("SELECT * FROM A WHERE A.a_number < 600".into())) // there are other ways to construct a query, this is the simplest.
         .query_cross_partition(true) // this will perform a cross partition query! notice how simple it is!
         .consistency_level(session_token)
-        .execute::<MySampleStruct>() // This will make sure the result is our custom struct!
+        .execute::<MySampleStruct, _>("SELECT * FROM A WHERE A.a_number < 600") // there are other ways to construct a query, this is the simplest.
         .await?
         .into_documents() // queries can return Documents or Raw json (ie without etag, _rid, etc...). Since our query return docs we convert with this function.
         .unwrap(); // we know in advance that the conversion to Document will not fail since we SELECT'ed * FROM table

@@ -16,8 +16,7 @@ async fn permission_token_usage() {
     // create a temp database
     let _create_database_response = client
         .create_database()
-        .database_name(&DATABASE_NAME)
-        .execute()
+        .execute(DATABASE_NAME)
         .await
         .unwrap();
 
@@ -49,7 +48,7 @@ async fn permission_token_usage() {
     let create_permission_response = permission_client
         .create_permission()
         .expiry_seconds(18000u64) // 5 hours, max!
-        .execute_with_permission(&permission_mode)
+        .execute(&permission_mode)
         .await
         .unwrap();
 
@@ -90,7 +89,7 @@ async fn permission_token_usage() {
         .create_document()
         .is_upsert(true)
         .partition_keys(["Gianluigi Bombatomica"])
-        .execute_with_document(&document)
+        .execute(&document)
         .await
         .unwrap_err();
 
@@ -105,7 +104,7 @@ async fn permission_token_usage() {
     let create_permission_response = permission_client
         .create_permission()
         .expiry_seconds(18000u64) // 5 hours, max!
-        .execute_with_permission(&permission_mode)
+        .execute(&permission_mode)
         .await
         .unwrap();
 
@@ -123,7 +122,7 @@ async fn permission_token_usage() {
         .create_document()
         .is_upsert(true)
         .partition_keys(["Gianluigi Bombatomica"])
-        .execute_with_document(&document)
+        .execute(&document)
         .await
         .unwrap();
     println!(
