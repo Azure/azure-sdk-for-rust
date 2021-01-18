@@ -8,7 +8,7 @@ pub use super::container::{
 };
 pub use super::Blob as BlobTrait;
 pub use crate::{
-    AccessTier, BlobVersioning, BlockId, ConditionAppendPosition, ConditionMaxSize,
+    AccessTier, BlobContentMD5, BlobVersioning, BlockId, ConditionAppendPosition, ConditionMaxSize,
     DeleteSnapshotsMethod, Hash, RehydratePriority, RehydratePriorityOption,
     RehydratePrioritySupport, Snapshot, VersionId,
 };
