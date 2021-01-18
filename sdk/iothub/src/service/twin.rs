@@ -6,48 +6,10 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
+use crate::service::identity::{
+    AuthenticationType, ConnectionState, DeviceCapabilities, Status, X509ThumbPrint,
+};
 use crate::service::{ServiceClient, API_VERSION};
-
-/// AuthenticationType of a module or device
-#[derive(Debug, Deserialize)]
-pub enum AuthenticationType {
-    #[serde(rename = "certificate")]
-    Certificate,
-    Authority,
-    #[serde(rename = "none")]
-    None,
-    #[serde(rename = "sas")]
-    SAS,
-    #[serde(rename = "selfSigned")]
-    SelfSigned,
-}
-
-/// The connection state of a module or device
-#[derive(Debug, Deserialize)]
-pub enum ConnectionState {
-    Connected,
-    Disconnected,
-}
-
-/// Device or module status
-#[derive(Deserialize, Debug, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub enum Status {
-    Disabled,
-    Enabled,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct DeviceCapabilities {
-    #[serde(rename = "iotEdge")]
-    pub iotedge: bool,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct X509ThumbPrint {
-    pub primary_thumbprint: Option<String>,
-    pub secondary_thumbprint: Option<String>,
-}
 
 #[derive(Deserialize, Debug)]
 pub struct TwinProperties {
