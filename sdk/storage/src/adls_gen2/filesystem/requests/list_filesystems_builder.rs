@@ -237,7 +237,7 @@ where
         enum States {
             Init,
             Continuation(String),
-        };
+        }
 
         unfold(Some(States::Init), move |continuation: Option<States>| {
             let req = self.clone();
