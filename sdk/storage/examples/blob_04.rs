@@ -33,10 +33,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     for (i, block) in data.chunks(64 * 1024 * 1024 /* 64 MiB */).enumerate() {
         block_ids.push(Bytes::from(format!("{}", i)));
         let hash = md5::compute(block).into();
-        let block_id = (&i.to_be_bytes() as &[u8]).into();
+        let block_id = Bytes::from(format!("{}", i));
 
         let put_block_response = blob
-            .put_block(&block_id, block)
+            .put_block(block_id, block)
             .hash(&hash)
             .execute()
             .await?;

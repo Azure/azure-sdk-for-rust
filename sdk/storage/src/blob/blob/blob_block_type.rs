@@ -1,23 +1,22 @@
-use bytes::Bytes;
+use crate::BlockId;
 
-// TODO: Change from Bytes to BlockId?
 #[derive(Debug, Clone, PartialEq)]
 pub enum BlobBlockType {
-    Committed(Bytes),
-    Uncommitted(Bytes),
-    Latest(Bytes),
+    Committed(BlockId),
+    Uncommitted(BlockId),
+    Latest(BlockId),
 }
 
 impl BlobBlockType {
-    pub fn new_committed(b: impl Into<Bytes>) -> Self {
+    pub fn new_committed(b: impl Into<BlockId>) -> Self {
         BlobBlockType::Committed(b.into())
     }
 
-    pub fn new_uncommitted(b: impl Into<Bytes>) -> Self {
+    pub fn new_uncommitted(b: impl Into<BlockId>) -> Self {
         BlobBlockType::Uncommitted(b.into())
     }
 
-    pub fn new_latest(b: impl Into<Bytes>) -> Self {
+    pub fn new_latest(b: impl Into<BlockId>) -> Self {
         BlobBlockType::Latest(b.into())
     }
 }

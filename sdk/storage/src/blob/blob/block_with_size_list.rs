@@ -104,9 +104,10 @@ mod test {
 
         assert!(
             bl.blocks[0].block_list_type
-                == BlobBlockType::Committed(Bytes::from_static(b"base64-encoded-block-id"))
+                == BlobBlockType::new_committed(Bytes::from_static(b"base64-encoded-block-id"))
         );
-        let b2 = BlobBlockType::Uncommitted(Bytes::from_static(b"base64-encoded-block-id-number2"));
+        let b2 =
+            BlobBlockType::new_uncommitted(Bytes::from_static(b"base64-encoded-block-id-number2"));
         assert!(
             bl.blocks[1].block_list_type == b2,
             "bl.blocks[1].block_list_type == {:?}, b2 == {:?}",

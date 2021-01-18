@@ -128,7 +128,7 @@ async fn put_and_get_block_list() {
     let digest3 = md5::compute(contents3).into();
 
     let put_block_response = blob
-        .put_block(&"block1".into(), Bytes::from(contents1))
+        .put_block("block1", Bytes::from(contents1))
         .execute()
         .await
         .unwrap();
@@ -138,13 +138,13 @@ async fn put_and_get_block_list() {
         _ => panic!("must receive a content_crc64 header"),
     }
 
-    blob.put_block(&"block2".into(), Bytes::from(contents2))
+    blob.put_block("block2", Bytes::from(contents2))
         .execute()
         .await
         .unwrap();
 
     let put_block_response = blob
-        .put_block(&"block3".into(), Bytes::from(contents3))
+        .put_block("block3", Bytes::from(contents3))
         .hash(&digest3)
         .execute()
         .await

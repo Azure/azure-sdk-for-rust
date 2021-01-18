@@ -117,10 +117,10 @@ impl BlobClient {
 
     pub fn put_block<'a>(
         &'a self,
-        block_id: &'a BlockId,
+        block_id: impl Into<BlockId>,
         body: impl Into<Bytes>,
     ) -> PutBlockBuilder<'a> {
-        PutBlockBuilder::new(self, block_id, body.into())
+        PutBlockBuilder::new(self, block_id, body)
     }
 
     pub fn clear_page(&self, ba512_range: BA512Range) -> ClearPageBuilder {

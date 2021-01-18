@@ -39,10 +39,12 @@ impl BlockList {
         s.push_str("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<BlockList>\n");
         for bl in &self.blocks {
             let node = match bl {
-                BlobBlockType::Committed(content) => format!(
-                    "\t<Committed>{}</Committed>\n",
-                    base64::encode(content.as_ref())
-                ),
+                BlobBlockType::Committed(content) => {
+                    format!(
+                        "\t<Committed>{}</Committed>\n",
+                        base64::encode(content.as_ref())
+                    )
+                }
                 BlobBlockType::Uncommitted(content) => format!(
                     "\t<Uncommitted>{}</Uncommitted>\n",
                     base64::encode(content.as_ref())
@@ -70,20 +72,22 @@ mod test {
         let mut blocks = BlockList { blocks: Vec::new() };
         blocks
             .blocks
-            .push(BlobBlockType::Committed(Bytes::from_static(b"numero1")));
+            .push(BlobBlockType::new_committed(Bytes::from_static(b"numero1")));
         blocks
             .blocks
-            .push(BlobBlockType::Uncommitted(Bytes::from_static(
+            .push(BlobBlockType::new_uncommitted(Bytes::from_static(
                 b"numero2" as &[u8],
             )));
         blocks
             .blocks
-            .push(BlobBlockType::Uncommitted(Bytes::from_static(
+            .push(BlobBlockType::new_uncommitted(Bytes::from_static(
                 b"numero3" as &[u8],
             )));
-        blocks.blocks.push(BlobBlockType::Latest(Bytes::from_static(
-            b"numero4" as &[u8],
-        )));
+        blocks
+            .blocks
+            .push(BlobBlockType::new_latest(Bytes::from_static(
+                b"numero4" as &[u8],
+            )));
 
         let _retu: &str = &blocks.to_xml();
 
