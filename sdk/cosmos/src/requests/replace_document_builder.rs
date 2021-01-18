@@ -97,9 +97,9 @@ impl<'a, 'b> ReplaceDocumentBuilder<'a, 'b, Yes, Yes> {
             azure_core::headers::add_mandatory_header(&self.partition_keys.as_ref().unwrap(), req);
         let req = azure_core::headers::add_mandatory_header(&self.allow_tentative_writes, req);
 
-        let serialized = serde_json::to_string(document)?;
+        let serialized = azure_core::to_json(document)?;
 
-        let req = req.body(serialized.as_bytes())?;
+        let req = req.body(serialized)?;
         debug!("request == {:#?}", req);
 
         Ok(self

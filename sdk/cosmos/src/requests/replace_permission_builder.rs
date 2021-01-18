@@ -62,9 +62,9 @@ impl<'a, 'b> ReplacePermissionBuilder<'a, 'b> {
             permission_mode: permission_mode.kind(),
             resource: permission_mode.resource(),
         };
-        let request_body = serde_json::to_string(&request_body)?;
+        let request_body = azure_core::to_json(&request_body)?;
 
-        let request = request.body(request_body.as_bytes())?;
+        let request = request.body(request_body)?;
         debug!("\nrequest == {:#?}", request);
 
         Ok(self

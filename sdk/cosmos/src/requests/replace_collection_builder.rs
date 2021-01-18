@@ -73,7 +73,7 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
             indexing_policy: &'k IndexingPolicy,
             #[serde(rename = "partitionKey")]
             partition_key: &'k PartitionKey,
-        };
+        }
 
         let request = Request {
             id: self.collection_client.collection_name(),
@@ -81,10 +81,10 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b, Yes, Yes> {
             partition_key: self.partition_key.as_ref().unwrap(),
         };
 
-        let body = serde_json::to_string(&request)?;
-        debug!("body == {}", body);
+        let body = azure_core::to_json(&request)?;
+        debug!("body == {:?}", body);
 
-        let req = req.body(body.as_bytes())?;
+        let req = req.body(body)?;
         debug!("\nreq == {:?}", req);
 
         // the docs are wrong here

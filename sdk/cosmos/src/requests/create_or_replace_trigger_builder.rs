@@ -202,8 +202,8 @@ impl<'a> CreateOrReplaceTriggerBuilder<'a, Yes, Yes, Yes> {
             body: self.body(),
         };
 
-        let request = serde_json::to_string(&request)?;
-        let request = req.body(request.as_bytes())?;
+        let request = azure_core::to_json(&request)?;
+        let request = req.body(request)?;
 
         let expected_status = if self.is_create {
             StatusCode::CREATED

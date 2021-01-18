@@ -62,9 +62,9 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b, Yes> {
         let request_body = RequestBody {
             id: self.user_name.unwrap(),
         };
-        let request_body = serde_json::to_string(&request_body)?;
+        let request_body = azure_core::to_json(&request_body)?;
 
-        let req = req.body(request_body.as_bytes())?;
+        let req = req.body(request_body)?;
         debug!("\nreq == {:?}", req);
 
         let response = self

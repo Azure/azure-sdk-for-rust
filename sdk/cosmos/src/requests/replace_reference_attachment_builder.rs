@@ -81,7 +81,7 @@ impl<'a, 'b> ReplaceReferenceAttachmentBuilder<'a, 'b, Yes, Yes> {
             pub media: &'r str,
         }
 
-        let request = serde_json::to_string(&_Request {
+        let request = azure_core::to_json(&_Request {
             id: self.attachment_client.attachment_name(),
             content_type: self.content_type.unwrap().as_str(),
             media: self.media.unwrap(),
@@ -89,7 +89,7 @@ impl<'a, 'b> ReplaceReferenceAttachmentBuilder<'a, 'b, Yes, Yes> {
 
         req = req.header(http::header::CONTENT_TYPE, "application/json");
         req = req.header(http::header::CONTENT_LENGTH, request.len());
-        let req = req.body(request.as_bytes())?;
+        let req = req.body(request)?;
         debug!("req == {:#?}", req);
 
         Ok(self

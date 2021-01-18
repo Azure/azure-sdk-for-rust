@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let content = std::str::from_utf8(&buf)?.to_owned();
     println!("content == {}", content);
 
-    let _response = blob.put_block_blob(&buf).execute().await?;
+    let _response = blob.put_block_blob(buf.clone()).execute().await?;
 
     let whole = blob.get().execute().await?;
 
@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut stream = Box::pin(blob.get().stream(512));
 
     println!("\nStreaming");
-    let mut chunk = 0;
+    let mut chunk: usize = 0;
     while let Some(value) = stream.next().await {
         let value = value?;
         println!("received {:?} bytes", value.len());

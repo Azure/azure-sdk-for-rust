@@ -5,6 +5,7 @@ use crate::shared_access_signature::SharedAccessSignature;
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
 use azure_core::HttpClient;
+use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
 use std::sync::Arc;
@@ -65,7 +66,7 @@ impl BlobClient {
     pub fn update_page<'a>(
         &'a self,
         ba512_range: BA512Range,
-        content: &'a [u8],
+        content: impl Into<Bytes>,
     ) -> UpdatePageBuilder<'a> {
         UpdatePageBuilder::new(self, ba512_range, content)
     }
@@ -109,16 +110,20 @@ impl BlobClient {
         PutBlockListBuilder::new(self, block_list)
     }
 
-    pub fn put_block_blob<'a>(&'a self, body: &'a [u8]) -> PutBlockBlobBuilder<'a> {
-        PutBlockBlobBuilder::new(self, body)
+    pub fn put_block_blob<'a>(&'a self, body: impl Into<Bytes>) -> PutBlockBlobBuilder<'a> {
+        PutBlockBlobBuilder::new(self, body.into())
     }
 
-    pub fn append_block<'a>(&'a self, body: &'a [u8]) -> AppendBlockBuilder<'a> {
-        AppendBlockBuilder::new(self, body)
+    pub fn append_block<'a>(&'a self, body: impl Into<Bytes>) -> AppendBlockBuilder<'a> {
+        AppendBlockBuilder::new(self, body.into())
     }
 
-    pub fn put_block<'a>(&'a self, block_id: &'a BlockId, body: &'a [u8]) -> PutBlockBuilder<'a> {
-        PutBlockBuilder::new(self, block_id, body)
+    pub fn put_block<'a>(
+        &'a self,
+        block_id: &'a BlockId,
+        body: impl Into<Bytes>,
+    ) -> PutBlockBuilder<'a> {
+        PutBlockBuilder::new(self, block_id, body.into())
     }
 
     pub fn clear_page(&self, ba512_range: BA512Range) -> ClearPageBuilder {
@@ -153,8 +158,8 @@ impl BlobClient {
         url: &str,
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
-        request_body: Option<&'a [u8]>,
-    ) -> Result<(Request<&'a [u8]>, url::Url), AzureError> {
+        request_body: Option<Bytes>,
+    ) -> Result<(Request<Bytes>, url::Url), AzureError> {
         self.container_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

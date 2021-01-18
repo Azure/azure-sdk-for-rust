@@ -2,6 +2,7 @@ use crate::prelude::*;
 use crate::responses::CreateSlugAttachmentResponse;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
+use bytes::Bytes;
 use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
@@ -13,7 +14,7 @@ where
     ContentTypeSet: ToAssign,
 {
     attachment_client: &'a AttachmentClient,
-    body: Option<&'b [u8]>,
+    body: Option<Bytes>,
     content_type: Option<ContentType<'b>>,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<UserAgent<'b>>,
@@ -56,9 +57,12 @@ impl<'a, 'b, ContentTypeSet> CreateSlugAttachmentBuilder<'a, 'b, No, ContentType
 where
     ContentTypeSet: ToAssign,
 {
-    pub fn body(self, body: &'b [u8]) -> CreateSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
+    pub fn body(
+        self,
+        body: impl Into<Bytes>,
+    ) -> CreateSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
         CreateSlugAttachmentBuilder {
-            body: Some(body),
+            body: Some(body.into()),
             attachment_client: self.attachment_client,
             content_type: self.content_type,
             if_match_condition: self.if_match_condition,
@@ -111,9 +115,10 @@ impl<'a, 'b> CreateSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
         req = azure_core::headers::add_mandatory_header(&self.content_type.unwrap(), req);
 
         req = req.header("Slug", self.attachment_client.attachment_name());
-        req = req.header(http::header::CONTENT_LENGTH, self.body.unwrap().len());
+        let body = self.body.clone().unwrap();
+        req = req.header(http::header::CONTENT_LENGTH, body.len());
 
-        let req = req.body(self.body.unwrap())?;
+        let req = req.body(body)?;
 
         debug!("req == {:#?}", req);
 

@@ -4,6 +4,7 @@ extern crate log;
 use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
+use bytes::Bytes;
 use std::error::Error;
 use std::sync::Arc;
 use std::time::Duration;
@@ -34,7 +35,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .as_container_client(&container)
         .as_blob_client(&blob_name);
 
-    let data = b"something";
+    let data = Bytes::from_static(b"something");
 
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
@@ -45,7 +46,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // parameters (such as LeaseID, or ContentDisposition, MD5 etc...)
     // so make sure to check with the documentation.
     let res = blob
-        .put_block_blob(data)
+        .put_block_blob(data.clone())
         .content_type("text/plain")
         .hash(&hash)
         .execute()
@@ -61,7 +62,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .push(BlobBlockType::Uncommitted(b"pollastro" as &[u8]));
 
     let res = blob
-        .put_block(&("satanasso".into()), data)
+        .put_block(&("satanasso".into()), data.clone())
         .execute()
         .await?;
     println!("2-put_block {:?}", res);
