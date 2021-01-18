@@ -1,6 +1,5 @@
 pub use super::blob::{
-    Blob, BlobBlockType, BlockList, BlockListRequired, BlockListSupport, BlockListType,
-    BlockListTypeRequired, BlockListTypeSupport,
+    Blob, BlobBlockType, BlockList, BlockListType, BlockListTypeRequired, BlockListTypeSupport,
 };
 pub use super::container::{
     PublicAccess, PublicAccessRequired, PublicAccessSupport, StoredAccessPolicyListOption,

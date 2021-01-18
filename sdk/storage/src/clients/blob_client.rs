@@ -103,10 +103,7 @@ impl BlobClient {
         GetBlockListBuilder::new(self)
     }
 
-    pub fn put_block_list<'a, T>(&'a self, block_list: &'a BlockList<T>) -> PutBlockListBuilder<T>
-    where
-        T: std::borrow::Borrow<[u8]> + 'a,
-    {
+    pub fn put_block_list<'a>(&'a self, block_list: &'a BlockList) -> PutBlockListBuilder {
         PutBlockListBuilder::new(self, block_list)
     }
 

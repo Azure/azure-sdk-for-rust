@@ -33,7 +33,6 @@ use azure_core::{
 use chrono::{DateTime, Utc};
 use hyper::header;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
-use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::str::FromStr;
 use xml::Element;
@@ -63,25 +62,6 @@ pub trait BlockListTypeRequired {
 
     fn to_uri_parameter(&self) -> String {
         format!("blocklisttype={}", self.block_list_type().to_str())
-    }
-}
-
-pub trait BlockListSupport<'a, T>
-where
-    T: Borrow<[u8]>,
-{
-    type O;
-    fn with_block_list(self, _: &'a BlockList<T>) -> Self::O;
-}
-
-pub trait BlockListRequired<'a, T>
-where
-    T: Borrow<[u8]> + 'a,
-{
-    fn block_list(&self) -> &'a BlockList<T>;
-
-    fn to_string(&self) -> String {
-        self.block_list().to_xml()
     }
 }
 

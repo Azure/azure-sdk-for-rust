@@ -4,15 +4,11 @@ use crate::core::prelude::*;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 use bytes::Bytes;
-use std::borrow::Borrow;
 
 #[derive(Debug, Clone)]
-pub struct PutBlockListBuilder<'a, B>
-where
-    B: Borrow<[u8]> + 'a,
-{
+pub struct PutBlockListBuilder<'a> {
     blob_client: &'a BlobClient,
-    block_list: &'a BlockList<B>,
+    block_list: &'a BlockList,
     content_type: Option<ContentType<'a>>,
     content_encoding: Option<ContentEncoding<'a>>,
     content_language: Option<ContentLanguage<'a>>,
@@ -26,11 +22,8 @@ where
     timeout: Option<Timeout>,
 }
 
-impl<'a, B> PutBlockListBuilder<'a, B>
-where
-    B: Borrow<[u8]> + 'a,
-{
-    pub(crate) fn new(blob_client: &'a BlobClient, block_list: &'a BlockList<B>) -> Self {
+impl<'a> PutBlockListBuilder<'a> {
+    pub(crate) fn new(blob_client: &'a BlobClient, block_list: &'a BlockList) -> Self {
         Self {
             blob_client,
             block_list,

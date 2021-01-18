@@ -1,25 +1,21 @@
 use crate::blob::blob::{BlobBlockType, BlockWithSizeList};
-use std::borrow::Borrow;
 
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct BlockList<T>
-where
-    T: Borrow<[u8]>,
-{
-    pub blocks: Vec<BlobBlockType<T>>,
+pub struct BlockList {
+    pub blocks: Vec<BlobBlockType>,
 }
 
-impl<'a> BlockList<&'a [u8]> {
-    pub fn to_owned(&self) -> BlockList<Vec<u8>> {
-        let mut bl: BlockList<Vec<u8>> = BlockList {
+impl BlockList {
+    pub fn to_owned(&self) -> Self {
+        let mut bl: BlockList = BlockList {
             blocks: Vec::with_capacity(self.blocks.len()),
         };
 
         for entry in &self.blocks {
             bl.blocks.push(match entry {
-                BlobBlockType::Committed(id) => BlobBlockType::Committed(id.to_vec()),
-                BlobBlockType::Uncommitted(id) => BlobBlockType::Uncommitted(id.to_vec()),
-                BlobBlockType::Latest(id) => BlobBlockType::Latest(id.to_vec()),
+                BlobBlockType::Committed(id) => BlobBlockType::Committed(id.clone()),
+                BlobBlockType::Uncommitted(id) => BlobBlockType::Uncommitted(id.clone()),
+                BlobBlockType::Latest(id) => BlobBlockType::Latest(id.clone()),
             });
         }
 
@@ -27,11 +23,8 @@ impl<'a> BlockList<&'a [u8]> {
     }
 }
 
-impl<T> From<BlockWithSizeList<T>> for BlockList<T>
-where
-    T: Borrow<[u8]> + Default,
-{
-    fn from(b: BlockWithSizeList<T>) -> BlockList<T> {
+impl From<BlockWithSizeList> for BlockList {
+    fn from(b: BlockWithSizeList) -> BlockList {
         let mut bl = BlockList::default();
         for block in b.blocks {
             bl.blocks.push(block.block_list_type);
@@ -40,10 +33,7 @@ where
     }
 }
 
-impl<T> BlockList<T>
-where
-    T: Borrow<[u8]>,
-{
+impl BlockList {
     pub fn to_xml(&self) -> String {
         let mut s = String::new();
         s.push_str("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<BlockList>\n");
@@ -51,14 +41,14 @@ where
             let node = match bl {
                 BlobBlockType::Committed(content) => format!(
                     "\t<Committed>{}</Committed>\n",
-                    base64::encode(content.borrow())
+                    base64::encode(content.as_ref())
                 ),
                 BlobBlockType::Uncommitted(content) => format!(
                     "\t<Uncommitted>{}</Uncommitted>\n",
-                    base64::encode(content.borrow())
+                    base64::encode(content.as_ref())
                 ),
                 BlobBlockType::Latest(content) => {
-                    format!("\t<Latest>{}</Latest>\n", base64::encode(content.borrow()))
+                    format!("\t<Latest>{}</Latest>\n", base64::encode(content.as_ref()))
                 }
             };
 
@@ -73,22 +63,27 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
+    use bytes::Bytes;
 
     #[test]
     fn to_xml() {
         let mut blocks = BlockList { blocks: Vec::new() };
         blocks
             .blocks
-            .push(BlobBlockType::Committed(Vec::from(b"numero1" as &[u8])));
+            .push(BlobBlockType::Committed(Bytes::from_static(b"numero1")));
         blocks
             .blocks
-            .push(BlobBlockType::Uncommitted(Vec::from(b"numero2" as &[u8])));
+            .push(BlobBlockType::Uncommitted(Bytes::from_static(
+                b"numero2" as &[u8],
+            )));
         blocks
             .blocks
-            .push(BlobBlockType::Uncommitted(Vec::from(b"numero3" as &[u8])));
-        blocks
-            .blocks
-            .push(BlobBlockType::Latest(Vec::from(b"numero4" as &[u8])));
+            .push(BlobBlockType::Uncommitted(Bytes::from_static(
+                b"numero3" as &[u8],
+            )));
+        blocks.blocks.push(BlobBlockType::Latest(Bytes::from_static(
+            b"numero4" as &[u8],
+        )));
 
         let _retu: &str = &blocks.to_xml();
 

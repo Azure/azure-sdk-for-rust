@@ -15,7 +15,7 @@ pub struct GetBlockListResponse {
     pub last_modified: Option<DateTime<Utc>>,
     pub request_id: RequestId,
     pub date: DateTime<Utc>,
-    pub block_with_size_list: BlockWithSizeList<Vec<u8>>,
+    pub block_with_size_list: BlockWithSizeList,
 }
 
 impl GetBlockListResponse {

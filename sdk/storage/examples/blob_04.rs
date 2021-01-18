@@ -1,6 +1,7 @@
 use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
+use bytes::Bytes;
 use std::error::Error;
 use std::sync::Arc;
 
@@ -30,7 +31,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let data = b"1337 azure blob test";
     let mut block_ids = Vec::new();
     for (i, block) in data.chunks(64 * 1024 * 1024 /* 64 MiB */).enumerate() {
-        block_ids.push(i.to_be_bytes());
+        block_ids.push(Bytes::from(format!("{}", i)));
         let hash = md5::compute(block).into();
         let block_id = (&i.to_be_bytes() as &[u8]).into();
 
@@ -44,8 +45,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     }
 
     let mut block_list = BlockList::default();
-    for id in block_ids.iter() {
-        block_list.blocks.push(BlobBlockType::Uncommitted(&id[..]));
+    for id in block_ids.into_iter() {
+        block_list.blocks.push(BlobBlockType::new_uncommitted(id));
     }
 
     Ok(())
