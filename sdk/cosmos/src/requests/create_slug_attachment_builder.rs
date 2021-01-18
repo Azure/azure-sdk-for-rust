@@ -43,7 +43,7 @@ impl<'a, 'b> CreateSlugAttachmentBuilder<'a, 'b> {
         &self,
         body: B,
     ) -> Result<CreateSlugAttachmentResponse, CosmosError> {
-        let body = body.as_ref();
+        let body = body.into();
         let mut req = self.attachment_client.prepare_request(http::Method::POST);
 
         req = azure_core::headers::add_optional_header(&self.if_match_condition, req);

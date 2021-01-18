@@ -91,7 +91,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
         let req = azure_core::headers::add_optional_header(&self.partition_keys, req);
         let req = azure_core::headers::add_mandatory_header(&self.query_cross_partition, req);
 
-        let body = serde_json::to_string(&query.into())?;
+        let body = azure_core::to_json(&query.into())?;
         debug!("body == {:?}", body);
 
         let req = req.body(body)?;

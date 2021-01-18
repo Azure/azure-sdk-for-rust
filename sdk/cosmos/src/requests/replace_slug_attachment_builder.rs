@@ -39,11 +39,11 @@ impl<'a, 'b> ReplaceSlugAttachmentBuilder<'a, 'b> {
 }
 
 impl<'a, 'b> ReplaceSlugAttachmentBuilder<'a, 'b> {
-    pub async fn execute<B: AsRef<[u8]>>(
+    pub async fn execute<B: Into<Bytes>>(
         &self,
         body: B,
     ) -> Result<CreateSlugAttachmentResponse, CosmosError> {
-        let body = body.as_ref();
+        let body = body.into();
         let mut req = self.attachment_client.prepare_request(http::Method::PUT);
 
         req = azure_core::headers::add_optional_header(&self.if_match_condition, req);

@@ -1,6 +1,5 @@
 use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
-use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::error::Error;
@@ -127,7 +126,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_slug()
         .consistency_level(&resp_delete)
         .content_type("text/plain")
-        .execute(b"FFFFF")
+        .execute("FFFFF")
         .await?;
 
     println!("create slug == {:#?}", resp);

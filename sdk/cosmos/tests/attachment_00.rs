@@ -1,6 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_cosmos::prelude::*;
-use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
@@ -119,7 +118,7 @@ async fn attachment() -> Result<(), CosmosError> {
         .create_slug()
         .consistency_level(&resp)
         .content_type("text/plain")
-        .execute(b"something cool here")
+        .execute("something cool here")
         .await?;
 
     // list attachments, there must be two.
