@@ -34,10 +34,10 @@ pub struct CreateReferenceAttachmentResponse {
     pub date: DateTime<Utc>,
 }
 
-impl std::convert::TryFrom<Response<Vec<u8>>> for CreateReferenceAttachmentResponse {
+impl std::convert::TryFrom<Response<bytes::Bytes>> for CreateReferenceAttachmentResponse {
     type Error = CosmosError;
 
-    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
         let body = response.body();
 
