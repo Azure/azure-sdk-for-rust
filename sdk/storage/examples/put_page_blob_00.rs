@@ -2,6 +2,7 @@
 extern crate log;
 use azure_core::prelude::*;
 use azure_storage::clients::*;
+use bytes::Bytes;
 use std::error::Error;
 use std::sync::Arc;
 
@@ -31,17 +32,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .as_container_client(&container_name);
     let blob = container.as_blob_client(&blob_name);
 
-    let data: [u8; 2000] = [51; 2000];
+    let data = Bytes::from_static(&[51; 2000]);
 
     let mut metadata = Metadata::new();
     metadata.insert("pollo", "arrosto");
     metadata.insert("milk", "shake");
 
-    let slice = &data[512..1024];
+    let slice = data.slice(512..1024);
 
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
-    let digest = md5::compute(slice);
+    let digest = md5::compute(slice.clone());
 
     // The required parameters are container_name_name, blob_name.
     // The builder supports many more optional
@@ -60,7 +61,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // the size of tha page or a buffer out
     // of bounds error will be thrown.
     let res = blob
-        .update_page(BA512Range::new(0, 511)?, slice)
+        .update_page(BA512Range::new(0, 511)?, slice.clone())
         .hash(&digest.into())
         .execute()
         .await?;
@@ -68,7 +69,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // update a second page with the same data
     let res = blob
-        .update_page(BA512Range::new(512, 1023)?, slice)
+        .update_page(BA512Range::new(512, 1023)?, slice.clone())
         .hash(&digest.into())
         .execute()
         .await?;

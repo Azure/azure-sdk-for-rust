@@ -5,6 +5,7 @@ use azure_core::headers::*;
 use azure_core::HttpClient;
 use azure_core::No;
 use azure_core::EMPTY_BODY;
+use bytes::Bytes;
 use http::header::*;
 use http::method::Method;
 use http::request::{Builder, Request};
@@ -268,8 +269,8 @@ impl StorageAccountClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         service_type: ServiceType,
-        request_body: Option<&'a [u8]>,
-    ) -> Result<(Request<&'a [u8]>, url::Url), AzureError> {
+        request_body: Option<Bytes>,
+    ) -> Result<(Request<Bytes>, url::Url), AzureError> {
         let dt = chrono::Utc::now();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
@@ -331,7 +332,7 @@ impl StorageAccountClient {
         let request = if let Some(request_body) = request_body {
             request.body(request_body)
         } else {
-            request.body(&EMPTY_BODY as &[u8])
+            request.body(Bytes::from_static(EMPTY_BODY))
         }?;
 
         debug!("using request == {:#?}", request);

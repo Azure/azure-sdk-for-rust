@@ -4,12 +4,13 @@ use crate::core::prelude::*;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::headers::{BLOB_TYPE, PAGE_WRITE};
 use azure_core::prelude::*;
+use bytes::Bytes;
 
 #[derive(Debug, Clone)]
 pub struct UpdatePageBuilder<'a> {
     blob_client: &'a BlobClient,
     ba512_range: BA512Range,
-    content: &'a [u8],
+    content: Bytes,
     hash: Option<&'a Hash>,
     sequence_number_condition: Option<SequenceNumberCondition>,
     if_modified_since_condition: Option<IfModifiedSinceCondition>,
@@ -23,12 +24,12 @@ impl<'a> UpdatePageBuilder<'a> {
     pub(crate) fn new(
         blob_client: &'a BlobClient,
         ba512_range: BA512Range,
-        content: &'a [u8],
+        content: impl Into<Bytes>,
     ) -> Self {
         Self {
             blob_client,
             ba512_range,
-            content,
+            content: content.into(),
             hash: None,
             sequence_number_condition: None,
             if_modified_since_condition: None,
@@ -82,7 +83,7 @@ impl<'a> UpdatePageBuilder<'a> {
                 request = add_optional_header_ref(&self.lease_id, request);
                 request
             },
-            Some(self.content),
+            Some(self.content.clone()),
         )?;
 
         trace!("request.headers() == {:#?}", request.headers());

@@ -3,6 +3,7 @@ use crate::blob::prelude::*;
 use crate::core::prelude::*;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
+use bytes::Bytes;
 use std::borrow::Borrow;
 
 #[derive(Debug, Clone)]
@@ -65,12 +66,12 @@ where
         trace!("url == {:?}", url);
 
         let body = self.block_list.to_xml();
-        let body_bytes = body.as_bytes();
+        let body_bytes = Bytes::from(body);
 
         // calculate the xml MD5. This can be made optional
         // if needed, but i think it's best to calculate it.
         let md5 = {
-            let hash = md5::compute(body_bytes);
+            let hash = md5::compute(body_bytes.clone());
             debug!("md5 hash: {:02X}", hash);
             base64::encode(hash.0)
         };

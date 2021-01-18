@@ -1,19 +1,21 @@
 use crate::errors::{AzureError, UnexpectedHTTPResult};
 use async_trait::async_trait;
+use bytes::Bytes;
 use http::{Request, Response, StatusCode};
 use hyper::{self, body, Body};
 use hyper_rustls::HttpsConnector;
+use serde::Serialize;
 
 #[async_trait]
 pub trait HttpClient: Send + Sync + std::fmt::Debug {
     async fn execute_request(
         &self,
-        request: Request<&[u8]>,
+        request: Request<Bytes>,
     ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>>;
 
     async fn execute_request_check_status(
         &self,
-        request: Request<&[u8]>,
+        request: Request<Bytes>,
         expected_status: StatusCode,
     ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>> {
         let response = self.execute_request(request).await?;
@@ -30,7 +32,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 
     async fn execute_request_check_statuses(
         &self,
-        request: Request<&[u8]>,
+        request: Request<Bytes>,
         expected_statuses: &[StatusCode],
     ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>> {
         let response = self.execute_request(request).await?;
@@ -59,13 +61,13 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     }
 }
 
-pub static EMPTY_BODY: [u8; 0] = [];
+pub static EMPTY_BODY: &[u8; 0] = &[];
 
 #[async_trait]
 impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
     async fn execute_request(
         &self,
-        request: Request<&[u8]>,
+        request: Request<Bytes>,
     ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>> {
         let mut hyper_request = hyper::Request::builder()
             .uri(request.uri())
@@ -75,7 +77,8 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
             hyper_request = hyper_request.header(header.0, header.1);
         }
 
-        let hyper_request = hyper_request.body(Body::from(request.body().to_vec()))?;
+        let body = request.into_body();
+        let hyper_request = hyper_request.body(Body::from(body))?;
 
         let hyper_response = self.request(hyper_request).await?;
 
@@ -97,7 +100,7 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
 impl HttpClient for reqwest::Client {
     async fn execute_request(
         &self,
-        request: Request<&[u8]>,
+        request: Request<Bytes>,
     ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>> {
         let mut reqwest_request =
             self.request(request.method().clone(), &request.uri().to_string());
@@ -105,7 +108,7 @@ impl HttpClient for reqwest::Client {
             reqwest_request = reqwest_request.header(header.0, header.1);
         }
 
-        let body = String::from_utf8(request.body().to_vec())?;
+        let body = request.into_body();
         let reqwest_request = reqwest_request.body(body).build()?;
 
         let reqwest_response = self.execute(reqwest_request).await?;
@@ -122,4 +125,12 @@ impl HttpClient for reqwest::Client {
 
         Ok(response)
     }
+}
+
+/// Serialize to json
+pub fn to_json<T>(value: &T) -> Result<Bytes, Box<dyn std::error::Error + Sync + Send>>
+where
+    T: ?Sized + Serialize,
+{
+    Ok(Bytes::from(serde_json::to_vec(value)?))
 }

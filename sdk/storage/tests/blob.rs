@@ -9,6 +9,7 @@ use azure_storage::blob::{
     prelude::*,
 };
 use azure_storage::core::prelude::*;
+use bytes::Bytes;
 use chrono::{FixedOffset, Utc};
 use std::ops::Add;
 use std::ops::Deref;
@@ -127,7 +128,7 @@ async fn put_and_get_block_list() {
     let digest3 = md5::compute(contents3).into();
 
     let put_block_response = blob
-        .put_block(&"block1".into(), &contents1.as_bytes())
+        .put_block(&"block1".into(), Bytes::from(contents1))
         .execute()
         .await
         .unwrap();
@@ -137,13 +138,13 @@ async fn put_and_get_block_list() {
         _ => panic!("must receive a content_crc64 header"),
     }
 
-    blob.put_block(&"block2".into(), &contents2.as_bytes())
+    blob.put_block(&"block2".into(), Bytes::from(contents2))
         .execute()
         .await
         .unwrap();
 
     let put_block_response = blob
-        .put_block(&"block3".into(), &contents3.as_bytes())
+        .put_block(&"block3".into(), Bytes::from(contents3))
         .hash(&digest3)
         .execute()
         .await
@@ -235,7 +236,7 @@ async fn list_containers() {
 async fn put_block_blob() {
     let blob_name: &'static str = "m1";
     let container_name: &'static str = "rust-upload-test";
-    let data = b"abcdef";
+    let data = Bytes::from_static(b"abcdef");
 
     let storage = initialize().as_storage_client();
     let container = storage.as_container_client(container_name);
@@ -276,7 +277,7 @@ async fn put_block_blob() {
 async fn copy_blob() {
     let blob_name: &'static str = "copysrc";
     let container_name: &'static str = "rust-upload-test";
-    let data = b"abcdef";
+    let data = Bytes::from_static(b"abcdef");
 
     let storage = initialize().as_storage_client();
     let container = storage.as_container_client(container_name);
@@ -337,7 +338,7 @@ where
 async fn put_block_blob_and_get_properties() {
     let blob_name: &'static str = "properties";
     let container_name: &'static str = "rust-upload-test";
-    let data = b"abcdef";
+    let data = Bytes::from_static(b"abcdef");
 
     let storage = initialize().as_storage_client();
     let container = storage.as_container_client(container_name);

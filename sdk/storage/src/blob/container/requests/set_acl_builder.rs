@@ -5,6 +5,7 @@ use azure_core::headers::{add_mandatory_header, add_optional_header, add_optiona
 use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use azure_core::StoredAccessPolicyList;
+use bytes::Bytes;
 use http::method::Method;
 use http::status::StatusCode;
 
@@ -62,7 +63,7 @@ impl<'a> SetACLBuilder<'a> {
                 request
             },
             match xml {
-                Some(ref x) => Some(x.as_bytes()),
+                Some(x) => Some(Bytes::from(x)),
                 None => None,
             },
         )?;

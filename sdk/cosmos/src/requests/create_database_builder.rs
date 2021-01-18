@@ -65,7 +65,7 @@ impl<'a> CreateDatabaseBuilder<'a, Yes> {
             pub id: &'a str,
         }
 
-        let req = serde_json::to_string(&CreateDatabaseRequest {
+        let req = azure_core::to_json(&CreateDatabaseRequest {
             id: self.database_name.unwrap(),
         })?;
 
@@ -77,7 +77,7 @@ impl<'a> CreateDatabaseBuilder<'a, Yes> {
         let request = azure_core::headers::add_optional_header(&self.activity_id, request);
         let request = azure_core::headers::add_optional_header(&self.consistency_level, request);
 
-        let request = request.body(req.as_bytes())?; // todo: set content-length here and elsewhere without builders
+        let request = request.body(req)?; // todo: set content-length here and elsewhere without builders
 
         debug!("create database request prepared == {:?}", request);
 

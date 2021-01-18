@@ -2,6 +2,7 @@ use crate::prelude::*;
 use crate::resources::stored_procedure::Parameters;
 use crate::responses::ExecuteStoredProcedureResponse;
 use azure_core::prelude::*;
+use bytes::Bytes;
 use http::StatusCode;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
@@ -16,6 +17,8 @@ pub struct ExecuteStoredProcedureBuilder<'a, 'b> {
     allow_tentative_writes: TenativeWritesAllowance,
     partition_keys: Option<&'b PartitionKeys>,
 }
+
+static EMPTY_LIST: &[u8; 2] = b"[]";
 
 impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     pub(crate) fn new(stored_procedure_client: &'a StoredProcedureClient) -> Self {
@@ -66,12 +69,12 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         let request = request.header(http::header::CONTENT_TYPE, "application/json");
 
         let body = if let Some(parameters) = self.parameters.as_ref() {
-            parameters.to_json()
+            Bytes::from(parameters.to_json())
         } else {
-            String::from("[]")
+            Bytes::from_static(EMPTY_LIST)
         };
 
-        let request = request.body(body.as_bytes())?;
+        let request = request.body(body)?;
 
         Ok(self
             .stored_procedure_client

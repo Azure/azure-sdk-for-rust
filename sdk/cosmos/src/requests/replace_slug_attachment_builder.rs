@@ -2,6 +2,7 @@ use crate::prelude::*;
 use crate::responses::CreateSlugAttachmentResponse;
 use azure_core::prelude::*;
 use azure_core::{No, ToAssign, Yes};
+use bytes::Bytes;
 use http::StatusCode;
 use std::convert::TryInto;
 use std::marker::PhantomData;
@@ -15,7 +16,7 @@ where
     attachment_client: &'a AttachmentClient,
     p_body: PhantomData<BodySet>,
     p_content_type: PhantomData<ContentTypeSet>,
-    body: Option<&'b [u8]>,
+    body: Option<Bytes>,
     content_type: Option<ContentType<'b>>,
     if_match_condition: Option<IfMatchCondition<'b>>,
     user_agent: Option<UserAgent<'b>>,
@@ -71,9 +72,10 @@ impl<'a, 'b> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, Yes> {
         req = azure_core::headers::add_mandatory_header(&self.content_type.unwrap(), req);
 
         req = req.header("Slug", self.attachment_client.attachment_name());
-        req = req.header(http::header::CONTENT_LENGTH, self.body.unwrap().len());
+        let body = self.body.clone().unwrap();
+        req = req.header(http::header::CONTENT_LENGTH, body.len());
 
-        let req = req.body(self.body.unwrap())?;
+        let req = req.body(body)?;
 
         debug!("req == {:#?}", req);
 
@@ -90,12 +92,15 @@ impl<'a, 'b, ContentTypeSet> ReplaceSlugAttachmentBuilder<'a, 'b, No, ContentTyp
 where
     ContentTypeSet: ToAssign,
 {
-    pub fn body(self, body: &'b [u8]) -> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
+    pub fn body(
+        self,
+        body: impl Into<Bytes>,
+    ) -> ReplaceSlugAttachmentBuilder<'a, 'b, Yes, ContentTypeSet> {
         ReplaceSlugAttachmentBuilder {
             attachment_client: self.attachment_client,
             p_body: PhantomData,
             p_content_type: PhantomData,
-            body: Some(body),
+            body: Some(body.into()),
             content_type: self.content_type,
             if_match_condition: self.if_match_condition,
             user_agent: self.user_agent,
