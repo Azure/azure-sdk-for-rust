@@ -43,16 +43,25 @@ pub struct StorageAccountClient {
     filesystem_url: Url,
 }
 
-fn get_sas_token_parms(sas_token: &str) -> Vec<(String, String)> {
-    Url::options()
-        // Any base url will do: we just need to parse the SAS token
-        // to get its query pairs.
-        .base_url(Some(&Url::parse("https://blob.core.windows.net").unwrap()))
-        .parse(sas_token)
-        .unwrap()
+fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>, url::ParseError> {
+    // Any base url will do: we just need to parse the SAS token
+    // to get its query pairs.
+    let base_url = Url::parse("https://blob.core.windows.net").unwrap();
+
+    let url = Url::options().base_url(Some(&base_url));
+
+    // this code handles the leading ?
+    // we support both with or without
+    let url = if sas_token.starts_with('?') {
+        url.parse(sas_token)
+    } else {
+        url.parse(&format!("?{}", sas_token))
+    }?;
+
+    Ok(url
         .query_pairs()
         .map(|p| (String::from(p.0), String::from(p.1)))
-        .collect()
+        .collect())
 }
 
 impl StorageAccountClient {
@@ -112,14 +121,14 @@ impl StorageAccountClient {
         http_client: Arc<Box<dyn HttpClient>>,
         account: A,
         sas_token: S,
-    ) -> Arc<Self>
+    ) -> Result<Arc<Self>, url::ParseError>
     where
         A: Into<String>,
         S: AsRef<str>,
     {
         let account = account.into();
 
-        Arc::new(Self {
+        Ok(Arc::new(Self {
             blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
                 .unwrap(),
             table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
@@ -130,9 +139,9 @@ impl StorageAccountClient {
                 .unwrap(),
             storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
                 sas_token.as_ref(),
-            )),
+            )?),
             http_client,
-        })
+        }))
     }
 
     pub fn new_bearer_token<A, BT>(
@@ -180,7 +189,7 @@ impl StorageAccountClient {
                 Ok(Arc::new(Self {
                     storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
                         sas_token,
-                    )),
+                    )?),
                     blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                     table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
                     queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
@@ -197,7 +206,7 @@ impl StorageAccountClient {
                 file_endpoint,
                 ..
             } => Ok(Arc::new(Self {
-                storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(sas_token)),
+                storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(sas_token)?),
                 blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                 table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
                 queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
