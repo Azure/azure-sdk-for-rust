@@ -1,13 +1,22 @@
-use std::borrow::Borrow;
+use crate::BlockId;
 
-// TODO: Change from Borrow<[u8]> to BlockId
-// Also, why Borrow? :| :|
 #[derive(Debug, Clone, PartialEq)]
-pub enum BlobBlockType<T>
-where
-    T: Borrow<[u8]>,
-{
-    Committed(T),
-    Uncommitted(T),
-    Latest(T),
+pub enum BlobBlockType {
+    Committed(BlockId),
+    Uncommitted(BlockId),
+    Latest(BlockId),
+}
+
+impl BlobBlockType {
+    pub fn new_committed(b: impl Into<BlockId>) -> Self {
+        BlobBlockType::Committed(b.into())
+    }
+
+    pub fn new_uncommitted(b: impl Into<BlockId>) -> Self {
+        BlobBlockType::Uncommitted(b.into())
+    }
+
+    pub fn new_latest(b: impl Into<BlockId>) -> Self {
+        BlobBlockType::Latest(b.into())
+    }
 }

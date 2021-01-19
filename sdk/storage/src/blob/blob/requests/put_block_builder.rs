@@ -8,7 +8,7 @@ use bytes::Bytes;
 #[derive(Debug, Clone)]
 pub struct PutBlockBuilder<'a> {
     blob_client: &'a BlobClient,
-    block_id: &'a BlockId,
+    block_id: BlockId,
     body: Bytes,
     hash: Option<&'a Hash>,
     client_request_id: Option<ClientRequestId<'a>>,
@@ -19,12 +19,12 @@ pub struct PutBlockBuilder<'a> {
 impl<'a> PutBlockBuilder<'a> {
     pub(crate) fn new(
         blob_client: &'a BlobClient,
-        block_id: &'a BlockId,
+        block_id: impl Into<BlockId>,
         body: impl Into<Bytes>,
     ) -> Self {
         Self {
             blob_client,
-            block_id,
+            block_id: block_id.into(),
             body: body.into(),
             hash: None,
             client_request_id: None,

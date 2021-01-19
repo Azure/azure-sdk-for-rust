@@ -4,20 +4,16 @@ use crate::core::prelude::*;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 use bytes::Bytes;
-use std::borrow::Borrow;
 
 #[derive(Debug, Clone)]
-pub struct PutBlockListBuilder<'a, T>
-where
-    T: Borrow<[u8]> + 'a,
-{
+pub struct PutBlockListBuilder<'a> {
     blob_client: &'a BlobClient,
-    block_list: &'a BlockList<T>,
-    hash: Option<&'a Hash>,
+    block_list: &'a BlockList,
     content_type: Option<ContentType<'a>>,
     content_encoding: Option<ContentEncoding<'a>>,
     content_language: Option<ContentLanguage<'a>>,
     content_disposition: Option<ContentDisposition<'a>>,
+    content_md5: Option<BlobContentMD5>,
     metadata: Option<&'a Metadata>,
     access_tier: AccessTier,
     // TODO: Support tags
@@ -26,25 +22,35 @@ where
     timeout: Option<Timeout>,
 }
 
-impl<'a, T> PutBlockListBuilder<'a, T>
-where
-    T: Borrow<[u8]> + 'a,
-{
-    pub(crate) fn new(blob_client: &'a BlobClient, block_list: &'a BlockList<T>) -> Self {
+impl<'a> PutBlockListBuilder<'a> {
+    pub(crate) fn new(blob_client: &'a BlobClient, block_list: &'a BlockList) -> Self {
         Self {
             blob_client,
             block_list,
-            hash: None,
             content_type: None,
             content_encoding: None,
             content_language: None,
             content_disposition: None,
+            content_md5: None,
             metadata: None,
             access_tier: AccessTier::Hot,
             lease_id: None,
             client_request_id: None,
             timeout: None,
         }
+    }
+
+    setters! {
+        content_type: ContentType<'a> => Some(content_type),
+        content_encoding: ContentEncoding<'a> => Some(content_encoding),
+        content_language: ContentLanguage<'a> => Some(content_language),
+        content_disposition: ContentDisposition<'a> => Some(content_disposition),
+        content_md5: BlobContentMD5 => Some(content_md5),
+        metadata: &'a Metadata => Some(metadata),
+        access_tier: AccessTier => access_tier,
+        lease_id: &'a LeaseId => Some(lease_id),
+        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        timeout: Timeout => Some(timeout),
     }
 
     pub async fn execute(
@@ -81,11 +87,11 @@ where
             &http::Method::PUT,
             &|mut request| {
                 request = request.header("Content-MD5", &md5);
-                request = add_optional_header_ref(&self.hash, request);
                 request = add_optional_header(&self.content_type, request);
                 request = add_optional_header(&self.content_encoding, request);
                 request = add_optional_header(&self.content_language, request);
                 request = add_optional_header(&self.content_disposition, request);
+                request = add_optional_header(&self.content_md5, request);
                 request = add_optional_header(&self.metadata, request);
                 request = add_mandatory_header(&self.access_tier, request);
                 request = add_optional_header_ref(&self.lease_id, request);

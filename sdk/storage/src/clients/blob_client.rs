@@ -103,10 +103,7 @@ impl BlobClient {
         GetBlockListBuilder::new(self)
     }
 
-    pub fn put_block_list<'a, T>(&'a self, block_list: &'a BlockList<T>) -> PutBlockListBuilder<T>
-    where
-        T: std::borrow::Borrow<[u8]> + 'a,
-    {
+    pub fn put_block_list<'a>(&'a self, block_list: &'a BlockList) -> PutBlockListBuilder {
         PutBlockListBuilder::new(self, block_list)
     }
 
@@ -120,10 +117,10 @@ impl BlobClient {
 
     pub fn put_block<'a>(
         &'a self,
-        block_id: &'a BlockId,
+        block_id: impl Into<BlockId>,
         body: impl Into<Bytes>,
     ) -> PutBlockBuilder<'a> {
-        PutBlockBuilder::new(self, block_id, body.into())
+        PutBlockBuilder::new(self, block_id, body)
     }
 
     pub fn clear_page(&self, ba512_range: BA512Range) -> ClearPageBuilder {
