@@ -2,11 +2,10 @@ use azure_core::errors::AzureError;
 use azure_core::headers::{
     date_from_headers, etag_from_headers, request_id_from_headers, server_from_headers,
 };
-use azure_core::RequestId;
+use azure_core::{Metadata, RequestId};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
-use std::collections::HashMap;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
@@ -15,16 +14,16 @@ pub struct GetBlobMetadataResponse {
     pub etag: String,
     pub server: String,
     pub date: DateTime<Utc>,
-    pub metadata: HashMap<String, Bytes>,
+    pub metadata: Metadata,
 }
 
 impl TryFrom<&HeaderMap> for GetBlobMetadataResponse {
     type Error = AzureError;
 
     fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
-        println!("headers == {:#?}", headers);
+        debug!("headers == {:#?}", headers);
 
-        let mut metadata = HashMap::new();
+        let mut metadata = Metadata::new();
         headers
             .iter()
             .filter(|header| header.0.as_str().starts_with("x-ms-meta-"))
