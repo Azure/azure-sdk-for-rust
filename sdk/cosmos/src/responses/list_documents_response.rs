@@ -73,13 +73,13 @@ where
     }
 }
 
-impl<T> std::convert::TryFrom<Response<Vec<u8>>> for ListDocumentsResponse<T>
+impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for ListDocumentsResponse<T>
 where
     T: DeserializeOwned,
 {
     type Error = CosmosError;
 
-    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
         let body: &[u8] = response.body();
 

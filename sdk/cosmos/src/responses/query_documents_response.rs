@@ -18,13 +18,13 @@ pub struct DocumentQueryResult<T> {
     pub result: T,
 }
 
-impl<T> std::convert::TryFrom<Response<Vec<u8>>> for DocumentQueryResult<T>
+impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for DocumentQueryResult<T>
 where
     T: DeserializeOwned,
 {
     type Error = CosmosError;
 
-    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice(response.body())?)
     }
 }
@@ -37,10 +37,10 @@ pub struct QueryResponseMeta {
     pub count: u64,
 }
 
-impl std::convert::TryFrom<Response<Vec<u8>>> for QueryResponseMeta {
+impl std::convert::TryFrom<Response<bytes::Bytes>> for QueryResponseMeta {
     type Error = CosmosError;
 
-    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice(response.body())?)
     }
 }
@@ -93,13 +93,13 @@ impl<T> QueryDocumentsResponse<T> {
     }
 }
 
-impl<T> std::convert::TryFrom<Response<Vec<u8>>> for QueryDocumentsResponse<T>
+impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for QueryDocumentsResponse<T>
 where
     T: DeserializeOwned,
 {
     type Error = CosmosError;
 
-    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
         let body = response.body();
 

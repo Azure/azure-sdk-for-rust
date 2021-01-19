@@ -2,7 +2,6 @@ use crate::errors::{AzureError, UnexpectedHTTPResult};
 use async_trait::async_trait;
 use bytes::Bytes;
 use http::{Request, Response, StatusCode};
-use hyper::{self, body, Body};
 use hyper_rustls::HttpsConnector;
 use serde::Serialize;
 
@@ -11,13 +10,13 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     async fn execute_request(
         &self,
         request: Request<Bytes>,
-    ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>>;
+    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>>;
 
     async fn execute_request_check_status(
         &self,
         request: Request<Bytes>,
         expected_status: StatusCode,
-    ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
         let response = self.execute_request(request).await?;
         if expected_status != response.status() {
             Err(Box::new(AzureError::from(UnexpectedHTTPResult::new(
@@ -34,7 +33,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         &self,
         request: Request<Bytes>,
         expected_statuses: &[StatusCode],
-    ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
         let response = self.execute_request(request).await?;
         if !expected_statuses
             .iter()
@@ -68,7 +67,7 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
     async fn execute_request(
         &self,
         request: Request<Bytes>,
-    ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
         let mut hyper_request = hyper::Request::builder()
             .uri(request.uri())
             .method(request.method());
@@ -77,8 +76,7 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
             hyper_request = hyper_request.header(header.0, header.1);
         }
 
-        let body = request.into_body();
-        let hyper_request = hyper_request.body(Body::from(body))?;
+        let hyper_request = hyper_request.body(hyper::Body::from(request.into_body()))?;
 
         let hyper_response = self.request(hyper_request).await?;
 
@@ -90,7 +88,7 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
             response = response.header(key, value);
         }
 
-        let response = response.body(body::to_bytes(hyper_response.into_body()).await?.to_vec())?;
+        let response = response.body(hyper::body::to_bytes(hyper_response.into_body()).await?)?;
 
         Ok(response)
     }
@@ -101,15 +99,14 @@ impl HttpClient for reqwest::Client {
     async fn execute_request(
         &self,
         request: Request<Bytes>,
-    ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
         let mut reqwest_request =
             self.request(request.method().clone(), &request.uri().to_string());
         for header in request.headers() {
             reqwest_request = reqwest_request.header(header.0, header.1);
         }
 
-        let body = request.into_body();
-        let reqwest_request = reqwest_request.body(body).build()?;
+        let reqwest_request = reqwest_request.body(request.into_body()).build()?;
 
         let reqwest_response = self.execute(reqwest_request).await?;
 
@@ -121,7 +118,7 @@ impl HttpClient for reqwest::Client {
             response = response.header(key, value);
         }
 
-        let response = response.body(reqwest_response.bytes().await?.to_vec())?;
+        let response = response.body(reqwest_response.bytes().await?)?;
 
         Ok(response)
     }
