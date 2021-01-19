@@ -61,7 +61,7 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b> {
             #[serde(skip_serializing_if = "Option::is_none")]
             indexing_policy: Option<&'k IndexingPolicy>,
             partition_key: PartitionKey,
-        };
+        }
 
         let request = Request {
             id: self.collection_client.collection_name(),

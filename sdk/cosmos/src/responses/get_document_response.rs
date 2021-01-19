@@ -15,13 +15,13 @@ pub enum GetDocumentResponse<T> {
     NotFound(Box<NotFoundDocumentResponse>),
 }
 
-impl<T> std::convert::TryFrom<Response<Vec<u8>>> for GetDocumentResponse<T>
+impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for GetDocumentResponse<T>
 where
     T: DeserializeOwned,
 {
     type Error = CosmosError;
 
-    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let status_code = response.status();
         let headers = response.headers();
         let body: &[u8] = response.body();
@@ -72,13 +72,13 @@ pub struct FoundDocumentResponse<T> {
     pub date: DateTime<Utc>,
 }
 
-impl<T> std::convert::TryFrom<Response<Vec<u8>>> for FoundDocumentResponse<T>
+impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for FoundDocumentResponse<T>
 where
     T: DeserializeOwned,
 {
     type Error = CosmosError;
 
-    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
         let body: &[u8] = response.body();
 
@@ -133,10 +133,10 @@ pub struct NotFoundDocumentResponse {
     pub date: DateTime<Utc>,
 }
 
-impl std::convert::TryFrom<Response<Vec<u8>>> for NotFoundDocumentResponse {
+impl std::convert::TryFrom<Response<bytes::Bytes>> for NotFoundDocumentResponse {
     type Error = CosmosError;
 
-    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
 
         Ok(Self {

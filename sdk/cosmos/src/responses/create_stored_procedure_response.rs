@@ -21,10 +21,10 @@ pub struct CreateStoredProcedureResponse {
     pub current_replica_set_size: u64,
 }
 
-impl std::convert::TryFrom<Response<Vec<u8>>> for CreateStoredProcedureResponse {
+impl std::convert::TryFrom<Response<bytes::Bytes>> for CreateStoredProcedureResponse {
     type Error = CosmosError;
 
-    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
         let body = response.body();
 
