@@ -13,6 +13,7 @@ pub struct AttachmentClient {
 }
 
 impl AttachmentClient {
+    /// Create a new client
     pub(crate) fn new<S: Into<ReadonlyString>>(
         document_client: DocumentClient,
         attachment_name: S,
@@ -41,11 +42,6 @@ impl AttachmentClient {
     /// Get a [`DocumentClient`].
     pub fn document_client(&self) -> &DocumentClient {
         &self.document_client
-    }
-
-    /// Get a raw [`HttpClient`].
-    pub fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
     }
 
     /// Get the attachment name.
@@ -81,6 +77,11 @@ impl AttachmentClient {
     /// Initiate a request to replace an attachment.
     pub fn replace_reference(&self) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_> {
         requests::ReplaceReferenceAttachmentBuilder::new(self)
+    }
+
+    /// Get a raw [`HttpClient`].
+    pub(crate) fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
     }
 
     pub(crate) fn prepare_request(&self, method: http::Method) -> http::request::Builder {

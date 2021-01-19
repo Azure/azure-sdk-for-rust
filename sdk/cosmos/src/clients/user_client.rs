@@ -21,42 +21,47 @@ impl UserClient {
         }
     }
 
+    /// Get a [`CosmosClient`]
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.database_client().cosmos_client()
     }
 
+    /// Get a [`DatabaseClient`]
     pub fn database_client(&self) -> &DatabaseClient {
         &self.database_client
     }
 
-    pub fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
-    }
-
+    /// Get the user name
     pub fn user_name(&self) -> &str {
         &self.user_name
     }
 
+    /// Create the user
     pub fn create_user(&self) -> requests::CreateUserBuilder<'_, '_> {
         requests::CreateUserBuilder::new(self)
     }
 
+    /// Get the user
     pub fn get_user(&self) -> requests::GetUserBuilder<'_, '_> {
         requests::GetUserBuilder::new(self)
     }
 
+    /// Replace the user
     pub fn replace_user(&self) -> requests::ReplaceUserBuilder<'_, '_> {
         requests::ReplaceUserBuilder::new(self)
     }
 
+    /// Delete the user
     pub fn delete_user(&self) -> requests::DeleteUserBuilder<'_, '_> {
         requests::DeleteUserBuilder::new(self)
     }
 
+    /// List the user's permissions
     pub fn list_permissions(&self) -> requests::ListPermissionsBuilder<'_, '_> {
         requests::ListPermissionsBuilder::new(self)
     }
 
+    /// Convert into a [`PermissionClient`]
     pub fn into_permission_client<S: Into<ReadonlyString>>(
         self,
         permission_name: S,
@@ -64,7 +69,7 @@ impl UserClient {
         PermissionClient::new(self, permission_name)
     }
 
-    pub fn prepare_request(&self, method: http::Method) -> http::request::Builder {
+    pub(crate) fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!("dbs/{}/users", self.database_client().database_name()),
             method,
@@ -72,7 +77,10 @@ impl UserClient {
         )
     }
 
-    pub fn prepare_request_with_user_name(&self, method: http::Method) -> http::request::Builder {
+    pub(crate) fn prepare_request_with_user_name(
+        &self,
+        method: http::Method,
+    ) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/users/{}",
@@ -82,5 +90,9 @@ impl UserClient {
             method,
             ResourceType::Users,
         )
+    }
+
+    pub(crate) fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
     }
 }

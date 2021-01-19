@@ -21,45 +21,48 @@ impl UserDefinedFunctionClient {
         }
     }
 
+    /// Get a [`CosmosClient`]
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.collection_client.cosmos_client()
     }
 
+    /// Get a [`DatabaseClient`]
     pub fn database_client(&self) -> &DatabaseClient {
         self.collection_client.database_client()
     }
 
+    /// Get a [`CollectionClient`]
     pub fn collection_client(&self) -> &CollectionClient {
         &self.collection_client
     }
 
-    pub fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
-    }
-
+    /// Get the user defined function's name
     pub fn user_defined_function_name(&self) -> &str {
         &self.user_defined_function_name
     }
 
+    /// Create the user defined function
     pub fn create_user_defined_function(
         &self,
     ) -> requests::CreateOrReplaceUserDefinedFunctionBuilder<'_, '_> {
         requests::CreateOrReplaceUserDefinedFunctionBuilder::new(self, true)
     }
 
+    /// Replace the user defined function
     pub fn replace_user_defined_function(
         &self,
     ) -> requests::CreateOrReplaceUserDefinedFunctionBuilder<'_, '_> {
         requests::CreateOrReplaceUserDefinedFunctionBuilder::new(self, false)
     }
 
+    /// Delete the user defined function
     pub fn delete_user_defined_function(
         &self,
     ) -> requests::DeleteUserDefinedFunctionBuilder<'_, '_> {
         requests::DeleteUserDefinedFunctionBuilder::new(self)
     }
 
-    pub fn prepare_request(&self, method: http::Method) -> http::request::Builder {
+    pub(crate) fn prepare_request(&self, method: http::Method) -> http::request::Builder {
         self.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/udfs",
@@ -71,7 +74,7 @@ impl UserDefinedFunctionClient {
         )
     }
 
-    pub fn prepare_request_with_user_defined_function_name(
+    pub(crate) fn prepare_request_with_user_defined_function_name(
         &self,
         method: http::Method,
     ) -> http::request::Builder {
@@ -85,5 +88,9 @@ impl UserDefinedFunctionClient {
             method,
             ResourceType::UserDefinedFunctions,
         )
+    }
+
+    pub(crate) fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
     }
 }

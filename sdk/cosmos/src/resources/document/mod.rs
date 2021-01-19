@@ -20,6 +20,7 @@ use serde::de::DeserializeOwned;
 ///
 /// You can learn more about Documents [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/documents).
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(missing_docs)]
 pub struct Document<T> {
     #[serde(flatten)]
     pub document_attributes: DocumentAttributes,
@@ -28,6 +29,7 @@ pub struct Document<T> {
 }
 
 impl<T> Document<T> {
+    /// Create a new document
     pub fn new(document: T) -> Self {
         let document_attributes = DocumentAttributes::default();
 
@@ -65,6 +67,7 @@ impl<T> Resource for &Document<T> {
 
 /// Whether to query across partitions
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(missing_docs)]
 pub enum QueryCrossPartition {
     Yes,
     No,
@@ -89,6 +92,7 @@ impl AddAsHeader for QueryCrossPartition {
 }
 
 /// Whether to parallelize across partitions
+#[allow(missing_docs)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ParallelizeCrossPartition {
     Yes,
@@ -115,6 +119,7 @@ impl AddAsHeader for ParallelizeCrossPartition {
 
 /// Whether the operation is an upsert
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(missing_docs)]
 pub enum IsUpsert {
     Yes,
     No,
@@ -136,6 +141,7 @@ impl AddAsHeader for IsUpsert {
 }
 
 /// Whether to use an incremental change feed
+#[allow(missing_docs)]
 #[derive(Debug, Clone, Copy)]
 pub enum ChangeFeed {
     Incremental,
@@ -153,6 +159,7 @@ impl AddAsHeader for ChangeFeed {
 
 /// Whether to allow tenative writes allowance
 #[derive(Debug, Clone, Copy)]
+#[allow(missing_docs)]
 pub enum TenativeWritesAllowance {
     Allow,
     Deny,

@@ -7,17 +7,24 @@ use super::Resource;
 /// You can learn more about Databases [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/databases).
 #[derive(Serialize, Clone, PartialEq, PartialOrd, Deserialize, Debug)]
 pub struct Database {
+    /// The database id
     pub id: String,
     #[serde(rename = "_rid")]
+    /// The resource id
     pub rid: String,
+    /// The last updated timestamp
     #[serde(rename = "_ts")]
     pub ts: u64,
+    /// The resource's uri
     #[serde(rename = "_self")]
     pub _self: String,
+    /// The resource's etag used for concurrency control
     #[serde(rename = "_etag")]
     pub etag: String,
+    /// The path to the database collections resource
     #[serde(rename = "_colls")]
     pub colls: String,
+    /// The path to the database users resource
     #[serde(rename = "_users")]
     pub users: String,
 }

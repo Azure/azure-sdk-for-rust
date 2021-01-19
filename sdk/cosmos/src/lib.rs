@@ -87,6 +87,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 !*/
 
 #![warn(unused_extern_crates)]
+#![deny(missing_docs)]
 #![recursion_limit = "256"]
 #[macro_use]
 extern crate log;
