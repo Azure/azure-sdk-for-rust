@@ -4,6 +4,8 @@
 //! then give you the ability to modify your request with certain options and finally
 //! execute the request with the `execute` method.
 
+#![allow(missing_docs)]
+
 mod create_collection_builder;
 mod create_database_builder;
 mod create_document_builder;

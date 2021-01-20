@@ -1,5 +1,7 @@
 //! Responses from any call to the Cosmos API.
 
+#![allow(missing_docs)]
+
 mod create_collection_response;
 mod create_database_response;
 mod create_document_response;

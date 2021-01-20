@@ -41,6 +41,7 @@ impl CosmosClient {
         }
     }
 
+    /// Create a new `CosmosClient` which connects to the account's instance in the Chinese Azure cloud.
     pub fn new_china(
         http_client: Arc<Box<dyn HttpClient>>,
         account: String,
@@ -54,6 +55,7 @@ impl CosmosClient {
         }
     }
 
+    /// Create a new `CosmosClient` which connects to the account's instance in custom Azure cloud.
     pub fn new_custom(
         http_client: Arc<Box<dyn HttpClient>>,
         account: String,
@@ -68,6 +70,7 @@ impl CosmosClient {
         }
     }
 
+    /// Create a new `CosmosClient` which connects to the account's instance in Azure emulator
     pub fn new_emulator(http_client: Arc<Box<dyn HttpClient>>, address: &str, port: u16) -> Self {
         //Account name: localhost:<port>
         //Account key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
@@ -86,38 +89,24 @@ impl CosmosClient {
         }
     }
 
+    /// Set the auth token used
     pub fn auth_token(&mut self, auth_token: AuthorizationToken) {
         self.auth_token = auth_token;
     }
 
-    fn prepare_request_with_signature(
-        &self,
-        uri_path: &str,
-        http_method: http::Method,
-        time: &str,
-        signature: &str,
-    ) -> RequestBuilder {
-        trace!("prepare_request::auth == {:?}", signature);
-        let uri = format!("{}/{}", self.cloud_location.url(), uri_path);
-        debug!(
-            "cosmos::client::prepare_request_with_resource_signature::uri == {:?}",
-            uri
-        );
-
-        RequestBuilder::new()
-            .method(http_method)
-            .uri(uri)
-            .header(HEADER_DATE, time)
-            .header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION))
-            .header(header::AUTHORIZATION, signature)
-    }
-
+    /// Create a database
     pub fn create_database(&self) -> requests::CreateDatabaseBuilder<'_> {
         requests::CreateDatabaseBuilder::new(self)
     }
 
+    /// List all databases
     pub fn list_databases(&self) -> requests::ListDatabasesBuilder<'_> {
         requests::ListDatabasesBuilder::new(self)
+    }
+
+    /// Convert into a [`DatabaseClient`]
+    pub fn into_database_client<S: Into<ReadonlyString>>(self, database_name: S) -> DatabaseClient {
+        DatabaseClient::new(self, database_name)
     }
 
     pub(crate) fn prepare_request(
@@ -141,12 +130,30 @@ impl CosmosClient {
         self.prepare_request_with_signature(uri_path, http_method, &time, &auth)
     }
 
-    pub fn into_database_client<S: Into<ReadonlyString>>(self, database_name: S) -> DatabaseClient {
-        DatabaseClient::new(self, database_name)
+    pub(crate) fn http_client(&self) -> &dyn HttpClient {
+        self.http_client.as_ref().as_ref()
     }
 
-    pub fn http_client(&self) -> &dyn HttpClient {
-        self.http_client.as_ref().as_ref()
+    fn prepare_request_with_signature(
+        &self,
+        uri_path: &str,
+        http_method: http::Method,
+        time: &str,
+        signature: &str,
+    ) -> RequestBuilder {
+        trace!("prepare_request::auth == {:?}", signature);
+        let uri = format!("{}/{}", self.cloud_location.url(), uri_path);
+        debug!(
+            "cosmos::client::prepare_request_with_resource_signature::uri == {:?}",
+            uri
+        );
+
+        RequestBuilder::new()
+            .method(http_method)
+            .uri(uri)
+            .header(HEADER_DATE, time)
+            .header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION))
+            .header(header::AUTHORIZATION, signature)
     }
 }
 

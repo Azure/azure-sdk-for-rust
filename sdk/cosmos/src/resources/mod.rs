@@ -36,12 +36,15 @@ use permission::PermissionMode;
 
 /// A Cosmos resource such as databases, documents, collections, users, etc.
 pub trait Resource {
+    /// Get the uri for a resource
     fn uri(&self) -> &str;
 
+    /// Get the read permissions for the resource
     fn read_permission(&self) -> PermissionMode<'_> {
         PermissionMode::read(self)
     }
 
+    /// Get all permissions for the resource
     fn all_permission(&self) -> PermissionMode<'_> {
         PermissionMode::all(self)
     }

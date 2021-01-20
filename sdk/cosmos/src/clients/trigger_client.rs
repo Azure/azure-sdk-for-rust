@@ -11,6 +11,7 @@ pub struct TriggerClient {
 }
 
 impl TriggerClient {
+    /// Create a new trigger client
     pub(crate) fn new<S: Into<ReadonlyString>>(
         collection_client: CollectionClient,
         trigger_name: S,
@@ -21,35 +22,46 @@ impl TriggerClient {
         }
     }
 
+    /// Get a [`CosmosClient`]
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.collection_client.cosmos_client()
     }
 
+    /// Get a [`DatabaseClient`]
     pub fn database_client(&self) -> &DatabaseClient {
         self.collection_client.database_client()
     }
 
+    /// Get a [`CollectionClient`]
     pub fn collection_client(&self) -> &CollectionClient {
         &self.collection_client
     }
 
-    pub fn http_client(&self) -> &dyn HttpClient {
+    /// Get the trigger name
+    pub fn trigger_name(&self) -> &str {
+        &self.trigger_name
+    }
+
+    /// Create a trigger
+    pub fn create_trigger(&self) -> requests::CreateOrReplaceTriggerBuilder<'_> {
+        requests::CreateOrReplaceTriggerBuilder::new(self, true)
+    }
+
+    /// Replace a trigger
+    pub fn replace_trigger(&self) -> requests::CreateOrReplaceTriggerBuilder<'_> {
+        requests::CreateOrReplaceTriggerBuilder::new(self, false)
+    }
+
+    /// Delete a trigger
+    pub fn delete_trigger(&self) -> requests::DeleteTriggerBuilder<'_, '_> {
+        requests::DeleteTriggerBuilder::new(self)
+    }
+
+    pub(crate) fn http_client(&self) -> &dyn HttpClient {
         self.cosmos_client().http_client()
     }
 
-    pub fn prepare_request(&self, method: http::Method) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
-            &format!(
-                "dbs/{}/colls/{}/triggers",
-                self.database_client().database_name(),
-                self.collection_client().collection_name(),
-            ),
-            method,
-            ResourceType::Triggers,
-        )
-    }
-
-    pub fn prepare_request_with_trigger_name(
+    pub(crate) fn prepare_request_with_trigger_name(
         &self,
         method: http::Method,
     ) -> http::request::Builder {
@@ -65,19 +77,15 @@ impl TriggerClient {
         )
     }
 
-    pub fn trigger_name(&self) -> &str {
-        &self.trigger_name
-    }
-
-    pub fn create_trigger(&self) -> requests::CreateOrReplaceTriggerBuilder<'_> {
-        requests::CreateOrReplaceTriggerBuilder::new(self, true)
-    }
-
-    pub fn replace_trigger(&self) -> requests::CreateOrReplaceTriggerBuilder<'_> {
-        requests::CreateOrReplaceTriggerBuilder::new(self, false)
-    }
-
-    pub fn delete_trigger(&self) -> requests::DeleteTriggerBuilder<'_, '_> {
-        requests::DeleteTriggerBuilder::new(self)
+    pub(crate) fn prepare_request(&self, method: http::Method) -> http::request::Builder {
+        self.cosmos_client().prepare_request(
+            &format!(
+                "dbs/{}/colls/{}/triggers",
+                self.database_client().database_name(),
+                self.collection_client().collection_name(),
+            ),
+            method,
+            ResourceType::Triggers,
+        )
     }
 }
