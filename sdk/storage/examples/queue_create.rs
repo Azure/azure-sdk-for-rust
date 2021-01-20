@@ -4,9 +4,10 @@ use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage::queue::prelude::*;
 use std::error::Error;
+use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // First we retrieve the account name and master key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
@@ -17,8 +18,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .expect("Please pass the queue name as first parameter");
 
-    let queue_client = QueueAccountClient::new(client::with_access_key(&account, &master_key))
-        .into_queue_client(&queue_name);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+
+    let storage_account_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+    let queue = storage_account_client
+        .as_storage_client()
+        .as_queue_client(queue_name);
 
     trace!("creating queue");
 
@@ -32,11 +38,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .as_mut()
         .insert("created".into(), format!("{:?}", chrono::Utc::now()).into());
 
-    let response = queue_client
-        .create_queue()
-        .metadata(&metadata)
-        .execute()
-        .await?;
+    let response = queue.create().metadata(&metadata).execute().await?;
     println!("response == {:#?}", response);
 
     // let's add some more metadata
@@ -45,12 +47,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     println!("metadata == {:#?}", metadata);
 
-    let response = queue_client.set_queue_metadata(&metadata).execute().await?;
+    let response = queue.set_metadata(&metadata).execute().await?;
     println!("response == {:#?}", response);
 
     // now let's delete it
-    let response = queue_client
-        .delete_queue()
+    let response = queue
+        .delete()
         .client_request_id("myclientid")
         .execute()
         .await?;

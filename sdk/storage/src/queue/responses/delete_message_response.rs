@@ -1,6 +1,7 @@
 use azure_core::errors::AzureError;
 use azure_core::headers::CommonStorageResponseHeaders;
-use hyper::header::HeaderMap;
+use bytes::Bytes;
+use http::response::Response;
 use std::convert::TryInto;
 
 use super::get_messages_response::Message;
@@ -20,13 +21,7 @@ impl PopReceipt for Message {
     }
 }
 
-impl From<Message> for Box<dyn PopReceipt> {
-    fn from(message: Message) -> Box<dyn PopReceipt> {
-        Box::new(message)
-    }
-}
-
-impl std::fmt::Debug for dyn PopReceipt {
+impl<'a> std::fmt::Debug for &'a dyn PopReceipt {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
@@ -42,13 +37,14 @@ pub struct DeleteMessageResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
 }
 
-impl std::convert::TryFrom<&HeaderMap> for DeleteMessageResponse {
+impl std::convert::TryFrom<&Response<Bytes>> for DeleteMessageResponse {
     type Error = AzureError;
-    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
-        debug!("headers == {:?}", headers);
+
+    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+        debug!("response == {:?}", response);
 
         Ok(DeleteMessageResponse {
-            common_storage_response_headers: headers.try_into()?,
+            common_storage_response_headers: response.headers().try_into()?,
         })
     }
 }
