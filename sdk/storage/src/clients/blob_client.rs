@@ -63,6 +63,10 @@ impl BlobClient {
         GetBlobPropertiesBuilder::new(self)
     }
 
+    pub fn get_metadata(&self) -> GetBlobMetadataBuilder {
+        GetBlobMetadataBuilder::new(self)
+    }
+
     pub fn update_page<'a>(
         &'a self,
         ba512_range: BA512Range,

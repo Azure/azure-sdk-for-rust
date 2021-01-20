@@ -5,6 +5,7 @@ extern crate log;
 use azure_core::prelude::*;
 use azure_storage::blob::container::PublicAccess;
 use azure_storage::core::prelude::*;
+use bytes::Bytes;
 use std::sync::Arc;
 
 #[tokio::test]
@@ -55,4 +56,12 @@ async fn put_append_blob() {
         .unwrap();
 
     trace!("created {:?}", blob_name);
+
+    let resp = blob.get_metadata().execute().await.unwrap();
+
+    assert_eq!(resp.metadata.len(), 2);
+
+    assert_eq!(resp.metadata.get("attrib"), Some(Bytes::from("value")));
+    assert_eq!(resp.metadata.get("second"), Some(Bytes::from("something")));
+    assert_eq!(resp.metadata.get("not_found"), None);
 }

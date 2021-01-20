@@ -58,5 +58,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("{:?}", res);
 
+    // let get back the metadata
+    let res = blob.get_metadata().execute().await?;
+    println!("{:?}", res);
+
     Ok(())
 }
