@@ -114,8 +114,8 @@ mod tests {
     #[test]
     fn directmethod_new_should_succeed() {
         use crate::service::InvokeMethodBuilder;
-        use std::sync::Arc;
         use azure_core::HttpClient;
+        use std::sync::Arc;
 
         let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
         let service: ServiceClient = ServiceClient::from_sas_token(http_client, "test", "test");
