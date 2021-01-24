@@ -1,22 +1,14 @@
-use azure_core::errors::{extract_status_headers_and_body, AzureError, UnexpectedHTTPResult};
-use hyper::{Body, Client, Method, Request, StatusCode};
-use hyper_tls::HttpsConnector;
-use serde::Deserialize;
-use serde_json::json;
+use std::convert::TryInto;
 
-use crate::service::{ServiceClient, API_VERSION};
+use http::{Method, StatusCode};
+use serde::Serialize;
 
-/// The DirectMethodResponse struct contains the response
-/// from the IoT Hub when a direct method was invoked.
-#[derive(Deserialize)]
-pub struct DirectMethodResponse {
-    pub status: u64,
-    pub payload: Option<String>,
-}
+use crate::service::responses::InvokeMethodResponse;
+use crate::service::{IoTHubError, ServiceClient, API_VERSION};
 
-/// The DirectMethod struct contains all neccessary properties
-/// to be able to invoke the method.
-pub struct DirectMethod<'a> {
+/// The InvokeMethodBuilder is used for constructing the request to
+/// invoke a module or device method.
+pub struct InvokeMethodBuilder<'a> {
     iothub_service: &'a ServiceClient,
     device_id: String,
     module_id: Option<String>,
@@ -25,7 +17,7 @@ pub struct DirectMethod<'a> {
     response_time_out: u64,
 }
 
-impl<'a> DirectMethod<'a> {
+impl<'a> InvokeMethodBuilder<'a> {
     /// Create a new DirectMethod
     pub(crate) fn new(
         iothub_service: &'a ServiceClient,
@@ -54,10 +46,12 @@ impl<'a> DirectMethod<'a> {
     ///
     /// # Examples
     /// ```
-    /// # use serde_json::json;
+    /// # use std::sync::Arc;
+    /// # use azure_core::HttpClient;
     /// use iothub::service::ServiceClient;
+    /// # let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
     ///
-    /// let service = ServiceClient::from_sas_token("some-iot-hub", "sas_token");
+    /// let service = ServiceClient::from_sas_token(http_client, "some-iot-hub", "sas_token");
     /// let great_method = service.create_device_method(
     ///    "SomeDeviceId",
     ///    "GreatMethod",
@@ -65,12 +59,12 @@ impl<'a> DirectMethod<'a> {
     ///    60
     /// );
     ///
-    /// great_method.execute(json!({"hello": "world"}));
+    /// great_method.execute(serde_json::json!({"hello": "world"}));
     /// ```
     pub async fn execute(
         &self,
         payload: serde_json::Value,
-    ) -> Result<DirectMethodResponse, AzureError> {
+    ) -> Result<InvokeMethodResponse, IoTHubError> {
         let uri = match &self.module_id {
             Some(module_id_value) => format!(
                 "https://{}.azure-devices.net/twins/{}/modules/{}/methods?api-version={}",
@@ -82,42 +76,35 @@ impl<'a> DirectMethod<'a> {
             ),
         };
 
-        Ok(self.invoke_method(&uri, payload).await?)
+        let request = self.iothub_service.prepare_request(&uri, Method::POST);
+        let method = InvokeMethodBody {
+            connect_timeout_in_seconds: self.connect_time_out,
+            method_name: &self.method_name,
+            payload,
+            response_timeout_in_seconds: self.response_time_out,
+        };
+
+        let body = azure_core::to_json(&method)?;
+
+        let request = request.body(body)?;
+
+        Ok(self
+            .iothub_service
+            .http_client()
+            .execute_request_check_status(request, StatusCode::OK)
+            .await?
+            .try_into()?)
     }
+}
 
-    /// Helper method for invoking the method
-    async fn invoke_method(
-        &self,
-        uri: &str,
-        payload: serde_json::Value,
-    ) -> Result<DirectMethodResponse, AzureError> {
-        let json_payload = json!({
-            "connectTimeoutInSeconds": self.connect_time_out,
-            "methodName": self.method_name,
-            "payload": payload,
-            "responseTimeoutInSeconds": self.response_time_out,
-        });
-
-        let client = Client::builder().build::<_, hyper::Body>(HttpsConnector::new());
-        let request = Request::builder()
-            .uri(uri)
-            .method(Method::POST)
-            .header("Authorization", &self.iothub_service.sas_token)
-            .header("Content-Type", "application/json")
-            .body(Body::from(serde_json::to_string(&json_payload)?))?;
-
-        let (status_code, _, whole_body) =
-            extract_status_headers_and_body(client.request(request)).await?;
-        if !status_code.is_success() {
-            return Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
-                StatusCode::OK,
-                status_code,
-                std::str::from_utf8(&whole_body)?,
-            )));
-        }
-
-        Ok(serde_json::from_slice::<DirectMethodResponse>(&whole_body)?)
-    }
+/// Body for the InvokeMethod request
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct InvokeMethodBody<'a> {
+    connect_timeout_in_seconds: u64,
+    method_name: &'a str,
+    payload: serde_json::Value,
+    response_timeout_in_seconds: u64,
 }
 
 #[cfg(test)]
@@ -126,10 +113,13 @@ mod tests {
 
     #[test]
     fn directmethod_new_should_succeed() {
-        use crate::service::DirectMethod;
+        use crate::service::InvokeMethodBuilder;
+        use std::sync::Arc;
+        use azure_core::HttpClient;
 
-        let service: ServiceClient = ServiceClient::from_sas_token("test", "test");
-        let direct_method = DirectMethod::new(
+        let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+        let service: ServiceClient = ServiceClient::from_sas_token(http_client, "test", "test");
+        let direct_method = InvokeMethodBuilder::new(
             &service,
             "SomeDevice".to_string(),
             None,

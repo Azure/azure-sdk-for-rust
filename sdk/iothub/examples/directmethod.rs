@@ -1,9 +1,12 @@
+use std::error::Error;
+use std::sync::Arc;
+
+use azure_core::HttpClient;
 use iothub::service::ServiceClient;
 use serde_json;
-use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let iothub_connection_string = std::env::var("IOTHUB_CONNECTION_STRING")
         .expect("Set env variable IOTHUB_CONNECTION_STRING first!");
 
@@ -23,7 +26,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(4)
         .expect("Please pass the payload as the fourth parameter");
 
-    let service_client = ServiceClient::from_connection_string(iothub_connection_string, 3600)?;
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let service_client =
+        ServiceClient::from_connection_string(http_client, iothub_connection_string, 3600)?;
     println!(
         "Sending direct method {} to {}:{} on: {}",
         method_name, device_id, module_id, service_client.iothub_name
