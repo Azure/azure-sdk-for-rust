@@ -3,11 +3,9 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use crate::models::*;
-use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
 pub mod private_endpoint_connections {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
         operation_config: &crate::OperationConfig,
@@ -16,31 +14,40 @@ pub mod private_endpoint_connections {
         private_endpoint_connection_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/servers/{}/privateEndpointConnections/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, server_name, private_endpoint_connection_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name,
+            private_endpoint_connection_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PrivateEndpointConnection =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -51,23 +58,25 @@ pub mod private_endpoint_connections {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -86,34 +95,45 @@ pub mod private_endpoint_connections {
         parameters: &PrivateEndpointConnection,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/servers/{}/privateEndpointConnections/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, server_name, private_endpoint_connection_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name,
+            private_endpoint_connection_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(create_or_update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: PrivateEndpointConnection =
-                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
-            StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
+            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -124,7 +144,6 @@ pub mod private_endpoint_connections {
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -135,17 +154,20 @@ pub mod private_endpoint_connections {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -164,32 +186,41 @@ pub mod private_endpoint_connections {
         private_endpoint_connection_name: &str,
         parameters: &TagsObject,
     ) -> std::result::Result<PrivateEndpointConnection, update_tags::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/servers/{}/privateEndpointConnections/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, server_name, private_endpoint_connection_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name,
+            private_endpoint_connection_name
         );
-        let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(update_tags::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PATCH);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(update_tags::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(update_tags::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(update_tags::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(update_tags::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(update_tags::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(update_tags::ResponseBytesError)?;
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(&body).context(update_tags::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PrivateEndpointConnection =
+                    serde_json::from_slice(rsp_body).context(update_tags::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(update_tags::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(update_tags::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(update_tags::DeserializeError { body: rsp_body.clone() })?;
                 update_tags::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -200,23 +231,25 @@ pub mod private_endpoint_connections {
     }
     pub mod update_tags {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -234,29 +267,38 @@ pub mod private_endpoint_connections {
         private_endpoint_connection_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/servers/{}/privateEndpointConnections/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, server_name, private_endpoint_connection_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name,
+            private_endpoint_connection_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete::Response::Ok200),
-            StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -267,7 +309,6 @@ pub mod private_endpoint_connections {
     }
     pub mod delete {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -279,17 +320,20 @@ pub mod private_endpoint_connections {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -306,32 +350,43 @@ pub mod private_endpoint_connections {
         server_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_server::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/servers/{}/privateEndpointConnections",
-            &operation_config.base_path, subscription_id, resource_group_name, server_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_server::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_server::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_server::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_server::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_server::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_server::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: PrivateEndpointConnectionListResult =
-                    serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(list_by_server::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(list_by_server::DeserializeError { body: rsp_body.clone() })?;
                 list_by_server::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -342,23 +397,25 @@ pub mod private_endpoint_connections {
     }
     pub mod list_by_server {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -372,7 +429,6 @@ pub mod private_endpoint_connections {
 }
 pub mod private_link_resources {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_server(
         operation_config: &crate::OperationConfig,
@@ -380,32 +436,43 @@ pub mod private_link_resources {
         server_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<PrivateLinkResourceListResult, list_by_server::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/servers/{}/privateLinkResources",
-            &operation_config.base_path, subscription_id, resource_group_name, server_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_server::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_server::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_server::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_server::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_server::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_server::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: PrivateLinkResourceListResult =
-                    serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(list_by_server::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_server::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_server::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(list_by_server::DeserializeError { body: rsp_body.clone() })?;
                 list_by_server::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -416,23 +483,25 @@ pub mod private_link_resources {
     }
     pub mod list_by_server {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -450,31 +519,40 @@ pub mod private_link_resources {
         group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<PrivateLinkResource, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/servers/{}/privateLinkResources/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, server_name, group_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name,
+            group_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: PrivateLinkResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PrivateLinkResource =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -485,23 +563,25 @@ pub mod private_link_resources {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,

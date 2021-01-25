@@ -3,42 +3,49 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use crate::models::*;
-use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
 pub mod data_collection_rule_associations {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_resource(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
     ) -> std::result::Result<DataCollectionRuleAssociationProxyOnlyResourceListResult, list_by_resource::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/{}/providers/Microsoft.Insights/dataCollectionRuleAssociations",
-            &operation_config.base_path, resource_uri
+            operation_config.base_path(),
+            resource_uri
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_resource::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_resource::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_resource::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_resource::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_resource::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_resource::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: DataCollectionRuleAssociationProxyOnlyResourceListResult =
-                    serde_json::from_slice(&body).context(list_by_resource::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(list_by_resource::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_resource::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_resource::DeserializeError { body: rsp_body.clone() })?;
                 list_by_resource::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -49,23 +56,25 @@ pub mod data_collection_rule_associations {
     }
     pub mod list_by_resource {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -82,32 +91,40 @@ pub mod data_collection_rule_associations {
         resource_group_name: &str,
         data_collection_rule_name: &str,
     ) -> std::result::Result<DataCollectionRuleAssociationProxyOnlyResourceListResult, list_by_rule::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/dataCollectionRules/{}/associations",
-            &operation_config.base_path, subscription_id, resource_group_name, data_collection_rule_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            data_collection_rule_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_rule::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_rule::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_rule::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_rule::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_rule::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(list_by_rule::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_rule::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: DataCollectionRuleAssociationProxyOnlyResourceListResult =
-                    serde_json::from_slice(&body).context(list_by_rule::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(list_by_rule::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_rule::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_rule::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_rule::DeserializeError { body: rsp_body.clone() })?;
                 list_by_rule::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -118,23 +135,25 @@ pub mod data_collection_rule_associations {
     }
     pub mod list_by_rule {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -150,32 +169,39 @@ pub mod data_collection_rule_associations {
         resource_uri: &str,
         association_name: &str,
     ) -> std::result::Result<DataCollectionRuleAssociationProxyOnlyResource, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/{}/providers/Microsoft.Insights/dataCollectionRuleAssociations/{}",
-            &operation_config.base_path, resource_uri, association_name
+            operation_config.base_path(),
+            resource_uri,
+            association_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: DataCollectionRuleAssociationProxyOnlyResource =
-                    serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -186,23 +212,25 @@ pub mod data_collection_rule_associations {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -219,41 +247,49 @@ pub mod data_collection_rule_associations {
         association_name: &str,
         body: Option<&DataCollectionRuleAssociationProxyOnlyResource>,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/{}/providers/Microsoft.Insights/dataCollectionRuleAssociations/{}",
-            &operation_config.base_path, resource_uri, association_name
+            operation_config.base_path(),
+            resource_uri,
+            association_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        if let Some(body) = body {
-            req_builder = req_builder.json(body);
-        }
-        let req = req_builder.build().context(create::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = if let Some(body) = body {
+            azure_core::to_json(body).context(create::SerializeError)?
+        } else {
+            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+        };
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: DataCollectionRuleAssociationProxyOnlyResource =
-                    serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Ok200(rsp_value))
             }
-            StatusCode::CREATED => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
                 let rsp_value: DataCollectionRuleAssociationProxyOnlyResource =
-                    serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 create::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -264,7 +300,6 @@ pub mod data_collection_rule_associations {
     }
     pub mod create {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -275,17 +310,20 @@ pub mod data_collection_rule_associations {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -301,28 +339,35 @@ pub mod data_collection_rule_associations {
         resource_uri: &str,
         association_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/{}/providers/Microsoft.Insights/dataCollectionRuleAssociations/{}",
-            &operation_config.base_path, resource_uri, association_name
+            operation_config.base_path(),
+            resource_uri,
+            association_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -333,7 +378,6 @@ pub mod data_collection_rule_associations {
     }
     pub mod delete {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -344,17 +388,20 @@ pub mod data_collection_rule_associations {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -368,39 +415,48 @@ pub mod data_collection_rule_associations {
 }
 pub mod data_collection_rules {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<DataCollectionRuleResourceListResult, list_by_resource_group::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/dataCollectionRules",
-            &operation_config.base_path, subscription_id, resource_group_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_resource_group::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_resource_group::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_resource_group::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: DataCollectionRuleResourceListResult =
-                    serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(list_by_resource_group::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_resource_group::DeserializeError { body: rsp_body.clone() })?;
                 list_by_resource_group::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -411,23 +467,25 @@ pub mod data_collection_rules {
     }
     pub mod list_by_resource_group {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -442,32 +500,41 @@ pub mod data_collection_rules {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<DataCollectionRuleResourceListResult, list_by_subscription::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Insights/dataCollectionRules",
-            &operation_config.base_path, subscription_id
+            operation_config.base_path(),
+            subscription_id
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_subscription::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_subscription::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_subscription::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_subscription::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_subscription::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_subscription::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: DataCollectionRuleResourceListResult =
-                    serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(list_by_subscription::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_subscription::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(list_by_subscription::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_subscription::DeserializeError { body: rsp_body.clone() })?;
                 list_by_subscription::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -478,23 +545,25 @@ pub mod data_collection_rules {
     }
     pub mod list_by_subscription {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -511,31 +580,40 @@ pub mod data_collection_rules {
         resource_group_name: &str,
         data_collection_rule_name: &str,
     ) -> std::result::Result<DataCollectionRuleResource, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/dataCollectionRules/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, data_collection_rule_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            data_collection_rule_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: DataCollectionRuleResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: DataCollectionRuleResource =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -546,23 +624,25 @@ pub mod data_collection_rules {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -580,39 +660,50 @@ pub mod data_collection_rules {
         data_collection_rule_name: &str,
         body: Option<&DataCollectionRuleResource>,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/dataCollectionRules/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, data_collection_rule_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            data_collection_rule_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        if let Some(body) = body {
-            req_builder = req_builder.json(body);
-        }
-        let req = req_builder.build().context(create::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = if let Some(body) = body {
+            azure_core::to_json(body).context(create::SerializeError)?
+        } else {
+            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+        };
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
-                let rsp_value: DataCollectionRuleResource = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: DataCollectionRuleResource =
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Ok200(rsp_value))
             }
-            StatusCode::CREATED => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
-                let rsp_value: DataCollectionRuleResource = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: DataCollectionRuleResource =
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 create::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -623,7 +714,6 @@ pub mod data_collection_rules {
     }
     pub mod create {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -634,17 +724,20 @@ pub mod data_collection_rules {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -662,34 +755,44 @@ pub mod data_collection_rules {
         data_collection_rule_name: &str,
         body: Option<&ResourceForUpdate>,
     ) -> std::result::Result<DataCollectionRuleResource, update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/dataCollectionRules/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, data_collection_rule_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            data_collection_rule_name
         );
-        let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PATCH);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        if let Some(body) = body {
-            req_builder = req_builder.json(body);
-        }
-        let req = req_builder.build().context(update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = if let Some(body) = body {
+            azure_core::to_json(body).context(update::SerializeError)?
+        } else {
+            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+        };
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(update::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
-                let rsp_value: DataCollectionRuleResource = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: DataCollectionRuleResource =
+                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
                 update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -700,23 +803,25 @@ pub mod data_collection_rules {
     }
     pub mod update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -733,28 +838,36 @@ pub mod data_collection_rules {
         resource_group_name: &str,
         data_collection_rule_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/dataCollectionRules/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, data_collection_rule_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            data_collection_rule_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: ErrorResponse = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -765,7 +878,6 @@ pub mod data_collection_rules {
     }
     pub mod delete {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -776,17 +888,20 @@ pub mod data_collection_rules {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::ErrorResponse,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,

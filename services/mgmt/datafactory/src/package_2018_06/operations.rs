@@ -3,35 +3,38 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use crate::models::*;
-use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
 pub mod operations {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResponse, list::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!("{}/providers/Microsoft.DataFactory/operations", &operation_config.base_path,);
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let http_client = operation_config.http_client();
+        let url_str = &format!("{}/providers/Microsoft.DataFactory/operations", operation_config.base_path(),);
+        let mut url = url::Url::parse(url_str).context(list::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: OperationListResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: OperationListResponse =
+                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -42,23 +45,25 @@ pub mod operations {
     }
     pub mod list {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -72,37 +77,42 @@ pub mod operations {
 }
 pub mod factories {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
     ) -> std::result::Result<FactoryListResponse, list::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataFactory/factories",
-            &operation_config.base_path, subscription_id
+            operation_config.base_path(),
+            subscription_id
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(list::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: FactoryListResponse = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: FactoryListResponse =
+                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -113,23 +123,25 @@ pub mod factories {
     }
     pub mod list {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -146,32 +158,42 @@ pub mod factories {
         location_id: &str,
         factory_repo_update: &FactoryRepoUpdate,
     ) -> std::result::Result<Factory, configure_factory_repo::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataFactory/locations/{}/configureFactoryRepo",
-            &operation_config.base_path, subscription_id, location_id
+            operation_config.base_path(),
+            subscription_id,
+            location_id
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(configure_factory_repo::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(configure_factory_repo::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(factory_repo_update);
-        let req = req_builder.build().context(configure_factory_repo::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(configure_factory_repo::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(configure_factory_repo::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(configure_factory_repo::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(configure_factory_repo::ResponseBytesError)?;
-                let rsp_value: Factory = serde_json::from_slice(&body).context(configure_factory_repo::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: Factory =
+                    serde_json::from_slice(rsp_body).context(configure_factory_repo::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(configure_factory_repo::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(configure_factory_repo::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(configure_factory_repo::DeserializeError { body: rsp_body.clone() })?;
                 configure_factory_repo::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -182,23 +204,25 @@ pub mod factories {
     }
     pub mod configure_factory_repo {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -214,32 +238,42 @@ pub mod factories {
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<FactoryListResponse, list_by_resource_group::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories",
-            &operation_config.base_path, subscription_id, resource_group_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_resource_group::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_resource_group::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_resource_group::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_resource_group::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_resource_group::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_resource_group::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: FactoryListResponse =
-                    serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(list_by_resource_group::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_resource_group::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_resource_group::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(list_by_resource_group::DeserializeError { body: rsp_body.clone() })?;
                 list_by_resource_group::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -250,23 +284,25 @@ pub mod factories {
     }
     pub mod list_by_resource_group {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -284,35 +320,42 @@ pub mod factories {
         factory_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<Factory, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: Factory = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: Factory = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
-            StatusCode::NOT_MODIFIED => get::NotModified304 {}.fail(),
+            http::StatusCode::NOT_MODIFIED => get::NotModified304 {}.fail(),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -323,24 +366,26 @@ pub mod factories {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             NotModified304 {},
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -359,35 +404,46 @@ pub mod factories {
         factory: &Factory,
         if_match: Option<&str>,
     ) -> std::result::Result<Factory, create_or_update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(factory);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
-        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(create_or_update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: Factory = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: Factory =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -398,23 +454,25 @@ pub mod factories {
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -432,32 +490,39 @@ pub mod factories {
         factory_name: &str,
         factory_update_parameters: &FactoryUpdateParameters,
     ) -> std::result::Result<Factory, update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PATCH);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(factory_update_parameters);
-        let req = req_builder.build().context(update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(update::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
-                let rsp_value: Factory = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: Factory = serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
                 update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -468,23 +533,25 @@ pub mod factories {
     }
     pub mod update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -501,28 +568,36 @@ pub mod factories {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -533,7 +608,6 @@ pub mod factories {
     }
     pub mod delete {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -544,17 +618,20 @@ pub mod factories {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -572,33 +649,43 @@ pub mod factories {
         factory_name: &str,
         git_hub_access_token_request: &GitHubAccessTokenRequest,
     ) -> std::result::Result<GitHubAccessTokenResponse, get_git_hub_access_token::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/getGitHubAccessToken",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_git_hub_access_token::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_git_hub_access_token::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(git_hub_access_token_request);
-        let req = req_builder.build().context(get_git_hub_access_token::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_git_hub_access_token::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_git_hub_access_token::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_git_hub_access_token::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_git_hub_access_token::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: GitHubAccessTokenResponse =
-                    serde_json::from_slice(&body).context(get_git_hub_access_token::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_git_hub_access_token::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_git_hub_access_token::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_git_hub_access_token::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(get_git_hub_access_token::DeserializeError { body: rsp_body.clone() })?;
                 get_git_hub_access_token::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -609,23 +696,25 @@ pub mod factories {
     }
     pub mod get_git_hub_access_token {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -643,33 +732,43 @@ pub mod factories {
         factory_name: &str,
         policy: &UserAccessPolicy,
     ) -> std::result::Result<AccessPolicyResponse, get_data_plane_access::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/getDataPlaneAccess",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_data_plane_access::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_data_plane_access::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(policy);
-        let req = req_builder.build().context(get_data_plane_access::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_data_plane_access::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_data_plane_access::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_data_plane_access::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_data_plane_access::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: AccessPolicyResponse =
-                    serde_json::from_slice(&body).context(get_data_plane_access::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_data_plane_access::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_data_plane_access::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_data_plane_access::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(get_data_plane_access::DeserializeError { body: rsp_body.clone() })?;
                 get_data_plane_access::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -680,23 +779,25 @@ pub mod factories {
     }
     pub mod get_data_plane_access {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -710,7 +811,6 @@ pub mod factories {
 }
 pub mod exposure_control {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get_feature_value(
         operation_config: &crate::OperationConfig,
@@ -718,33 +818,42 @@ pub mod exposure_control {
         location_id: &str,
         exposure_control_request: &ExposureControlRequest,
     ) -> std::result::Result<ExposureControlResponse, get_feature_value::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataFactory/locations/{}/getFeatureValue",
-            &operation_config.base_path, subscription_id, location_id
+            operation_config.base_path(),
+            subscription_id,
+            location_id
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_feature_value::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_feature_value::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(exposure_control_request);
-        let req = req_builder.build().context(get_feature_value::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_feature_value::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_feature_value::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_feature_value::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_feature_value::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: ExposureControlResponse =
-                    serde_json::from_slice(&body).context(get_feature_value::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_feature_value::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_feature_value::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_feature_value::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(get_feature_value::DeserializeError { body: rsp_body.clone() })?;
                 get_feature_value::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -755,23 +864,25 @@ pub mod exposure_control {
     }
     pub mod get_feature_value {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -789,37 +900,45 @@ pub mod exposure_control {
         factory_name: &str,
         exposure_control_request: &ExposureControlRequest,
     ) -> std::result::Result<ExposureControlResponse, get_feature_value_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/getFeatureValue",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_feature_value_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_feature_value_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(exposure_control_request);
-        let req = req_builder.build().context(get_feature_value_by_factory::BuildRequestError)?;
-        let rsp = client
-            .execute(req)
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .context(get_feature_value_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
             .await
             .context(get_feature_value_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_feature_value_by_factory::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: ExposureControlResponse =
-                    serde_json::from_slice(&body).context(get_feature_value_by_factory::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_feature_value_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_feature_value_by_factory::ResponseBytesError)?;
+                let rsp_body = rsp.body();
                 let rsp_value: CloudError =
-                    serde_json::from_slice(&body).context(get_feature_value_by_factory::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_feature_value_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 get_feature_value_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -830,23 +949,25 @@ pub mod exposure_control {
     }
     pub mod get_feature_value_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -864,37 +985,45 @@ pub mod exposure_control {
         factory_name: &str,
         exposure_control_batch_request: &ExposureControlBatchRequest,
     ) -> std::result::Result<ExposureControlBatchResponse, query_feature_values_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/queryFeaturesValue",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(query_feature_values_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(query_feature_values_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(exposure_control_batch_request);
-        let req = req_builder.build().context(query_feature_values_by_factory::BuildRequestError)?;
-        let rsp = client
-            .execute(req)
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .context(query_feature_values_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
             .await
             .context(query_feature_values_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query_feature_values_by_factory::ResponseBytesError)?;
-                let rsp_value: ExposureControlBatchResponse =
-                    serde_json::from_slice(&body).context(query_feature_values_by_factory::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ExposureControlBatchResponse = serde_json::from_slice(rsp_body)
+                    .context(query_feature_values_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query_feature_values_by_factory::ResponseBytesError)?;
-                let rsp_value: CloudError =
-                    serde_json::from_slice(&body).context(query_feature_values_by_factory::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                    .context(query_feature_values_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 query_feature_values_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -905,23 +1034,25 @@ pub mod exposure_control {
     }
     pub mod query_feature_values_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -935,7 +1066,6 @@ pub mod exposure_control {
 }
 pub mod integration_runtimes {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_factory(
         operation_config: &crate::OperationConfig,
@@ -943,32 +1073,43 @@ pub mod integration_runtimes {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<IntegrationRuntimeListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: IntegrationRuntimeListResponse =
-                    serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 list_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -979,23 +1120,25 @@ pub mod integration_runtimes {
     }
     pub mod list_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1014,35 +1157,44 @@ pub mod integration_runtimes {
         integration_runtime_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<IntegrationRuntimeResource, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: IntegrationRuntimeResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: IntegrationRuntimeResource =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
-            StatusCode::NOT_MODIFIED => get::NotModified304 {}.fail(),
+            http::StatusCode::NOT_MODIFIED => get::NotModified304 {}.fail(),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1053,24 +1205,26 @@ pub mod integration_runtimes {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             NotModified304 {},
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1090,36 +1244,47 @@ pub mod integration_runtimes {
         if_match: Option<&str>,
         integration_runtime: &IntegrationRuntimeResource,
     ) -> std::result::Result<IntegrationRuntimeResource, create_or_update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
-        req_builder = req_builder.json(integration_runtime);
-        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(create_or_update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: IntegrationRuntimeResource =
-                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1130,23 +1295,25 @@ pub mod integration_runtimes {
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1165,32 +1332,41 @@ pub mod integration_runtimes {
         integration_runtime_name: &str,
         update_integration_runtime_request: &UpdateIntegrationRuntimeRequest,
     ) -> std::result::Result<IntegrationRuntimeResource, update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PATCH);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(update_integration_runtime_request);
-        let req = req_builder.build().context(update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(update::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
-                let rsp_value: IntegrationRuntimeResource = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: IntegrationRuntimeResource =
+                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
                 update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1201,23 +1377,25 @@ pub mod integration_runtimes {
     }
     pub mod update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1235,28 +1413,37 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1267,7 +1454,6 @@ pub mod integration_runtimes {
     }
     pub mod delete {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -1278,17 +1464,20 @@ pub mod integration_runtimes {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1306,33 +1495,42 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<IntegrationRuntimeStatusResponse, get_status::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/getStatus",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_status::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_status::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(get_status::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_status::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_status::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get_status::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_status::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: IntegrationRuntimeStatusResponse =
-                    serde_json::from_slice(&body).context(get_status::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_status::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_status::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_status::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(get_status::DeserializeError { body: rsp_body.clone() })?;
                 get_status::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1343,23 +1541,25 @@ pub mod integration_runtimes {
     }
     pub mod get_status {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1377,33 +1577,45 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<IntegrationRuntimeConnectionInfo, get_connection_info::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/getConnectionInfo",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_connection_info::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_connection_info::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(get_connection_info::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_connection_info::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_connection_info::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_connection_info::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_connection_info::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: IntegrationRuntimeConnectionInfo =
-                    serde_json::from_slice(&body).context(get_connection_info::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_connection_info::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_connection_info::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_connection_info::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(get_connection_info::DeserializeError { body: rsp_body.clone() })?;
                 get_connection_info::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1414,23 +1626,25 @@ pub mod integration_runtimes {
     }
     pub mod get_connection_info {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1449,33 +1663,44 @@ pub mod integration_runtimes {
         integration_runtime_name: &str,
         regenerate_key_parameters: &IntegrationRuntimeRegenerateKeyParameters,
     ) -> std::result::Result<IntegrationRuntimeAuthKeys, regenerate_auth_key::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/regenerateAuthKey",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(regenerate_auth_key::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(regenerate_auth_key::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(regenerate_key_parameters);
-        let req = req_builder.build().context(regenerate_auth_key::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(regenerate_auth_key::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(regenerate_auth_key::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(regenerate_auth_key::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(regenerate_auth_key::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: IntegrationRuntimeAuthKeys =
-                    serde_json::from_slice(&body).context(regenerate_auth_key::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(regenerate_auth_key::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(regenerate_auth_key::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(regenerate_auth_key::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(regenerate_auth_key::DeserializeError { body: rsp_body.clone() })?;
                 regenerate_auth_key::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1486,23 +1711,25 @@ pub mod integration_runtimes {
     }
     pub mod regenerate_auth_key {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1520,33 +1747,45 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<IntegrationRuntimeAuthKeys, list_auth_keys::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/listAuthKeys",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_auth_keys::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_auth_keys::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(list_auth_keys::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_auth_keys::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_auth_keys::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_auth_keys::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_auth_keys::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: IntegrationRuntimeAuthKeys =
-                    serde_json::from_slice(&body).context(list_auth_keys::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(list_auth_keys::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_auth_keys::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_auth_keys::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(list_auth_keys::DeserializeError { body: rsp_body.clone() })?;
                 list_auth_keys::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1557,23 +1796,25 @@ pub mod integration_runtimes {
     }
     pub mod list_auth_keys {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1591,34 +1832,42 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<start::Response, start::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/start",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(start::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(start::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(start::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(start::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(start::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(start::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(start::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: IntegrationRuntimeStatusResponse =
-                    serde_json::from_slice(&body).context(start::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(start::DeserializeError { body: rsp_body.clone() })?;
                 Ok(start::Response::Ok200(rsp_value))
             }
-            StatusCode::ACCEPTED => Ok(start::Response::Accepted202),
+            http::StatusCode::ACCEPTED => Ok(start::Response::Accepted202),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(start::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(start::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(start::DeserializeError { body: rsp_body.clone() })?;
                 start::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1629,7 +1878,6 @@ pub mod integration_runtimes {
     }
     pub mod start {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -1640,17 +1888,20 @@ pub mod integration_runtimes {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1668,29 +1919,37 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<stop::Response, stop::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/stop",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(stop::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(stop::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(stop::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(stop::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(stop::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(stop::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(stop::Response::Ok200),
-            StatusCode::ACCEPTED => Ok(stop::Response::Accepted202),
+            http::StatusCode::OK => Ok(stop::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(stop::Response::Accepted202),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(stop::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(stop::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(stop::DeserializeError { body: rsp_body.clone() })?;
                 stop::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1701,7 +1960,6 @@ pub mod integration_runtimes {
     }
     pub mod stop {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -1712,17 +1970,20 @@ pub mod integration_runtimes {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1740,28 +2001,40 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<(), sync_credentials::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/syncCredentials",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(sync_credentials::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(sync_credentials::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(sync_credentials::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(sync_credentials::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(sync_credentials::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(sync_credentials::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(()),
+            http::StatusCode::OK => Ok(()),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(sync_credentials::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(sync_credentials::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(sync_credentials::DeserializeError { body: rsp_body.clone() })?;
                 sync_credentials::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1772,23 +2045,25 @@ pub mod integration_runtimes {
     }
     pub mod sync_credentials {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1806,33 +2081,45 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<IntegrationRuntimeMonitoringData, get_monitoring_data::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/monitoringData",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_monitoring_data::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_monitoring_data::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(get_monitoring_data::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_monitoring_data::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_monitoring_data::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_monitoring_data::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_monitoring_data::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: IntegrationRuntimeMonitoringData =
-                    serde_json::from_slice(&body).context(get_monitoring_data::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_monitoring_data::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_monitoring_data::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_monitoring_data::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(get_monitoring_data::DeserializeError { body: rsp_body.clone() })?;
                 get_monitoring_data::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1843,23 +2130,25 @@ pub mod integration_runtimes {
     }
     pub mod get_monitoring_data {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1877,28 +2166,37 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<(), upgrade::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/upgrade",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(upgrade::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(upgrade::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(upgrade::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(upgrade::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(upgrade::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(upgrade::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(()),
+            http::StatusCode::OK => Ok(()),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(upgrade::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(upgrade::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(upgrade::DeserializeError { body: rsp_body.clone() })?;
                 upgrade::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1909,23 +2207,25 @@ pub mod integration_runtimes {
     }
     pub mod upgrade {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -1944,28 +2244,36 @@ pub mod integration_runtimes {
         integration_runtime_name: &str,
         linked_integration_runtime_request: &LinkedIntegrationRuntimeRequest,
     ) -> std::result::Result<(), remove_links::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/removeLinks",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(remove_links::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(remove_links::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(linked_integration_runtime_request);
-        let req = req_builder.build().context(remove_links::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(remove_links::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(remove_links::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(remove_links::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(()),
+            http::StatusCode::OK => Ok(()),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(remove_links::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(remove_links::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(remove_links::DeserializeError { body: rsp_body.clone() })?;
                 remove_links::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1976,23 +2284,25 @@ pub mod integration_runtimes {
     }
     pub mod remove_links {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2011,34 +2321,39 @@ pub mod integration_runtimes {
         integration_runtime_name: &str,
         create_linked_integration_runtime_request: &CreateLinkedIntegrationRuntimeRequest,
     ) -> std::result::Result<IntegrationRuntimeStatusResponse, create_linked_integration_runtime::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/linkedIntegrationRuntime" , & operation_config . base_path , subscription_id , resource_group_name , factory_name , integration_runtime_name) ;
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/linkedIntegrationRuntime" , operation_config . base_path () , subscription_id , resource_group_name , factory_name , integration_runtime_name) ;
+        let mut url = url::Url::parse(url_str).context(create_linked_integration_runtime::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_linked_integration_runtime::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(create_linked_integration_runtime_request);
-        let req = req_builder.build().context(create_linked_integration_runtime::BuildRequestError)?;
-        let rsp = client
-            .execute(req)
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .context(create_linked_integration_runtime::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
             .await
             .context(create_linked_integration_runtime::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_linked_integration_runtime::ResponseBytesError)?;
-                let rsp_value: IntegrationRuntimeStatusResponse =
-                    serde_json::from_slice(&body).context(create_linked_integration_runtime::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: IntegrationRuntimeStatusResponse = serde_json::from_slice(rsp_body)
+                    .context(create_linked_integration_runtime::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_linked_integration_runtime::ResponseBytesError)?;
-                let rsp_value: CloudError =
-                    serde_json::from_slice(&body).context(create_linked_integration_runtime::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                    .context(create_linked_integration_runtime::DeserializeError { body: rsp_body.clone() })?;
                 create_linked_integration_runtime::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2049,23 +2364,25 @@ pub mod integration_runtimes {
     }
     pub mod create_linked_integration_runtime {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2079,7 +2396,6 @@ pub mod integration_runtimes {
 }
 pub mod integration_runtime_object_metadata {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn refresh(
         operation_config: &crate::OperationConfig,
@@ -2088,31 +2404,36 @@ pub mod integration_runtime_object_metadata {
         factory_name: &str,
         integration_runtime_name: &str,
     ) -> std::result::Result<refresh::Response, refresh::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/refreshObjectMetadata" , & operation_config . base_path , subscription_id , resource_group_name , factory_name , integration_runtime_name) ;
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/refreshObjectMetadata" , operation_config . base_path () , subscription_id , resource_group_name , factory_name , integration_runtime_name) ;
+        let mut url = url::Url::parse(url_str).context(refresh::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(refresh::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(refresh::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(refresh::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(refresh::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(refresh::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(refresh::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: SsisObjectMetadataStatusResponse =
-                    serde_json::from_slice(&body).context(refresh::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(refresh::DeserializeError { body: rsp_body.clone() })?;
                 Ok(refresh::Response::Ok200(rsp_value))
             }
-            StatusCode::ACCEPTED => Ok(refresh::Response::Accepted202),
+            http::StatusCode::ACCEPTED => Ok(refresh::Response::Accepted202),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(refresh::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(refresh::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(refresh::DeserializeError { body: rsp_body.clone() })?;
                 refresh::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2123,7 +2444,6 @@ pub mod integration_runtime_object_metadata {
     }
     pub mod refresh {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -2134,17 +2454,20 @@ pub mod integration_runtime_object_metadata {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2163,34 +2486,44 @@ pub mod integration_runtime_object_metadata {
         integration_runtime_name: &str,
         get_metadata_request: Option<&GetSsisObjectMetadataRequest>,
     ) -> std::result::Result<SsisObjectMetadataListResponse, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/getObjectMetadata",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        if let Some(get_metadata_request) = get_metadata_request {
-            req_builder = req_builder.json(get_metadata_request);
-        }
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = if let Some(get_metadata_request) = get_metadata_request {
+            azure_core::to_json(get_metadata_request).context(get::SerializeError)?
+        } else {
+            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+        };
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: SsisObjectMetadataListResponse = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: SsisObjectMetadataListResponse =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2201,23 +2534,25 @@ pub mod integration_runtime_object_metadata {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2231,7 +2566,6 @@ pub mod integration_runtime_object_metadata {
 }
 pub mod integration_runtime_nodes {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
         operation_config: &crate::OperationConfig,
@@ -2241,31 +2575,41 @@ pub mod integration_runtime_nodes {
         integration_runtime_name: &str,
         node_name: &str,
     ) -> std::result::Result<SelfHostedIntegrationRuntimeNode, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/nodes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name, node_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name,
+            node_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: SelfHostedIntegrationRuntimeNode = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: SelfHostedIntegrationRuntimeNode =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2276,23 +2620,25 @@ pub mod integration_runtime_nodes {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2312,33 +2658,42 @@ pub mod integration_runtime_nodes {
         node_name: &str,
         update_integration_runtime_node_request: &UpdateIntegrationRuntimeNodeRequest,
     ) -> std::result::Result<SelfHostedIntegrationRuntimeNode, update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/nodes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name, node_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name,
+            node_name
         );
-        let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PATCH);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(update_integration_runtime_node_request);
-        let req = req_builder.build().context(update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(update::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(update::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: SelfHostedIntegrationRuntimeNode =
-                    serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(update::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
                 update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2349,23 +2704,25 @@ pub mod integration_runtime_nodes {
     }
     pub mod update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2384,28 +2741,38 @@ pub mod integration_runtime_nodes {
         integration_runtime_name: &str,
         node_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/nodes/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name, node_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name,
+            node_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2416,7 +2783,6 @@ pub mod integration_runtime_nodes {
     }
     pub mod delete {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -2427,17 +2793,20 @@ pub mod integration_runtime_nodes {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2456,33 +2825,46 @@ pub mod integration_runtime_nodes {
         integration_runtime_name: &str,
         node_name: &str,
     ) -> std::result::Result<IntegrationRuntimeNodeIpAddress, get_ip_address::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/nodes/{}/ipAddress",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, integration_runtime_name, node_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            integration_runtime_name,
+            node_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_ip_address::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_ip_address::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(get_ip_address::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_ip_address::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_ip_address::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_ip_address::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_ip_address::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: IntegrationRuntimeNodeIpAddress =
-                    serde_json::from_slice(&body).context(get_ip_address::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_ip_address::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_ip_address::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get_ip_address::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(get_ip_address::DeserializeError { body: rsp_body.clone() })?;
                 get_ip_address::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2493,23 +2875,25 @@ pub mod integration_runtime_nodes {
     }
     pub mod get_ip_address {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2523,7 +2907,6 @@ pub mod integration_runtime_nodes {
 }
 pub mod linked_services {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_factory(
         operation_config: &crate::OperationConfig,
@@ -2531,32 +2914,43 @@ pub mod linked_services {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<LinkedServiceListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/linkedservices",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: LinkedServiceListResponse =
-                    serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 list_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2567,23 +2961,25 @@ pub mod linked_services {
     }
     pub mod list_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2602,35 +2998,44 @@ pub mod linked_services {
         linked_service_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<LinkedServiceResource, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/linkedservices/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, linked_service_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            linked_service_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: LinkedServiceResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LinkedServiceResource =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
-            StatusCode::NOT_MODIFIED => get::NotModified304 {}.fail(),
+            http::StatusCode::NOT_MODIFIED => get::NotModified304 {}.fail(),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2641,24 +3046,26 @@ pub mod linked_services {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             NotModified304 {},
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2678,36 +3085,47 @@ pub mod linked_services {
         if_match: Option<&str>,
         linked_service: &LinkedServiceResource,
     ) -> std::result::Result<LinkedServiceResource, create_or_update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/linkedservices/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, linked_service_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            linked_service_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
-        req_builder = req_builder.json(linked_service);
-        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(create_or_update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: LinkedServiceResource =
-                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2718,23 +3136,25 @@ pub mod linked_services {
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2752,28 +3172,37 @@ pub mod linked_services {
         factory_name: &str,
         linked_service_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/linkedservices/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, linked_service_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            linked_service_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2784,7 +3213,6 @@ pub mod linked_services {
     }
     pub mod delete {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -2795,17 +3223,20 @@ pub mod linked_services {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2819,7 +3250,6 @@ pub mod linked_services {
 }
 pub mod datasets {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_factory(
         operation_config: &crate::OperationConfig,
@@ -2827,31 +3257,43 @@ pub mod datasets {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<DatasetListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/datasets",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
-                let rsp_value: DatasetListResponse = serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: DatasetListResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 list_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2862,23 +3304,25 @@ pub mod datasets {
     }
     pub mod list_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2897,35 +3341,44 @@ pub mod datasets {
         dataset_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<DatasetResource, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/datasets/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, dataset_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            dataset_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: DatasetResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: DatasetResource =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
-            StatusCode::NOT_MODIFIED => get::NotModified304 {}.fail(),
+            http::StatusCode::NOT_MODIFIED => get::NotModified304 {}.fail(),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2936,24 +3389,26 @@ pub mod datasets {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             NotModified304 {},
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -2973,35 +3428,47 @@ pub mod datasets {
         if_match: Option<&str>,
         dataset: &DatasetResource,
     ) -> std::result::Result<DatasetResource, create_or_update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/datasets/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, dataset_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            dataset_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
-        req_builder = req_builder.json(dataset);
-        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(create_or_update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: DatasetResource = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: DatasetResource =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3012,23 +3479,25 @@ pub mod datasets {
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -3046,28 +3515,37 @@ pub mod datasets {
         factory_name: &str,
         dataset_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/datasets/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, dataset_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            dataset_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3078,7 +3556,6 @@ pub mod datasets {
     }
     pub mod delete {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -3089,17 +3566,20 @@ pub mod datasets {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -3113,7 +3593,6 @@ pub mod datasets {
 }
 pub mod pipelines {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_factory(
         operation_config: &crate::OperationConfig,
@@ -3121,31 +3600,43 @@ pub mod pipelines {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<PipelineListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
-                let rsp_value: PipelineListResponse = serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PipelineListResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 list_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3156,23 +3647,25 @@ pub mod pipelines {
     }
     pub mod list_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -3191,35 +3684,44 @@ pub mod pipelines {
         pipeline_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<PipelineResource, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, pipeline_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            pipeline_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: PipelineResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PipelineResource =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
-            StatusCode::NOT_MODIFIED => get::NotModified304 {}.fail(),
+            http::StatusCode::NOT_MODIFIED => get::NotModified304 {}.fail(),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3230,24 +3732,26 @@ pub mod pipelines {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             NotModified304 {},
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -3267,35 +3771,47 @@ pub mod pipelines {
         if_match: Option<&str>,
         pipeline: &PipelineResource,
     ) -> std::result::Result<PipelineResource, create_or_update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, pipeline_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            pipeline_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
-        req_builder = req_builder.json(pipeline);
-        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(create_or_update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: PipelineResource = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PipelineResource =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3306,23 +3822,25 @@ pub mod pipelines {
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -3340,28 +3858,37 @@ pub mod pipelines {
         factory_name: &str,
         pipeline_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, pipeline_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            pipeline_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3372,7 +3899,6 @@ pub mod pipelines {
     }
     pub mod delete {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -3383,17 +3909,20 @@ pub mod pipelines {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -3416,46 +3945,59 @@ pub mod pipelines {
         start_from_failure: Option<bool>,
         parameters: Option<&ParameterValueSpecification>,
     ) -> std::result::Result<CreateRunResponse, create_run::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines/{}/createRun",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, pipeline_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            pipeline_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create_run::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_run::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(reference_pipeline_run_id) = reference_pipeline_run_id {
-            req_builder = req_builder.query(&[("referencePipelineRunId", reference_pipeline_run_id)]);
+            url.query_pairs_mut()
+                .append_pair("referencePipelineRunId", reference_pipeline_run_id);
         }
         if let Some(is_recovery) = is_recovery {
-            req_builder = req_builder.query(&[("isRecovery", is_recovery)]);
+            url.query_pairs_mut().append_pair("isRecovery", is_recovery.to_string().as_str());
         }
         if let Some(start_activity_name) = start_activity_name {
-            req_builder = req_builder.query(&[("startActivityName", start_activity_name)]);
+            url.query_pairs_mut().append_pair("startActivityName", start_activity_name);
         }
         if let Some(start_from_failure) = start_from_failure {
-            req_builder = req_builder.query(&[("startFromFailure", start_from_failure)]);
+            url.query_pairs_mut()
+                .append_pair("startFromFailure", start_from_failure.to_string().as_str());
         }
-        if let Some(parameters) = parameters {
-            req_builder = req_builder.json(parameters);
-        }
-        let req = req_builder.build().context(create_run::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create_run::ExecuteRequestError)?;
+        let req_body = if let Some(parameters) = parameters {
+            azure_core::to_json(parameters).context(create_run::SerializeError)?
+        } else {
+            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+        };
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create_run::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(create_run::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_run::ResponseBytesError)?;
-                let rsp_value: CreateRunResponse = serde_json::from_slice(&body).context(create_run::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: CreateRunResponse =
+                    serde_json::from_slice(rsp_body).context(create_run::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_run::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_run::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(create_run::DeserializeError { body: rsp_body.clone() })?;
                 create_run::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3466,23 +4008,25 @@ pub mod pipelines {
     }
     pub mod create_run {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -3496,7 +4040,6 @@ pub mod pipelines {
 }
 pub mod pipeline_runs {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn query_by_factory(
         operation_config: &crate::OperationConfig,
@@ -3505,33 +4048,43 @@ pub mod pipeline_runs {
         factory_name: &str,
         filter_parameters: &RunFilterParameters,
     ) -> std::result::Result<PipelineRunsQueryResponse, query_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/queryPipelineRuns",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(query_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(query_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(filter_parameters);
-        let req = req_builder.build().context(query_by_factory::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(query_by_factory::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(query_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(query_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query_by_factory::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: PipelineRunsQueryResponse =
-                    serde_json::from_slice(&body).context(query_by_factory::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(query_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query_by_factory::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(query_by_factory::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(query_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 query_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3542,23 +4095,25 @@ pub mod pipeline_runs {
     }
     pub mod query_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -3576,31 +4131,39 @@ pub mod pipeline_runs {
         factory_name: &str,
         run_id: &str,
     ) -> std::result::Result<PipelineRun, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelineruns/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, run_id
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            run_id
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: PipelineRun = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PipelineRun = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3611,23 +4174,25 @@ pub mod pipeline_runs {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -3646,31 +4211,40 @@ pub mod pipeline_runs {
         run_id: &str,
         is_recursive: Option<bool>,
     ) -> std::result::Result<(), cancel::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelineruns/{}/cancel",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, run_id
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            run_id
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(cancel::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(cancel::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(is_recursive) = is_recursive {
-            req_builder = req_builder.query(&[("isRecursive", is_recursive)]);
+            url.query_pairs_mut().append_pair("isRecursive", is_recursive.to_string().as_str());
         }
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(cancel::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(cancel::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(cancel::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(cancel::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(()),
+            http::StatusCode::OK => Ok(()),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(cancel::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(cancel::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(cancel::DeserializeError { body: rsp_body.clone() })?;
                 cancel::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3681,23 +4255,25 @@ pub mod pipeline_runs {
     }
     pub mod cancel {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -3711,7 +4287,6 @@ pub mod pipeline_runs {
 }
 pub mod activity_runs {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn query_by_pipeline_run(
         operation_config: &crate::OperationConfig,
@@ -3721,33 +4296,44 @@ pub mod activity_runs {
         run_id: &str,
         filter_parameters: &RunFilterParameters,
     ) -> std::result::Result<ActivityRunsQueryResponse, query_by_pipeline_run::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelineruns/{}/queryActivityruns",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, run_id
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            run_id
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(query_by_pipeline_run::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(query_by_pipeline_run::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(filter_parameters);
-        let req = req_builder.build().context(query_by_pipeline_run::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(query_by_pipeline_run::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(query_by_pipeline_run::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(query_by_pipeline_run::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query_by_pipeline_run::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: ActivityRunsQueryResponse =
-                    serde_json::from_slice(&body).context(query_by_pipeline_run::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(query_by_pipeline_run::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query_by_pipeline_run::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(query_by_pipeline_run::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(query_by_pipeline_run::DeserializeError { body: rsp_body.clone() })?;
                 query_by_pipeline_run::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3758,23 +4344,25 @@ pub mod activity_runs {
     }
     pub mod query_by_pipeline_run {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -3788,7 +4376,6 @@ pub mod activity_runs {
 }
 pub mod triggers {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_factory(
         operation_config: &crate::OperationConfig,
@@ -3796,31 +4383,43 @@ pub mod triggers {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<TriggerListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
-                let rsp_value: TriggerListResponse = serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: TriggerListResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 list_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3831,23 +4430,25 @@ pub mod triggers {
     }
     pub mod list_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -3865,32 +4466,43 @@ pub mod triggers {
         factory_name: &str,
         filter_parameters: &TriggerFilterParameters,
     ) -> std::result::Result<TriggerQueryResponse, query_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/querytriggers",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(query_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(query_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(filter_parameters);
-        let req = req_builder.build().context(query_by_factory::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(query_by_factory::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(query_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(query_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query_by_factory::ResponseBytesError)?;
-                let rsp_value: TriggerQueryResponse = serde_json::from_slice(&body).context(query_by_factory::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: TriggerQueryResponse =
+                    serde_json::from_slice(rsp_body).context(query_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query_by_factory::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(query_by_factory::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(query_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 query_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3901,23 +4513,25 @@ pub mod triggers {
     }
     pub mod query_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -3936,35 +4550,44 @@ pub mod triggers {
         trigger_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<TriggerResource, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: TriggerResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: TriggerResource =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
-            StatusCode::NOT_MODIFIED => get::NotModified304 {}.fail(),
+            http::StatusCode::NOT_MODIFIED => get::NotModified304 {}.fail(),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3975,24 +4598,26 @@ pub mod triggers {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             NotModified304 {},
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4012,35 +4637,47 @@ pub mod triggers {
         if_match: Option<&str>,
         trigger: &TriggerResource,
     ) -> std::result::Result<TriggerResource, create_or_update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
-        req_builder = req_builder.json(trigger);
-        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(create_or_update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: TriggerResource = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: TriggerResource =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4051,23 +4688,25 @@ pub mod triggers {
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4085,28 +4724,37 @@ pub mod triggers {
         factory_name: &str,
         trigger_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4117,7 +4765,6 @@ pub mod triggers {
     }
     pub mod delete {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -4128,17 +4775,20 @@ pub mod triggers {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4156,34 +4806,46 @@ pub mod triggers {
         factory_name: &str,
         trigger_name: &str,
     ) -> std::result::Result<subscribe_to_events::Response, subscribe_to_events::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/subscribeToEvents",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(subscribe_to_events::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(subscribe_to_events::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(subscribe_to_events::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(subscribe_to_events::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(subscribe_to_events::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(subscribe_to_events::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(subscribe_to_events::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: TriggerSubscriptionOperationStatus =
-                    serde_json::from_slice(&body).context(subscribe_to_events::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(subscribe_to_events::DeserializeError { body: rsp_body.clone() })?;
                 Ok(subscribe_to_events::Response::Ok200(rsp_value))
             }
-            StatusCode::ACCEPTED => Ok(subscribe_to_events::Response::Accepted202),
+            http::StatusCode::ACCEPTED => Ok(subscribe_to_events::Response::Accepted202),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(subscribe_to_events::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(subscribe_to_events::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(subscribe_to_events::DeserializeError { body: rsp_body.clone() })?;
                 subscribe_to_events::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4194,7 +4856,6 @@ pub mod triggers {
     }
     pub mod subscribe_to_events {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -4205,17 +4866,20 @@ pub mod triggers {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4233,37 +4897,47 @@ pub mod triggers {
         factory_name: &str,
         trigger_name: &str,
     ) -> std::result::Result<TriggerSubscriptionOperationStatus, get_event_subscription_status::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/getEventSubscriptionStatus",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_event_subscription_status::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_event_subscription_status::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(get_event_subscription_status::BuildRequestError)?;
-        let rsp = client
-            .execute(req)
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .context(get_event_subscription_status::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
             .await
             .context(get_event_subscription_status::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_event_subscription_status::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: TriggerSubscriptionOperationStatus =
-                    serde_json::from_slice(&body).context(get_event_subscription_status::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_event_subscription_status::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_event_subscription_status::ResponseBytesError)?;
+                let rsp_body = rsp.body();
                 let rsp_value: CloudError =
-                    serde_json::from_slice(&body).context(get_event_subscription_status::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_event_subscription_status::DeserializeError { body: rsp_body.clone() })?;
                 get_event_subscription_status::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4274,23 +4948,25 @@ pub mod triggers {
     }
     pub mod get_event_subscription_status {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4308,34 +4984,46 @@ pub mod triggers {
         factory_name: &str,
         trigger_name: &str,
     ) -> std::result::Result<unsubscribe_from_events::Response, unsubscribe_from_events::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/unsubscribeFromEvents",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(unsubscribe_from_events::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(unsubscribe_from_events::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(unsubscribe_from_events::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(unsubscribe_from_events::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(unsubscribe_from_events::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(unsubscribe_from_events::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(unsubscribe_from_events::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: TriggerSubscriptionOperationStatus =
-                    serde_json::from_slice(&body).context(unsubscribe_from_events::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(unsubscribe_from_events::DeserializeError { body: rsp_body.clone() })?;
                 Ok(unsubscribe_from_events::Response::Ok200(rsp_value))
             }
-            StatusCode::ACCEPTED => Ok(unsubscribe_from_events::Response::Accepted202),
+            http::StatusCode::ACCEPTED => Ok(unsubscribe_from_events::Response::Accepted202),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(unsubscribe_from_events::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(unsubscribe_from_events::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(unsubscribe_from_events::DeserializeError { body: rsp_body.clone() })?;
                 unsubscribe_from_events::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4346,7 +5034,6 @@ pub mod triggers {
     }
     pub mod unsubscribe_from_events {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -4357,17 +5044,20 @@ pub mod triggers {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4385,28 +5075,36 @@ pub mod triggers {
         factory_name: &str,
         trigger_name: &str,
     ) -> std::result::Result<(), start::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/start",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(start::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(start::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(start::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(start::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(start::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(start::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(()),
+            http::StatusCode::OK => Ok(()),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(start::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(start::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(start::DeserializeError { body: rsp_body.clone() })?;
                 start::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4417,23 +5115,25 @@ pub mod triggers {
     }
     pub mod start {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4451,28 +5151,36 @@ pub mod triggers {
         factory_name: &str,
         trigger_name: &str,
     ) -> std::result::Result<(), stop::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/stop",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(stop::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(stop::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(stop::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(stop::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(stop::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(stop::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(()),
+            http::StatusCode::OK => Ok(()),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(stop::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(stop::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(stop::DeserializeError { body: rsp_body.clone() })?;
                 stop::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4483,23 +5191,25 @@ pub mod triggers {
     }
     pub mod stop {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4513,7 +5223,6 @@ pub mod triggers {
 }
 pub mod trigger_runs {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn rerun(
         operation_config: &crate::OperationConfig,
@@ -4523,28 +5232,37 @@ pub mod trigger_runs {
         trigger_name: &str,
         run_id: &str,
     ) -> std::result::Result<(), rerun::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/triggerRuns/{}/rerun",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name, run_id
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name,
+            run_id
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(rerun::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(rerun::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(rerun::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(rerun::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(rerun::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(rerun::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(()),
+            http::StatusCode::OK => Ok(()),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(rerun::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(rerun::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(rerun::DeserializeError { body: rsp_body.clone() })?;
                 rerun::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4555,23 +5273,25 @@ pub mod trigger_runs {
     }
     pub mod rerun {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4590,28 +5310,38 @@ pub mod trigger_runs {
         trigger_name: &str,
         run_id: &str,
     ) -> std::result::Result<(), cancel::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/triggerRuns/{}/cancel",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, trigger_name, run_id
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            trigger_name,
+            run_id
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(cancel::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(cancel::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(cancel::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(cancel::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(cancel::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(cancel::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(()),
+            http::StatusCode::OK => Ok(()),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(cancel::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(cancel::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(cancel::DeserializeError { body: rsp_body.clone() })?;
                 cancel::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4622,23 +5352,25 @@ pub mod trigger_runs {
     }
     pub mod cancel {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4656,33 +5388,43 @@ pub mod trigger_runs {
         factory_name: &str,
         filter_parameters: &RunFilterParameters,
     ) -> std::result::Result<TriggerRunsQueryResponse, query_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/queryTriggerRuns",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(query_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(query_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(filter_parameters);
-        let req = req_builder.build().context(query_by_factory::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(query_by_factory::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(query_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(query_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query_by_factory::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: TriggerRunsQueryResponse =
-                    serde_json::from_slice(&body).context(query_by_factory::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(query_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query_by_factory::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(query_by_factory::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(query_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 query_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4693,23 +5435,25 @@ pub mod trigger_runs {
     }
     pub mod query_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4723,7 +5467,6 @@ pub mod trigger_runs {
 }
 pub mod data_flows {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get(
         operation_config: &crate::OperationConfig,
@@ -4733,34 +5476,43 @@ pub mod data_flows {
         data_flow_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<DataFlowResource, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/dataflows/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, data_flow_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            data_flow_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: DataFlowResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: DataFlowResource =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4771,23 +5523,25 @@ pub mod data_flows {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4807,35 +5561,47 @@ pub mod data_flows {
         if_match: Option<&str>,
         data_flow: &DataFlowResource,
     ) -> std::result::Result<DataFlowResource, create_or_update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/dataflows/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, data_flow_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            data_flow_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
-        req_builder = req_builder.json(data_flow);
-        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(create_or_update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: DataFlowResource = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: DataFlowResource =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4846,23 +5612,25 @@ pub mod data_flows {
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4880,28 +5648,37 @@ pub mod data_flows {
         factory_name: &str,
         data_flow_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/dataflows/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, data_flow_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            data_flow_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4912,7 +5689,6 @@ pub mod data_flows {
     }
     pub mod delete {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -4923,17 +5699,20 @@ pub mod data_flows {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -4950,31 +5729,43 @@ pub mod data_flows {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<DataFlowListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/dataflows",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
-                let rsp_value: DataFlowListResponse = serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: DataFlowListResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 list_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -4985,23 +5776,25 @@ pub mod data_flows {
     }
     pub mod list_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -5015,7 +5808,6 @@ pub mod data_flows {
 }
 pub mod data_flow_debug_session {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn create(
         operation_config: &crate::OperationConfig,
@@ -5024,34 +5816,41 @@ pub mod data_flow_debug_session {
         factory_name: &str,
         request: &CreateDataFlowDebugSessionRequest,
     ) -> std::result::Result<create::Response, create::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/createDataFlowDebugSession",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(request);
-        let req = req_builder.build().context(create::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
+            http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: CreateDataFlowDebugSessionResponse =
-                    serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(create::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 create::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -5062,7 +5861,6 @@ pub mod data_flow_debug_session {
     }
     pub mod create {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -5073,17 +5871,20 @@ pub mod data_flow_debug_session {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -5100,33 +5901,44 @@ pub mod data_flow_debug_session {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<QueryDataFlowDebugSessionsResponse, query_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/queryDataFlowDebugSessions",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(query_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(query_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-        let req = req_builder.build().context(query_by_factory::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(query_by_factory::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(query_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(query_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query_by_factory::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: QueryDataFlowDebugSessionsResponse =
-                    serde_json::from_slice(&body).context(query_by_factory::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(query_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(query_by_factory::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(query_by_factory::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(query_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 query_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -5137,23 +5949,25 @@ pub mod data_flow_debug_session {
     }
     pub mod query_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -5171,33 +5985,40 @@ pub mod data_flow_debug_session {
         factory_name: &str,
         request: &DataFlowDebugPackage,
     ) -> std::result::Result<AddDataFlowToDebugSessionResponse, add_data_flow::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/addDataFlowToDebugSession",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(add_data_flow::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(add_data_flow::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(request);
-        let req = req_builder.build().context(add_data_flow::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(add_data_flow::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(add_data_flow::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(add_data_flow::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(add_data_flow::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: AddDataFlowToDebugSessionResponse =
-                    serde_json::from_slice(&body).context(add_data_flow::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(add_data_flow::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(add_data_flow::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(add_data_flow::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(add_data_flow::DeserializeError { body: rsp_body.clone() })?;
                 add_data_flow::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -5208,23 +6029,25 @@ pub mod data_flow_debug_session {
     }
     pub mod add_data_flow {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -5242,28 +6065,35 @@ pub mod data_flow_debug_session {
         factory_name: &str,
         request: &DeleteDataFlowDebugSessionRequest,
     ) -> std::result::Result<(), delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/deleteDataFlowDebugSession",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(request);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(()),
+            http::StatusCode::OK => Ok(()),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -5274,23 +6104,25 @@ pub mod data_flow_debug_session {
     }
     pub mod delete {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -5308,34 +6140,44 @@ pub mod data_flow_debug_session {
         factory_name: &str,
         request: &DataFlowDebugCommandRequest,
     ) -> std::result::Result<execute_command::Response, execute_command::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/executeDataFlowDebugCommand",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.post(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(execute_command::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(execute_command::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(request);
-        let req = req_builder.build().context(execute_command::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(execute_command::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(execute_command::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(execute_command::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::ACCEPTED => Ok(execute_command::Response::Accepted202),
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(execute_command::ResponseBytesError)?;
+            http::StatusCode::ACCEPTED => Ok(execute_command::Response::Accepted202),
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: DataFlowDebugCommandResponse =
-                    serde_json::from_slice(&body).context(execute_command::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(execute_command::DeserializeError { body: rsp_body.clone() })?;
                 Ok(execute_command::Response::Ok200(rsp_value))
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(execute_command::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(execute_command::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(execute_command::DeserializeError { body: rsp_body.clone() })?;
                 execute_command::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -5346,7 +6188,6 @@ pub mod data_flow_debug_session {
     }
     pub mod execute_command {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -5357,17 +6198,20 @@ pub mod data_flow_debug_session {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -5381,7 +6225,6 @@ pub mod data_flow_debug_session {
 }
 pub mod managed_virtual_networks {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_factory(
         operation_config: &crate::OperationConfig,
@@ -5389,32 +6232,43 @@ pub mod managed_virtual_networks {
         resource_group_name: &str,
         factory_name: &str,
     ) -> std::result::Result<ManagedVirtualNetworkListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(list_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: ManagedVirtualNetworkListResponse =
-                    serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 list_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -5425,23 +6279,25 @@ pub mod managed_virtual_networks {
     }
     pub mod list_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -5460,34 +6316,43 @@ pub mod managed_virtual_networks {
         managed_virtual_network_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<ManagedVirtualNetworkResource, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, managed_virtual_network_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            managed_virtual_network_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ManagedVirtualNetworkResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ManagedVirtualNetworkResource =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -5498,23 +6363,25 @@ pub mod managed_virtual_networks {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -5534,36 +6401,47 @@ pub mod managed_virtual_networks {
         if_match: Option<&str>,
         managed_virtual_network: &ManagedVirtualNetworkResource,
     ) -> std::result::Result<ManagedVirtualNetworkResource, create_or_update::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}",
-            &operation_config.base_path, subscription_id, resource_group_name, factory_name, managed_virtual_network_name
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            factory_name,
+            managed_virtual_network_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
-        req_builder = req_builder.json(managed_virtual_network);
-        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(create_or_update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: ManagedVirtualNetworkResource =
-                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -5574,23 +6452,25 @@ pub mod managed_virtual_networks {
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -5604,7 +6484,6 @@ pub mod managed_virtual_networks {
 }
 pub mod managed_private_endpoints {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_factory(
         operation_config: &crate::OperationConfig,
@@ -5613,29 +6492,37 @@ pub mod managed_private_endpoints {
         factory_name: &str,
         managed_virtual_network_name: &str,
     ) -> std::result::Result<ManagedPrivateEndpointListResponse, list_by_factory::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints" , & operation_config . base_path , subscription_id , resource_group_name , factory_name , managed_virtual_network_name) ;
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints" , operation_config . base_path () , subscription_id , resource_group_name , factory_name , managed_virtual_network_name) ;
+        let mut url = url::Url::parse(url_str).context(list_by_factory::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(list_by_factory::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(list_by_factory::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(list_by_factory::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_factory::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_factory::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: ManagedPrivateEndpointListResponse =
-                    serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(list_by_factory::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(list_by_factory::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(list_by_factory::DeserializeError { body: rsp_body.clone() })?;
                 list_by_factory::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -5646,23 +6533,25 @@ pub mod managed_private_endpoints {
     }
     pub mod list_by_factory {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -5682,31 +6571,36 @@ pub mod managed_private_endpoints {
         managed_private_endpoint_name: &str,
         if_none_match: Option<&str>,
     ) -> std::result::Result<ManagedPrivateEndpointResource, get::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}" , & operation_config . base_path , subscription_id , resource_group_name , factory_name , managed_virtual_network_name , managed_private_endpoint_name) ;
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}" , operation_config . base_path () , subscription_id , resource_group_name , factory_name , managed_virtual_network_name , managed_private_endpoint_name) ;
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
-        let req = req_builder.build().context(get::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: ManagedPrivateEndpointResource = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ManagedPrivateEndpointResource =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(get::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -5717,23 +6611,25 @@ pub mod managed_private_endpoints {
     }
     pub mod get {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -5754,33 +6650,40 @@ pub mod managed_private_endpoints {
         if_match: Option<&str>,
         managed_private_endpoint: &ManagedPrivateEndpointResource,
     ) -> std::result::Result<ManagedPrivateEndpointResource, create_or_update::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}" , & operation_config . base_path , subscription_id , resource_group_name , factory_name , managed_virtual_network_name , managed_private_endpoint_name) ;
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}" , operation_config . base_path () , subscription_id , resource_group_name , factory_name , managed_virtual_network_name , managed_private_endpoint_name) ;
+        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_or_update::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
-        req_builder = req_builder.json(managed_private_endpoint);
-        let req = req_builder.build().context(create_or_update::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(create_or_update::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(create_or_update::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: ManagedPrivateEndpointResource =
-                    serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(create_or_update::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -5791,23 +6694,25 @@ pub mod managed_private_endpoints {
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
@@ -5826,25 +6731,30 @@ pub mod managed_private_endpoints {
         managed_virtual_network_name: &str,
         managed_private_endpoint_name: &str,
     ) -> std::result::Result<delete::Response, delete::Error> {
-        let client = &operation_config.client;
-        let uri_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}" , & operation_config . base_path , subscription_id , resource_group_name , factory_name , managed_virtual_network_name , managed_private_endpoint_name) ;
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}" , operation_config . base_path () , subscription_id , resource_group_name , factory_name , managed_virtual_network_name , managed_private_endpoint_name) ;
+        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete::ResponseBytesError)?;
-                let rsp_value: CloudError = serde_json::from_slice(&body).context(delete::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -5855,7 +6765,6 @@ pub mod managed_private_endpoints {
     }
     pub mod delete {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -5866,17 +6775,20 @@ pub mod managed_private_endpoints {
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
             DefaultResponse {
-                status_code: StatusCode,
+                status_code: http::StatusCode,
                 value: models::CloudError,
             },
+            ParseUrlError {
+                source: url::ParseError,
+            },
             BuildRequestError {
-                source: reqwest::Error,
+                source: http::Error,
             },
             ExecuteRequestError {
-                source: reqwest::Error,
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
-            ResponseBytesError {
-                source: reqwest::Error,
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
             },
             DeserializeError {
                 source: serde_json::Error,
