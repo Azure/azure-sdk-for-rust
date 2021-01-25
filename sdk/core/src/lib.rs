@@ -105,7 +105,7 @@ impl TokenResponse {
 
 /// Represents a credential capable of providing an OAuth token.
 #[async_trait::async_trait]
-pub trait TokenCredential {
+pub trait TokenCredential: Send + Sync {
     /// Gets a `TokenResponse` for the specified resource
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError>;
 }
