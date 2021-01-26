@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use azure_core::HttpClient;
-use iothub::service::resources::{DesiredCapability, Status};
+use iothub::service::resources::{AuthenticationMechanism, DesiredCapability, Status};
 use iothub::service::ServiceClient;
 use std::error::Error;
 
@@ -20,13 +20,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         ServiceClient::from_connection_string(http_client, iothub_connection_string, 3600)?;
     let device = service_client
         .create_device_identity()
-        .device_id(device_id)
-        .authentication_using_sas(
-            "QhgevIUBSWe37q1MP+M/vtktjOcrE74BVbpcxlLQw58=",
-            "6YS6w5wqkpdfkEW7iOP1NvituehFlFRfPko2n7KY4Gk=",
+        .execute(
+            &device_id,
+            Status::Enabled,
+            AuthenticationMechanism::new_using_symmetric_key(
+                "QhgevIUBSWe37q1MP+M/vtktjOcrE74BVbpcxlLQw58=",
+                "6YS6w5wqkpdfkEW7iOP1NvituehFlFRfPko2n7KY4Gk",
+            ),
         )
-        .status(Status::Enabled)
-        .execute()
         .await?;
 
     println!("Successfully created a new device '{}'", device.device_id);
@@ -37,21 +38,19 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
     let device = service_client
         .update_device_identity(device.etag)
-        .device_id(device.device_id)
         .device_capability(DesiredCapability::IotEdge)
-        .authentication_using_sas(
-            "QhgevIUBSWe37q1MP+M/vtktjOcrE74BVbpcxlLQw58=",
-            "6YS6w5wqkpdfkEW7iOP1NvituehFlFRfPko2n7KY4Gk=",
+        .execute(
+            &device_id,
+            Status::Enabled,
+            AuthenticationMechanism::new_using_symmetric_key(
+                "QhgevIUBSWe37q1MP+M/vtktjOcrE74BVbpcxlLQw58=",
+                "6YS6w5wqkpdfkEW7iOP1NvituehFlFRfPko2n7KY4Gk",
+            ),
         )
-        .status(Status::Disabled)
-        .execute()
         .await?;
 
     println!("Getting device identity of '{}'", device.device_id);
-    let device = service_client
-        .get_device_identity(device.device_id)
-        .execute()
-        .await?;
+    let device = service_client.get_device_identity(device.device_id).await?;
     println!("Identity is: {:?}", device);
 
     println!("Deleting device '{}'", device.device_id);

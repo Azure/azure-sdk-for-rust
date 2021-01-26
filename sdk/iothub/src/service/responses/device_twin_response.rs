@@ -41,7 +41,7 @@ pub struct DeviceTwinResponse {
     /// The date and time the status was last updated.
     pub status_update_time: String,
     /// The tags for of the device
-    pub tags: HashMap<String, String>,
+    pub tags: Option<HashMap<String, String>>,
     /// The version of the device twin including tags and desired properties.
     pub version: i64,
     /// The x509 thumbprint of the device.

@@ -15,8 +15,8 @@ pub mod resources;
 pub mod responses;
 
 use crate::service::requests::{
-    CreateOrUpdateDeviceIdentityBuilder, CreateOrUpdateModuleIdentityBuilder,
-    DeleteIdentityBuilder, GetIdentityBuilder, GetTwinBuilder, InvokeMethodBuilder,
+    get_identity, get_twin, CreateOrUpdateDeviceIdentityBuilder,
+    CreateOrUpdateModuleIdentityBuilder, DeleteIdentityBuilder, InvokeMethodBuilder,
     UpdateOrReplaceTwinBuilder,
 };
 use crate::service::resources::identity::IdentityOperation;
@@ -250,15 +250,6 @@ impl ServiceClient {
         })
     }
 
-    /// Prepares a request that can be used by any request builders.
-    pub(crate) fn prepare_request(&self, uri: &str, method: Method) -> RequestBuilder {
-        RequestBuilder::new()
-            .uri(uri)
-            .method(method)
-            .header(header::AUTHORIZATION, &self.sas_token)
-            .header(header::CONTENT_TYPE, "application/json")
-    }
-
     /// Create a new device method
     ///
     /// ```
@@ -343,12 +334,12 @@ impl ServiceClient {
         &self,
         device_id: S,
         module_id: T,
-    ) -> GetTwinBuilder<'_, ModuleTwinResponse>
+    ) -> Result<ModuleTwinResponse, IoTHubError>
     where
         S: Into<String>,
         T: Into<String>,
     {
-        GetTwinBuilder::new(self, device_id.into(), Some(module_id.into()))
+        get_twin(self, device_id.into(), Some(module_id.into())).await
     }
 
     /// Get the HttpClient of the IoTHub service
@@ -368,11 +359,11 @@ impl ServiceClient {
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iothub.get_device_twin("some-device");
     /// ```
-    pub fn get_device_twin<S>(&self, device_id: S) -> GetTwinBuilder<'_, DeviceTwinResponse>
+    pub async fn get_device_twin<S>(&self, device_id: S) -> Result<DeviceTwinResponse, IoTHubError>
     where
         S: Into<String>,
     {
-        GetTwinBuilder::new(self, device_id.into(), None)
+        get_twin(self, device_id.into(), None).await
     }
 
     /// Update the module twin of a given device or module
@@ -501,14 +492,14 @@ impl ServiceClient {
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iothub.get_device_identity("some-device");
     /// ```
-    pub fn get_device_identity<S>(
+    pub async fn get_device_identity<S>(
         &self,
         device_id: S,
-    ) -> GetIdentityBuilder<'_, DeviceIdentityResponse>
+    ) -> Result<DeviceIdentityResponse, IoTHubError>
     where
         S: Into<String>,
     {
-        GetIdentityBuilder::new(&self, device_id.into(), None)
+        get_identity(self, device_id.into(), None).await
     }
 
     /// Create a new device identity
@@ -517,16 +508,13 @@ impl ServiceClient {
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
     /// use iothub::service::ServiceClient;
-    /// use iothub::service::resources::{Status};
+    /// use iothub::service::resources::{Status, AuthenticationMechanism};
     ///
     /// # let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iothub.create_device_identity()
-    ///     .device_id("some-new-device")
-    ///     .authentication_using_sas("first-key", "second-key")
-    ///     .status(Status::Enabled)
-    ///     .execute();
+    ///     .execute("some-existing-device", Status::Enabled, AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
     pub fn create_device_identity(&self) -> CreateOrUpdateDeviceIdentityBuilder {
         CreateOrUpdateDeviceIdentityBuilder::new(&self, IdentityOperation::Create, None)
@@ -538,16 +526,13 @@ impl ServiceClient {
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
     /// use iothub::service::ServiceClient;
-    /// use iothub::service::resources::{Status};
+    /// use iothub::service::resources::{Status, AuthenticationMechanism};
     ///
     /// # let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iothub.update_device_identity("etag-of-device-to-update")
-    ///     .device_id("some-new-device")
-    ///     .authentication_using_sas("first-key", "second-key")
-    ///     .status(Status::Disabled)
-    ///     .execute();
+    ///     .execute("some-existing-device", Status::Enabled, AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
     pub fn update_device_identity<S>(&self, etag: S) -> CreateOrUpdateDeviceIdentityBuilder
     where
@@ -599,16 +584,16 @@ impl ServiceClient {
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iothub.get_module_identity("some-device", "some-module");
     /// ```
-    pub fn get_module_identity<S, T>(
+    pub async fn get_module_identity<S, T>(
         &self,
         device_id: S,
         module_id: T,
-    ) -> GetIdentityBuilder<'_, ModuleIdentityResponse>
+    ) -> Result<ModuleIdentityResponse, IoTHubError>
     where
         S: Into<String>,
         T: Into<String>,
     {
-        GetIdentityBuilder::new(&self, device_id.into(), Some(module_id.into()))
+        get_identity(self, device_id.into(), Some(module_id.into())).await
     }
 
     /// Create a new module identity
@@ -617,17 +602,13 @@ impl ServiceClient {
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
     /// use iothub::service::ServiceClient;
-    /// use iothub::service::resources::{Status};
+    /// use iothub::service::resources::{Status, AuthenticationMechanism};
     ///
     /// # let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iothub.create_module_identity()
-    ///     .device_id("some-existing-device")
-    ///     .module_id("some-new-module")
-    ///     .managed_by("IoTEdge")
-    ///     .authentication_using_sas("first-key", "second-key")
-    ///     .execute();
+    ///     .execute("some-existing-device", "some-existing-module", "IoTEdge", AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
     pub fn create_module_identity(&self) -> CreateOrUpdateModuleIdentityBuilder {
         CreateOrUpdateModuleIdentityBuilder::new(&self, IdentityOperation::Create, None)
@@ -639,17 +620,13 @@ impl ServiceClient {
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
     /// use iothub::service::ServiceClient;
-    /// use iothub::service::resources::{Status};
+    /// use iothub::service::resources::{Status, AuthenticationMechanism};
     ///
     /// # let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iothub.update_module_identity("etag-of-device-to-update")
-    ///     .device_id("some-existing-device")
-    ///     .module_id("some-existing-module")
-    ///     .managed_by("IoTEdge")
-    ///     .authentication_using_sas("first-key", "second-key")
-    ///     .execute();
+    ///     .execute("some-existing-device", "some-existing-module", "IoTEdge", AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
     pub fn update_module_identity<S>(&self, etag: S) -> CreateOrUpdateModuleIdentityBuilder
     where
@@ -694,6 +671,15 @@ impl ServiceClient {
             device_id.into(),
             Some(module_id.into()),
         )
+    }
+
+    /// Prepares a request that can be used by any request builders.
+    pub(crate) fn prepare_request(&self, uri: &str, method: Method) -> RequestBuilder {
+        RequestBuilder::new()
+            .uri(uri)
+            .method(method)
+            .header(header::AUTHORIZATION, &self.sas_token)
+            .header(header::CONTENT_TYPE, "application/json")
     }
 }
 

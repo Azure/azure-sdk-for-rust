@@ -85,6 +85,49 @@ pub struct AuthenticationMechanism {
     pub x509_thumbprint: X509ThumbPrint,
 }
 
+impl AuthenticationMechanism {
+    /// Create a new AuthenticationMechanism using a symmetric key
+    pub fn new_using_symmetric_key<S, T>(primary_key: S, secondary_key: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<String>,
+    {
+        Self {
+            symmetric_key: SymmetricKey {
+                primary_key: Some(primary_key.into()),
+                secondary_key: Some(secondary_key.into()),
+            },
+            authentication_type: AuthenticationType::SAS,
+            x509_thumbprint: X509ThumbPrint::default(),
+        }
+    }
+
+    /// Create a new AuthenticationMechanism using a x509 thumbprint
+    pub fn new_using_x509_thumbprint<S, T>(primary_thumbprint: S, secondary_thumbprint: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<String>,
+    {
+        Self {
+            authentication_type: AuthenticationType::SelfSigned,
+            x509_thumbprint: X509ThumbPrint {
+                primary_thumbprint: Some(primary_thumbprint.into()),
+                secondary_thumbprint: Some(secondary_thumbprint.into()),
+            },
+            symmetric_key: SymmetricKey::default(),
+        }
+    }
+
+    /// Create a new AuthenticationMechanism using a certificate authority
+    pub fn new_using_certificate_authority() -> Self {
+        Self {
+            authentication_type: AuthenticationType::Authority,
+            x509_thumbprint: X509ThumbPrint::default(),
+            symmetric_key: SymmetricKey::default(),
+        }
+    }
+}
+
 /// The operation to perform on an identity
 #[derive(PartialEq)]
 pub(crate) enum IdentityOperation {

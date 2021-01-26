@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use crate::service::resources::{
     identity::DesiredCapability, identity::IdentityOperation, AuthenticationMechanism,
-    AuthenticationType, DeviceCapabilities, Status, SymmetricKey, X509ThumbPrint,
+    DeviceCapabilities, Status,
 };
 use crate::service::responses::DeviceIdentityResponse;
 use crate::service::{IoTHubError, ServiceClient, API_VERSION};
@@ -15,10 +15,7 @@ use crate::service::{IoTHubError, ServiceClient, API_VERSION};
 /// or the update an existing one.
 pub struct CreateOrUpdateDeviceIdentityBuilder<'a> {
     service_client: &'a ServiceClient,
-    authentication: Option<AuthenticationMechanism>,
     capabilities: DeviceCapabilities,
-    device_id: Option<String>,
-    status: Option<Status>,
     etag: Option<String>,
     operation: IdentityOperation,
 }
@@ -31,64 +28,10 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
     ) -> Self {
         Self {
             service_client,
-            authentication: None,
             capabilities: DeviceCapabilities::default(),
-            device_id: None,
-            status: None,
             etag,
             operation,
         }
-    }
-
-    /// Set authentication to SAS on the device
-    pub fn authentication_using_sas<S, T>(mut self, primary_key: S, secondary_key: T) -> Self
-    where
-        S: Into<String>,
-        T: Into<String>,
-    {
-        self.authentication = Some(AuthenticationMechanism {
-            authentication_type: AuthenticationType::SAS,
-            x509_thumbprint: X509ThumbPrint::default(),
-            symmetric_key: SymmetricKey {
-                primary_key: Some(primary_key.into()),
-                secondary_key: Some(secondary_key.into()),
-            },
-        });
-
-        self
-    }
-
-    /// Set authentication to x509 on the device
-    pub fn authentication_using_x509<S, T>(
-        mut self,
-        primary_thumbprint: S,
-        secondary_thumbprint: T,
-    ) -> Self
-    where
-        S: Into<String>,
-        T: Into<String>,
-    {
-        self.authentication = Some(AuthenticationMechanism {
-            authentication_type: AuthenticationType::SelfSigned,
-            x509_thumbprint: X509ThumbPrint {
-                primary_thumbprint: Some(primary_thumbprint.into()),
-                secondary_thumbprint: Some(secondary_thumbprint.into()),
-            },
-            symmetric_key: SymmetricKey::default(),
-        });
-
-        self
-    }
-
-    /// Set authentication to certificate authority on the device
-    pub fn authentication_using_certificate_authority(mut self) -> Self {
-        self.authentication = Some(AuthenticationMechanism {
-            authentication_type: AuthenticationType::Authority,
-            x509_thumbprint: X509ThumbPrint::default(),
-            symmetric_key: SymmetricKey::default(),
-        });
-
-        self
     }
 
     /// Sets a device capability on the device
@@ -99,38 +42,21 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
         self
     }
 
-    /// Sets the device id of the device
-    pub fn device_id<S>(mut self, device_id: S) -> Self
-    where
-        S: Into<String>,
-    {
-        self.device_id = Some(device_id.into());
-        self
-    }
-
-    /// Sets the desired status of the device
-    pub fn status(mut self, status: Status) -> Self {
-        self.status = Some(status);
-        self
-    }
-
     /// Performs the create or update request on the device identity
-    pub async fn execute(self) -> Result<DeviceIdentityResponse, IoTHubError> {
-        let device_id = self.device_id.ok_or_else(|| {
-            AzureError::GenericErrorWithText("Field 'device_id' is not set".to_string())
-        })?;
-
-        let status = self.status.ok_or_else(|| {
-            AzureError::GenericErrorWithText("Field 'status' is not set".to_string())
-        })?;
-
-        let authentication = self.authentication.ok_or_else(|| {
-            AzureError::GenericErrorWithText("Field 'authentication' is not set".to_string())
-        })?;
-
+    pub async fn execute<S>(
+        self,
+        device_id: S,
+        status: Status,
+        authentication: AuthenticationMechanism,
+    ) -> Result<DeviceIdentityResponse, IoTHubError>
+    where
+        S: AsRef<str>,
+    {
         let uri = format!(
             "https://{}.azure-devices.net/devices/{}?api-version={}",
-            self.service_client.iothub_name, device_id, API_VERSION
+            self.service_client.iothub_name,
+            device_id.as_ref(),
+            API_VERSION
         );
 
         let mut request = self.service_client.prepare_request(&uri, Method::PUT);
@@ -150,7 +76,7 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
 
         let body = CreateOrUpdateDeviceIdentityBody {
             authentication,
-            device_id,
+            device_id: device_id.as_ref(),
             status,
             capabilities: self.capabilities,
             etag: self.etag,
@@ -173,9 +99,9 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct CreateOrUpdateDeviceIdentityBody {
+struct CreateOrUpdateDeviceIdentityBody<'a> {
     authentication: AuthenticationMechanism,
-    device_id: String,
+    device_id: &'a str,
     status: Status,
     capabilities: DeviceCapabilities,
     #[serde(skip_serializing_if = "Option::is_none")]

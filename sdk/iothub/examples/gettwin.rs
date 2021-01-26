@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
     let service_client =
         ServiceClient::from_connection_string(http_client, iothub_connection_string, 3600)?;
-    let twin = service_client.get_device_twin(device_id).execute().await?;
+    let twin = service_client.get_device_twin(device_id).await?;
 
     println!("Received device twin: {:?}", twin);
 
