@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate log;
-
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
@@ -22,8 +19,18 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
     let storage_client = storage_account_client.as_storage_client();
 
-    trace!("enumerating queues");
+    println!("getting service stats");
+    let response = storage_client.get_queue_service_stats().execute().await?;
+    println!("get_queue_service_properties.response == {:#?}", response);
 
+    println!("getting service properties");
+    let response = storage_client
+        .get_queue_service_properties()
+        .execute()
+        .await?;
+    println!("get_queue_service_stats.response == {:#?}", response);
+
+    println!("enumerating queues starting with a");
     let response = storage_client
         .list_queues()
         .prefix("a")
@@ -31,9 +38,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .max_results(NonZeroU32::new(2u32).unwrap())
         .execute()
         .await?;
-
     println!("response == {:#?}", response);
 
+    println!("streaming queues");
     let mut stream = Box::pin(
         storage_client
             .list_queues()
@@ -43,14 +50,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     while let Some(value) = stream.next().await {
         let value = value?;
-        let len = value.queues.queues.len();
+        let len = value.queues.len();
         println!("received {} queues", len);
 
         value
             .queues
-            .queues
             .iter()
-            .for_each(|queue| println!("{}", queue.name));
+            .for_each(|queue| println!("{:#?}", queue));
     }
 
     Ok(())

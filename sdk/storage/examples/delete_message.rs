@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         for message in get_response.messages {
             trace!("deleting messages {}", message.message_id);
 
-            let delete_response = queue.delete_message(&message).execute().await?;
+            let delete_response = queue.delete_message().execute(&message).await?;
 
             println!("delete_response == {:#?}", delete_response);
         }

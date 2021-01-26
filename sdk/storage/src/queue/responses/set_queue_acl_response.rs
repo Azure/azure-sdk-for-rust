@@ -5,17 +5,17 @@ use http::response::Response;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct DeleteMessageResponse {
+pub struct SetQueueACLResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for DeleteMessageResponse {
+impl std::convert::TryFrom<&Response<Bytes>> for SetQueueACLResponse {
     type Error = AzureError;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         debug!("response == {:?}", response);
 
-        Ok(DeleteMessageResponse {
+        Ok(SetQueueACLResponse {
             common_storage_response_headers: response.headers().try_into()?,
         })
     }

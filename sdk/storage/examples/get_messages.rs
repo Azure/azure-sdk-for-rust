@@ -36,5 +36,19 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("response == {:#?}", response);
 
+    let response = queue
+        .get_messages()
+        .number_of_messages(1)
+        .visibility_timeout(Duration::from_secs(10)) // the message will become visible again after 10 secs
+        .execute()
+        .await?;
+    println!("response == {:#?}", response);
+
+    let response = queue
+        .update_message(Duration::from_secs(4))
+        .execute(&response.messages[0], "new body") // for this example there is no check on messages returned!
+        .await?;
+    println!("response == {:#?}", response);
+
     Ok(())
 }

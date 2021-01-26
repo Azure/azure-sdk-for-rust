@@ -2,13 +2,11 @@ use crate::queue::*;
 use crate::responses::*;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
-use std::borrow::Cow;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
 pub struct PutMessageBuilder<'a> {
     queue_client: &'a QueueClient,
-    body: Cow<'a, str>,
     visibility_timeout: Option<VisibilityTimeout>,
     ttl: Option<MessageTTL>,
     timeout: Option<Timeout>,
@@ -16,10 +14,9 @@ pub struct PutMessageBuilder<'a> {
 }
 
 impl<'a> PutMessageBuilder<'a> {
-    pub(crate) fn new(queue_client: &'a QueueClient, body: impl Into<Cow<'a, str>>) -> Self {
+    pub(crate) fn new(queue_client: &'a QueueClient) -> Self {
         PutMessageBuilder {
             queue_client,
-            body: body.into(),
             visibility_timeout: None,
             ttl: None,
             timeout: None,
@@ -36,6 +33,7 @@ impl<'a> PutMessageBuilder<'a> {
 
     pub async fn execute(
         &self,
+        body: impl AsRef<str>,
     ) -> Result<PutMessageResponse, Box<dyn std::error::Error + Sync + Send>> {
         let mut url = self.queue_client.queue_url()?.join("messages")?;
 
@@ -50,7 +48,7 @@ impl<'a> PutMessageBuilder<'a> {
         // stringent.
         let message = format!(
             "<QueueMessage><MessageText>{}</MessageText></QueueMessage>",
-            self.body
+            body.as_ref()
         );
 
         debug!("message about to be posted == {}", message);

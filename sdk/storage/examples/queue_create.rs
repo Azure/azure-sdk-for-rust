@@ -3,6 +3,7 @@ extern crate log;
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage::queue::prelude::*;
+use chrono::{Duration, Utc};
 use std::error::Error;
 use std::sync::Arc;
 
@@ -33,21 +34,55 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut metadata = Metadata::new();
     metadata
         .as_mut()
-        .insert("source".into(), "azure-sdk-for-rust".into());
+        .insert("source".into(), "Azure SDK for Rust".into());
     metadata
         .as_mut()
-        .insert("created".into(), format!("{:?}", chrono::Utc::now()).into());
+        .insert("created".into(), format!("{:?}", Utc::now()).into());
 
     let response = queue.create().metadata(&metadata).execute().await?;
     println!("response == {:#?}", response);
 
     // let's add some more metadata
     metadata.insert("version".to_owned(), "TBD".to_owned());
-    metadata.insert("updated".to_owned(), format!("{:?}", chrono::Utc::now()));
+    metadata.insert("updated".to_owned(), format!("{:?}", Utc::now()));
 
     println!("metadata == {:#?}", metadata);
 
-    let response = queue.set_metadata(&metadata).execute().await?;
+    let response = queue.set_metadata().execute(&metadata).await?;
+    println!("response == {:#?}", response);
+
+    // let's get back the metadata
+    let response = queue.get_metadata().execute().await?;
+    println!("response == {:#?}", response);
+
+    // create two queue stored access policies
+    let mut queue_stored_acess_policies = Vec::new();
+    queue_stored_acess_policies.push(
+        QueueStoredAccessPolicy::new(
+            "first_sap_read_process",
+            Utc::now() - Duration::hours(1),
+            Utc::now() + Duration::days(1),
+        )
+        .enable_read()
+        .enable_process(),
+    );
+    queue_stored_acess_policies.push(
+        QueueStoredAccessPolicy::new(
+            "sap_admin",
+            Utc::now() - chrono::Duration::hours(1),
+            Utc::now() + chrono::Duration::hours(5),
+        )
+        .enable_all(),
+    );
+
+    let response = queue
+        .set_acl()
+        .execute(&queue_stored_acess_policies)
+        .await?;
+    println!("response == {:#?}", response);
+
+    // get the queue ACL
+    let response = queue.get_acl().execute().await?;
     println!("response == {:#?}", response);
 
     // now let's delete it

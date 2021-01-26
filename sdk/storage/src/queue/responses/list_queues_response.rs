@@ -13,7 +13,7 @@ pub struct ListQueuesResponse {
     // this seems duplicate :S
     pub marker: Option<String>,
     pub max_results: Option<u32>,
-    pub queues: Queues,
+    pub queues: Vec<Queue>,
     pub next_marker: Option<NextMarker>,
 }
 
@@ -44,7 +44,7 @@ struct ListQueuesResponseInternal {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Queues {
     #[serde(rename = "Queue")]
-    pub queues: Vec<Queue>,
+    pub queues: Option<Vec<Queue>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,23 +68,12 @@ impl std::convert::TryFrom<&Response<Bytes>> for ListQueuesResponse {
         let mut response: ListQueuesResponseInternal = serde_xml_rs::from_reader(&body[3..])?;
 
         // get rid of the ugly Some("") empty string
-        // we use None as Rust dictates to identify
-        // lack of value.
+        // we use None instead
         if let Some(next_marker) = &response.next_marker {
             if next_marker.is_empty() {
                 response.next_marker = None;
             }
         }
-
-        // get rid of the ugly metadata: Some( {} ) in case of
-        // no metadata returned.
-        response.queues.queues.iter_mut().for_each(|queue| {
-            if let Some(metadata) = &queue.metadata {
-                if metadata.is_empty() {
-                    queue.metadata = None;
-                }
-            }
-        });
 
         Ok(ListQueuesResponse {
             common_storage_response_headers: headers.try_into()?,
@@ -92,7 +81,7 @@ impl std::convert::TryFrom<&Response<Bytes>> for ListQueuesResponse {
             prefix: response.prefix,
             marker: response.marker,
             max_results: response.max_results,
-            queues: response.queues,
+            queues: response.queues.queues.unwrap_or(Vec::new()),
             next_marker: response.next_marker.map(|nm| nm.into()),
         })
     }
@@ -108,6 +97,6 @@ mod test {
 
         let response: ListQueuesResponseInternal = serde_xml_rs::from_str(range).unwrap();
 
-        assert_eq!(response.queues.queues.len(), 2);
+        assert_eq!(response.queues.queues.unwrap().len(), 2);
     }
 }

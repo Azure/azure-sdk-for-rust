@@ -1,3 +1,4 @@
+use crate::queue::PopReceipt;
 use azure_core::errors::AzureError;
 use azure_core::headers::{utc_date_from_rfc2822, CommonStorageResponseHeaders};
 use bytes::Bytes;
@@ -20,6 +21,16 @@ pub struct Message {
     pub time_next_visible: DateTime<Utc>,
     pub dequeue_count: u64,
     pub message_text: String,
+}
+
+impl PopReceipt for Message {
+    fn message_id(&self) -> &str {
+        &self.message_id
+    }
+
+    fn pop_receipt(&self) -> &str {
+        &self.pop_receipt
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
