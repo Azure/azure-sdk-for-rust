@@ -3,8 +3,7 @@ use crate::filesystem::responses::DeleteFilesystemResponse;
 use crate::filesystem::FilesystemSupport;
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
-use azure_core::{ClientRequestIdSupport, TimeoutSupport};
-use azure_core::{No, ToAssign, Yes};
+use crate::core::{No, ToAssign, Yes};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 

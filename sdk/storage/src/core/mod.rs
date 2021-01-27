@@ -21,10 +21,11 @@ pub use self::rest_client::{
 };
 use crate::key_client::KeyClient;
 use azure_core::errors::AzureError;
-use azure_core::headers::COPY_ID;
+use azure_core::headers::*;
 use azure_core::util::HeaderMapExt;
 pub use client::Client;
 pub use client_endpoint::ClientEndpoint;
+use http::request::Builder;
 use http::HeaderMap;
 pub use hyper_client_endpoint::HyperClientEndpoint;
 pub use perform_request_response::PerformRequestResponse;
@@ -43,42 +44,51 @@ impl ToAssign for No {}
 
 impl Assigned for Yes {}
 impl NotAssigned for No {}
-pub trait PrefixSupport<'a> {
+
+pub trait TimeoutSupport {
     type O;
-    fn with_prefix(self, prefix: &'a str) -> Self::O;
+    fn with_timeout(self, timeout: u64) -> Self::O;
 }
 
-pub trait IncludeMetadataSupport {
-    type O;
-    fn with_include_metadata(self) -> Self::O;
-}
+pub trait TimeoutOption {
+    fn timeout(&self) -> Option<u64>;
 
-pub trait NextMarkerSupport<'a> {
-    type O;
-    fn with_next_marker(self, next_marker: &'a str) -> Self::O;
-}
-
-pub trait MaxResultsSupport {
-    type O;
-    fn with_max_results(self, max_results: u32) -> Self::O;
-}
-
-pub trait IncludeMetadataOption {
-    fn include_metadata(&self) -> bool;
-
-    fn to_uri_parameter(&self) -> Option<&'static str> {
-        if self.include_metadata() {
-            Some("include=metadata")
+    fn to_uri_parameter(&self) -> Option<String> {
+        if let Some(nm) = self.timeout() {
+            Some(format!("timeout={}", nm))
         } else {
             None
         }
     }
 
     fn append_to_url(&self, url: &mut url::Url) {
-        if self.include_metadata() {
-            url.query_pairs_mut().append_pair("include", "metadata");
+        if let Some(timeout) = self.timeout() {
+            url.query_pairs_mut()
+                .append_pair("timeout", &format!("{}", timeout));
         }
     }
+}
+pub trait ContinuationOption<'a> {
+    fn continuation(&self) -> Option<&'a str>;
+
+    #[must_use]
+    fn add_optional_header(&self, builder: Builder) -> Builder {
+        if let Some(continuation) = self.continuation() {
+            builder.header(CONTINUATION, continuation)
+        } else {
+            builder
+        }
+    }
+}
+
+pub trait ContinuationSupport<'a> {
+    type O;
+    fn with_continuation(self, continuation: &'a str) -> Self::O;
+}
+
+pub trait MaxResultsSupport {
+    type O;
+    fn with_max_results(self, max_results: u32) -> Self::O;
 }
 
 pub trait MaxResultsOption {
@@ -99,6 +109,57 @@ pub trait MaxResultsOption {
         }
     }
 }
+
+pub trait ClientRequestIdSupport<'a> {
+    type O;
+    fn with_client_request_id(self, client_request_id: &'a str) -> Self::O;
+}
+
+pub trait ClientRequestIdOption<'a> {
+    fn client_request_id(&self) -> Option<&'a str>;
+
+    #[must_use]
+    fn add_optional_header(&self, mut builder: Builder) -> Builder {
+        if let Some(client_request_id) = self.client_request_id() {
+            builder = builder.header(CLIENT_REQUEST_ID, client_request_id);
+        }
+        builder
+    }
+}
+
+pub trait PrefixSupport<'a> {
+    type O;
+    fn with_prefix(self, prefix: &'a str) -> Self::O;
+}
+
+pub trait IncludeMetadataSupport {
+    type O;
+    fn with_include_metadata(self) -> Self::O;
+}
+
+pub trait NextMarkerSupport<'a> {
+    type O;
+    fn with_next_marker(self, next_marker: &'a str) -> Self::O;
+}
+
+pub trait IncludeMetadataOption {
+    fn include_metadata(&self) -> bool;
+
+    fn to_uri_parameter(&self) -> Option<&'static str> {
+        if self.include_metadata() {
+            Some("include=metadata")
+        } else {
+            None
+        }
+    }
+
+    fn append_to_url(&self, url: &mut url::Url) {
+        if self.include_metadata() {
+            url.query_pairs_mut().append_pair("include", "metadata");
+        }
+    }
+}
+
 pub trait NextMarkerOption<'a> {
     fn next_marker(&self) -> Option<&'a str>;
 
