@@ -1,4 +1,3 @@
-use crate::request_options::range::ParseError;
 use http::header::ToStrError;
 use hyper::{self, body, Body, StatusCode};
 use std::io::Error as IOError;
@@ -13,6 +12,12 @@ use xml::BuilderError as XMLError;
 #[derive(Debug)]
 pub enum ParsingError {
     ElementNotFound(String),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ParseError {
+    SplitNotFound,
+    ParseIntError(ParseIntError),
 }
 
 quick_error! {

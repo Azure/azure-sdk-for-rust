@@ -1,4 +1,5 @@
-use super::ba512_range::BA512Range;
+use super::BA512Range;
+use crate::errors::ParseError;
 use crate::AddAsHeader;
 use http::request::Builder;
 use std::convert::From;
@@ -24,12 +25,6 @@ impl Range {
     pub fn is_empty(&self) -> bool {
         self.end == self.start
     }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum ParseError {
-    SplitNotFound,
-    ParseIntError(ParseIntError),
 }
 
 impl<'a> From<&'a BA512Range> for Range {

@@ -22,18 +22,20 @@ mod request_options;
 mod stored_access_policy;
 pub mod util;
 
-pub use self::stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
-use crate::errors::AzureError;
 use chrono::{DateTime, Utc};
+use errors::AzureError;
 use headers::*;
-use http::request::Builder;
-pub use http_client::*;
 use oauth2::AccessToken;
 use std::fmt::Debug;
 use uuid::Uuid;
 
+pub use headers::AddAsHeader;
+pub use http_client::{to_json, HttpClient};
+pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
+
 pub type RequestId = Uuid;
 pub type SessionToken = String;
+pub const EMPTY_BODY: &[u8] = &[];
 
 /// Represents an Azure service bearer access token with expiry information.
 #[derive(Debug, Clone)]
@@ -62,9 +64,6 @@ pub trait TokenCredential: Send + Sync {
 pub enum Consistency {
     Md5([u8; 16]),
     Crc64([u8; 8]),
-}
-pub trait AddAsHeader {
-    fn add_as_header(&self, builder: Builder) -> Builder;
 }
 
 pub trait AppendToUrlQuery {

@@ -60,8 +60,6 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     }
 }
 
-pub static EMPTY_BODY: &[u8; 0] = &[];
-
 #[async_trait]
 impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
     async fn execute_request(
