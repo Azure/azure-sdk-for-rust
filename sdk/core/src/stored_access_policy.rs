@@ -86,8 +86,8 @@ impl StoredAccessPolicyList {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "PascalCase")]
 struct SignedIdentifiers {
+    #[serde(rename = "SignedIdentifier")]
     signed_identifiers: Option<Vec<SignedIdentifier>>,
 }
 
