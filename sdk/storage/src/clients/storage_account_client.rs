@@ -1,9 +1,8 @@
-use crate::core::ConnectionString;
+use crate::core::{ConnectionString, No};
 use crate::shared_access_signature::SharedAccessSignatureBuilder;
 use azure_core::errors::AzureError;
 use azure_core::headers::*;
 use azure_core::HttpClient;
-use azure_core::No;
 use azure_core::EMPTY_BODY;
 use bytes::Bytes;
 use http::header::*;

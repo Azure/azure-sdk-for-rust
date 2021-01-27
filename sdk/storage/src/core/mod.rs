@@ -29,6 +29,21 @@ use http::HeaderMap;
 pub use hyper_client_endpoint::HyperClientEndpoint;
 pub use perform_request_response::PerformRequestResponse;
 
+#[derive(Debug, Clone, Eq, PartialEq, Copy, Serialize, Deserialize)]
+pub struct Yes;
+#[derive(Debug, Clone, Eq, PartialEq, Copy, Serialize, Deserialize)]
+pub struct No;
+
+pub trait ToAssign: std::fmt::Debug {}
+pub trait Assigned: ToAssign {}
+pub trait NotAssigned: ToAssign {}
+
+impl ToAssign for Yes {}
+impl ToAssign for No {}
+
+impl Assigned for Yes {}
+impl NotAssigned for No {}
+
 pub trait ClientRequired<'a, C>
 where
     C: Client,
