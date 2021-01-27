@@ -37,12 +37,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("get_response == {:#?}", get_response);
 
     if get_response.messages.is_empty() {
-        trace!("no message to delete");
+        println!("no message to delete");
     } else {
-        for message in get_response.messages {
-            trace!("deleting messages {}", message.message_id);
+        for message_to_delete in get_response.messages {
+            println!("deleting message {:?}", message_to_delete);
 
-            let delete_response = queue.delete_message().execute(&message).await?;
+            let delete_response = queue
+                .as_pop_receipt_client(message_to_delete)
+                .delete()
+                .execute()
+                .await?;
 
             println!("delete_response == {:#?}", delete_response);
         }

@@ -1,5 +1,4 @@
-use crate::queue::clients::QueueClient;
-use crate::queue::PopReceipt;
+use crate::queue::clients::PopReceiptClient;
 use crate::responses::*;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
@@ -7,15 +6,15 @@ use std::convert::TryInto;
 
 #[derive(Debug)]
 pub struct DeleteMessageBuilder<'a> {
-    queue_client: &'a QueueClient,
+    pop_receipt_client: &'a PopReceiptClient,
     timeout: Option<Timeout>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 
 impl<'a> DeleteMessageBuilder<'a> {
-    pub(crate) fn new(queue_client: &'a QueueClient) -> Self {
+    pub(crate) fn new(pop_receipt_client: &'a PopReceiptClient) -> Self {
         DeleteMessageBuilder {
-            queue_client,
+            pop_receipt_client,
             timeout: None,
             client_request_id: None,
         }
@@ -28,21 +27,14 @@ impl<'a> DeleteMessageBuilder<'a> {
 
     pub async fn execute(
         &self,
-        pop_receipt: &dyn PopReceipt,
     ) -> Result<DeleteMessageResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self
-            .queue_client
-            .queue_url()?
-            .join("messages/")?
-            .join(pop_receipt.message_id())?;
+        let mut url = self.pop_receipt_client.pop_receipt_url()?;
 
-        url.query_pairs_mut()
-            .append_pair("popreceipt", pop_receipt.pop_receipt());
         self.timeout.append_to_url_query(&mut url);
 
         debug!("url == {}", url.as_str());
 
-        let request = self.queue_client.storage_client().prepare_request(
+        let request = self.pop_receipt_client.storage_client().prepare_request(
             url.as_str(),
             &http::method::Method::DELETE,
             &|mut request| {
@@ -53,9 +45,7 @@ impl<'a> DeleteMessageBuilder<'a> {
         )?;
 
         let response = self
-            .queue_client
-            .storage_client()
-            .storage_account_client()
+            .pop_receipt_client
             .http_client()
             .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
             .await?;

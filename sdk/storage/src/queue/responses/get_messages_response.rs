@@ -14,22 +14,17 @@ pub struct GetMessagesResponse {
 
 #[derive(Debug, Clone)]
 pub struct Message {
-    pub message_id: String,
+    pub pop_receipt: PopReceipt,
     pub insertion_time: DateTime<Utc>,
     pub expiration_time: DateTime<Utc>,
-    pub pop_receipt: String,
     pub time_next_visible: DateTime<Utc>,
     pub dequeue_count: u64,
     pub message_text: String,
 }
 
-impl PopReceipt for Message {
-    fn message_id(&self) -> &str {
-        &self.message_id
-    }
-
-    fn pop_receipt(&self) -> &str {
-        &self.pop_receipt
+impl Into<PopReceipt> for Message {
+    fn into(self) -> PopReceipt {
+        self.pop_receipt
     }
 }
 
@@ -74,10 +69,9 @@ impl std::convert::TryFrom<&Response<Bytes>> for GetMessagesResponse {
         let mut messages = Vec::new();
         for message in response.messages.unwrap_or_default().into_iter() {
             messages.push(Message {
-                message_id: message.message_id,
+                pop_receipt: PopReceipt::new(message.message_id, message.pop_receipt),
                 insertion_time: utc_date_from_rfc2822(&message.insertion_time)?,
                 expiration_time: utc_date_from_rfc2822(&message.expiration_time)?,
-                pop_receipt: message.pop_receipt,
                 time_next_visible: utc_date_from_rfc2822(&message.time_next_visible)?,
                 dequeue_count: message.dequeue_count,
                 message_text: message.message_text,

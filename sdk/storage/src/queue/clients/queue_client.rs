@@ -1,5 +1,4 @@
 use crate::clients::StorageClient;
-use crate::queue::prelude::*;
 use crate::queue::requests::*;
 use std::sync::Arc;
 
@@ -89,28 +88,9 @@ impl QueueClient {
         PeekMessagesBuilder::new(self)
     }
 
-    /// Gets, shadowing them, one or more messages. In order to delete them, call [delete_message]
-    /// with the pop receipt before the shadow timeout expires.
+    /// Gets, shadowing them, one or more messages.
     pub fn get_messages(&self) -> GetMessagesBuilder {
         GetMessagesBuilder::new(self)
-    }
-
-    /// Deletes one or more previously shadowed messages.
-    /// The PopReceipt will be passed
-    /// to the `execute` function of the returned struct.
-    pub fn delete_message(&self) -> DeleteMessageBuilder {
-        DeleteMessageBuilder::new(self)
-    }
-
-    /// Updates a message. The message must have been
-    /// previously retrieved with `get_messages` and must not have
-    /// been made visible again. You need the pop receipt from
-    /// `get_messages` in order for this call to succeed.
-    pub fn update_message(
-        &self,
-        visibility_timeout: impl Into<VisibilityTimeout>,
-    ) -> UpdateMessageBuilder {
-        UpdateMessageBuilder::new(self, visibility_timeout)
     }
 
     /// Removes all messages from the queue.

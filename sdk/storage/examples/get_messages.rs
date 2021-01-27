@@ -36,19 +36,26 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("response == {:#?}", response);
 
-    let response = queue
+    let get_messages_response = queue
         .get_messages()
-        .number_of_messages(1)
+        .number_of_messages(2)
         .visibility_timeout(Duration::from_secs(10)) // the message will become visible again after 10 secs
         .execute()
         .await?;
-    println!("response == {:#?}", response);
+    println!("get_messages_response == {:#?}", get_messages_response);
 
-    let response = queue
-        .update_message(Duration::from_secs(4))
-        .execute(&response.messages[0], "new body") // for this example there is no check on messages returned!
-        .await?;
-    println!("response == {:#?}", response);
+    // we will now update the contents of the retrieved messages
+    // Note that we have to specify how long the message will stay
+    // "hidden" before being visible again in the queue.
+    for message_to_update in get_messages_response.messages.into_iter() {
+        let pop_receipt = queue.as_pop_receipt_client(message_to_update);
+
+        let response = pop_receipt
+            .update(Duration::from_secs(4))
+            .execute(format!("new body at {}", chrono::Utc::now()))
+            .await?;
+        println!("response == {:#?}", response);
+    }
 
     Ok(())
 }
