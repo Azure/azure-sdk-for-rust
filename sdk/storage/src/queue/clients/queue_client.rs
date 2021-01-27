@@ -3,7 +3,7 @@ use crate::queue::clients::QueueAccountClient;
 use crate::queue::requests::*;
 use crate::queue::PopReceipt;
 use crate::HasStorageClient;
-use azure_core::Metadata;
+use azure_core::prelude::*;
 use std::borrow::Cow;
 use std::fmt::Debug;
 

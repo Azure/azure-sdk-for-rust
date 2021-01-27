@@ -1,8 +1,7 @@
+use super::range::Range;
 use crate::errors::{Not512ByteAlignedError, Parse512AlignedError};
-use crate::range::Range;
 use crate::AddAsHeader;
 use http::request::Builder;
-use std::convert::Into;
 use std::convert::TryFrom;
 use std::fmt;
 use std::str::FromStr;

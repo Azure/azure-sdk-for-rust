@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use crate::resources::trigger::*;
 use crate::responses::CreateTriggerResponse;
-use azure_core::{ActivityId, UserAgent};
+use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
 

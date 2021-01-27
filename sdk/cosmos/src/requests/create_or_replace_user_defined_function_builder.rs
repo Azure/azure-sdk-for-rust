@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use crate::responses::CreateUserDefinedFunctionResponse;
-use azure_core::{ActivityId, UserAgent};
+use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
 

@@ -27,7 +27,7 @@ use azure_core::{
     incompletevector::IncompleteVector,
     lease::{LeaseDuration, LeaseState, LeaseStatus},
     parsing::{cast_must, cast_optional, from_azure_time, inner_text, traverse},
-    range::Range,
+    prelude::*,
     util::HeaderMapExt,
 };
 use chrono::{DateTime, Utc};

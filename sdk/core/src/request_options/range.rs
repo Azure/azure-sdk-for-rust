@@ -1,4 +1,4 @@
-use crate::ba512_range::BA512Range;
+use super::ba512_range::BA512Range;
 use crate::AddAsHeader;
 use http::request::Builder;
 use std::convert::From;

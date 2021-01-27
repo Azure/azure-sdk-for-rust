@@ -3,7 +3,6 @@ use crate::resources::ResourceType;
 use crate::responses::CreateDocumentResponse;
 use azure_core::errors::UnexpectedHTTPResult;
 use azure_core::prelude::*;
-use azure_core::{ActivityId, UserAgent};
 use chrono::{DateTime, Utc};
 use http::StatusCode;
 use serde::Serialize;

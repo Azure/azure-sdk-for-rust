@@ -1,4 +1,4 @@
-use crate::range::ParseError;
+use crate::request_options::range::ParseError;
 use http::header::ToStrError;
 use hyper::{self, body, Body, StatusCode};
 use std::io::Error as IOError;
