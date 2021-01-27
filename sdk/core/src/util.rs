@@ -1,33 +1,10 @@
-use bytes::{Bytes, BytesMut};
+use bytes::Bytes;
 use http::{self, request::Builder};
 use hyper::header::{AsHeaderName, HeaderMap, HeaderName, HeaderValue};
-use std::{
-    convert::TryFrom,
-    fmt::Display,
-    io::{self, Write},
-    str::FromStr,
-};
-
-struct Writer(BytesMut);
-impl io::Write for Writer {
-    fn write(&mut self, src: &[u8]) -> io::Result<usize> {
-        self.0.extend_from_slice(src);
-        Ok(src.len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
-    }
-}
-
-fn format_as_bytes<D: Display>(value: D) -> Bytes {
-    let mut wrt = Writer(BytesMut::new());
-    let _ = write!(wrt, "{}", value);
-    wrt.0.freeze()
-}
+use std::{convert::TryFrom, fmt::Display, str::FromStr};
 
 pub fn format_header_value<D: Display>(value: D) -> Result<HeaderValue, http::Error> {
-    let value: &[u8] = &format_as_bytes(value);
+    let value: &str = &format(value);
     Ok(HeaderValue::try_from(value)?)
 }
 
@@ -75,7 +52,7 @@ pub trait RequestBuilderExt {
         <HeaderName as TryFrom<K>>::Error: Into<http::Error>,
         Self: Sized,
     {
-        self.set_header(key, &format_as_bytes(value) as &[u8])
+        self.set_header(key, &format(value))
     }
 
     fn header_static<K>(self, key: K, value: &'static str) -> Self
@@ -108,4 +85,8 @@ impl RequestBuilderExt for Builder {
     {
         self.header(key, value)
     }
+}
+
+fn format<D: Display>(value: D) -> String {
+    format!("{}", value)
 }
