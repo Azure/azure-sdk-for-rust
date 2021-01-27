@@ -1,10 +1,10 @@
 use crate::core::prelude::*;
+use crate::core::{No, ToAssign, Yes};
 use crate::filesystem::responses::CreateFilesystemResponse;
 use crate::filesystem::{
     FilesystemRequired, FilesystemSupport, PropertiesOption, PropertiesSupport,
 };
 use azure_core::errors::AzureError;
-use crate::core::{No, ToAssign, Yes};
 use hyper::{Method, StatusCode};
 use std::marker::PhantomData;
 
