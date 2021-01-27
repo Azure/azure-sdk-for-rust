@@ -20,7 +20,7 @@ mod metadata;
 mod next_marker;
 mod prefix;
 mod proposed_lease_id;
-pub(crate) mod range;
+mod range;
 mod sequence_number;
 mod sequence_number_condition;
 mod source_content_md5;
