@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let mut list_blobs = Box::pin(container.list_blobs().stream());
     while let Some(list_blobs_response) = list_blobs.next().await {
         let list_blobs_response = list_blobs_response?;
-        count += list_blobs_response.incomplete_vector.vector.len();
+        count += list_blobs_response.incomplete_vector.len();
     }
 
     println!("blob count {}", count);
