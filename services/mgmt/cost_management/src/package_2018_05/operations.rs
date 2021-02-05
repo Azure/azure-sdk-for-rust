@@ -262,7 +262,7 @@ pub mod report_config {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(create_or_update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
         let rsp = http_client
@@ -510,7 +510,7 @@ pub mod report_config {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(create_or_update_by_resource_group_name::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -969,7 +969,7 @@ pub async fn query_subscription(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    let req_body = azure_core::to_json(parameters).context(query_subscription::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).context(query_subscription::BuildRequestError)?;
     let rsp = http_client
@@ -1050,7 +1050,7 @@ pub async fn query_resource_group(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    let req_body = azure_core::to_json(parameters).context(query_resource_group::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).context(query_resource_group::BuildRequestError)?;
     let rsp = http_client
@@ -1129,7 +1129,7 @@ pub async fn query_billing_account(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    let req_body = azure_core::to_json(parameters).context(query_billing_account::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).context(query_billing_account::BuildRequestError)?;
     let rsp = http_client

@@ -109,7 +109,7 @@ pub mod record_sets {
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(create_or_update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
         let rsp = http_client
@@ -456,7 +456,7 @@ pub mod zones {
         if let Some(if_none_match) = if_none_match {
             req_builder = req_builder.header("If-None-Match", if_none_match);
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(create_or_update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
         let rsp = http_client
