@@ -258,6 +258,8 @@ pub struct OperationPropertiesDefinition {
 pub struct OperationServiceSpecificationDefinition {
     #[serde(rename = "metricSpecifications", skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<OperationMetricSpecificationDefinition>,
+    #[serde(rename = "logSpecifications", skip_serializing_if = "Vec::is_empty")]
+    pub log_specifications: Vec<OperationLogSpecificationDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationMetricSpecificationDefinition {
@@ -273,6 +275,15 @@ pub struct OperationMetricSpecificationDefinition {
     pub aggregation_type: Option<String>,
     #[serde(rename = "internalMetricName", skip_serializing_if = "Option::is_none")]
     pub internal_metric_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationLogSpecificationDefinition {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "blobDuration", skip_serializing_if = "Option::is_none")]
+    pub blob_duration: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineRun {
@@ -515,6 +526,8 @@ pub struct RegistryProperties {
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[serde(rename = "publicNetworkAccess", skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<registry_properties::PublicNetworkAccess>,
+    #[serde(rename = "networkRuleBypassOptions", skip_serializing_if = "Option::is_none")]
+    pub network_rule_bypass_options: Option<registry_properties::NetworkRuleBypassOptions>,
 }
 pub mod registry_properties {
     use super::*;
@@ -531,6 +544,11 @@ pub mod registry_properties {
     pub enum PublicNetworkAccess {
         Enabled,
         Disabled,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum NetworkRuleBypassOptions {
+        AzureServices,
+        None,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -686,11 +704,11 @@ pub struct KeyVaultProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistryUpdateParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity: Option<IdentityProperties>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub identity: Option<IdentityProperties>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistryPropertiesUpdateParameters>,
 }
@@ -708,6 +726,8 @@ pub struct RegistryPropertiesUpdateParameters {
     pub data_endpoint_enabled: Option<bool>,
     #[serde(rename = "publicNetworkAccess", skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<registry_properties_update_parameters::PublicNetworkAccess>,
+    #[serde(rename = "networkRuleBypassOptions", skip_serializing_if = "Option::is_none")]
+    pub network_rule_bypass_options: Option<registry_properties_update_parameters::NetworkRuleBypassOptions>,
 }
 pub mod registry_properties_update_parameters {
     use super::*;
@@ -715,6 +735,11 @@ pub mod registry_properties_update_parameters {
     pub enum PublicNetworkAccess {
         Enabled,
         Disabled,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum NetworkRuleBypassOptions {
+        AzureServices,
+        None,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

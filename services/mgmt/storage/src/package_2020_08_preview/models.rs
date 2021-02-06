@@ -358,6 +358,8 @@ pub struct StorageAccountPropertiesCreateParameters {
     pub allow_blob_public_access: Option<bool>,
     #[serde(rename = "minimumTlsVersion", skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<storage_account_properties_create_parameters::MinimumTlsVersion>,
+    #[serde(rename = "allowSharedKeyAccess", skip_serializing_if = "Option::is_none")]
+    pub allow_shared_key_access: Option<bool>,
 }
 pub mod storage_account_properties_create_parameters {
     use super::*;
@@ -596,6 +598,8 @@ pub struct StorageAccountProperties {
     pub allow_blob_public_access: Option<bool>,
     #[serde(rename = "minimumTlsVersion", skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<storage_account_properties::MinimumTlsVersion>,
+    #[serde(rename = "allowSharedKeyAccess", skip_serializing_if = "Option::is_none")]
+    pub allow_shared_key_access: Option<bool>,
 }
 pub mod storage_account_properties {
     use super::*;
@@ -736,6 +740,8 @@ pub struct StorageAccountPropertiesUpdateParameters {
     pub allow_blob_public_access: Option<bool>,
     #[serde(rename = "minimumTlsVersion", skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<storage_account_properties_update_parameters::MinimumTlsVersion>,
+    #[serde(rename = "allowSharedKeyAccess", skip_serializing_if = "Option::is_none")]
+    pub allow_shared_key_access: Option<bool>,
 }
 pub mod storage_account_properties_update_parameters {
     use super::*;
@@ -1049,6 +1055,8 @@ pub struct ManagementPolicyAction {
     pub base_blob: Option<ManagementPolicyBaseBlob>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub snapshot: Option<ManagementPolicySnapShot>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<ManagementPolicyVersion>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementPolicyBaseBlob {
@@ -1063,6 +1071,19 @@ pub struct ManagementPolicyBaseBlob {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementPolicySnapShot {
+    #[serde(rename = "tierToCool", skip_serializing_if = "Option::is_none")]
+    pub tier_to_cool: Option<DateAfterCreation>,
+    #[serde(rename = "tierToArchive", skip_serializing_if = "Option::is_none")]
+    pub tier_to_archive: Option<DateAfterCreation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub delete: Option<DateAfterCreation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementPolicyVersion {
+    #[serde(rename = "tierToCool", skip_serializing_if = "Option::is_none")]
+    pub tier_to_cool: Option<DateAfterCreation>,
+    #[serde(rename = "tierToArchive", skip_serializing_if = "Option::is_none")]
+    pub tier_to_archive: Option<DateAfterCreation>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub delete: Option<DateAfterCreation>,
 }
@@ -1446,6 +1467,8 @@ pub struct BlobServiceItems {
 pub struct ChangeFeed {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[serde(rename = "retentionInDays", skip_serializing_if = "Option::is_none")]
+    pub retention_in_days: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorePolicyProperties {

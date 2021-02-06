@@ -84,7 +84,7 @@ pub mod views {
     pub async fn list_by_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
-    ) -> std::result::Result<ViewListResult, list_by_scope::Error> {
+    ) -> std::result::Result<list_by_scope::Response, list_by_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.CostManagement/views",
@@ -111,8 +111,9 @@ pub mod views {
                 let rsp_body = rsp.body();
                 let rsp_value: ViewListResult =
                     serde_json::from_slice(rsp_body).context(list_by_scope::DeserializeError { body: rsp_body.clone() })?;
-                Ok(rsp_value)
+                Ok(list_by_scope::Response::Ok200(rsp_value))
             }
+            http::StatusCode::NO_CONTENT => Ok(list_by_scope::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
@@ -128,6 +129,11 @@ pub mod views {
     pub mod list_by_scope {
         use crate::{models, models::*};
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ViewListResult),
+            NoContent204,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
@@ -249,7 +255,7 @@ pub mod views {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(create_or_update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
         let rsp = http_client
@@ -494,7 +500,7 @@ pub mod views {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(create_or_update_by_scope::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update_by_scope::BuildRequestError)?;
         let rsp = http_client
@@ -815,7 +821,7 @@ pub mod alerts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(dismiss::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(dismiss::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(dismiss::ExecuteRequestError)?;
@@ -954,7 +960,7 @@ pub mod forecast {
         filter: Option<&str>,
         scope: &str,
         parameters: &ForecastDefinition,
-    ) -> std::result::Result<QueryResult, usage::Error> {
+    ) -> std::result::Result<usage::Response, usage::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.CostManagement/forecast",
@@ -975,7 +981,7 @@ pub mod forecast {
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(usage::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(usage::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(usage::ExecuteRequestError)?;
@@ -984,8 +990,9 @@ pub mod forecast {
                 let rsp_body = rsp.body();
                 let rsp_value: QueryResult =
                     serde_json::from_slice(rsp_body).context(usage::DeserializeError { body: rsp_body.clone() })?;
-                Ok(rsp_value)
+                Ok(usage::Response::Ok200(rsp_value))
             }
+            http::StatusCode::NO_CONTENT => Ok(usage::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
@@ -1001,6 +1008,11 @@ pub mod forecast {
     pub mod usage {
         use crate::{models, models::*};
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(QueryResult),
+            NoContent204,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
@@ -1057,7 +1069,7 @@ pub mod forecast {
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(external_cloud_provider_usage::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -1341,7 +1353,7 @@ pub mod query {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(usage::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(usage::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(usage::ExecuteRequestError)?;
@@ -1425,7 +1437,7 @@ pub mod query {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(usage_by_external_cloud_provider_type::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -1907,7 +1919,7 @@ pub mod exports {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(create_or_update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
         let rsp = http_client

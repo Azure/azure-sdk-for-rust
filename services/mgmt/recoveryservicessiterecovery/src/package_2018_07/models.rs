@@ -1626,6 +1626,10 @@ pub struct HyperVReplicaAzureEnableProtectionInput {
     pub target_availability_zone: Option<String>,
     #[serde(rename = "targetProximityPlacementGroupId", skip_serializing_if = "Option::is_none")]
     pub target_proximity_placement_group_id: Option<String>,
+    #[serde(rename = "targetAvailabilitySetId", skip_serializing_if = "Option::is_none")]
+    pub target_availability_set_id: Option<String>,
+    #[serde(rename = "targetVmSize", skip_serializing_if = "Option::is_none")]
+    pub target_vm_size: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaAzureEventDetails {
@@ -2208,6 +2212,10 @@ pub struct InMageAzureV2EnableProtectionInput {
     pub target_availability_zone: Option<String>,
     #[serde(rename = "targetProximityPlacementGroupId", skip_serializing_if = "Option::is_none")]
     pub target_proximity_placement_group_id: Option<String>,
+    #[serde(rename = "targetAvailabilitySetId", skip_serializing_if = "Option::is_none")]
+    pub target_availability_set_id: Option<String>,
+    #[serde(rename = "targetVmSize", skip_serializing_if = "Option::is_none")]
+    pub target_vm_size: Option<String>,
 }
 pub mod in_mage_azure_v2_enable_protection_input {
     use super::*;

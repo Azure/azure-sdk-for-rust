@@ -10,6 +10,8 @@ pub struct Operation {
     pub display: Option<operation::Display>,
     #[serde(skip_serializing)]
     pub origin: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<operation::Properties>,
 }
 pub mod operation {
     use super::*;
@@ -24,6 +26,52 @@ pub mod operation {
         #[serde(skip_serializing)]
         pub description: Option<String>,
     }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "serviceSpecification", skip_serializing_if = "Option::is_none")]
+        pub service_specification: Option<properties::ServiceSpecification>,
+    }
+    pub mod properties {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub struct ServiceSpecification {
+            #[serde(rename = "metricSpecifications", skip_serializing)]
+            pub metric_specifications: Vec<MetricSpecifications>,
+            #[serde(rename = "logSpecifications", skip_serializing)]
+            pub log_specifications: Vec<LogSpecifications>,
+        }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricSpecifications {
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing)]
+    pub display_name: Option<String>,
+    #[serde(rename = "displayDescription", skip_serializing)]
+    pub display_description: Option<String>,
+    #[serde(skip_serializing)]
+    pub unit: Option<String>,
+    #[serde(rename = "aggregationType", skip_serializing)]
+    pub aggregation_type: Option<String>,
+    #[serde(skip_serializing)]
+    pub dimensions: Vec<MetricDimensions>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogSpecifications {
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing)]
+    pub display_name: Option<String>,
+    #[serde(rename = "blobDuration", skip_serializing)]
+    pub blob_duration: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricDimensions {
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing)]
+    pub display_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
@@ -209,9 +257,9 @@ pub struct GatewayError {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[serde(rename = "subCode", skip_serializing_if = "Option::is_none")]
-    pub sub_code: Option<String>,
+    pub sub_code: Option<i32>,
     #[serde(rename = "httpStatusCode", skip_serializing_if = "Option::is_none")]
-    pub http_status_code: Option<String>,
+    pub http_status_code: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckServerNameAvailabilityParameters {
@@ -262,6 +310,26 @@ pub struct SkuDetailsForExistingResource {
     pub resource_type: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(skip_serializing)]
+    pub code: Option<String>,
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+    #[serde(skip_serializing)]
+    pub target: Option<String>,
+    #[serde(skip_serializing)]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", skip_serializing)]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing)]
+    pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
@@ -275,8 +343,12 @@ pub mod error_response {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
         #[serde(rename = "subCode", skip_serializing_if = "Option::is_none")]
-        pub sub_code: Option<String>,
+        pub sub_code: Option<i32>,
         #[serde(rename = "httpStatusCode", skip_serializing_if = "Option::is_none")]
-        pub http_status_code: Option<String>,
+        pub http_status_code: Option<i32>,
+        #[serde(rename = "timeStamp", skip_serializing)]
+        pub time_stamp: Option<String>,
+        #[serde(skip_serializing)]
+        pub details: Vec<ErrorDetail>,
     }
 }

@@ -96,6 +96,10 @@ pub struct Operation {
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[serde(skip_serializing)]
+    pub origin: Option<String>,
+    #[serde(skip_serializing)]
+    pub properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationDisplay {
@@ -137,6 +141,17 @@ pub struct AppTemplate {
     pub order: Option<f64>,
     #[serde(skip_serializing)]
     pub description: Option<String>,
+    #[serde(skip_serializing)]
+    pub industry: Option<String>,
+    #[serde(skip_serializing)]
+    pub locations: Vec<AppTemplateLocations>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AppTemplateLocations {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(rename = "displayName", skip_serializing)]
+    pub display_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppTemplatesResult {

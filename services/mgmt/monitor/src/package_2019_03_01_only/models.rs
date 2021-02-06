@@ -212,8 +212,8 @@ pub struct TimeSeriesBaseline {
     pub dimensions: Vec<MetricSingleDimension>,
     pub timestamps: Vec<String>,
     pub data: Vec<SingleBaseline>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub metadata: Vec<BaselineMetadata>,
+    #[serde(rename = "metadataValues", skip_serializing_if = "Vec::is_empty")]
+    pub metadata_values: Vec<BaselineMetadata>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricSingleDimension {

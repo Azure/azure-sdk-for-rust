@@ -13,7 +13,7 @@ pub mod invoices {
         expand: Option<&str>,
         filter: Option<&str>,
         skiptoken: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<InvoicesListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(

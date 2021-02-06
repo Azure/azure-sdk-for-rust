@@ -100,9 +100,9 @@ pub struct ReportConfigFilter {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub or: Vec<ReportConfigFilter>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub dimension: Option<ReportConfigComparisonExpression>,
+    pub dimensions: Option<ReportConfigComparisonExpression>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub tag: Option<ReportConfigComparisonExpression>,
+    pub tags: Option<ReportConfigComparisonExpression>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReportConfigColumnType {
@@ -456,6 +456,12 @@ pub struct DismissAlertPayload {
 pub struct QueryResult {
     #[serde(flatten)]
     pub resource: Resource,
+    #[serde(rename = "eTag", skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
+    #[serde(skip_serializing)]
+    pub location: Option<String>,
+    #[serde(skip_serializing)]
+    pub sku: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<QueryProperties>,
 }

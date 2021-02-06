@@ -1798,7 +1798,7 @@ pub struct SecurityPolicyProperties {
     #[serde(flatten)]
     pub afd_state_properties: AfdStateProperties,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<SecurityPolicyWebApplicationFirewallParameters>,
+    pub parameters: Option<SecurityPolicyParameters>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityPolicyParameters {
@@ -1942,15 +1942,11 @@ pub struct UrlSigningKeyParameters {
 pub struct ManagedCertificateParameters {
     #[serde(flatten)]
     pub secret_parameters: SecretParameters,
-    #[serde(flatten)]
-    pub certificate: Certificate,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomerCertificateParameters {
     #[serde(flatten)]
     pub secret_parameters: SecretParameters,
-    #[serde(flatten)]
-    pub certificate: Certificate,
     #[serde(rename = "secretSource")]
     pub secret_source: ResourceReference,
     #[serde(rename = "secretVersion", skip_serializing_if = "Option::is_none")]
@@ -2162,9 +2158,7 @@ pub struct RouteUpdatePropertiesParameters {
     #[serde(rename = "compressionSettings", skip_serializing_if = "Option::is_none")]
     pub compression_settings: Option<serde_json::Value>,
     #[serde(rename = "queryStringCachingBehavior", skip_serializing_if = "Option::is_none")]
-    pub query_string_caching_behavior: Option<QueryStringCachingBehavior>,
-    #[serde(rename = "optimizationType", skip_serializing_if = "Option::is_none")]
-    pub optimization_type: Option<OptimizationType>,
+    pub query_string_caching_behavior: Option<route_update_properties_parameters::QueryStringCachingBehavior>,
     #[serde(rename = "forwardingProtocol", skip_serializing_if = "Option::is_none")]
     pub forwarding_protocol: Option<route_update_properties_parameters::ForwardingProtocol>,
     #[serde(rename = "linkToDefaultDomain", skip_serializing_if = "Option::is_none")]
@@ -2176,6 +2170,12 @@ pub struct RouteUpdatePropertiesParameters {
 }
 pub mod route_update_properties_parameters {
     use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum QueryStringCachingBehavior {
+        IgnoreQueryString,
+        UseQueryString,
+        NotSet,
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ForwardingProtocol {
         HttpOnly,
@@ -2489,7 +2489,7 @@ pub struct CustomRule {
     pub name: String,
     #[serde(rename = "enabledState", skip_serializing_if = "Option::is_none")]
     pub enabled_state: Option<custom_rule::EnabledState>,
-    pub priority: i64,
+    pub priority: i32,
     #[serde(rename = "matchConditions")]
     pub match_conditions: Vec<MatchCondition>,
     pub action: ActionType,
@@ -2512,9 +2512,9 @@ pub struct RateLimitRule {
     #[serde(flatten)]
     pub custom_rule: CustomRule,
     #[serde(rename = "rateLimitThreshold")]
-    pub rate_limit_threshold: i64,
+    pub rate_limit_threshold: i32,
     #[serde(rename = "rateLimitDurationInMinutes")]
-    pub rate_limit_duration_in_minutes: i64,
+    pub rate_limit_duration_in_minutes: i32,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MatchCondition {

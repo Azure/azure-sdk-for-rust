@@ -216,8 +216,8 @@ pub struct Resource {
     pub location: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
-    #[serde(rename = "eTag", skip_serializing_if = "Option::is_none")]
-    pub e_tag: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -257,8 +257,8 @@ pub mod graph_query_properties {
 pub struct GraphQueryUpdateParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(rename = "eTag", skip_serializing_if = "Option::is_none")]
-    pub e_tag: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<GraphQueryPropertiesUpdateParameters>,
 }

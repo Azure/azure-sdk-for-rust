@@ -161,8 +161,6 @@ pub struct HostPoolProperties {
     pub vm_template: Option<String>,
     #[serde(rename = "applicationGroupReferences", skip_serializing)]
     pub application_group_references: Vec<String>,
-    #[serde(rename = "ssoContext", skip_serializing_if = "Option::is_none")]
-    pub sso_context: Option<String>,
     #[serde(rename = "ssoadfsAuthority", skip_serializing_if = "Option::is_none")]
     pub ssoadfs_authority: Option<String>,
     #[serde(rename = "ssoClientId", skip_serializing_if = "Option::is_none")]
@@ -239,8 +237,6 @@ pub struct HostPoolPatchProperties {
     pub registration_info: Option<RegistrationInfoPatch>,
     #[serde(rename = "vmTemplate", skip_serializing_if = "Option::is_none")]
     pub vm_template: Option<String>,
-    #[serde(rename = "ssoContext", skip_serializing_if = "Option::is_none")]
-    pub sso_context: Option<String>,
     #[serde(rename = "ssoadfsAuthority", skip_serializing_if = "Option::is_none")]
     pub ssoadfs_authority: Option<String>,
     #[serde(rename = "ssoClientId", skip_serializing_if = "Option::is_none")]
@@ -554,8 +550,6 @@ pub struct DesktopPatchProperties {
 pub struct StartMenuItemProperties {
     #[serde(rename = "appAlias", skip_serializing_if = "Option::is_none")]
     pub app_alias: Option<String>,
-    #[serde(rename = "friendlyName", skip_serializing_if = "Option::is_none")]
-    pub friendly_name: Option<String>,
     #[serde(rename = "filePath", skip_serializing_if = "Option::is_none")]
     pub file_path: Option<String>,
     #[serde(rename = "commandLineArguments", skip_serializing_if = "Option::is_none")]
@@ -790,10 +784,10 @@ pub struct ScalingSchedule {
     pub days_of_week: Vec<String>,
     #[serde(rename = "rampUpStartTime", skip_serializing_if = "Option::is_none")]
     pub ramp_up_start_time: Option<String>,
-    #[serde(rename = "rampUpAlgorithm", skip_serializing_if = "Option::is_none")]
-    pub ramp_up_algorithm: Option<scaling_schedule::RampUpAlgorithm>,
-    #[serde(rename = "rampUpMinimumHostPct", skip_serializing_if = "Option::is_none")]
-    pub ramp_up_minimum_host_pct: Option<i32>,
+    #[serde(rename = "rampUpLoadBalancingAlgorithm", skip_serializing_if = "Option::is_none")]
+    pub ramp_up_load_balancing_algorithm: Option<scaling_schedule::RampUpLoadBalancingAlgorithm>,
+    #[serde(rename = "rampUpMinimumHostsPct", skip_serializing_if = "Option::is_none")]
+    pub ramp_up_minimum_hosts_pct: Option<i32>,
     #[serde(rename = "rampUpCapacityThresholdPct", skip_serializing_if = "Option::is_none")]
     pub ramp_up_capacity_threshold_pct: Option<i32>,
     #[serde(rename = "peakStartTime", skip_serializing_if = "Option::is_none")]
@@ -812,8 +806,8 @@ pub struct ScalingSchedule {
     pub ramp_down_force_logoff_users: Option<bool>,
     #[serde(rename = "rampDownStopHostsWhen", skip_serializing_if = "Option::is_none")]
     pub ramp_down_stop_hosts_when: Option<scaling_schedule::RampDownStopHostsWhen>,
-    #[serde(rename = "rampDownNotificationMinutes", skip_serializing_if = "Option::is_none")]
-    pub ramp_down_notification_minutes: Option<i32>,
+    #[serde(rename = "rampDownWaitTimeMinutes", skip_serializing_if = "Option::is_none")]
+    pub ramp_down_wait_time_minutes: Option<i32>,
     #[serde(rename = "rampDownNotificationMessage", skip_serializing_if = "Option::is_none")]
     pub ramp_down_notification_message: Option<String>,
     #[serde(rename = "offPeakStartTime", skip_serializing_if = "Option::is_none")]
@@ -824,7 +818,7 @@ pub struct ScalingSchedule {
 pub mod scaling_schedule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum RampUpAlgorithm {
+    pub enum RampUpLoadBalancingAlgorithm {
         BreadthFirst,
         DepthFirst,
     }

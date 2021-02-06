@@ -264,10 +264,6 @@ pub struct PrivateCloudUpdateProperties {
     pub internet: Option<private_cloud_update_properties::Internet>,
     #[serde(rename = "identitySources", skip_serializing_if = "Vec::is_empty")]
     pub identity_sources: Vec<IdentitySource>,
-    #[serde(rename = "vcenterPassword", skip_serializing_if = "Option::is_none")]
-    pub vcenter_password: Option<private_cloud_update_properties::VcenterPassword>,
-    #[serde(rename = "nsxtPassword", skip_serializing_if = "Option::is_none")]
-    pub nsxt_password: Option<private_cloud_update_properties::NsxtPassword>,
 }
 pub mod private_cloud_update_properties {
     use super::*;
@@ -275,14 +271,6 @@ pub mod private_cloud_update_properties {
     pub enum Internet {
         Enabled,
         Disabled,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum VcenterPassword {
-        OnetimeRotate,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum NsxtPassword {
-        OnetimeRotate,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

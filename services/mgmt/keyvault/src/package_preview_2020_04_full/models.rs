@@ -3,18 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudError {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<CloudErrorBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudErrorBody {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub family: sku::Family,
     pub name: sku::Name,
@@ -81,6 +69,8 @@ pub struct VaultProperties {
     pub enable_purge_protection: Option<bool>,
     #[serde(rename = "networkAcls", skip_serializing_if = "Option::is_none")]
     pub network_acls: Option<NetworkRuleSet>,
+    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<vault_properties::ProvisioningState>,
     #[serde(rename = "privateEndpointConnections", skip_serializing)]
     pub private_endpoint_connections: Vec<PrivateEndpointConnectionItem>,
 }
@@ -92,6 +82,11 @@ pub mod vault_properties {
         Recover,
         #[serde(rename = "default")]
         Default,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Succeeded,
+        RegisteringDns,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -148,6 +143,8 @@ pub struct DeletedVaultProperties {
     pub scheduled_purge_date: Option<String>,
     #[serde(skip_serializing)]
     pub tags: Option<serde_json::Value>,
+    #[serde(rename = "purgeProtectionEnabled", skip_serializing)]
+    pub purge_protection_enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VaultCreateOrUpdateParameters {
@@ -308,6 +305,8 @@ pub struct PrivateEndpointConnection {
     pub resource: Resource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
@@ -329,8 +328,15 @@ pub struct PrivateLinkServiceConnectionState {
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "actionRequired", skip_serializing_if = "Option::is_none")]
-    pub action_required: Option<String>,
+    #[serde(rename = "actionsRequired", skip_serializing_if = "Option::is_none")]
+    pub actions_required: Option<private_link_service_connection_state::ActionsRequired>,
+}
+pub mod private_link_service_connection_state {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ActionsRequired {
+        None,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointServiceConnectionStatus {
@@ -386,6 +392,8 @@ pub struct Operation {
     pub origin: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationProperties>,
+    #[serde(rename = "isDataAction", skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
 }
 pub mod operation {
     use super::*;
@@ -589,4 +597,16 @@ pub struct Error {
     pub message: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub innererror: Option<Error>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudError {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<CloudErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudErrorBody {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }

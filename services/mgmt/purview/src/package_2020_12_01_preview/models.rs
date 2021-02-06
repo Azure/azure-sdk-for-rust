@@ -49,12 +49,12 @@ pub struct AccountProperties {
     pub friendly_name: Option<String>,
     #[serde(rename = "managedResources", skip_serializing)]
     pub managed_resources: Option<serde_json::Value>,
-    #[serde(rename = "networkAcls", skip_serializing_if = "Option::is_none")]
-    pub network_acls: Option<NetworkAcls>,
     #[serde(rename = "privateEndpointConnections", skip_serializing)]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<account_properties::ProvisioningState>,
+    #[serde(rename = "publicNetworkAccess", skip_serializing_if = "Option::is_none")]
+    pub public_network_access: Option<account_properties::PublicNetworkAccess>,
 }
 pub mod account_properties {
     use super::*;
@@ -68,6 +68,12 @@ pub mod account_properties {
         SoftDeleted,
         Failed,
         Succeeded,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PublicNetworkAccess {
+        NotSpecified,
+        Enabled,
+        Disabled,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -115,19 +121,6 @@ pub struct ManagedResources {
     pub resource_group: Option<String>,
     #[serde(rename = "storageAccount", skip_serializing)]
     pub storage_account: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkAcls {
-    #[serde(rename = "defaultAction", skip_serializing_if = "Option::is_none")]
-    pub default_action: Option<network_acls::DefaultAction>,
-}
-pub mod network_acls {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DefaultAction {
-        Allow,
-        Deny,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {

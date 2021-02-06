@@ -4,308 +4,90 @@
 #![allow(unused_imports)]
 use crate::models::*;
 use snafu::{ResultExt, Snafu};
-pub async fn get_catalog(
-    operation_config: &crate::OperationConfig,
-    subscription_id: &str,
-) -> std::result::Result<Vec<Catalog>, get_catalog::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/subscriptions/{}/providers/Microsoft.Capacity/catalogs",
-        operation_config.base_path(),
-        subscription_id
-    );
-    let mut url = url::Url::parse(url_str).context(get_catalog::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .context(get_catalog::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-    }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).context(get_catalog::BuildRequestError)?;
-    let rsp = http_client.execute_request(req).await.context(get_catalog::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: Vec<Catalog> =
-                serde_json::from_slice(rsp_body).context(get_catalog::DeserializeError { body: rsp_body.clone() })?;
-            Ok(rsp_value)
-        }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body).context(get_catalog::DeserializeError { body: rsp_body.clone() })?;
-            get_catalog::DefaultResponse {
-                status_code,
-                value: rsp_value,
-            }
-            .fail()
-        }
-    }
-}
-pub mod get_catalog {
-    use crate::{models, models::*};
-    use snafu::Snafu;
-    #[derive(Debug, Snafu)]
-    #[snafu(visibility(pub(crate)))]
-    pub enum Error {
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::Error,
-        },
-        ParseUrlError {
-            source: url::ParseError,
-        },
-        BuildRequestError {
-            source: http::Error,
-        },
-        ExecuteRequestError {
-            source: Box<dyn std::error::Error + Sync + Send>,
-        },
-        SerializeError {
-            source: Box<dyn std::error::Error + Sync + Send>,
-        },
-        DeserializeError {
-            source: serde_json::Error,
-            body: bytes::Bytes,
-        },
-        GetTokenError {
-            source: azure_core::errors::AzureError,
-        },
-    }
-}
-pub async fn get_applied_reservation_list(
-    operation_config: &crate::OperationConfig,
-    subscription_id: &str,
-) -> std::result::Result<AppliedReservations, get_applied_reservation_list::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/subscriptions/{}/providers/Microsoft.Capacity/appliedReservations",
-        operation_config.base_path(),
-        subscription_id
-    );
-    let mut url = url::Url::parse(url_str).context(get_applied_reservation_list::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .context(get_applied_reservation_list::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-    }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .context(get_applied_reservation_list::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .context(get_applied_reservation_list::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: AppliedReservations =
-                serde_json::from_slice(rsp_body).context(get_applied_reservation_list::DeserializeError { body: rsp_body.clone() })?;
-            Ok(rsp_value)
-        }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: Error =
-                serde_json::from_slice(rsp_body).context(get_applied_reservation_list::DeserializeError { body: rsp_body.clone() })?;
-            get_applied_reservation_list::DefaultResponse {
-                status_code,
-                value: rsp_value,
-            }
-            .fail()
-        }
-    }
-}
-pub mod get_applied_reservation_list {
-    use crate::{models, models::*};
-    use snafu::Snafu;
-    #[derive(Debug, Snafu)]
-    #[snafu(visibility(pub(crate)))]
-    pub enum Error {
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::Error,
-        },
-        ParseUrlError {
-            source: url::ParseError,
-        },
-        BuildRequestError {
-            source: http::Error,
-        },
-        ExecuteRequestError {
-            source: Box<dyn std::error::Error + Sync + Send>,
-        },
-        SerializeError {
-            source: Box<dyn std::error::Error + Sync + Send>,
-        },
-        DeserializeError {
-            source: serde_json::Error,
-            body: bytes::Bytes,
-        },
-        GetTokenError {
-            source: azure_core::errors::AzureError,
-        },
-    }
-}
-pub mod reservation_order {
-    use crate::models::*;
-    use snafu::{ResultExt, Snafu};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ReservationOrderList, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/providers/Microsoft.Capacity/reservationOrders", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).context(list::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .context(list::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(list::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: ReservationOrderList =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
-                list::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod list {
-        use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        reservation_order_id: &str,
-    ) -> std::result::Result<ReservationOrderResponse, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Capacity/reservationOrders/{}",
-            operation_config.base_path(),
-            reservation_order_id
-        );
-        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .context(get::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: ReservationOrderResponse =
-                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
-                get::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                }
-                .fail()
-            }
-        }
-    }
-    pub mod get {
-        use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
-        pub enum Error {
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::Error,
-            },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
-        }
-    }
-}
 pub mod reservation {
     use crate::models::*;
     use snafu::{ResultExt, Snafu};
+    pub async fn available_scopes(
+        operation_config: &crate::OperationConfig,
+        reservation_order_id: &str,
+        reservation_id: &str,
+        body: &AvailableScopeRequest,
+    ) -> std::result::Result<AvailableScopeProperties, available_scopes::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}/availableScopes",
+            operation_config.base_path(),
+            reservation_order_id,
+            reservation_id
+        );
+        let mut url = url::Url::parse(url_str).context(available_scopes::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(available_scopes::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(body).context(available_scopes::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(available_scopes::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(available_scopes::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: AvailableScopeProperties =
+                    serde_json::from_slice(rsp_body).context(available_scopes::DeserializeError { body: rsp_body.clone() })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(available_scopes::DeserializeError { body: rsp_body.clone() })?;
+                available_scopes::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod available_scopes {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
     pub async fn split(
         operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
@@ -328,7 +110,7 @@ pub mod reservation {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(body).context(split::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(split::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(split::ExecuteRequestError)?;
@@ -409,7 +191,7 @@ pub mod reservation {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(body).context(merge::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(merge::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(merge::ExecuteRequestError)?;
@@ -546,6 +328,7 @@ pub mod reservation {
         operation_config: &crate::OperationConfig,
         reservation_id: &str,
         reservation_order_id: &str,
+        expand: Option<&str>,
     ) -> std::result::Result<ReservationResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -565,6 +348,9 @@ pub mod reservation {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("expand", expand);
+        }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(get::BuildRequestError)?;
@@ -642,7 +428,7 @@ pub mod reservation {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -782,6 +568,471 @@ pub mod reservation {
         }
     }
 }
+pub async fn get_catalog(
+    operation_config: &crate::OperationConfig,
+    subscription_id: &str,
+    reserved_resource_type: &str,
+    location: Option<&str>,
+) -> std::result::Result<Vec<Catalog>, get_catalog::Error> {
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
+        "{}/subscriptions/{}/providers/Microsoft.Capacity/catalogs",
+        operation_config.base_path(),
+        subscription_id
+    );
+    let mut url = url::Url::parse(url_str).context(get_catalog::ParseUrlError)?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::GET);
+    if let Some(token_credential) = operation_config.token_credential() {
+        let token_response = token_credential
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_catalog::GetTokenError)?;
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    }
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("reservedResourceType", reserved_resource_type);
+    if let Some(location) = location {
+        url.query_pairs_mut().append_pair("location", location);
+    }
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder.body(req_body).context(get_catalog::BuildRequestError)?;
+    let rsp = http_client.execute_request(req).await.context(get_catalog::ExecuteRequestError)?;
+    match rsp.status() {
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
+            let rsp_value: Vec<Catalog> =
+                serde_json::from_slice(rsp_body).context(get_catalog::DeserializeError { body: rsp_body.clone() })?;
+            Ok(rsp_value)
+        }
+        status_code => {
+            let rsp_body = rsp.body();
+            let rsp_value: Error = serde_json::from_slice(rsp_body).context(get_catalog::DeserializeError { body: rsp_body.clone() })?;
+            get_catalog::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            }
+            .fail()
+        }
+    }
+}
+pub mod get_catalog {
+    use crate::{models, models::*};
+    use snafu::Snafu;
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::Error,
+        },
+        ParseUrlError {
+            source: url::ParseError,
+        },
+        BuildRequestError {
+            source: http::Error,
+        },
+        ExecuteRequestError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        SerializeError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
+    }
+}
+pub async fn get_applied_reservation_list(
+    operation_config: &crate::OperationConfig,
+    subscription_id: &str,
+) -> std::result::Result<AppliedReservations, get_applied_reservation_list::Error> {
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
+        "{}/subscriptions/{}/providers/Microsoft.Capacity/appliedReservations",
+        operation_config.base_path(),
+        subscription_id
+    );
+    let mut url = url::Url::parse(url_str).context(get_applied_reservation_list::ParseUrlError)?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::GET);
+    if let Some(token_credential) = operation_config.token_credential() {
+        let token_response = token_credential
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .context(get_applied_reservation_list::GetTokenError)?;
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    }
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder
+        .body(req_body)
+        .context(get_applied_reservation_list::BuildRequestError)?;
+    let rsp = http_client
+        .execute_request(req)
+        .await
+        .context(get_applied_reservation_list::ExecuteRequestError)?;
+    match rsp.status() {
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
+            let rsp_value: AppliedReservations =
+                serde_json::from_slice(rsp_body).context(get_applied_reservation_list::DeserializeError { body: rsp_body.clone() })?;
+            Ok(rsp_value)
+        }
+        status_code => {
+            let rsp_body = rsp.body();
+            let rsp_value: Error =
+                serde_json::from_slice(rsp_body).context(get_applied_reservation_list::DeserializeError { body: rsp_body.clone() })?;
+            get_applied_reservation_list::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            }
+            .fail()
+        }
+    }
+}
+pub mod get_applied_reservation_list {
+    use crate::{models, models::*};
+    use snafu::Snafu;
+    #[derive(Debug, Snafu)]
+    #[snafu(visibility(pub(crate)))]
+    pub enum Error {
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::Error,
+        },
+        ParseUrlError {
+            source: url::ParseError,
+        },
+        BuildRequestError {
+            source: http::Error,
+        },
+        ExecuteRequestError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        SerializeError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
+    }
+}
+pub mod reservation_order {
+    use crate::models::*;
+    use snafu::{ResultExt, Snafu};
+    pub async fn calculate(
+        operation_config: &crate::OperationConfig,
+        body: &PurchaseRequest,
+    ) -> std::result::Result<CalculatePriceResponse, calculate::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!("{}/providers/Microsoft.Capacity/calculatePrice", operation_config.base_path(),);
+        let mut url = url::Url::parse(url_str).context(calculate::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(calculate::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(body).context(calculate::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(calculate::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(calculate::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: CalculatePriceResponse =
+                    serde_json::from_slice(rsp_body).context(calculate::DeserializeError { body: rsp_body.clone() })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: Error = serde_json::from_slice(rsp_body).context(calculate::DeserializeError { body: rsp_body.clone() })?;
+                calculate::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod calculate {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ReservationOrderList, list::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!("{}/providers/Microsoft.Capacity/reservationOrders", operation_config.base_path(),);
+        let mut url = url::Url::parse(url_str).context(list::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ReservationOrderList =
+                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: Error = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        reservation_order_id: &str,
+        expand: Option<&str>,
+    ) -> std::result::Result<ReservationOrderResponse, get::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/providers/Microsoft.Capacity/reservationOrders/{}",
+            operation_config.base_path(),
+            reservation_order_id
+        );
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ReservationOrderResponse =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: Error = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn purchase(
+        operation_config: &crate::OperationConfig,
+        reservation_order_id: &str,
+        body: &PurchaseRequest,
+    ) -> std::result::Result<purchase::Response, purchase::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/providers/Microsoft.Capacity/reservationOrders/{}",
+            operation_config.base_path(),
+            reservation_order_id
+        );
+        let mut url = url::Url::parse(url_str).context(purchase::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(purchase::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(body).context(purchase::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(purchase::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(purchase::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ReservationOrderResponse =
+                    serde_json::from_slice(rsp_body).context(purchase::DeserializeError { body: rsp_body.clone() })?;
+                Ok(purchase::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: ReservationOrderResponse =
+                    serde_json::from_slice(rsp_body).context(purchase::DeserializeError { body: rsp_body.clone() })?;
+                Ok(purchase::Response::Accepted202(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: Error = serde_json::from_slice(rsp_body).context(purchase::DeserializeError { body: rsp_body.clone() })?;
+                purchase::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod purchase {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ReservationOrderResponse),
+            Accepted202(ReservationOrderResponse),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
 pub mod operation {
     use crate::models::*;
     use snafu::{ResultExt, Snafu};
@@ -824,6 +1075,166 @@ pub mod operation {
     pub mod list {
         use crate::{models, models::*};
         use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod calculate_exchange {
+    use crate::models::*;
+    use snafu::{ResultExt, Snafu};
+    pub async fn post(
+        operation_config: &crate::OperationConfig,
+        body: &CalculateExchangeRequest,
+    ) -> std::result::Result<post::Response, post::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!("{}/providers/Microsoft.Capacity/calculateExchange", operation_config.base_path(),);
+        let mut url = url::Url::parse(url_str).context(post::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(post::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(body).context(post::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(post::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(post::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: CalculateExchangeOperationResultResponse =
+                    serde_json::from_slice(rsp_body).context(post::DeserializeError { body: rsp_body.clone() })?;
+                Ok(post::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => Ok(post::Response::Accepted202),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: Error = serde_json::from_slice(rsp_body).context(post::DeserializeError { body: rsp_body.clone() })?;
+                post::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod post {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(CalculateExchangeOperationResultResponse),
+            Accepted202,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod exchange {
+    use crate::models::*;
+    use snafu::{ResultExt, Snafu};
+    pub async fn post(
+        operation_config: &crate::OperationConfig,
+        body: &ExchangeRequest,
+    ) -> std::result::Result<post::Response, post::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!("{}/providers/Microsoft.Capacity/exchange", operation_config.base_path(),);
+        let mut url = url::Url::parse(url_str).context(post::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(post::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(body).context(post::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(post::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(post::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ExchangeOperationResultResponse =
+                    serde_json::from_slice(rsp_body).context(post::DeserializeError { body: rsp_body.clone() })?;
+                Ok(post::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => Ok(post::Response::Accepted202),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: Error = serde_json::from_slice(rsp_body).context(post::DeserializeError { body: rsp_body.clone() })?;
+                post::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod post {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ExchangeOperationResultResponse),
+            Accepted202,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
@@ -965,7 +1376,7 @@ pub mod quota {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(create_quota_request).context(create_or_update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
         let rsp = http_client
@@ -1061,7 +1472,7 @@ pub mod quota {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(create_quota_request).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;

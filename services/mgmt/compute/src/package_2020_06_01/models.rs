@@ -3714,17 +3714,24 @@ pub struct GalleryApplicationVersionPublishingProfile {
     #[serde(flatten)]
     pub gallery_artifact_publishing_profile_base: GalleryArtifactPublishingProfileBase,
     pub source: UserArtifactSource,
-    #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
-    pub content_type: Option<String>,
+    #[serde(rename = "manageActions", skip_serializing_if = "Option::is_none")]
+    pub manage_actions: Option<UserArtifactManage>,
     #[serde(rename = "enableHealthCheck", skip_serializing_if = "Option::is_none")]
     pub enable_health_check: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserArtifactSource {
-    #[serde(rename = "fileName")]
-    pub file_name: String,
     #[serde(rename = "mediaLink")]
     pub media_link: String,
+    #[serde(rename = "defaultConfigurationLink", skip_serializing_if = "Option::is_none")]
+    pub default_configuration_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserArtifactManage {
+    pub install: String,
+    pub remove: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub update: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImage {

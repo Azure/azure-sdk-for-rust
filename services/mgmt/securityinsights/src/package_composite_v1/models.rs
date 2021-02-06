@@ -226,6 +226,12 @@ pub struct BookmarkProperties {
     pub updated: Option<String>,
     #[serde(rename = "updatedBy", skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<UserInfo>,
+    #[serde(rename = "eventTime", skip_serializing_if = "Option::is_none")]
+    pub event_time: Option<String>,
+    #[serde(rename = "queryStartTime", skip_serializing_if = "Option::is_none")]
+    pub query_start_time: Option<String>,
+    #[serde(rename = "queryEndTime", skip_serializing_if = "Option::is_none")]
+    pub query_end_time: Option<String>,
     #[serde(rename = "incidentInfo", skip_serializing_if = "Option::is_none")]
     pub incident_info: Option<IncidentInfo>,
 }
@@ -843,12 +849,14 @@ pub struct UserInfo {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentInfo {
-    #[serde(rename = "incidentId")]
-    pub incident_id: String,
-    pub severity: incident_info::Severity,
-    pub title: String,
-    #[serde(rename = "relationName")]
-    pub relation_name: String,
+    #[serde(rename = "incidentId", skip_serializing_if = "Option::is_none")]
+    pub incident_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub severity: Option<incident_info::Severity>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(rename = "relationName", skip_serializing_if = "Option::is_none")]
+    pub relation_name: Option<String>,
 }
 pub mod incident_info {
     use super::*;

@@ -21,7 +21,7 @@ pub async fn resources(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    let req_body = azure_core::to_json(query).context(resources::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).context(resources::BuildRequestError)?;
     let rsp = http_client.execute_request(req).await.context(resources::ExecuteRequestError)?;

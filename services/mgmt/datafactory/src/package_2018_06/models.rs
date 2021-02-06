@@ -4207,6 +4207,8 @@ pub struct CustomActivityTypeProperties {
     pub extended_properties: Option<serde_json::Value>,
     #[serde(rename = "retentionTimeInDays", skip_serializing_if = "Option::is_none")]
     pub retention_time_in_days: Option<serde_json::Value>,
+    #[serde(rename = "autoUserSpecification", skip_serializing_if = "Option::is_none")]
+    pub auto_user_specification: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomActivityReferenceObject {
@@ -4905,6 +4907,25 @@ pub mod blob_events_trigger {
     }
 }
 pub type BlobEventTypes = Vec<String>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomEventsTrigger {
+    #[serde(flatten)]
+    pub multiple_pipeline_trigger: MultiplePipelineTrigger,
+    #[serde(rename = "typeProperties")]
+    pub type_properties: custom_events_trigger::TypeProperties,
+}
+pub mod custom_events_trigger {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct TypeProperties {
+        #[serde(rename = "subjectBeginsWith", skip_serializing_if = "Option::is_none")]
+        pub subject_begins_with: Option<String>,
+        #[serde(rename = "subjectEndsWith", skip_serializing_if = "Option::is_none")]
+        pub subject_ends_with: Option<String>,
+        pub events: Vec<serde_json::Value>,
+        pub scope: String,
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TumblingWindowTrigger {
     #[serde(flatten)]
@@ -8895,8 +8916,12 @@ pub struct AzureDatabricksLinkedService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureDatabricksLinkedServiceTypeProperties {
     pub domain: serde_json::Value,
-    #[serde(rename = "accessToken")]
-    pub access_token: SecretBase,
+    #[serde(rename = "accessToken", skip_serializing_if = "Option::is_none")]
+    pub access_token: Option<SecretBase>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub authentication: Option<serde_json::Value>,
+    #[serde(rename = "workspaceResourceId", skip_serializing_if = "Option::is_none")]
+    pub workspace_resource_id: Option<serde_json::Value>,
     #[serde(rename = "existingClusterId", skip_serializing_if = "Option::is_none")]
     pub existing_cluster_id: Option<serde_json::Value>,
     #[serde(rename = "instancePoolId", skip_serializing_if = "Option::is_none")]
@@ -8923,6 +8948,8 @@ pub struct AzureDatabricksLinkedServiceTypeProperties {
     pub new_cluster_enable_elastic_disk: Option<serde_json::Value>,
     #[serde(rename = "encryptedCredential", skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
+    #[serde(rename = "policyId", skip_serializing_if = "Option::is_none")]
+    pub policy_id: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureDatabricksDeltaLakeLinkedService {

@@ -357,6 +357,8 @@ pub struct VcoreCapability {
     pub supported_iops: Option<i64>,
     #[serde(rename = "supportedMemoryPerVcoreMB", skip_serializing)]
     pub supported_memory_per_vcore_mb: Option<i64>,
+    #[serde(skip_serializing)]
+    pub status: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerVersionCapability {
@@ -364,6 +366,8 @@ pub struct ServerVersionCapability {
     pub name: Option<String>,
     #[serde(rename = "supportedVcores", skip_serializing)]
     pub supported_vcores: Vec<VcoreCapability>,
+    #[serde(skip_serializing)]
+    pub status: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageEditionCapability {
@@ -377,6 +381,8 @@ pub struct StorageEditionCapability {
     pub min_backup_retention_days: Option<i64>,
     #[serde(rename = "maxBackupRetentionDays", skip_serializing)]
     pub max_backup_retention_days: Option<i64>,
+    #[serde(skip_serializing)]
+    pub status: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerEditionCapability {
@@ -386,6 +392,8 @@ pub struct ServerEditionCapability {
     pub supported_storage_editions: Vec<StorageEditionCapability>,
     #[serde(rename = "supportedServerVersions", skip_serializing)]
     pub supported_server_versions: Vec<ServerVersionCapability>,
+    #[serde(skip_serializing)]
+    pub status: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CapabilityProperties {
@@ -393,6 +401,8 @@ pub struct CapabilityProperties {
     pub zone: Option<String>,
     #[serde(rename = "supportedFlexibleServerEditions", skip_serializing)]
     pub supported_flexible_server_editions: Vec<ServerEditionCapability>,
+    #[serde(skip_serializing)]
+    pub status: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CapabilitiesListResult {

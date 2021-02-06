@@ -13,6 +13,10 @@ pub struct Resource {
     pub location: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[serde(skip_serializing)]
+    pub kind: Option<String>,
+    #[serde(skip_serializing)]
+    pub etag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSearchRuleResource {
@@ -80,6 +84,8 @@ pub struct LogMetricTrigger {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ConditionalOperator {
+    GreaterThanOrEqual,
+    LessThanOrEqual,
     GreaterThan,
     LessThan,
     Equal,
@@ -108,8 +114,14 @@ pub enum QueryType {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSearchRule {
+    #[serde(rename = "createdWithApiVersion", skip_serializing)]
+    pub created_with_api_version: Option<String>,
+    #[serde(rename = "isLegacyLogAnalyticsRule", skip_serializing)]
+    pub is_legacy_log_analytics_rule: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<log_search_rule::Enabled>,
     #[serde(rename = "lastUpdatedTime", skip_serializing)]
@@ -194,6 +206,11 @@ pub struct LogToMetricAction {
     #[serde(flatten)]
     pub action: Action,
     pub criteria: Vec<Criteria>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorContract {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {

@@ -140,6 +140,16 @@ pub struct ZoneProperties {
     pub number_of_record_sets: Option<i64>,
     #[serde(rename = "nameServers", skip_serializing)]
     pub name_servers: Vec<String>,
+    #[serde(rename = "zoneType", skip_serializing_if = "Option::is_none")]
+    pub zone_type: Option<zone_properties::ZoneType>,
+}
+pub mod zone_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ZoneType {
+        Public,
+        Private,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Zone {

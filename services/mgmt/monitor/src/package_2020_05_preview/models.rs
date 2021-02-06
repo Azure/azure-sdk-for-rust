@@ -11,8 +11,14 @@ pub struct Action {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledQueryRuleProperties {
+    #[serde(rename = "createdWithApiVersion", skip_serializing)]
+    pub created_with_api_version: Option<String>,
+    #[serde(rename = "isLegacyLogAnalyticsRule", skip_serializing)]
+    pub is_legacy_log_analytics_rule: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub severity: Option<scheduled_query_rule_properties::Severity>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -23,6 +29,8 @@ pub struct ScheduledQueryRuleProperties {
     pub evaluation_frequency: Option<String>,
     #[serde(rename = "windowSize", skip_serializing_if = "Option::is_none")]
     pub window_size: Option<String>,
+    #[serde(rename = "OverrideQueryTimeRange", skip_serializing_if = "Option::is_none")]
+    pub override_query_time_range: Option<String>,
     #[serde(rename = "targetResourceTypes", skip_serializing_if = "Vec::is_empty")]
     pub target_resource_types: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -52,6 +60,10 @@ pub mod scheduled_query_rule_properties {
 pub struct ScheduledQueryRuleResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[serde(skip_serializing)]
+    pub kind: Option<String>,
+    #[serde(skip_serializing)]
+    pub etag: Option<String>,
     pub properties: ScheduledQueryRuleProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

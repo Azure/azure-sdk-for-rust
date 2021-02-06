@@ -3069,6 +3069,15 @@ pub struct ResourceSkusResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxyOnlyResource {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Disk {
     #[serde(flatten)]
     pub resource: Resource,
@@ -3080,6 +3089,8 @@ pub struct Disk {
     pub sku: Option<DiskSku>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
+    #[serde(rename = "extendedLocation", skip_serializing_if = "Option::is_none")]
+    pub extended_location: Option<ExtendedLocation>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskProperties>,
 }
@@ -3146,6 +3157,8 @@ pub struct DiskProperties {
     pub os_type: Option<disk_properties::OsType>,
     #[serde(rename = "hyperVGeneration", skip_serializing_if = "Option::is_none")]
     pub hyper_v_generation: Option<disk_properties::HyperVGeneration>,
+    #[serde(rename = "purchasePlan", skip_serializing_if = "Option::is_none")]
+    pub purchase_plan: Option<PurchasePlan>,
     #[serde(rename = "creationData")]
     pub creation_data: CreationData,
     #[serde(rename = "diskSizeGB", skip_serializing_if = "Option::is_none")]
@@ -3180,6 +3193,8 @@ pub struct DiskProperties {
     pub disk_access_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+    #[serde(rename = "burstingEnabled", skip_serializing_if = "Option::is_none")]
+    pub bursting_enabled: Option<bool>,
 }
 pub mod disk_properties {
     use super::*;
@@ -3202,6 +3217,8 @@ pub struct SnapshotProperties {
     pub os_type: Option<snapshot_properties::OsType>,
     #[serde(rename = "hyperVGeneration", skip_serializing_if = "Option::is_none")]
     pub hyper_v_generation: Option<snapshot_properties::HyperVGeneration>,
+    #[serde(rename = "purchasePlan", skip_serializing_if = "Option::is_none")]
+    pub purchase_plan: Option<PurchasePlan>,
     #[serde(rename = "creationData")]
     pub creation_data: CreationData,
     #[serde(rename = "diskSizeGB", skip_serializing_if = "Option::is_none")]
@@ -3248,9 +3265,9 @@ pub struct EncryptionSetProperties {
     #[serde(rename = "encryptionType", skip_serializing_if = "Option::is_none")]
     pub encryption_type: Option<DiskEncryptionSetType>,
     #[serde(rename = "activeKey", skip_serializing_if = "Option::is_none")]
-    pub active_key: Option<KeyVaultAndKeyReference>,
+    pub active_key: Option<KeyForDiskEncryptionSet>,
     #[serde(rename = "previousKeys", skip_serializing)]
-    pub previous_keys: Vec<KeyVaultAndKeyReference>,
+    pub previous_keys: Vec<KeyForDiskEncryptionSet>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
 }
@@ -3280,6 +3297,13 @@ pub struct KeyVaultAndSecretReference {
 pub struct KeyVaultAndKeyReference {
     #[serde(rename = "sourceVault")]
     pub source_vault: SourceVault,
+    #[serde(rename = "keyUrl")]
+    pub key_url: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyForDiskEncryptionSet {
+    #[serde(rename = "sourceVault", skip_serializing_if = "Option::is_none")]
+    pub source_vault: Option<SourceVault>,
     #[serde(rename = "keyUrl")]
     pub key_url: String,
 }
@@ -3338,6 +3362,10 @@ pub struct DiskUpdateProperties {
     pub disk_access_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+    #[serde(rename = "burstingEnabled", skip_serializing_if = "Option::is_none")]
+    pub bursting_enabled: Option<bool>,
+    #[serde(rename = "purchasePlan", skip_serializing_if = "Option::is_none")]
+    pub purchase_plan: Option<PurchasePlan>,
 }
 pub mod disk_update_properties {
     use super::*;
@@ -3375,7 +3403,7 @@ pub struct DiskEncryptionSetUpdateProperties {
     #[serde(rename = "encryptionType", skip_serializing_if = "Option::is_none")]
     pub encryption_type: Option<DiskEncryptionSetType>,
     #[serde(rename = "activeKey", skip_serializing_if = "Option::is_none")]
-    pub active_key: Option<KeyVaultAndKeyReference>,
+    pub active_key: Option<KeyForDiskEncryptionSet>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DiskState {
@@ -3455,6 +3483,8 @@ pub struct Snapshot {
     pub managed_by: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sku: Option<SnapshotSku>,
+    #[serde(rename = "extendedLocation", skip_serializing_if = "Option::is_none")]
+    pub extended_location: Option<ExtendedLocation>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<SnapshotProperties>,
 }
@@ -3487,6 +3517,7 @@ pub mod encryption_set_identity {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
+        None,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3612,9 +3643,72 @@ pub struct PrivateLinkResourceProperties {
     pub required_zone_names: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskRestorePoint {
+    #[serde(flatten)]
+    pub proxy_only_resource: ProxyOnlyResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DiskRestorePointProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskRestorePointList {
+    pub value: Vec<DiskRestorePoint>,
+    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskRestorePointProperties {
+    #[serde(rename = "timeCreated", skip_serializing)]
+    pub time_created: Option<String>,
+    #[serde(rename = "sourceResourceId", skip_serializing)]
+    pub source_resource_id: Option<String>,
+    #[serde(rename = "osType", skip_serializing)]
+    pub os_type: Option<disk_restore_point_properties::OsType>,
+    #[serde(rename = "hyperVGeneration", skip_serializing_if = "Option::is_none")]
+    pub hyper_v_generation: Option<disk_restore_point_properties::HyperVGeneration>,
+    #[serde(rename = "purchasePlan", skip_serializing_if = "Option::is_none")]
+    pub purchase_plan: Option<PurchasePlan>,
+    #[serde(rename = "familyId", skip_serializing)]
+    pub family_id: Option<String>,
+    #[serde(rename = "sourceUniqueId", skip_serializing)]
+    pub source_unique_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub encryption: Option<Encryption>,
+}
+pub mod disk_restore_point_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsType {
+        Windows,
+        Linux,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HyperVGeneration {
+        V1,
+        V2,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkResourceListResult {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionListResult {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PrivateEndpointConnection>,
+    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ExtendedLocationType {
+    EdgeZone,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExtendedLocation {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    pub type_: Option<ExtendedLocationType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Gallery {

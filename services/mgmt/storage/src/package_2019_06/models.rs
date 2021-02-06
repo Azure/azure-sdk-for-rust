@@ -349,6 +349,8 @@ pub struct StorageAccountPropertiesCreateParameters {
     pub allow_blob_public_access: Option<bool>,
     #[serde(rename = "minimumTlsVersion", skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<storage_account_properties_create_parameters::MinimumTlsVersion>,
+    #[serde(rename = "allowSharedKeyAccess", skip_serializing_if = "Option::is_none")]
+    pub allow_shared_key_access: Option<bool>,
 }
 pub mod storage_account_properties_create_parameters {
     use super::*;
@@ -561,6 +563,8 @@ pub struct StorageAccountProperties {
     pub allow_blob_public_access: Option<bool>,
     #[serde(rename = "minimumTlsVersion", skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<storage_account_properties::MinimumTlsVersion>,
+    #[serde(rename = "allowSharedKeyAccess", skip_serializing_if = "Option::is_none")]
+    pub allow_shared_key_access: Option<bool>,
 }
 pub mod storage_account_properties {
     use super::*;
@@ -685,6 +689,8 @@ pub struct StorageAccountPropertiesUpdateParameters {
     pub allow_blob_public_access: Option<bool>,
     #[serde(rename = "minimumTlsVersion", skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<storage_account_properties_update_parameters::MinimumTlsVersion>,
+    #[serde(rename = "allowSharedKeyAccess", skip_serializing_if = "Option::is_none")]
+    pub allow_shared_key_access: Option<bool>,
 }
 pub mod storage_account_properties_update_parameters {
     use super::*;
@@ -998,6 +1004,8 @@ pub struct ManagementPolicyAction {
     pub base_blob: Option<ManagementPolicyBaseBlob>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub snapshot: Option<ManagementPolicySnapShot>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<ManagementPolicyVersion>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementPolicyBaseBlob {
@@ -1007,16 +1015,33 @@ pub struct ManagementPolicyBaseBlob {
     pub tier_to_archive: Option<DateAfterModification>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub delete: Option<DateAfterModification>,
+    #[serde(rename = "enableAutoTierToHotFromCool", skip_serializing_if = "Option::is_none")]
+    pub enable_auto_tier_to_hot_from_cool: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementPolicySnapShot {
+    #[serde(rename = "tierToCool", skip_serializing_if = "Option::is_none")]
+    pub tier_to_cool: Option<DateAfterCreation>,
+    #[serde(rename = "tierToArchive", skip_serializing_if = "Option::is_none")]
+    pub tier_to_archive: Option<DateAfterCreation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub delete: Option<DateAfterCreation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementPolicyVersion {
+    #[serde(rename = "tierToCool", skip_serializing_if = "Option::is_none")]
+    pub tier_to_cool: Option<DateAfterCreation>,
+    #[serde(rename = "tierToArchive", skip_serializing_if = "Option::is_none")]
+    pub tier_to_archive: Option<DateAfterCreation>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub delete: Option<DateAfterCreation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DateAfterModification {
-    #[serde(rename = "daysAfterModificationGreaterThan")]
-    pub days_after_modification_greater_than: f64,
+    #[serde(rename = "daysAfterModificationGreaterThan", skip_serializing_if = "Option::is_none")]
+    pub days_after_modification_greater_than: Option<f64>,
+    #[serde(rename = "daysAfterLastAccessTimeGreaterThan", skip_serializing_if = "Option::is_none")]
+    pub days_after_last_access_time_greater_than: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DateAfterCreation {
@@ -1114,11 +1139,72 @@ pub struct ObjectReplicationPolicyFilter {
     pub min_creation_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
+pub struct ListBlobInventoryPolicy {
+    #[serde(skip_serializing)]
+    pub value: Vec<BlobInventoryPolicy>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobInventoryPolicy {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<BlobInventoryPolicyProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobInventoryPolicyProperties {
+    #[serde(rename = "lastModifiedTime", skip_serializing)]
+    pub last_modified_time: Option<String>,
+    pub policy: BlobInventoryPolicySchema,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobInventoryPolicySchema {
+    pub enabled: bool,
+    pub destination: String,
+    #[serde(rename = "type")]
+    pub type_: blob_inventory_policy_schema::Type,
+    pub rules: Vec<BlobInventoryPolicyRule>,
+}
+pub mod blob_inventory_policy_schema {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Inventory,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobInventoryPolicyRule {
+    pub enabled: bool,
+    pub name: String,
+    pub definition: BlobInventoryPolicyDefinition,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobInventoryPolicyDefinition {
+    pub filters: BlobInventoryPolicyFilter,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobInventoryPolicyFilter {
+    #[serde(rename = "prefixMatch", skip_serializing_if = "Vec::is_empty")]
+    pub prefix_match: Vec<String>,
+    #[serde(rename = "blobTypes")]
+    pub blob_types: Vec<String>,
+    #[serde(rename = "includeBlobVersions", skip_serializing_if = "Option::is_none")]
+    pub include_blob_versions: Option<bool>,
+    #[serde(rename = "includeSnapshots", skip_serializing_if = "Option::is_none")]
+    pub include_snapshots: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponseBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponseBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerProperties {
@@ -1317,6 +1403,8 @@ pub mod blob_service_properties {
         pub restore_policy: Option<RestorePolicyProperties>,
         #[serde(rename = "containerDeleteRetentionPolicy", skip_serializing_if = "Option::is_none")]
         pub container_delete_retention_policy: Option<DeleteRetentionPolicy>,
+        #[serde(rename = "lastAccessTimeTrackingPolicy", skip_serializing_if = "Option::is_none")]
+        pub last_access_time_tracking_policy: Option<LastAccessTimeTrackingPolicy>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1328,6 +1416,8 @@ pub struct BlobServiceItems {
 pub struct ChangeFeed {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[serde(rename = "retentionInDays", skip_serializing_if = "Option::is_none")]
+    pub retention_in_days: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorePolicyProperties {
@@ -1338,6 +1428,23 @@ pub struct RestorePolicyProperties {
     pub last_enabled_time: Option<String>,
     #[serde(rename = "minRestoreTime", skip_serializing)]
     pub min_restore_time: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LastAccessTimeTrackingPolicy {
+    pub enable: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<last_access_time_tracking_policy::Name>,
+    #[serde(rename = "trackingGranularityInDays", skip_serializing_if = "Option::is_none")]
+    pub tracking_granularity_in_days: Option<i32>,
+    #[serde(rename = "blobType", skip_serializing_if = "Vec::is_empty")]
+    pub blob_type: Vec<String>,
+}
+pub mod last_access_time_tracking_policy {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        AccessTimeTracking,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LeaseContainerRequest {
@@ -1696,6 +1803,38 @@ pub struct TrackedResource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureEntityResource {
