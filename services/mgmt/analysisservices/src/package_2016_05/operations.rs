@@ -129,6 +129,12 @@ pub mod servers {
                     serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
             }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: AnalysisServicesServer =
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
@@ -148,6 +154,7 @@ pub mod servers {
         pub enum Response {
             Ok200(AnalysisServicesServer),
             Created201(AnalysisServicesServer),
+            Accepted202(AnalysisServicesServer),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -943,6 +950,7 @@ pub mod servers {
         match rsp.status() {
             http::StatusCode::OK => Ok(list_operation_results::Response::Ok200),
             http::StatusCode::ACCEPTED => Ok(list_operation_results::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(list_operation_results::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
@@ -962,6 +970,7 @@ pub mod servers {
         pub enum Response {
             Ok200,
             Accepted202,
+            NoContent204,
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]

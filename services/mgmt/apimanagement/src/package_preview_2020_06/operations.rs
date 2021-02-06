@@ -7660,9 +7660,11 @@ pub mod operation {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list_by_tags::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_tags::DeserializeError { body: rsp_body.clone() })?;
+                list_by_tags::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -7674,13 +7676,29 @@ pub mod operation {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -9957,6 +9975,7 @@ pub mod certificate {
         filter: Option<&str>,
         top: Option<i32>,
         skip: Option<i32>,
+        is_key_vault_refresh_failed: Option<bool>,
         subscription_id: &str,
     ) -> std::result::Result<CertificateCollection, list_by_service::Error> {
         let http_client = operation_config.http_client();
@@ -9986,6 +10005,10 @@ pub mod certificate {
         }
         if let Some(skip) = skip {
             url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        }
+        if let Some(is_key_vault_refresh_failed) = is_key_vault_refresh_failed {
+            url.query_pairs_mut()
+                .append_pair("isKeyVaultRefreshFailed", is_key_vault_refresh_failed.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -10358,6 +10381,91 @@ pub mod certificate {
         }
     }
     pub mod get_entity_tag {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn refresh_secret(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        service_name: &str,
+        certificate_id: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<CertificateContract, refresh_secret::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/certificates/{}/refreshSecret",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            service_name,
+            certificate_id
+        );
+        let mut url = url::Url::parse(url_str).context(refresh_secret::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(refresh_secret::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(refresh_secret::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(refresh_secret::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: CertificateContract =
+                    serde_json::from_slice(rsp_body).context(refresh_secret::DeserializeError { body: rsp_body.clone() })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(refresh_secret::DeserializeError { body: rsp_body.clone() })?;
+                refresh_secret::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod refresh_secret {
         use crate::{models, models::*};
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
@@ -11456,9 +11564,11 @@ pub mod api_management_operations {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                list::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -11470,13 +11580,29 @@ pub mod api_management_operations {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -12203,9 +12329,11 @@ pub mod api_management_service {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                list::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -12217,13 +12345,29 @@ pub mod api_management_service {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_sso_token(
@@ -17320,6 +17464,7 @@ pub mod named_value {
         filter: Option<&str>,
         top: Option<i32>,
         skip: Option<i32>,
+        is_key_vault_refresh_failed: Option<bool>,
         subscription_id: &str,
     ) -> std::result::Result<NamedValueCollection, list_by_service::Error> {
         let http_client = operation_config.http_client();
@@ -17349,6 +17494,10 @@ pub mod named_value {
         }
         if let Some(skip) = skip {
             url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        }
+        if let Some(is_key_vault_refresh_failed) = is_key_vault_refresh_failed {
+            url.query_pairs_mut()
+                .append_pair("isKeyVaultRefreshFailed", is_key_vault_refresh_failed.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -17897,6 +18046,97 @@ pub mod named_value {
     pub mod list_value {
         use crate::{models, models::*};
         use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn refresh_secret(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        service_name: &str,
+        named_value_id: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<refresh_secret::Response, refresh_secret::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/namedValues/{}/refreshSecret",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            service_name,
+            named_value_id
+        );
+        let mut url = url::Url::parse(url_str).context(refresh_secret::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(refresh_secret::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(refresh_secret::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(refresh_secret::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::ACCEPTED => Ok(refresh_secret::Response::Accepted202),
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: NamedValueContract =
+                    serde_json::from_slice(rsp_body).context(refresh_secret::DeserializeError { body: rsp_body.clone() })?;
+                Ok(refresh_secret::Response::Ok200(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(refresh_secret::DeserializeError { body: rsp_body.clone() })?;
+                refresh_secret::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod refresh_secret {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            Ok200(NamedValueContract),
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
@@ -20603,6 +20843,92 @@ pub mod portal_revision {
         }
     }
     pub mod get_entity_tag {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod portal_settings {
+    use crate::models::*;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list_by_service(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        service_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<PortalSettingsCollection, list_by_service::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/portalsettings",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            service_name
+        );
+        let mut url = url::Url::parse(url_str).context(list_by_service::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(list_by_service::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_service::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_service::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PortalSettingsCollection =
+                    serde_json::from_slice(rsp_body).context(list_by_service::DeserializeError { body: rsp_body.clone() })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_service::DeserializeError { body: rsp_body.clone() })?;
+                list_by_service::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list_by_service {
         use crate::{models, models::*};
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
@@ -24069,9 +24395,11 @@ pub mod reports {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list_by_api::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_api::DeserializeError { body: rsp_body.clone() })?;
+                list_by_api::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -24083,13 +24411,29 @@ pub mod reports {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_user(
@@ -24144,9 +24488,11 @@ pub mod reports {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list_by_user::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_user::DeserializeError { body: rsp_body.clone() })?;
+                list_by_user::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -24158,13 +24504,29 @@ pub mod reports {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_operation(
@@ -24222,9 +24584,11 @@ pub mod reports {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list_by_operation::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_operation::DeserializeError { body: rsp_body.clone() })?;
+                list_by_operation::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -24236,13 +24600,29 @@ pub mod reports {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_product(
@@ -24300,9 +24680,11 @@ pub mod reports {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list_by_product::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_product::DeserializeError { body: rsp_body.clone() })?;
+                list_by_product::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -24314,13 +24696,29 @@ pub mod reports {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_geo(
@@ -24371,9 +24769,11 @@ pub mod reports {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list_by_geo::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_geo::DeserializeError { body: rsp_body.clone() })?;
+                list_by_geo::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -24385,13 +24785,29 @@ pub mod reports {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_subscription(
@@ -24449,9 +24865,11 @@ pub mod reports {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list_by_subscription::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_subscription::DeserializeError { body: rsp_body.clone() })?;
+                list_by_subscription::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -24463,13 +24881,29 @@ pub mod reports {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_time(
@@ -24526,9 +24960,11 @@ pub mod reports {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list_by_time::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_time::DeserializeError { body: rsp_body.clone() })?;
+                list_by_time::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -24540,13 +24976,29 @@ pub mod reports {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_request(
@@ -24600,9 +25052,11 @@ pub mod reports {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list_by_request::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_request::DeserializeError { body: rsp_body.clone() })?;
+                list_by_request::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -24614,13 +25068,29 @@ pub mod reports {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -26808,9 +27278,11 @@ pub mod tenant_configuration {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                get_sync_state::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(get_sync_state::DeserializeError { body: rsp_body.clone() })?;
+                get_sync_state::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -26822,13 +27294,29 @@ pub mod tenant_configuration {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -27712,6 +28200,89 @@ pub mod user_subscription {
         }
     }
     pub mod list {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        service_name: &str,
+        user_id: &str,
+        sid: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<SubscriptionContract, get::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/users/{}/subscriptions/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            service_name,
+            user_id,
+            sid
+        );
+        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(get::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: SubscriptionContract =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                get::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod get {
         use crate::{models, models::*};
         use snafu::Snafu;
         #[derive(Debug, Snafu)]

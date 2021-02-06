@@ -1914,6 +1914,8 @@ pub mod recovery_point_tier_information {
         InstantRp,
         #[serde(rename = "HardenedRP")]
         HardenedRp,
+        #[serde(rename = "ArchivedRP")]
+        ArchivedRp,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -1921,6 +1923,7 @@ pub mod recovery_point_tier_information {
         Valid,
         Disabled,
         Deleted,
+        Rehydrated,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3663,6 +3666,13 @@ pub struct WorkloadCrrAccessToken {
     pub policy_name: Option<String>,
     #[serde(rename = "policyId", skip_serializing_if = "Option::is_none")]
     pub policy_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecoveryPointMoveReadinessInfo {
+    #[serde(rename = "isReadyForMove", skip_serializing_if = "Option::is_none")]
+    pub is_ready_for_move: Option<bool>,
+    #[serde(rename = "additionalInfo", skip_serializing_if = "Option::is_none")]
+    pub additional_info: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupGoalFeatureSupportRequest {

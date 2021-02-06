@@ -3875,7 +3875,7 @@ pub mod aad_properties {
     ) -> std::result::Result<AadPropertiesResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.RecoveryServices/locations/{}/backupAadProperties/default",
+            "{}/subscriptions/{}/providers/Microsoft.RecoveryServices/locations/{}/backupAadProperties",
             operation_config.base_path(),
             subscription_id,
             azure_region

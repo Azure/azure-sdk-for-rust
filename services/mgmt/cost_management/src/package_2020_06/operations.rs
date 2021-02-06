@@ -1120,7 +1120,7 @@ pub mod dimensions {
         filter: Option<&str>,
         expand: Option<&str>,
         skiptoken: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<DimensionsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1212,7 +1212,7 @@ pub mod dimensions {
         filter: Option<&str>,
         expand: Option<&str>,
         skiptoken: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<DimensionsListResult, by_external_cloud_provider_type::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(

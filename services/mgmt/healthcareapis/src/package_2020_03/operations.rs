@@ -654,7 +654,7 @@ pub mod operation_results {
         subscription_id: &str,
         location_name: &str,
         operation_result_id: &str,
-    ) -> std::result::Result<OperationResultsDescription, get::Error> {
+    ) -> std::result::Result<get::Response, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HealthcareApis/locations/{}/operationresults/{}",
@@ -683,8 +683,9 @@ pub mod operation_results {
                 let rsp_body = rsp.body();
                 let rsp_value: OperationResultsDescription =
                     serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
-                Ok(rsp_value)
+                Ok(get::Response::Ok200(rsp_value))
             }
+            http::StatusCode::ACCEPTED => Ok(get::Response::Accepted202),
             http::StatusCode::NOT_FOUND => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
@@ -704,6 +705,11 @@ pub mod operation_results {
     pub mod get {
         use crate::{models, models::*};
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(OperationResultsDescription),
+            Accepted202,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {

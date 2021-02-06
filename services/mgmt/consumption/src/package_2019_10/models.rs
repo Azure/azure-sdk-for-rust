@@ -1138,6 +1138,8 @@ pub struct ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
     #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
@@ -1286,6 +1288,8 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
+    #[serde(skip_serializing)]
+    pub etag: Option<String>,
     #[serde(skip_serializing)]
     pub tags: Option<serde_json::Value>,
 }

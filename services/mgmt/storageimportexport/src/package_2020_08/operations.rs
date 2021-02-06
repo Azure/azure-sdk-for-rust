@@ -165,7 +165,7 @@ pub mod jobs {
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
-        top: Option<i64>,
+        top: Option<i32>,
         filter: Option<&str>,
         subscription_id: &str,
         accept_language: Option<&str>,
@@ -255,7 +255,7 @@ pub mod jobs {
     }
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
-        top: Option<i64>,
+        top: Option<i32>,
         filter: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,

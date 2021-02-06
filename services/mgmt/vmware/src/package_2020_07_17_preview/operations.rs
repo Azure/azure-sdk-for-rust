@@ -742,6 +742,174 @@ pub mod private_clouds {
             },
         }
     }
+    pub async fn rotate_vcenter_password(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        private_cloud_name: &str,
+    ) -> std::result::Result<rotate_vcenter_password::Response, rotate_vcenter_password::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/rotateVcenterPassword",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            private_cloud_name
+        );
+        let mut url = url::Url::parse(url_str).context(rotate_vcenter_password::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(rotate_vcenter_password::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(rotate_vcenter_password::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(rotate_vcenter_password::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::ACCEPTED => Ok(rotate_vcenter_password::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(rotate_vcenter_password::Response::NoContent204),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(rotate_vcenter_password::DeserializeError { body: rsp_body.clone() })?;
+                rotate_vcenter_password::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod rotate_vcenter_password {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn rotate_nsxt_password(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        private_cloud_name: &str,
+    ) -> std::result::Result<rotate_nsxt_password::Response, rotate_nsxt_password::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/rotateNsxtPassword",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            private_cloud_name
+        );
+        let mut url = url::Url::parse(url_str).context(rotate_nsxt_password::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(rotate_nsxt_password::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(rotate_nsxt_password::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(rotate_nsxt_password::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::ACCEPTED => Ok(rotate_nsxt_password::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(rotate_nsxt_password::Response::NoContent204),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).context(rotate_nsxt_password::DeserializeError { body: rsp_body.clone() })?;
+                rotate_nsxt_password::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod rotate_nsxt_password {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
     pub async fn list_admin_credentials(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,

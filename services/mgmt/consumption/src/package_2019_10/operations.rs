@@ -13,7 +13,7 @@ pub mod usage_details {
         expand: Option<&str>,
         filter: Option<&str>,
         skiptoken: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         metric: Option<&str>,
     ) -> std::result::Result<UsageDetailsListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -109,7 +109,7 @@ pub mod marketplaces {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         skiptoken: Option<&str>,
         scope: &str,
     ) -> std::result::Result<MarketplacesListResult, list::Error> {
@@ -1723,7 +1723,7 @@ pub mod price_sheet {
         operation_config: &crate::OperationConfig,
         expand: Option<&str>,
         skiptoken: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<PriceSheetResult, get::Error> {
         let http_client = operation_config.http_client();
@@ -1810,7 +1810,7 @@ pub mod price_sheet {
         operation_config: &crate::OperationConfig,
         expand: Option<&str>,
         skiptoken: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
         subscription_id: &str,
         billing_period_name: &str,
     ) -> std::result::Result<PriceSheetResult, get_by_billing_period::Error> {
@@ -2145,7 +2145,7 @@ pub mod aggregated_cost {
         billing_period_name: &str,
     ) -> std::result::Result<ManagementGroupAggregatedCostResult, get_for_billing_period_by_management_group::Error> {
         let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Billing/billingPeriods/{}/Microsoft.Consumption/aggregatedcost" , operation_config . base_path () , management_group_id , billing_period_name) ;
+        let url_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Billing/billingPeriods/{}/Microsoft.Consumption/aggregatedCost" , operation_config . base_path () , management_group_id , billing_period_name) ;
         let mut url = url::Url::parse(url_str).context(get_for_billing_period_by_management_group::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);

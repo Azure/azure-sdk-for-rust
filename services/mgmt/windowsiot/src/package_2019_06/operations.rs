@@ -162,9 +162,9 @@ pub mod services {
         subscription_id: &str,
         resource_group_name: &str,
         device_name: &str,
-        device_service: &DeviceServiceProperties,
+        device_service: &DeviceService,
         if_match: Option<&str>,
-    ) -> std::result::Result<DeviceService, create_or_update::Error> {
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.WindowsIoT/deviceServices/{}",
@@ -199,7 +199,13 @@ pub mod services {
                 let rsp_body = rsp.body();
                 let rsp_value: DeviceService =
                     serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
-                Ok(rsp_value)
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: DeviceService =
+                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -216,6 +222,11 @@ pub mod services {
     pub mod create_or_update {
         use crate::{models, models::*};
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(DeviceService),
+            Created201(DeviceService),
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
@@ -249,7 +260,7 @@ pub mod services {
         subscription_id: &str,
         resource_group_name: &str,
         device_name: &str,
-        device_service: &DeviceServiceProperties,
+        device_service: &DeviceService,
         if_match: Option<&str>,
     ) -> std::result::Result<DeviceService, update::Error> {
         let http_client = operation_config.http_client();
@@ -333,7 +344,7 @@ pub mod services {
         subscription_id: &str,
         resource_group_name: &str,
         device_name: &str,
-    ) -> std::result::Result<DeviceService, delete::Error> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.WindowsIoT/deviceServices/{}",
@@ -362,7 +373,13 @@ pub mod services {
                 let rsp_body = rsp.body();
                 let rsp_value: DeviceService =
                     serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                Ok(rsp_value)
+                Ok(delete::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::NO_CONTENT => {
+                let rsp_body = rsp.body();
+                let rsp_value: DeviceService =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
+                Ok(delete::Response::NoContent204(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -379,6 +396,11 @@ pub mod services {
     pub mod delete {
         use crate::{models, models::*};
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(DeviceService),
+            NoContent204(DeviceService),
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {

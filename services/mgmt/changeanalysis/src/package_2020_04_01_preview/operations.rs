@@ -43,7 +43,8 @@ pub mod configuration_profile {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -60,7 +61,7 @@ pub mod configuration_profile {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::Error,
+                value: models::ErrorResponse,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -124,7 +125,8 @@ pub mod configuration_profile {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 create::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -141,7 +143,7 @@ pub mod configuration_profile {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::Error,
+                value: models::ErrorResponse,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -205,7 +207,8 @@ pub mod configuration_profile {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
                 update::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -222,7 +225,7 @@ pub mod configuration_profile {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::Error,
+                value: models::ErrorResponse,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -277,7 +280,8 @@ pub mod configuration_profile {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -299,7 +303,7 @@ pub mod configuration_profile {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::Error,
+                value: models::ErrorResponse,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -359,7 +363,8 @@ pub mod operations {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -376,7 +381,7 @@ pub mod operations {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::Error,
+                value: models::ErrorResponse,
             },
             ParseUrlError {
                 source: url::ParseError,

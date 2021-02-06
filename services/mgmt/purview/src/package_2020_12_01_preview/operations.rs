@@ -351,7 +351,7 @@ pub mod accounts {
         resource_group_name: &str,
         account_name: &str,
         account_update_parameters: &AccountUpdateParameters,
-    ) -> std::result::Result<Account, update::Error> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Purview/accounts/{}",
@@ -379,7 +379,12 @@ pub mod accounts {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: Account = serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
-                Ok(rsp_value)
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: Account = serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -396,6 +401,11 @@ pub mod accounts {
     pub mod update {
         use crate::{models, models::*};
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Account),
+            Accepted202(Account),
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {

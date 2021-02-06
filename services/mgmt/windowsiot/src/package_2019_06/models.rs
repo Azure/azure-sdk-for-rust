@@ -60,6 +60,8 @@ pub struct OperationEntity {
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplayInfo>,
+    #[serde(rename = "isDataAction", skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationDisplayInfo {
@@ -75,13 +77,21 @@ pub struct OperationDisplayInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetails {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub details: Option<String>,
+    pub error: Option<error_details::Error>,
+}
+pub mod error_details {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Error {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub code: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub message: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub target: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub details: Option<String>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceServiceDescriptionListResult {

@@ -185,7 +185,7 @@ pub mod services {
         resource_group_name: &str,
         resource_name: &str,
         service_patch_description: &ServicesPatchDescription,
-    ) -> std::result::Result<ServicesDescription, update::Error> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HealthcareApis/services/{}",
@@ -214,8 +214,9 @@ pub mod services {
                 let rsp_body = rsp.body();
                 let rsp_value: ServicesDescription =
                     serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
-                Ok(rsp_value)
+                Ok(update::Response::Ok200(rsp_value))
             }
+            http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorDetails =
@@ -231,6 +232,11 @@ pub mod services {
     pub mod update {
         use crate::{models, models::*};
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ServicesDescription),
+            Accepted202,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {

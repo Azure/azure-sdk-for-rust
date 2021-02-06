@@ -193,8 +193,25 @@ pub struct BaselineResponse {
     pub type_: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub timestamps: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub baseline: Vec<Baseline>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub metdata: Vec<BaselineMetadataValue>,
+    #[serde(rename = "predictionResultType", skip_serializing_if = "Option::is_none")]
+    pub prediction_result_type: Option<baseline_response::PredictionResultType>,
+    #[serde(rename = "errorType", skip_serializing_if = "Option::is_none")]
+    pub error_type: Option<baseline_response::ErrorType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<BaselineProperties>,
+}
+pub mod baseline_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PredictionResultType {}
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ErrorType {}
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaselineProperties {
@@ -204,12 +221,8 @@ pub struct BaselineProperties {
     pub interval: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub timestamps: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub baseline: Vec<Baseline>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub metadata: Vec<BaselineMetadataValue>,
+    #[serde(rename = "internalOperationId", skip_serializing)]
+    pub internal_operation_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Baseline {
@@ -220,6 +233,10 @@ pub struct Baseline {
     pub high_thresholds: Vec<f64>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
+    #[serde(rename = "PredictionResultType", skip_serializing_if = "Option::is_none")]
+    pub prediction_result_type: Option<baseline::PredictionResultType>,
+    #[serde(rename = "ErrorType", skip_serializing_if = "Option::is_none")]
+    pub error_type: Option<baseline::ErrorType>,
 }
 pub mod baseline {
     use super::*;
@@ -229,6 +246,10 @@ pub mod baseline {
         Medium,
         High,
     }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PredictionResultType {}
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ErrorType {}
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimeSeriesInformation {
@@ -246,16 +267,77 @@ pub struct CalculateBaselineResponse {
     pub baseline: Vec<Baseline>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub statistics: Option<calculate_baseline_response::Statistics>,
+    #[serde(rename = "internalOperationId", skip_serializing)]
+    pub internal_operation_id: Option<String>,
+    #[serde(rename = "errorType", skip_serializing_if = "Option::is_none")]
+    pub error_type: Option<calculate_baseline_response::ErrorType>,
 }
 pub mod calculate_baseline_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Statistics {
         #[serde(rename = "isEligible", skip_serializing_if = "Option::is_none")]
-        pub is_eligible: Option<String>,
+        pub is_eligible: Option<bool>,
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub status: Vec<String>,
         #[serde(rename = "seasonalityPeriod", skip_serializing_if = "Option::is_none")]
         pub seasonality_period: Option<i32>,
     }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ErrorType {}
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricBaselinesResponse {
+    pub timespan: String,
+    pub interval: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SingleMetricBaseline>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SingleMetricBaseline {
+    pub id: String,
+    #[serde(rename = "type")]
+    pub type_: String,
+    #[serde(rename = "metricName")]
+    pub metric_name: String,
+    pub baselines: Vec<TimeSeriesBaseline>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TimeSeriesBaseline {
+    pub aggregation: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub dimensions: Vec<MetricSingleDimension>,
+    pub timestamps: Vec<String>,
+    pub data: Vec<SingleBaseline>,
+    #[serde(rename = "metadataValues", skip_serializing_if = "Vec::is_empty")]
+    pub metadata_values: Vec<BaselineMetadata>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricSingleDimension {
+    pub name: String,
+    pub value: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SingleBaseline {
+    pub sensitivity: single_baseline::Sensitivity,
+    #[serde(rename = "lowThresholds")]
+    pub low_thresholds: Vec<f64>,
+    #[serde(rename = "highThresholds")]
+    pub high_thresholds: Vec<f64>,
+}
+pub mod single_baseline {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Sensitivity {
+        Low,
+        Medium,
+        High,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BaselineMetadata {
+    pub name: String,
+    pub value: String,
 }

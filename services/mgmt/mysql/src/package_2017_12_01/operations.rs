@@ -2899,4 +2899,61 @@ pub mod server_security_alert_policies {
             GetTokenError { source: azure_core::errors::AzureError },
         }
     }
+    pub async fn list_by_server(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        server_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<ServerSecurityAlertPolicyListResult, list_by_server::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/securityAlertPolicies",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name
+        );
+        let mut url = url::Url::parse(url_str).context(list_by_server::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(list_by_server::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list_by_server::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(list_by_server::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ServerSecurityAlertPolicyListResult =
+                    serde_json::from_slice(rsp_body).context(list_by_server::DeserializeError { body: rsp_body.clone() })?;
+                Ok(rsp_value)
+            }
+            status_code => list_by_server::DefaultResponse { status_code }.fail(),
+        }
+    }
+    pub mod list_by_server {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse { status_code: http::StatusCode },
+            ParseUrlError { source: url::ParseError },
+            BuildRequestError { source: http::Error },
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
 }

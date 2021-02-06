@@ -132,6 +132,50 @@ pub struct FacetError {
     pub errors: Vec<ErrorDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    pub error: Error,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Error {
+    pub code: String,
+    pub message: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetails {
+    pub code: String,
+    pub message: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display: Option<operation::Display>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+}
+pub mod operation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Display {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceChangesRequestParameters {
     #[serde(rename = "resourceId")]
     pub resource_id: String,
@@ -152,6 +196,8 @@ pub struct ResourceChangeList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceChangeData {
+    #[serde(rename = "resourceId", skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
     #[serde(rename = "changeId")]
     pub change_id: String,
     #[serde(rename = "beforeSnapshot")]
@@ -201,6 +247,8 @@ pub mod resource_property_change {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSnapshotData {
+    #[serde(rename = "snapshotId", skip_serializing_if = "Option::is_none")]
+    pub snapshot_id: Option<String>,
     pub timestamp: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<serde_json::Value>,
@@ -218,46 +266,36 @@ pub struct DateTimeInterval {
     pub end: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    pub error: Error,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Error {
-    pub code: String,
-    pub message: String,
+pub struct ResourcesHistoryRequest {
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDetails>,
+    pub subscriptions: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub query: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub options: Option<ResourcesHistoryRequestOptions>,
+    #[serde(rename = "managementGroupId", skip_serializing_if = "Option::is_none")]
+    pub management_group_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetails {
-    pub code: String,
-    pub message: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
+pub struct ResourcesHistoryRequestOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub origin: Option<String>,
+    pub interval: Option<DateTimeInterval>,
+    #[serde(rename = "$top", skip_serializing_if = "Option::is_none")]
+    pub top: Option<i32>,
+    #[serde(rename = "$skip", skip_serializing_if = "Option::is_none")]
+    pub skip: Option<i32>,
+    #[serde(rename = "$skipToken", skip_serializing_if = "Option::is_none")]
+    pub skip_token: Option<String>,
+    #[serde(rename = "resultFormat", skip_serializing_if = "Option::is_none")]
+    pub result_format: Option<resources_history_request_options::ResultFormat>,
 }
-pub mod operation {
+pub mod resources_history_request_options {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub provider: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub resource: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub operation: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub description: Option<String>,
+    pub enum ResultFormat {
+        #[serde(rename = "table")]
+        Table,
+        #[serde(rename = "objectArray")]
+        ObjectArray,
     }
 }

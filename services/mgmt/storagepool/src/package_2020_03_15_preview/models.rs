@@ -36,42 +36,69 @@ pub struct DiskPoolListResult {
 pub struct DiskPool {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DiskPoolProperties>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
+    pub properties: DiskPoolProperties,
     #[serde(rename = "systemData", skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemMetadata>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskPoolCreate {
+    pub properties: DiskPoolCreateProperties,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    pub location: String,
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskPoolUpdate {
+    pub properties: DiskPoolUpdateProperties,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailabilityZone {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<ProvisioningState>,
+    pub provisioning_state: ProvisioningState,
     #[serde(rename = "availabilityZones")]
     pub availability_zones: Vec<AvailabilityZone>,
-    #[serde(skip_serializing)]
-    pub status: Option<disk_pool_properties::Status>,
+    pub status: OperationalStatus,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub disks: Vec<Disk>,
     #[serde(rename = "subnetId")]
     pub subnet_id: String,
+    #[serde(rename = "additionalCapabilities", skip_serializing_if = "Vec::is_empty")]
+    pub additional_capabilities: Vec<AdditionalCapability>,
+    pub tier: DiskPoolTier,
 }
-pub mod disk_pool_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Invalid,
-        Unknown,
-        Healthy,
-        Unhealthy,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskPoolCreateProperties {
+    #[serde(rename = "availabilityZones")]
+    pub availability_zones: Vec<AvailabilityZone>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub disks: Vec<Disk>,
+    #[serde(rename = "subnetId")]
+    pub subnet_id: String,
+    #[serde(rename = "additionalCapabilities", skip_serializing_if = "Vec::is_empty")]
+    pub additional_capabilities: Vec<AdditionalCapability>,
+    pub tier: DiskPoolTier,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskPoolUpdateProperties {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub disks: Vec<Disk>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Disk {
     pub id: String,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AdditionalCapability {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetList {
     pub value: Vec<IscsiTarget>,
@@ -82,40 +109,58 @@ pub struct IscsiTargetList {
 pub struct IscsiTarget {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IscsiTargetProperties>,
+    pub properties: IscsiTargetProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IscsiTargetCreate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    pub properties: IscsiTargetCreateProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IscsiTargetUpdate {
+    pub properties: IscsiTargetUpdateProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<ProvisioningState>,
-    #[serde(skip_serializing)]
-    pub status: Option<iscsi_target_properties::Status>,
+    pub provisioning_state: ProvisioningState,
+    pub status: OperationalStatus,
     pub tpgs: Vec<TargetPortalGroup>,
     #[serde(rename = "targetIqn")]
     pub target_iqn: String,
 }
-pub mod iscsi_target_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Invalid,
-        Unknown,
-        Healthy,
-        Unhealthy,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IscsiTargetCreateProperties {
+    pub tpgs: Vec<TargetPortalGroupCreate>,
+    #[serde(rename = "targetIqn", skip_serializing_if = "Option::is_none")]
+    pub target_iqn: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IscsiTargetUpdateProperties {
+    pub tpgs: Vec<TargetPortalGroupUpdate>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TargetPortalGroup {
     pub luns: Vec<IscsiLun>,
     pub acls: Vec<Acl>,
     pub attributes: Attributes,
-    #[serde(skip_serializing)]
     pub endpoints: Vec<String>,
-    #[serde(skip_serializing)]
-    pub tag: Option<i32>,
-    #[serde(skip_serializing)]
-    pub port: Option<i32>,
+    pub tag: i32,
+    pub port: i32,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TargetPortalGroupCreate {
+    pub luns: Vec<IscsiLun>,
+    pub acls: Vec<Acl>,
+    pub attributes: Attributes,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TargetPortalGroupUpdate {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub luns: Vec<IscsiLun>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub acls: Vec<Acl>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Acl {
@@ -160,6 +205,24 @@ pub enum ProvisioningState {
     Deleting,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OperationalStatus {
+    Invalid,
+    Unknown,
+    Healthy,
+    Unhealthy,
+    Updating,
+    Running,
+    Stopped,
+    #[serde(rename = "Stopped (deallocated)")]
+    StoppedDeallocated,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DiskPoolTier {
+    Basic,
+    Standard,
+    Premium,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemMetadata {
     #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -173,28 +236,6 @@ pub struct SystemMetadata {
     pub last_modified_by_type: Option<String>,
     #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tier: Option<sku::Tier>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub size: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub family: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<i32>,
-}
-pub mod sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Tier {
-        Free,
-        Basic,
-        Standard,
-        Premium,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {

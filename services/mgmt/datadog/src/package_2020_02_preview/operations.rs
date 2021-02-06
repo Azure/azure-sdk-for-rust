@@ -27,6 +27,7 @@ pub mod marketplace_agreements {
                 .context(list::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(list::BuildRequestError)?;
@@ -102,6 +103,7 @@ pub mod marketplace_agreements {
                 .context(create::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(body) = body {
             azure_core::to_json(body).context(create::SerializeError)?
         } else {

@@ -111,7 +111,7 @@ pub mod metric_baseline {
     ) -> std::result::Result<CalculateBaselineResponse, calculate_baseline::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/calculatebaseline",
+            "{}/{}/providers/Microsoft.Insights/calculatebaseline",
             operation_config.base_path(),
             resource_uri
         );

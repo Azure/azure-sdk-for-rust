@@ -712,7 +712,7 @@ pub mod alert_rules {
     ) -> std::result::Result<AlertRuleResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/alertrules/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/alertrules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -742,9 +742,11 @@ pub mod alert_rules {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                get::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                get::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -756,13 +758,29 @@ pub mod alert_rules {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update(
@@ -774,7 +792,7 @@ pub mod alert_rules {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/alertrules/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/alertrules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -868,7 +886,7 @@ pub mod alert_rules {
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/alertrules/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/alertrules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -958,7 +976,7 @@ pub mod alert_rules {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/alertrules/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/alertrules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -984,9 +1002,11 @@ pub mod alert_rules {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
             status_code => {
                 let rsp_body = rsp.body();
-                delete::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
+                delete::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -1003,13 +1023,29 @@ pub mod alert_rules {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_resource_group(
@@ -1019,7 +1055,7 @@ pub mod alert_rules {
     ) -> std::result::Result<AlertRuleResourceCollection, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/alertrules",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/alertrules",
             operation_config.base_path(),
             subscription_id,
             resource_group_name
@@ -1051,9 +1087,11 @@ pub mod alert_rules {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list_by_resource_group::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_resource_group::DeserializeError { body: rsp_body.clone() })?;
+                list_by_resource_group::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -1065,13 +1103,29 @@ pub mod alert_rules {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn list_by_subscription(
@@ -1080,7 +1134,7 @@ pub mod alert_rules {
     ) -> std::result::Result<AlertRuleResourceCollection, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/alertrules",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/alertrules",
             operation_config.base_path(),
             subscription_id
         );
@@ -1111,9 +1165,11 @@ pub mod alert_rules {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list_by_subscription::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list_by_subscription::DeserializeError { body: rsp_body.clone() })?;
+                list_by_subscription::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -1125,13 +1181,29 @@ pub mod alert_rules {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -3555,7 +3627,7 @@ pub mod metric_baseline {
     ) -> std::result::Result<CalculateBaselineResponse, calculate_baseline::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/calculatebaseline",
+            "{}/{}/providers/Microsoft.Insights/calculatebaseline",
             operation_config.base_path(),
             resource_uri
         );
@@ -4317,7 +4389,7 @@ pub mod scheduled_query_rules {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorContract =
                     serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
@@ -4335,7 +4407,7 @@ pub mod scheduled_query_rules {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorContract,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -4406,7 +4478,7 @@ pub mod scheduled_query_rules {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorContract =
                     serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update::DefaultResponse {
                     status_code,
@@ -4429,7 +4501,7 @@ pub mod scheduled_query_rules {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorContract,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -4491,7 +4563,7 @@ pub mod scheduled_query_rules {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorContract =
                     serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
                 update::DefaultResponse {
                     status_code,
@@ -4509,7 +4581,7 @@ pub mod scheduled_query_rules {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorContract,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -4566,7 +4638,7 @@ pub mod scheduled_query_rules {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorContract =
                     serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
@@ -4589,7 +4661,7 @@ pub mod scheduled_query_rules {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorContract,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -4653,7 +4725,7 @@ pub mod scheduled_query_rules {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorContract =
                     serde_json::from_slice(rsp_body).context(list_by_subscription::DeserializeError { body: rsp_body.clone() })?;
                 list_by_subscription::DefaultResponse {
                     status_code,
@@ -4671,7 +4743,7 @@ pub mod scheduled_query_rules {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorContract,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -4737,7 +4809,7 @@ pub mod scheduled_query_rules {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorContract =
                     serde_json::from_slice(rsp_body).context(list_by_resource_group::DeserializeError { body: rsp_body.clone() })?;
                 list_by_resource_group::DefaultResponse {
                     status_code,
@@ -4755,7 +4827,7 @@ pub mod scheduled_query_rules {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorContract,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -4815,6 +4887,117 @@ pub mod metric_namespaces {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: MetricNamespaceCollection =
+                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                list::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+}
+pub mod baselines {
+    use crate::models::*;
+    use snafu::{ResultExt, Snafu};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        resource_uri: &str,
+        metricnames: Option<&str>,
+        metricnamespace: Option<&str>,
+        timespan: Option<&str>,
+        interval: Option<&str>,
+        aggregation: Option<&str>,
+        sensitivities: Option<&str>,
+        filter: Option<&str>,
+        result_type: Option<&str>,
+    ) -> std::result::Result<MetricBaselinesResponse, list::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/{}/providers/Microsoft.Insights/metricBaselines",
+            operation_config.base_path(),
+            resource_uri
+        );
+        let mut url = url::Url::parse(url_str).context(list::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(list::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(metricnames) = metricnames {
+            url.query_pairs_mut().append_pair("metricnames", metricnames);
+        }
+        if let Some(metricnamespace) = metricnamespace {
+            url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
+        }
+        if let Some(timespan) = timespan {
+            url.query_pairs_mut().append_pair("timespan", timespan);
+        }
+        if let Some(interval) = interval {
+            url.query_pairs_mut().append_pair("interval", interval);
+        }
+        if let Some(aggregation) = aggregation {
+            url.query_pairs_mut().append_pair("aggregation", aggregation);
+        }
+        if let Some(sensitivities) = sensitivities {
+            url.query_pairs_mut().append_pair("sensitivities", sensitivities);
+        }
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
+        }
+        if let Some(result_type) = result_type {
+            url.query_pairs_mut().append_pair("resultType", result_type);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(list::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(list::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: MetricBaselinesResponse =
                     serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }

@@ -323,6 +323,8 @@ pub struct AppResourceProperties {
     pub fqdn: Option<String>,
     #[serde(rename = "httpsOnly", skip_serializing_if = "Option::is_none")]
     pub https_only: Option<bool>,
+    #[serde(rename = "enableEndToEndTLS", skip_serializing_if = "Option::is_none")]
+    pub enable_end_to_end_tls: Option<bool>,
     #[serde(rename = "createdTime", skip_serializing)]
     pub created_time: Option<String>,
     #[serde(rename = "temporaryDisk", skip_serializing_if = "Option::is_none")]

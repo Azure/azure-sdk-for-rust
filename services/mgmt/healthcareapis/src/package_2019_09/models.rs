@@ -166,10 +166,14 @@ pub struct OperationListResult {
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
+    #[serde(rename = "isDataAction", skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
     #[serde(skip_serializing)]
     pub origin: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OperationProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationDisplay {
@@ -182,6 +186,8 @@ pub struct OperationDisplay {
     #[serde(skip_serializing)]
     pub description: Option<String>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationProperties {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityParameters {
     pub name: String,

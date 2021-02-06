@@ -437,7 +437,7 @@ pub mod check_name_availability_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
-        #[serde(rename = "Microsoft.Management/managementGroup")]
-        MicrosoftManagementManagementGroup,
+        #[serde(rename = "Microsoft.Management/managementGroups")]
+        MicrosoftManagementManagementGroups,
     }
 }

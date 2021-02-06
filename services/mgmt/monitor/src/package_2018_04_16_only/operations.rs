@@ -45,7 +45,7 @@ pub mod scheduled_query_rules {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorContract =
                     serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
                 get::DefaultResponse {
                     status_code,
@@ -63,7 +63,7 @@ pub mod scheduled_query_rules {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorContract,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -134,7 +134,7 @@ pub mod scheduled_query_rules {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorContract =
                     serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update::DefaultResponse {
                     status_code,
@@ -157,7 +157,7 @@ pub mod scheduled_query_rules {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorContract,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -219,7 +219,7 @@ pub mod scheduled_query_rules {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorContract =
                     serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
                 update::DefaultResponse {
                     status_code,
@@ -237,7 +237,7 @@ pub mod scheduled_query_rules {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorContract,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -294,7 +294,7 @@ pub mod scheduled_query_rules {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorContract =
                     serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
                 delete::DefaultResponse {
                     status_code,
@@ -317,7 +317,7 @@ pub mod scheduled_query_rules {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorContract,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -381,7 +381,7 @@ pub mod scheduled_query_rules {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorContract =
                     serde_json::from_slice(rsp_body).context(list_by_subscription::DeserializeError { body: rsp_body.clone() })?;
                 list_by_subscription::DefaultResponse {
                     status_code,
@@ -399,7 +399,7 @@ pub mod scheduled_query_rules {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorContract,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -465,7 +465,7 @@ pub mod scheduled_query_rules {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorContract =
                     serde_json::from_slice(rsp_body).context(list_by_resource_group::DeserializeError { body: rsp_body.clone() })?;
                 list_by_resource_group::DefaultResponse {
                     status_code,
@@ -483,7 +483,7 @@ pub mod scheduled_query_rules {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorContract,
             },
             ParseUrlError {
                 source: url::ParseError,

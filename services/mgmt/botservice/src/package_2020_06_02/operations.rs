@@ -1205,9 +1205,10 @@ pub mod operations {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list::UnexpectedResponse {
+                let rsp_value: Error = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                list::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 }
                 .fail()
             }
@@ -1219,13 +1220,29 @@ pub mod operations {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
-            ParseUrlError { source: url::ParseError },
-            BuildRequestError { source: http::Error },
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
@@ -1320,7 +1337,7 @@ pub mod bot_connection {
     ) -> std::result::Result<ConnectionSetting, list_with_secrets::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/Connections/{}/listWithSecrets",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/connections/{}/listWithSecrets",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1405,7 +1422,7 @@ pub mod bot_connection {
     ) -> std::result::Result<ConnectionSetting, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/Connections/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/connections/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1486,7 +1503,7 @@ pub mod bot_connection {
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/Connections/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/connections/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1578,7 +1595,7 @@ pub mod bot_connection {
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/Connections/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/connections/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1669,7 +1686,7 @@ pub mod bot_connection {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/Connections/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/connections/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,

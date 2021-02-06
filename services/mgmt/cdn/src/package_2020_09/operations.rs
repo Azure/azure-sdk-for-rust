@@ -3998,6 +3998,11 @@ pub mod afd_custom_domains {
                 let rsp_value: AfdDomain = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
             }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: AfdDomain = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: AfdErrorResponse =
@@ -4017,6 +4022,7 @@ pub mod afd_custom_domains {
         pub enum Response {
             Ok200(AfdDomain),
             Created201(AfdDomain),
+            Accepted202(AfdDomain),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -4170,6 +4176,7 @@ pub mod afd_custom_domains {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -4189,6 +4196,7 @@ pub mod afd_custom_domains {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -4515,6 +4523,12 @@ pub mod afd_endpoints {
                     serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
             }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: AfdEndpoint =
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: AfdErrorResponse =
@@ -4534,6 +4548,7 @@ pub mod afd_endpoints {
         pub enum Response {
             Ok200(AfdEndpoint),
             Created201(AfdEndpoint),
+            Accepted202(AfdEndpoint),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -4689,6 +4704,7 @@ pub mod afd_endpoints {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -4708,6 +4724,7 @@ pub mod afd_endpoints {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -5203,6 +5220,12 @@ pub mod afd_origin_groups {
                     serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
             }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: AfdOriginGroup =
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: AfdErrorResponse =
@@ -5222,6 +5245,7 @@ pub mod afd_origin_groups {
         pub enum Response {
             Ok200(AfdOriginGroup),
             Created201(AfdOriginGroup),
+            Accepted202(AfdOriginGroup),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -5377,6 +5401,7 @@ pub mod afd_origin_groups {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -5396,6 +5421,7 @@ pub mod afd_origin_groups {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -5726,6 +5752,11 @@ pub mod afd_origins {
                 let rsp_value: AfdOrigin = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
             }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: AfdOrigin = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: AfdErrorResponse =
@@ -5745,6 +5776,7 @@ pub mod afd_origins {
         pub enum Response {
             Ok200(AfdOrigin),
             Created201(AfdOrigin),
+            Accepted202(AfdOrigin),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -5902,6 +5934,7 @@ pub mod afd_origins {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -5921,6 +5954,7 @@ pub mod afd_origins {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -6166,6 +6200,11 @@ pub mod routes {
                 let rsp_value: Route = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
             }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: Route = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: AfdErrorResponse =
@@ -6185,6 +6224,7 @@ pub mod routes {
         pub enum Response {
             Ok200(Route),
             Created201(Route),
+            Accepted202(Route),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -6342,6 +6382,7 @@ pub mod routes {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -6361,6 +6402,7 @@ pub mod routes {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -6600,6 +6642,11 @@ pub mod rule_sets {
                 let rsp_value: RuleSet = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
             }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: RuleSet = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: AfdErrorResponse =
@@ -6619,6 +6666,7 @@ pub mod rule_sets {
         pub enum Response {
             Ok200(RuleSet),
             Created201(RuleSet),
+            Accepted202(RuleSet),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -7030,6 +7078,11 @@ pub mod rules {
                 let rsp_value: Rule = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
             }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: Rule = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: AfdErrorResponse =
@@ -7049,6 +7102,7 @@ pub mod rules {
         pub enum Response {
             Ok200(Rule),
             Created201(Rule),
+            Accepted202(Rule),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -7206,6 +7260,7 @@ pub mod rules {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -7225,6 +7280,7 @@ pub mod rules {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -7467,6 +7523,12 @@ pub mod security_policies {
                     serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
             }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: SecurityPolicy =
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: AfdErrorResponse =
@@ -7486,6 +7548,7 @@ pub mod security_policies {
         pub enum Response {
             Ok200(SecurityPolicy),
             Created201(SecurityPolicy),
+            Accepted202(SecurityPolicy),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -7520,7 +7583,7 @@ pub mod security_policies {
         resource_group_name: &str,
         profile_name: &str,
         security_policy_name: &str,
-        security_policy_parameters: &SecurityPolicyWebApplicationFirewallParameters,
+        security_policy_properties: &SecurityPolicyProperties,
         subscription_id: &str,
     ) -> std::result::Result<patch::Response, patch::Error> {
         let http_client = operation_config.http_client();
@@ -7543,7 +7606,7 @@ pub mod security_policies {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(security_policy_parameters).context(patch::SerializeError)?;
+        let req_body = azure_core::to_json(security_policy_properties).context(patch::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(patch::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(patch::ExecuteRequestError)?;
@@ -7641,6 +7704,7 @@ pub mod security_policies {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -7660,6 +7724,7 @@ pub mod security_policies {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -7899,6 +7964,11 @@ pub mod secrets {
                 let rsp_value: Secret = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
             }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: Secret = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: AfdErrorResponse =
@@ -7918,6 +7988,7 @@ pub mod secrets {
         pub enum Response {
             Ok200(Secret),
             Created201(Secret),
+            Accepted202(Secret),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -8071,6 +8142,7 @@ pub mod secrets {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -8090,6 +8162,7 @@ pub mod secrets {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -8305,7 +8378,7 @@ pub mod log_analytics {
         profile_name: &str,
         rankings: &Vec<&str>,
         metrics: &Vec<&str>,
-        max_ranking: f64,
+        max_ranking: i32,
         date_time_begin: &str,
         date_time_end: &str,
         custom_domains: &Vec<&str>,
@@ -8655,7 +8728,7 @@ pub mod log_analytics {
         metrics: &Vec<&str>,
         date_time_begin: &str,
         date_time_end: &str,
-        max_ranking: f64,
+        max_ranking: i32,
         rankings: &Vec<&str>,
         actions: &Vec<&str>,
         rule_types: &Vec<&str>,
