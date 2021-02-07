@@ -40,10 +40,12 @@ impl StoredAccessPolicyList {
     }
 
     pub fn from_xml(xml: &str) -> Result<StoredAccessPolicyList, AzureError> {
+        debug!("{}", xml);
+
         let mut sal = StoredAccessPolicyList {
             stored_access: Vec::new(),
         };
-        let sis: SignedIdentifiers = serde_xml_rs::de::from_reader(xml.as_bytes())?;
+        let sis: SignedIdentifiers = serde_xml_rs::de::from_str(xml)?;
 
         if let Some(sis) = sis.signed_identifiers {
             for si in sis {

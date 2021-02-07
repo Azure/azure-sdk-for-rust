@@ -1,6 +1,8 @@
 use azure_core::errors::AzureError;
 use azure_core::headers::CommonStorageResponseHeaders;
-use hyper::header::HeaderMap;
+use azure_core::NextMarker;
+use bytes::Bytes;
+use http::response::Response;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -8,12 +10,17 @@ pub struct ListQueuesResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub service_endpoint: String,
     pub prefix: Option<String>,
+    // this seems duplicate :S
     pub marker: Option<String>,
     pub max_results: Option<u32>,
+    pub queues: Vec<Queue>,
+    pub next_marker: Option<NextMarker>,
+}
 
-    pub queues: Queues,
-
-    pub next_marker: Option<String>,
+impl ListQueuesResponse {
+    pub fn next_marker(&self) -> &Option<NextMarker> {
+        &self.next_marker
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,7 +44,7 @@ struct ListQueuesResponseInternal {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Queues {
     #[serde(rename = "Queue")]
-    pub queues: Vec<Queue>,
+    pub queues: Option<Vec<Queue>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,36 +55,25 @@ pub struct Queue {
     pub metadata: Option<std::collections::HashMap<String, String>>,
 }
 
-impl std::convert::TryFrom<(&HeaderMap, &[u8])> for ListQueuesResponse {
+impl std::convert::TryFrom<&Response<Bytes>> for ListQueuesResponse {
     type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let body = value.1;
+    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body = response.body();
 
-        println!("headers == {:?}", headers);
+        debug!("headers == {:?}", headers);
 
         let received = &std::str::from_utf8(body)?[3..];
-        println!("receieved == {:#?}", received);
+        debug!("receieved == {:#?}", received);
         let mut response: ListQueuesResponseInternal = serde_xml_rs::from_reader(&body[3..])?;
 
         // get rid of the ugly Some("") empty string
-        // we use None as Rust dictates to identify
-        // lack of value.
+        // we use None instead
         if let Some(next_marker) = &response.next_marker {
             if next_marker.is_empty() {
                 response.next_marker = None;
             }
         }
-
-        // get rid of the ugly metadata: Some( {} ) in case of
-        // no metadata returned.
-        response.queues.queues.iter_mut().for_each(|queue| {
-            if let Some(metadata) = &queue.metadata {
-                if metadata.is_empty() {
-                    queue.metadata = None;
-                }
-            }
-        });
 
         Ok(ListQueuesResponse {
             common_storage_response_headers: headers.try_into()?,
@@ -85,8 +81,8 @@ impl std::convert::TryFrom<(&HeaderMap, &[u8])> for ListQueuesResponse {
             prefix: response.prefix,
             marker: response.marker,
             max_results: response.max_results,
-            queues: response.queues,
-            next_marker: response.next_marker,
+            queues: response.queues.queues.unwrap_or(Vec::new()),
+            next_marker: response.next_marker.map(|nm| nm.into()),
         })
     }
 }
@@ -101,6 +97,6 @@ mod test {
 
         let response: ListQueuesResponseInternal = serde_xml_rs::from_str(range).unwrap();
 
-        assert_eq!(response.queues.queues.len(), 2);
+        assert_eq!(response.queues.queues.unwrap().len(), 2);
     }
 }

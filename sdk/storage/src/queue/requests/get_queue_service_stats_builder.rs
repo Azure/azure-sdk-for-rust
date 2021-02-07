@@ -1,57 +1,63 @@
-use crate::queue::clients::QueueClient;
+use crate::core::prelude::*;
 use crate::queue::responses::*;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
+use http::method::Method;
+use http::status::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct CreateQueueBuilder<'a> {
-    queue_client: &'a QueueClient,
+pub struct GetQueueServiceStatsBuilder<'a> {
+    storage_client: &'a StorageClient,
     timeout: Option<Timeout>,
-    metadata: Option<&'a Metadata>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 
-impl<'a> CreateQueueBuilder<'a> {
-    pub(crate) fn new(queue_client: &'a QueueClient) -> Self {
-        CreateQueueBuilder {
-            queue_client,
+impl<'a> GetQueueServiceStatsBuilder<'a> {
+    pub(crate) fn new(storage_client: &'a StorageClient) -> Self {
+        Self {
+            storage_client,
             timeout: None,
-            metadata: None,
             client_request_id: None,
         }
     }
 
     setters! {
-        metadata: &'a Metadata => Some(metadata),
         timeout: Timeout => Some(timeout),
         client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
     pub async fn execute(
         &self,
-    ) -> Result<CreateQueueResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self.queue_client.queue_url()?;
+    ) -> Result<GetQueueServiceStatsResponse, Box<dyn std::error::Error + Sync + Send>> {
+        let mut url = self
+            .storage_client
+            .storage_account_client()
+            .queue_storage_secondary_url()
+            .to_owned();
+
+        url.query_pairs_mut().append_pair("restype", "service");
+        url.query_pairs_mut().append_pair("comp", "stats");
 
         self.timeout.append_to_url_query(&mut url);
 
-        let request = self.queue_client.storage_client().prepare_request(
+        trace!("url == {}", url);
+
+        let request = self.storage_client.prepare_request(
             url.as_str(),
-            &http::method::Method::PUT,
+            &Method::GET,
             &|mut request| {
                 request = add_optional_header(&self.client_request_id, request);
-                request = add_optional_header(&self.metadata, request);
                 request
             },
             None,
         )?;
 
         let response = self
-            .queue_client
-            .storage_client()
+            .storage_client
             .storage_account_client()
             .http_client()
-            .execute_request_check_status(request.0, http::status::StatusCode::CREATED)
+            .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
         Ok((&response).try_into()?)

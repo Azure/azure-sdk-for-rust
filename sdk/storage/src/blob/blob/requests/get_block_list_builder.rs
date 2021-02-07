@@ -52,7 +52,7 @@ impl<'a> GetBlockListBuilder<'a> {
         self.block_list_type.append_to_url_query(&mut url);
         self.timeout.append_to_url_query(&mut url);
 
-        println!("url == {:?}", url);
+        debug!("url == {:?}", url);
 
         let (request, _url) = self.blob_client.prepare_request(
             url.as_str(),

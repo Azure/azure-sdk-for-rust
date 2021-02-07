@@ -1,6 +1,5 @@
+pub use crate::queue::clients::{AsPopReceiptClient, AsQueueClient};
 pub use crate::{
-    MessageBodyRequired, MessageBodySupport, MessageTTLRequired, MessageTTLSupport,
-    NumberOfMessagesOption, NumberOfMessagesSupport, PopReceiptRequired, PopReceiptSupport,
-    QueueAccountClient, QueueClient, VisibilityTimeoutOption, VisibilityTimeoutRequired,
-    VisibilityTimeoutSupport,
+    MessageTTL, NumberOfMessages, PopReceipt, QueueClient, QueueStoredAccessPolicy,
+    VisibilityTimeout,
 };

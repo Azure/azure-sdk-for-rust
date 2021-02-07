@@ -1,48 +1,46 @@
 use crate::queue::clients::QueueClient;
-use crate::queue::prelude::*;
-use crate::responses::*;
+use crate::queue::responses::*;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
+use http::method::Method;
+use http::status::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct PeekMessagesBuilder<'a> {
+pub struct GetQueueMetadataBuilder<'a> {
     queue_client: &'a QueueClient,
-    number_of_messages: Option<NumberOfMessages>,
     timeout: Option<Timeout>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 
-impl<'a> PeekMessagesBuilder<'a> {
+impl<'a> GetQueueMetadataBuilder<'a> {
     pub(crate) fn new(queue_client: &'a QueueClient) -> Self {
-        PeekMessagesBuilder {
+        Self {
             queue_client,
-            number_of_messages: None,
             timeout: None,
             client_request_id: None,
         }
     }
 
     setters! {
-        number_of_messages: NumberOfMessages => Some(number_of_messages),
         timeout: Timeout => Some(timeout),
         client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
     pub async fn execute(
         &self,
-    ) -> Result<PeekMessagesResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self.queue_client.queue_url()?.join("messages")?;
+    ) -> Result<GetQueueMetadataResponse, Box<dyn std::error::Error + Sync + Send>> {
+        let mut url = self.queue_client.queue_url()?;
 
-        url.query_pairs_mut().append_pair("peekonly", "true");
-        self.number_of_messages.append_to_url_query(&mut url);
+        url.query_pairs_mut().append_pair("comp", "metadata");
+
         self.timeout.append_to_url_query(&mut url);
 
-        debug!("url == {}", url);
+        trace!("url == {}", url);
 
         let request = self.queue_client.storage_client().prepare_request(
             url.as_str(),
-            &http::method::Method::GET,
+            &Method::GET,
             &|mut request| {
                 request = add_optional_header(&self.client_request_id, request);
                 request
@@ -55,7 +53,7 @@ impl<'a> PeekMessagesBuilder<'a> {
             .storage_client()
             .storage_account_client()
             .http_client()
-            .execute_request_check_status(request.0, http::status::StatusCode::OK)
+            .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
         Ok((&response).try_into()?)

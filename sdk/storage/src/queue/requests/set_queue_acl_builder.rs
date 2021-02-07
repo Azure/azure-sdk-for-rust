@@ -1,19 +1,20 @@
 use crate::queue::clients::QueueClient;
 use crate::queue::responses::*;
-use azure_core::headers::{add_mandatory_header, add_optional_header};
+use crate::QueueStoredAccessPolicy;
+use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct SetQueueMetadataBuilder<'a> {
+pub struct SetQueueACLBuilder<'a> {
     queue_client: &'a QueueClient,
     timeout: Option<Timeout>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 
-impl<'a> SetQueueMetadataBuilder<'a> {
+impl<'a> SetQueueACLBuilder<'a> {
     pub(crate) fn new(queue_client: &'a QueueClient) -> Self {
-        SetQueueMetadataBuilder {
+        SetQueueACLBuilder {
             queue_client,
             timeout: None,
             client_request_id: None,
@@ -25,32 +26,43 @@ impl<'a> SetQueueMetadataBuilder<'a> {
         client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
-    /// This call sets the metadata.
-    /// Keep in mind that keys present on Azure but not included in the passed
-    /// metadata parameter will be deleted. If you want to keep the preexisting
-    /// key-value pairs, retrieve them with GetMetadata first and
-    /// then update/add to the received Metadata struct. Then pass the Metadata
-    /// back to SetQueueMetadata.
-    /// If you just want to clear the metadata, just pass an empty Metadata
-    /// struct.
+    /// Pass the requested polices here.
+    /// While this SDK does not enforce any limit,
+    /// keep in mind Azure supports a limited number of
+    /// stored access policies for each queue.
+    /// More info here
+    /// [https://docs.microsoft.com/en-us/rest/api/storageservices/set-queue-acl#remarks](https://docs.microsoft.com/en-us/rest/api/storageservices/set-queue-acl#remarks).
     pub async fn execute(
         &self,
-        metadata: &Metadata,
-    ) -> Result<SetQueueMetadataResponse, Box<dyn std::error::Error + Sync + Send>> {
+        queue_stored_access_policies: &[QueueStoredAccessPolicy],
+    ) -> Result<SetQueueACLResponse, Box<dyn std::error::Error + Sync + Send>> {
         let mut url = self.queue_client.queue_url()?;
 
-        url.query_pairs_mut().append_pair("comp", "metadata");
+        url.query_pairs_mut().append_pair("comp", "acl");
         self.timeout.append_to_url_query(&mut url);
+
+        // convert the queue_stored_access_policies slice
+        // in a StoredAccessPolicyList to get its XML
+        // representation.
+        let xml_body = {
+            let mut qapl = StoredAccessPolicyList::new();
+            queue_stored_access_policies
+                .iter()
+                .for_each(|queue_policy| qapl.stored_access.push(queue_policy.into()));
+
+            qapl.to_xml()
+        };
+
+        debug!("xml about to be sent == {}", xml_body);
 
         let request = self.queue_client.storage_client().prepare_request(
             url.as_str(),
             &http::method::Method::PUT,
             &|mut request| {
-                request = add_mandatory_header(&metadata, request);
                 request = add_optional_header(&self.client_request_id, request);
                 request
             },
-            None,
+            Some(xml_body.into()),
         )?;
 
         let response = self

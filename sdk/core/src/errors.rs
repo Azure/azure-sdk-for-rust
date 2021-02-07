@@ -122,6 +122,15 @@ quick_error! {
 
 quick_error! {
     #[derive(Debug)]
+    pub enum PermissionError {
+        NonSupportedToken(service:String, received_token: char, supported_tokens: Vec<char>) {
+            display("Permission token not supported in this service ({}). Received token {}, supported tokens {:?}",
+                service, received_token, supported_tokens)
+        }
+    }
+}
+quick_error! {
+    #[derive(Debug)]
     pub enum Parse512AlignedError {
         SplitNotFound {
             display("split not found")
@@ -180,6 +189,11 @@ quick_error! {
         HyperError(err: hyper::Error){
             from()
             display("Hyper error: {}", err)
+            cause(err)
+        }
+        PermissionError(err: PermissionError){
+            from()
+            display("Permission error: {}", err)
             cause(err)
         }
         IOError(err: IOError){
