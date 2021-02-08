@@ -1,10 +1,8 @@
-use crate::core::ConnectionString;
+use crate::core::{ConnectionString, No};
 use crate::shared_access_signature::SharedAccessSignatureBuilder;
 use azure_core::errors::AzureError;
 use azure_core::headers::*;
-use azure_core::HttpClient;
-use azure_core::No;
-use azure_core::EMPTY_BODY;
+use azure_core::prelude::*;
 use bytes::Bytes;
 use http::header::*;
 use http::method::Method;
@@ -13,7 +11,7 @@ use ring::hmac;
 use std::sync::Arc;
 use url::Url;
 
-pub(crate) const HEADER_VERSION: &str = "x-ms-version"; //=> [String] }
+pub(crate) const HEADER_VERSION: &str = "x-ms-version";
 
 pub(crate) const AZURE_VERSION: &str = "2019-07-07";
 //pub(crate) const SAS_VERSION: &str = "2019-02-02";

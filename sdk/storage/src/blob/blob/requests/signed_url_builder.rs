@@ -1,12 +1,9 @@
 use crate::blob::blob::generate_blob_uri;
 use crate::core::prelude::*;
 use crate::core::{
-    shared_access_signature::SharedAccessSignature, SharedAccessSignatureRequired,
-    SharedAccessSignatureSupport,
-};
-use azure_core::{
-    BlobNameRequired, BlobNameSupport, ContainerNameRequired, ContainerNameSupport, No, ToAssign,
-    Yes,
+    shared_access_signature::SharedAccessSignature, BlobNameRequired, BlobNameSupport,
+    ContainerNameRequired, ContainerNameSupport, No, SharedAccessSignatureRequired,
+    SharedAccessSignatureSupport, ToAssign, Yes,
 };
 use std::marker::PhantomData;
 

@@ -1,6 +1,6 @@
 use super::*;
 use crate::errors::{check_status_extract_body_2, AzureError};
-use crate::lease::LeaseId;
+use crate::request_options::LeaseId;
 use crate::util::HeaderMapExt;
 use crate::{Consistency, RequestId, SessionToken};
 use chrono::{DateTime, Utc};

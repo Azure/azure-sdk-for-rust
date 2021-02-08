@@ -1,8 +1,7 @@
 pub mod filesystem;
 pub mod prelude;
 
-use crate::core::Client;
-use azure_core::No;
+use crate::core::{Client, No};
 
 pub trait Filesystem<C>
 where

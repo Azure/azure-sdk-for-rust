@@ -1,4 +1,4 @@
-use azure_core::{No, ToAssign};
+use super::{No, ToAssign};
 use base64::encode;
 use chrono::{DateTime, Utc};
 use ring::hmac;

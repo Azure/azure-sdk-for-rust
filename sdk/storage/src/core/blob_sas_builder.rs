@@ -1,7 +1,5 @@
 use super::rest_client::{generate_storage_sas, SASType};
-use super::ClientEndpoint;
-use super::IPRange;
-use azure_core::{No, ToAssign, Yes};
+use super::{ClientEndpoint, IPRange, No, ToAssign, Yes};
 use chrono::{DateTime, Utc};
 use std::marker::PhantomData;
 use url::Url;

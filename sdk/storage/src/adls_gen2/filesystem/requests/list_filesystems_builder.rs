@@ -1,7 +1,6 @@
 use crate::core::prelude::*;
 use crate::filesystem::responses::ListFilesystemsResponse;
 use azure_core::errors::AzureError;
-use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use hyper::{Method, StatusCode};
 

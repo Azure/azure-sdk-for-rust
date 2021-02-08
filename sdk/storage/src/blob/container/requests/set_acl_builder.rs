@@ -2,7 +2,6 @@ use crate::blob::prelude::PublicAccess;
 use crate::clients::ContainerClient;
 use crate::container::public_access_from_header;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
-use azure_core::lease::LeaseId;
 use azure_core::prelude::*;
 use azure_core::StoredAccessPolicyList;
 use bytes::Bytes;

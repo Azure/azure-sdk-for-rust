@@ -1,34 +1,6 @@
-pub use crate::ba512_range::BA512Range;
-pub use crate::lease::LeaseId;
-pub use crate::range::Range;
+pub use crate::errors::AzureError;
+pub use crate::request_options::*;
 pub use crate::{
-    ActivityId, ActivityIdSupport, AddAsHeader, AppendPositionOption, AppendPositionSupport,
-    AppendToUrlQuery, BA512RangeOption, BA512RangeRequired, BA512RangeSupport, BlobNameRequired,
-    BlobNameSupport, BlockIdRequired, BlockIdSupport, BodyRequired, BodySupport,
-    CacheControlOption, CacheControlSupport, ChunkSizeOption, ChunkSizeSupport, ClientRequestId,
-    ClientRequestIdOption, ClientRequestIdSupport, Consistency, ContainerNameRequired,
-    ContainerNameSupport, ContentDisposition, ContentDispositionOption, ContentDispositionSupport,
-    ContentEncoding, ContentEncodingOption, ContentEncodingSupport, ContentLanguage,
-    ContentLanguageOption, ContentLanguageSupport, ContentLengthOption, ContentLengthRequired,
-    ContentLengthSupport, ContentMD5Option, ContentMD5Support, ContentType, ContentTypeOption,
-    ContentTypeRequired, ContentTypeSupport, Continuation, ContinuationOption, ContinuationSupport,
-    Delimiter, DelimiterOption, DelimiterSupport, HttpClient, IfMatchCondition, IfModifiedSince,
-    IfModifiedSinceCondition, IfModifiedSinceOption, IfModifiedSinceSupport,
-    IfSourceMatchCondition, IfSourceModifiedSinceCondition, IncludeCopyOption, IncludeCopySupport,
-    IncludeDeletedOption, IncludeDeletedSupport, IncludeListOptions, IncludeMetadataOption,
-    IncludeMetadataSupport, IncludeSnapshotsOption, IncludeSnapshotsSupport,
-    IncludeUncommittedBlobsOption, IncludeUncommittedBlobsSupport, IsSynchronousOption,
-    IsSynchronousSupport, LeaseBreakPeriod, LeaseBreakPeriodOption, LeaseBreakPeriodRequired,
-    LeaseBreakPeriodSupport, LeaseDuration, LeaseDurationRequired, LeaseDurationSupport,
-    LeaseIdOption, LeaseIdRequired, LeaseIdSupport, MaxResults, MaxResultsOption,
-    MaxResultsSupport, Metadata, MetadataOption, MetadataSupport, NextMarker, NextMarkerOption,
-    NextMarkerSupport, PageBlobLengthRequired, PageBlobLengthSupport, Prefix, PrefixOption,
-    PrefixSupport, ProposedLeaseId, ProposedLeaseIdOption, ProposedLeaseIdRequired,
-    ProposedLeaseIdSupport, RangeOption, RangeRequired, RangeSupport, SequenceNumber,
-    SequenceNumberCondition, SequenceNumberConditionSupport, SequenceNumberOption,
-    SequenceNumberSupport, SnapshotOption, SnapshotRequired, SnapshotSupport, SourceContentMD5,
-    SourceContentMD5Option, SourceContentMD5Support, SourceLeaseId, SourceLeaseIdOption,
-    SourceLeaseIdSupport, SourceUrlRequired, SourceUrlSupport, StoredAccessPolicy,
-    StoredAccessPolicyList, Timeout, TimeoutOption, TimeoutSupport, UserAgent, UserAgentSupport,
-    EMPTY_BODY,
+    AddAsHeader, AppendToUrlQuery, Consistency, HttpClient, RequestId, SessionToken,
+    StoredAccessPolicy, StoredAccessPolicyList, EMPTY_BODY,
 };

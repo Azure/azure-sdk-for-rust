@@ -1,5 +1,5 @@
-use crate::headers::*;
-use crate::{AddAsHeader, LeaseId};
+use super::LeaseId;
+use crate::{headers, AddAsHeader};
 use http::request::Builder;
 
 #[derive(Debug, Clone, Copy)]
@@ -7,7 +7,7 @@ pub struct ProposedLeaseId(LeaseId);
 
 impl AddAsHeader for ProposedLeaseId {
     fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(PROPOSED_LEASE_ID, &format!("{}", self.0))
+        builder.header(headers::PROPOSED_LEASE_ID, &format!("{}", self.0))
     }
 }
 
