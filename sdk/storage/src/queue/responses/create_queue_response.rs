@@ -1,6 +1,7 @@
 use azure_core::errors::AzureError;
 use azure_core::headers::CommonStorageResponseHeaders;
-use hyper::header::HeaderMap;
+use bytes::Bytes;
+use http::response::Response;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -8,14 +9,14 @@ pub struct CreateQueueResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
 }
 
-impl std::convert::TryFrom<&HeaderMap> for CreateQueueResponse {
+impl std::convert::TryFrom<&Response<Bytes>> for CreateQueueResponse {
     type Error = AzureError;
 
-    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
-        debug!("headers == {:?}", headers);
+    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+        debug!("response == {:?}", response);
 
         Ok(CreateQueueResponse {
-            common_storage_response_headers: headers.try_into()?,
+            common_storage_response_headers: response.headers().try_into()?,
         })
     }
 }

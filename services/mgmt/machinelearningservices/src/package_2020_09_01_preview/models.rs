@@ -3,6 +3,200 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum JobStatus {
+    NotStarted,
+    Starting,
+    Provisioning,
+    Preparing,
+    Queued,
+    Running,
+    Finalizing,
+    CancelRequested,
+    Completed,
+    Failed,
+    Canceled,
+    NotResponding,
+    Paused,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ComputeBinding {
+    #[serde(rename = "computeId", skip_serializing_if = "Option::is_none")]
+    pub compute_id: Option<String>,
+    #[serde(rename = "nodeCount", skip_serializing_if = "Option::is_none")]
+    pub node_count: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MachineLearningServiceError {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponse>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(skip_serializing)]
+    pub code: Option<String>,
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+    #[serde(skip_serializing)]
+    pub details: Vec<ErrorDetail>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    pub code: String,
+    pub message: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabelClass {
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subclasses: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabelCategory {
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "allowMultiSelect", skip_serializing_if = "Option::is_none")]
+    pub allow_multi_select: Option<bool>,
+    pub classes: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabelingJobInstructions {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabelingDatasetConfiguration {
+    #[serde(rename = "assetName")]
+    pub asset_name: String,
+    #[serde(rename = "enableIncrementalDatasetRefresh", skip_serializing_if = "Option::is_none")]
+    pub enable_incremental_dataset_refresh: Option<bool>,
+    #[serde(rename = "datasetVersion")]
+    pub dataset_version: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MlAssistConfiguration {
+    #[serde(rename = "inferencingComputeBinding")]
+    pub inferencing_compute_binding: ComputeBinding,
+    #[serde(rename = "trainingComputeBinding")]
+    pub training_compute_binding: ComputeBinding,
+    #[serde(rename = "modelNamePrefix")]
+    pub model_name_prefix: String,
+    #[serde(rename = "prelabelAccuracyThreshold", skip_serializing_if = "Option::is_none")]
+    pub prelabel_accuracy_threshold: Option<f64>,
+    #[serde(rename = "mlAssistEnabled", skip_serializing_if = "Option::is_none")]
+    pub ml_assist_enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabelingJobMediaProperties {
+    #[serde(rename = "mediaType")]
+    pub media_type: labeling_job_media_properties::MediaType,
+}
+pub mod labeling_job_media_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum MediaType {
+        Image,
+        Text,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabelingJobImageProperties {
+    #[serde(flatten)]
+    pub labeling_job_media_properties: LabelingJobMediaProperties,
+    #[serde(flatten)]
+    pub serde_json_value: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabelingJobTextProperties {
+    #[serde(flatten)]
+    pub labeling_job_media_properties: LabelingJobMediaProperties,
+    #[serde(flatten)]
+    pub serde_json_value: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProgressMetrics {
+    #[serde(rename = "totalDatapointCount", skip_serializing)]
+    pub total_datapoint_count: Option<i64>,
+    #[serde(rename = "completedDatapointCount", skip_serializing)]
+    pub completed_datapoint_count: Option<i64>,
+    #[serde(rename = "skippedDatapointCount", skip_serializing)]
+    pub skipped_datapoint_count: Option<i64>,
+    #[serde(rename = "incrementalDatasetLastRefreshTime", skip_serializing)]
+    pub incremental_dataset_last_refresh_time: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StatusMessage {
+    #[serde(skip_serializing)]
+    pub level: Option<status_message::Level>,
+    #[serde(skip_serializing)]
+    pub code: Option<String>,
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+    #[serde(rename = "createdTimeUtc", skip_serializing)]
+    pub created_time_utc: Option<String>,
+}
+pub mod status_message {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Level {
+        Error,
+        Information,
+        Warning,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabelingJobProperties {
+    #[serde(rename = "labelCategories")]
+    pub label_categories: serde_json::Value,
+    #[serde(rename = "jobInstructions")]
+    pub job_instructions: LabelingJobInstructions,
+    #[serde(rename = "datasetConfiguration")]
+    pub dataset_configuration: LabelingDatasetConfiguration,
+    #[serde(rename = "mlAssistConfiguration", skip_serializing_if = "Option::is_none")]
+    pub ml_assist_configuration: Option<MlAssistConfiguration>,
+    #[serde(rename = "labelingJobMediaProperties")]
+    pub labeling_job_media_properties: LabelingJobImageProperties,
+    #[serde(rename = "projectId", skip_serializing)]
+    pub project_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<JobStatus>,
+    #[serde(rename = "progressMetrics", skip_serializing_if = "Option::is_none")]
+    pub progress_metrics: Option<ProgressMetrics>,
+    #[serde(rename = "statusMessages", skip_serializing)]
+    pub status_messages: Vec<StatusMessage>,
+    #[serde(rename = "createdTimeUtc", skip_serializing)]
+    pub created_time_utc: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabelingJobCreateResource {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<LabelingJobProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabelingJobResource {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<LabelingJobProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabelingJobResourcePaginatedResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<LabelingJobResource>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -551,6 +745,7 @@ pub mod ssl_configuration {
     pub enum Status {
         Disabled,
         Enabled,
+        Auto,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -707,25 +902,6 @@ pub enum ComputeType {
     HdInsight,
     Databricks,
     DataLakeAnalytics,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MachineLearningServiceError {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorResponse>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(skip_serializing)]
-    pub code: Option<String>,
-    #[serde(skip_serializing)]
-    pub message: Option<String>,
-    #[serde(skip_serializing)]
-    pub details: Vec<ErrorDetail>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetail {
-    pub code: String,
-    pub message: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuCapability {
@@ -1581,4 +1757,59 @@ pub struct WorkspaceConnectionProps {
     pub auth_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SetupScripts {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scripts: Option<ScriptsToExecute>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScriptsToExecute {
+    #[serde(rename = "startupScript", skip_serializing_if = "Option::is_none")]
+    pub startup_script: Option<ScriptReference>,
+    #[serde(rename = "creationScript", skip_serializing_if = "Option::is_none")]
+    pub creation_script: Option<ScriptReference>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScriptReference {
+    #[serde(rename = "scriptSource", skip_serializing_if = "Option::is_none")]
+    pub script_source: Option<String>,
+    #[serde(rename = "scriptData", skip_serializing_if = "Option::is_none")]
+    pub script_data: Option<String>,
+    #[serde(rename = "scriptArguments", skip_serializing_if = "Option::is_none")]
+    pub script_arguments: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timeout: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }

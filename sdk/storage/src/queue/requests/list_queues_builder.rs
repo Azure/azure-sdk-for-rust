@@ -1,34 +1,29 @@
 use crate::core::*;
 use crate::queue::clients::QueueAccountClient;
+use crate::core::prelude::*;
 use crate::queue::responses::*;
-use crate::queue::HasStorageClient;
-use azure_core::errors::AzureError;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
-use hyper::StatusCode;
+use futures::stream::{unfold, Stream};
+use http::method::Method;
+use http::status::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    queue_account_client: &'a QueueAccountClient<C>,
-    prefix: Option<&'a str>,
-    next_marker: Option<&'a str>,
-    max_results: Option<u32>,
+pub struct ListQueuesBuilder<'a> {
+    storage_client: &'a StorageClient,
+    prefix: Option<Prefix<'a>>,
+    next_marker: Option<NextMarker>,
+    max_results: Option<MaxResults>,
     include_metadata: bool,
     timeout: Option<Timeout>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 
-impl<'a, C> ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    pub(crate) fn new(queue_account_client: &'a QueueAccountClient<C>) -> Self {
-        ListQueuesBuilder {
-            queue_account_client,
+impl<'a> ListQueuesBuilder<'a> {
+    pub(crate) fn new(storage_client: &'a StorageClient) -> Self {
+        Self {
+            storage_client,
             prefix: None,
             next_marker: None,
             max_results: None,
@@ -37,159 +32,96 @@ where
             client_request_id: None,
         }
     }
-}
 
-//set mandatory no traits methods
-impl<'a, C> PrefixOption<'a> for ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn prefix(&self) -> Option<&'a str> {
-        self.prefix
-    }
-}
-
-impl<'a, C> NextMarkerOption<'a> for ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn next_marker(&self) -> Option<&'a str> {
-        self.next_marker
-    }
-}
-
-impl<'a, C> MaxResultsOption for ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn max_results(&self) -> Option<u32> {
-        self.max_results
-    }
-}
-
-impl<'a, C> IncludeMetadataOption for ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn include_metadata(&self) -> bool {
-        self.include_metadata
-    }
-}
-
-impl<'a, C> PrefixSupport<'a> for ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_prefix(self, prefix: &'a str) -> Self::O {
-        ListQueuesBuilder {
-            queue_account_client: self.queue_account_client,
-            prefix: Some(prefix),
-            next_marker: self.next_marker,
-            max_results: self.max_results,
-            include_metadata: self.include_metadata,
-            timeout: self.timeout,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C> NextMarkerSupport<'a> for ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_next_marker(self, next_marker: &'a str) -> Self::O {
-        ListQueuesBuilder {
-            queue_account_client: self.queue_account_client,
-            prefix: self.prefix,
-            next_marker: Some(next_marker),
-            max_results: self.max_results,
-            include_metadata: self.include_metadata,
-            timeout: self.timeout,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C> MaxResultsSupport for ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_max_results(self, max_results: u32) -> Self::O {
-        ListQueuesBuilder {
-            queue_account_client: self.queue_account_client,
-            prefix: self.prefix,
-            next_marker: self.next_marker,
-            max_results: Some(max_results),
-            include_metadata: self.include_metadata,
-            timeout: self.timeout,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-impl<'a, C> IncludeMetadataSupport for ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_include_metadata(self) -> Self::O {
-        ListQueuesBuilder {
-            queue_account_client: self.queue_account_client,
-            prefix: self.prefix,
-            next_marker: self.next_marker,
-            max_results: self.max_results,
-            include_metadata: true,
-            timeout: self.timeout,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
-impl<'a, C> ListQueuesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
     setters! {
+        prefix: Prefix<'a> => Some(prefix),
+        next_marker: NextMarker => Some(next_marker),
+        max_results: MaxResults => Some(max_results),
+        include_metadata: bool => include_metadata,
         timeout: Timeout => Some(timeout),
         client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
-    pub async fn execute(self) -> Result<ListQueuesResponse, AzureError> {
-        let mut url = url::Url::parse(self.queue_account_client.storage_client().queue_uri())?;
+    pub async fn execute(
+        &self,
+    ) -> Result<ListQueuesResponse, Box<dyn std::error::Error + Sync + Send>> {
+        let mut url = self
+            .storage_client
+            .storage_account_client()
+            .queue_storage_url()
+            .to_owned();
 
         url.query_pairs_mut().append_pair("comp", "list");
 
-        IncludeMetadataOption::append_to_url(&self, &mut url);
-        MaxResultsOption::append_to_url(&self, &mut url);
-        NextMarkerOption::append_to_url(&self, &mut url);
-        PrefixOption::append_to_url(&self, &mut url);
+        self.prefix.append_to_url_query(&mut url);
+        self.next_marker.append_to_url_query(&mut url);
+        self.max_results.append_to_url_query(&mut url);
 
+        if self.include_metadata {
+            url.query_pairs_mut().append_pair("include", "metadata");
+        }
+
+        self.timeout.append_to_url_query(&mut url);
         AppendToUrlQuery::append_to_url_query(&self.timeout, &mut url);
 
-        debug!("url == {}", url);
+        trace!("url == {}", url);
 
-        let perform_request_response = self.queue_account_client.storage_client().perform_request(
+        let request = self.storage_client.prepare_request(
             url.as_str(),
-            &http::Method::GET,
+            &Method::GET,
             &|mut request| {
                 request = add_optional_header(&self.client_request_id, request);
                 request
             },
-            Some(&[]),
+            None,
         )?;
 
-        let (headers, body) = perform_request_response
-            .check_status_extract_headers_and_body(StatusCode::OK)
+        let response = self
+            .storage_client
+            .storage_account_client()
+            .http_client()
+            .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        (&headers, &body as &[u8]).try_into()
+        Ok((&response).try_into()?)
+    }
+
+    pub fn stream(
+        self,
+    ) -> impl Stream<Item = Result<ListQueuesResponse, Box<dyn std::error::Error + Sync + Send>>> + 'a
+    {
+        #[derive(Debug, Clone, PartialEq)]
+        enum States {
+            Init,
+            NextMarker(NextMarker),
+        }
+
+        unfold(Some(States::Init), move |next_marker: Option<States>| {
+            let req = self.clone();
+            async move {
+                debug!("next_marker == {:?}", &next_marker);
+                let response = match next_marker {
+                    Some(States::Init) => req.execute().await,
+                    Some(States::NextMarker(next_marker)) => {
+                        req.next_marker(next_marker).execute().await
+                    }
+                    None => return None,
+                };
+
+                // the ? operator does not work in async move (yet?)
+                // so we have to resort to this boilerplate
+                let response = match response {
+                    Ok(response) => response,
+                    Err(err) => return Some((Err(err), None)),
+                };
+
+                let next_marker = response
+                    .next_marker()
+                    .as_ref()
+                    .map(|next_marker| States::NextMarker(next_marker.to_owned()));
+
+                Some((Ok(response), next_marker))
+            }
+        })
     }
 }

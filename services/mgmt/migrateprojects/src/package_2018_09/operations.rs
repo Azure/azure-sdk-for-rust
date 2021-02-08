@@ -737,7 +737,7 @@ pub mod migrate_projects {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(body).context(put_migrate_project::SerializeError)?;
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
@@ -817,7 +817,7 @@ pub mod migrate_projects {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(body).context(patch_migrate_project::SerializeError)?;
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
@@ -949,7 +949,7 @@ pub mod migrate_projects {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(input).context(register_tool::SerializeError)?;
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
@@ -1014,7 +1014,7 @@ pub mod migrate_projects {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(input).context(refresh_migrate_project_summary::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -1150,7 +1150,7 @@ pub mod solutions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(solution_input).context(put_solution::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(put_solution::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(put_solution::ExecuteRequestError)?;
@@ -1225,7 +1225,7 @@ pub mod solutions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(solution_input).context(patch_solution::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(patch_solution::BuildRequestError)?;
         let rsp = http_client

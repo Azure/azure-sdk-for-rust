@@ -342,7 +342,7 @@ pub mod query_packs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(log_analytics_query_pack_payload).context(create_or_update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
         let rsp = http_client
@@ -425,7 +425,7 @@ pub mod query_packs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(query_pack_tags).context(update_tags::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update_tags::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update_tags::ExecuteRequestError)?;
@@ -692,7 +692,7 @@ pub mod queries {
         if let Some(skip_token) = skip_token {
             url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(query_search_properties).context(search::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(search::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(search::ExecuteRequestError)?;
@@ -855,7 +855,7 @@ pub mod queries {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(query_payload).context(put::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(put::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(put::ExecuteRequestError)?;
@@ -937,7 +937,7 @@ pub mod queries {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(query_payload).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;

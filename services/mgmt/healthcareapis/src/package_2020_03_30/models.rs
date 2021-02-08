@@ -50,7 +50,7 @@ pub struct ServiceAccessPolicyEntry {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceCosmosDbConfigurationInfo {
     #[serde(rename = "offerThroughput", skip_serializing_if = "Option::is_none")]
-    pub offer_throughput: Option<i64>,
+    pub offer_throughput: Option<i32>,
     #[serde(rename = "keyVaultKeyUri", skip_serializing_if = "Option::is_none")]
     pub key_vault_key_uri: Option<String>,
 }
@@ -72,7 +72,7 @@ pub struct ServiceCorsConfigurationInfo {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub methods: Vec<ServiceCorsConfigurationMethodEntry>,
     #[serde(rename = "maxAge", skip_serializing_if = "Option::is_none")]
-    pub max_age: Option<i64>,
+    pub max_age: Option<i32>,
     #[serde(rename = "allowCredentials", skip_serializing_if = "Option::is_none")]
     pub allow_credentials: Option<bool>,
 }
@@ -179,10 +179,14 @@ pub struct OperationListResult {
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
+    #[serde(rename = "isDataAction", skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
     #[serde(skip_serializing)]
     pub origin: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OperationProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationDisplay {
@@ -195,6 +199,8 @@ pub struct OperationDisplay {
     #[serde(skip_serializing)]
     pub description: Option<String>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationProperties {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicesPropertiesUpdateParameters {
     #[serde(rename = "publicNetworkAccess", skip_serializing_if = "Option::is_none")]

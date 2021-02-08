@@ -165,7 +165,7 @@ pub mod jobs {
     use snafu::{ResultExt, Snafu};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
-        top: Option<i64>,
+        top: Option<i32>,
         filter: Option<&str>,
         subscription_id: &str,
         accept_language: Option<&str>,
@@ -255,7 +255,7 @@ pub mod jobs {
     }
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
-        top: Option<i64>,
+        top: Option<i32>,
         filter: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
@@ -461,7 +461,7 @@ pub mod jobs {
         if let Some(x_ms_client_tenant_id) = x_ms_client_tenant_id {
             req_builder = req_builder.header("x-ms-client-tenant-id", x_ms_client_tenant_id);
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(body).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -556,7 +556,7 @@ pub mod jobs {
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(body).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;

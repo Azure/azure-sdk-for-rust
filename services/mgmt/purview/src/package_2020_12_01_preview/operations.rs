@@ -277,7 +277,7 @@ pub mod accounts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(account).context(create_or_update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
         let rsp = http_client
@@ -351,7 +351,7 @@ pub mod accounts {
         resource_group_name: &str,
         account_name: &str,
         account_update_parameters: &AccountUpdateParameters,
-    ) -> std::result::Result<Account, update::Error> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Purview/accounts/{}",
@@ -371,7 +371,7 @@ pub mod accounts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(account_update_parameters).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -379,7 +379,12 @@ pub mod accounts {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: Account = serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
-                Ok(rsp_value)
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: Account = serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -396,6 +401,11 @@ pub mod accounts {
     pub mod update {
         use crate::{models, models::*};
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Account),
+            Accepted202(Account),
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
@@ -608,7 +618,7 @@ pub mod accounts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(check_name_availability_request).context(check_name_availability::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(check_name_availability::BuildRequestError)?;
         let rsp = http_client
@@ -764,7 +774,7 @@ pub mod default_accounts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(default_account_payload).context(set::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(set::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(set::ExecuteRequestError)?;
@@ -1169,7 +1179,7 @@ pub mod private_endpoint_connections {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(request).context(create_or_update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
         let rsp = http_client

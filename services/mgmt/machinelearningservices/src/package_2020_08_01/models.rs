@@ -372,9 +372,9 @@ pub mod identity {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
-        UserAssigned,
         #[serde(rename = "SystemAssigned,UserAssigned")]
         SystemAssignedUserAssigned,
+        UserAssigned,
         None,
     }
 }
@@ -563,6 +563,7 @@ pub mod ssl_configuration {
     pub enum Status {
         Disabled,
         Enabled,
+        Auto,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1052,4 +1053,16 @@ pub struct ComputeInstanceCreatedBy {
     pub user_org_id: Option<String>,
     #[serde(rename = "userId", skip_serializing)]
     pub user_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PersonalComputeInstanceSettings {
+    #[serde(rename = "assignedUser", skip_serializing_if = "Option::is_none")]
+    pub assigned_user: Option<AssignedUser>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AssignedUser {
+    #[serde(rename = "objectId")]
+    pub object_id: String,
+    #[serde(rename = "tenantId")]
+    pub tenant_id: String,
 }

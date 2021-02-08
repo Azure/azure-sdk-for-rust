@@ -35,6 +35,26 @@ impl StorageClient {
         crate::container::requests::ListContainersBuilder::new(self)
     }
 
+    pub fn list_queues(&self) -> crate::queue::requests::ListQueuesBuilder {
+        crate::queue::requests::ListQueuesBuilder::new(self)
+    }
+
+    pub fn get_queue_service_properties(
+        &self,
+    ) -> crate::queue::requests::GetQueueServicePropertiesBuilder {
+        crate::queue::requests::GetQueueServicePropertiesBuilder::new(self)
+    }
+
+    pub fn set_queue_service_properties(
+        &self,
+    ) -> crate::queue::requests::SetQueueServicePropertiesBuilder {
+        crate::queue::requests::SetQueueServicePropertiesBuilder::new(self)
+    }
+
+    pub fn get_queue_service_stats(&self) -> crate::queue::requests::GetQueueServiceStatsBuilder {
+        crate::queue::requests::GetQueueServiceStatsBuilder::new(self)
+    }
+
     pub(crate) fn prepare_request<'a>(
         &self,
         url: &str,

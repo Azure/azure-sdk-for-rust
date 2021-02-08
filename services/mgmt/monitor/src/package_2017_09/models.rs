@@ -286,6 +286,12 @@ pub struct RuleDataSource {
     pub odata_type: String,
     #[serde(rename = "resourceUri", skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
+    #[serde(rename = "legacyResourceId", skip_serializing_if = "Option::is_none")]
+    pub legacy_resource_id: Option<String>,
+    #[serde(rename = "resourceLocation", skip_serializing_if = "Option::is_none")]
+    pub resource_location: Option<String>,
+    #[serde(rename = "metricNamespace", skip_serializing_if = "Option::is_none")]
+    pub metric_namespace: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleMetricDataSource {
@@ -401,9 +407,13 @@ pub struct AlertRule {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
     pub condition: RuleCondition,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub action: Option<RuleAction>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<RuleAction>,
     #[serde(rename = "lastUpdatedTime", skip_serializing)]

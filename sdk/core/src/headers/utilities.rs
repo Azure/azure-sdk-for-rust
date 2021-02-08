@@ -137,19 +137,33 @@ pub fn last_modified_from_headers_optional(
     }
 }
 
-pub fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureError> {
-    let last_modified = headers
-        .get(LAST_MODIFIED)
-        .ok_or_else(|| {
-            static LM: HeaderName = LAST_MODIFIED;
-            AzureError::HeaderNotFound(LM.as_str().to_owned())
-        })?
+pub fn rfc2822_from_headers_mandatory(
+    headers: &HeaderMap,
+    header_name: &str,
+) -> Result<DateTime<Utc>, AzureError> {
+    let val = headers
+        .get(header_name)
+        .ok_or_else(|| AzureError::HeaderNotFound(header_name.to_owned()))?
         .to_str()?;
-    let last_modified = DateTime::parse_from_rfc2822(last_modified)?;
-    let last_modified = DateTime::from_utc(last_modified.naive_utc(), Utc);
+    let val = DateTime::parse_from_rfc2822(val)?;
+    let val = DateTime::from_utc(val.naive_utc(), Utc);
 
-    trace!("last_modified == {:?}", last_modified);
-    Ok(last_modified)
+    trace!("header {} == {:?}", header_name, val);
+    Ok(val)
+}
+
+pub fn string_from_headers_mandatory<'a>(
+    headers: &'a HeaderMap,
+    header_name: &str,
+) -> Result<&'a str, AzureError> {
+    Ok(headers
+        .get(header_name)
+        .ok_or_else(|| AzureError::HeaderNotFound(header_name.to_owned()))?
+        .to_str()?)
+}
+
+pub fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureError> {
+    rfc2822_from_headers_mandatory(headers, LAST_MODIFIED.as_str())
 }
 
 pub fn continuation_token_from_headers_optional(

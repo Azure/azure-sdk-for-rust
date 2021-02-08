@@ -286,6 +286,12 @@ pub struct RuleDataSource {
     pub odata_type: String,
     #[serde(rename = "resourceUri", skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
+    #[serde(rename = "legacyResourceId", skip_serializing_if = "Option::is_none")]
+    pub legacy_resource_id: Option<String>,
+    #[serde(rename = "resourceLocation", skip_serializing_if = "Option::is_none")]
+    pub resource_location: Option<String>,
+    #[serde(rename = "metricNamespace", skip_serializing_if = "Option::is_none")]
+    pub metric_namespace: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleMetricDataSource {
@@ -401,9 +407,13 @@ pub struct AlertRule {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
     pub condition: RuleCondition,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub action: Option<RuleAction>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<RuleAction>,
     #[serde(rename = "lastUpdatedTime", skip_serializing)]
@@ -1040,7 +1050,6 @@ pub struct MetricAlertProperties {
     pub description: Option<String>,
     pub severity: i32,
     pub enabled: bool,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub scopes: Vec<String>,
     #[serde(rename = "evaluationFrequency")]
     pub evaluation_frequency: String,
@@ -1057,6 +1066,8 @@ pub struct MetricAlertProperties {
     pub actions: Vec<MetricAlertAction>,
     #[serde(rename = "lastUpdatedTime", skip_serializing)]
     pub last_updated_time: Option<String>,
+    #[serde(rename = "isMigrated", skip_serializing)]
+    pub is_migrated: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertPropertiesPatch {
@@ -1084,6 +1095,8 @@ pub struct MetricAlertPropertiesPatch {
     pub actions: Vec<MetricAlertAction>,
     #[serde(rename = "lastUpdatedTime", skip_serializing)]
     pub last_updated_time: Option<String>,
+    #[serde(rename = "isMigrated", skip_serializing)]
+    pub is_migrated: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertResource {
@@ -1327,6 +1340,8 @@ pub struct LogMetricTrigger {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ConditionalOperator {
+    GreaterThanOrEqual,
+    LessThanOrEqual,
     GreaterThan,
     LessThan,
     Equal,
@@ -1355,8 +1370,14 @@ pub enum QueryType {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSearchRule {
+    #[serde(rename = "createdWithApiVersion", skip_serializing)]
+    pub created_with_api_version: Option<String>,
+    #[serde(rename = "isLegacyLogAnalyticsRule", skip_serializing)]
+    pub is_legacy_log_analytics_rule: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<log_search_rule::Enabled>,
     #[serde(rename = "lastUpdatedTime", skip_serializing)]
@@ -1441,6 +1462,11 @@ pub struct LogToMetricAction {
     #[serde(flatten)]
     pub action: Action,
     pub criteria: Vec<Criteria>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorContract {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricNamespaceName {

@@ -111,7 +111,7 @@ pub mod services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(service_description).context(create_or_update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
         let rsp = http_client
@@ -205,7 +205,7 @@ pub mod services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(service_patch_description).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -516,7 +516,7 @@ pub mod services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(check_name_availability_inputs).context(check_name_availability::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(check_name_availability::BuildRequestError)?;
         let rsp = http_client
@@ -654,7 +654,7 @@ pub mod operation_results {
         subscription_id: &str,
         location_name: &str,
         operation_result_id: &str,
-    ) -> std::result::Result<OperationResultsDescription, get::Error> {
+    ) -> std::result::Result<get::Response, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HealthcareApis/locations/{}/operationresults/{}",
@@ -683,8 +683,9 @@ pub mod operation_results {
                 let rsp_body = rsp.body();
                 let rsp_value: OperationResultsDescription =
                     serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
-                Ok(rsp_value)
+                Ok(get::Response::Ok200(rsp_value))
             }
+            http::StatusCode::ACCEPTED => Ok(get::Response::Accepted202),
             http::StatusCode::NOT_FOUND => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
@@ -704,6 +705,11 @@ pub mod operation_results {
     pub mod get {
         use crate::{models, models::*};
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(OperationResultsDescription),
+            Accepted202,
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {

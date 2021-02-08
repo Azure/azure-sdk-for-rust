@@ -103,7 +103,7 @@ pub mod storage_sync_services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(check_name_availability::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(check_name_availability::BuildRequestError)?;
         let rsp = http_client
@@ -247,7 +247,7 @@ pub mod storage_sync_services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -820,7 +820,7 @@ pub mod private_endpoint_connections {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(properties).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -1244,7 +1244,7 @@ pub mod sync_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -1496,7 +1496,7 @@ pub mod cloud_endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -1748,7 +1748,7 @@ pub mod cloud_endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(pre_backup::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(pre_backup::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(pre_backup::ExecuteRequestError)?;
@@ -1825,7 +1825,7 @@ pub mod cloud_endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(post_backup::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(post_backup::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(post_backup::ExecuteRequestError)?;
@@ -1907,7 +1907,7 @@ pub mod cloud_endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(pre_restore::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(pre_restore::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(pre_restore::ExecuteRequestError)?;
@@ -2058,7 +2058,7 @@ pub mod cloud_endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(post_restore::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(post_restore::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(post_restore::ExecuteRequestError)?;
@@ -2135,7 +2135,7 @@ pub mod cloud_endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(trigger_change_detection::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(trigger_change_detection::BuildRequestError)?;
         let rsp = http_client
@@ -2310,7 +2310,7 @@ pub mod server_endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -2654,7 +2654,7 @@ pub mod server_endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(recall_action::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(recall_action::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(recall_action::ExecuteRequestError)?;
@@ -2906,7 +2906,7 @@ pub mod registered_servers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -3071,7 +3071,7 @@ pub mod registered_servers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(parameters).context(trigger_rollover::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(trigger_rollover::BuildRequestError)?;
         let rsp = http_client

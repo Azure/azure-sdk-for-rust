@@ -449,6 +449,8 @@ pub struct OperationPropertiesDefinition {
 pub struct OperationServiceSpecificationDefinition {
     #[serde(rename = "metricSpecifications", skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<OperationMetricSpecificationDefinition>,
+    #[serde(rename = "logSpecifications", skip_serializing_if = "Vec::is_empty")]
+    pub log_specifications: Vec<OperationLogSpecificationDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationMetricSpecificationDefinition {
@@ -464,6 +466,15 @@ pub struct OperationMetricSpecificationDefinition {
     pub aggregation_type: Option<String>,
     #[serde(rename = "internalMetricName", skip_serializing_if = "Option::is_none")]
     pub internal_metric_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationLogSpecificationDefinition {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "blobDuration", skip_serializing_if = "Option::is_none")]
+    pub blob_duration: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineRun {
@@ -891,11 +902,11 @@ pub struct KeyVaultProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistryUpdateParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity: Option<IdentityProperties>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub identity: Option<IdentityProperties>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistryPropertiesUpdateParameters>,
 }

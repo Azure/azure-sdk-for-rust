@@ -71,6 +71,8 @@ pub struct SoaRecord {
 pub struct RecordSetProperties {
     #[serde(rename = "TTL", skip_serializing_if = "Option::is_none")]
     pub ttl: Option<i64>,
+    #[serde(skip_serializing)]
+    pub fqdn: Option<String>,
     #[serde(rename = "ARecords", skip_serializing_if = "Vec::is_empty")]
     pub a_records: Vec<ARecord>,
     #[serde(rename = "AAAARecords", skip_serializing_if = "Vec::is_empty")]
@@ -92,8 +94,12 @@ pub struct RecordSetProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecordSet {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -110,6 +116,8 @@ pub struct RecordSetListResult {
 pub struct ZoneProperties {
     #[serde(rename = "maxNumberOfRecordSets", skip_serializing_if = "Option::is_none")]
     pub max_number_of_record_sets: Option<i64>,
+    #[serde(rename = "maxNumberOfRecordsPerRecordSet", skip_serializing)]
+    pub max_number_of_records_per_record_set: Option<i64>,
     #[serde(rename = "numberOfRecordSets", skip_serializing_if = "Option::is_none")]
     pub number_of_record_sets: Option<i64>,
 }
@@ -133,6 +141,22 @@ pub struct ZoneListResult {
 pub struct SubResource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudError {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<CloudErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudErrorBody {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {

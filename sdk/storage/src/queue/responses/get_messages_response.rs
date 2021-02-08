@@ -1,7 +1,9 @@
+use crate::queue::PopReceipt;
 use azure_core::errors::AzureError;
 use azure_core::headers::{utc_date_from_rfc2822, CommonStorageResponseHeaders};
+use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use hyper::header::HeaderMap;
+use http::response::Response;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -12,13 +14,18 @@ pub struct GetMessagesResponse {
 
 #[derive(Debug, Clone)]
 pub struct Message {
-    pub message_id: String,
+    pub pop_receipt: PopReceipt,
     pub insertion_time: DateTime<Utc>,
     pub expiration_time: DateTime<Utc>,
-    pub pop_receipt: String,
     pub time_next_visible: DateTime<Utc>,
     pub dequeue_count: u64,
     pub message_text: String,
+}
+
+impl Into<PopReceipt> for Message {
+    fn into(self) -> PopReceipt {
+        self.pop_receipt
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,11 +52,12 @@ struct MessagesInternal {
     pub messages: Option<Vec<MessageInternal>>,
 }
 
-impl std::convert::TryFrom<(&HeaderMap, &[u8])> for GetMessagesResponse {
+impl std::convert::TryFrom<&Response<Bytes>> for GetMessagesResponse {
     type Error = AzureError;
-    fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
-        let headers = value.0;
-        let body = value.1;
+
+    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+        let headers = response.headers();
+        let body = response.body();
 
         debug!("headers == {:?}", headers);
 
@@ -61,10 +69,9 @@ impl std::convert::TryFrom<(&HeaderMap, &[u8])> for GetMessagesResponse {
         let mut messages = Vec::new();
         for message in response.messages.unwrap_or_default().into_iter() {
             messages.push(Message {
-                message_id: message.message_id,
+                pop_receipt: PopReceipt::new(message.message_id, message.pop_receipt),
                 insertion_time: utc_date_from_rfc2822(&message.insertion_time)?,
                 expiration_time: utc_date_from_rfc2822(&message.expiration_time)?,
-                pop_receipt: message.pop_receipt,
                 time_next_visible: utc_date_from_rfc2822(&message.time_next_visible)?,
                 dequeue_count: message.dequeue_count,
                 message_text: message.message_text,

@@ -167,7 +167,7 @@ pub struct DataExportListResult {
 pub struct DataExportProperties {
     #[serde(rename = "dataExportId", skip_serializing_if = "Option::is_none")]
     pub data_export_id: Option<String>,
-    #[serde(rename = "tableNames", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "tableNames")]
     pub table_names: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub destination: Option<Destination>,

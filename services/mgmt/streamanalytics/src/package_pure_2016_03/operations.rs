@@ -153,7 +153,7 @@ pub mod streaming_jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(streaming_job).context(create_or_replace::SerializeError)?;
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -236,7 +236,7 @@ pub mod streaming_jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(streaming_job).context(update::SerializeError)?;
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -692,7 +692,7 @@ pub mod inputs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(input).context(create_or_replace::SerializeError)?;
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -777,7 +777,7 @@ pub mod inputs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(input).context(update::SerializeError)?;
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -1118,7 +1118,7 @@ pub mod transformations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(transformation).context(create_or_replace::SerializeError)?;
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -1203,7 +1203,7 @@ pub mod transformations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(transformation).context(update::SerializeError)?;
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -1338,7 +1338,7 @@ pub mod outputs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(output).context(create_or_replace::SerializeError)?;
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -1423,7 +1423,7 @@ pub mod outputs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(output).context(update::SerializeError)?;
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -1763,7 +1763,7 @@ pub mod functions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(function).context(create_or_replace::SerializeError)?;
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
@@ -1848,7 +1848,7 @@ pub mod functions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(function).context(update::SerializeError)?;
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }

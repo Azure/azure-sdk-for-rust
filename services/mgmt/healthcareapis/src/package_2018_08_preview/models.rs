@@ -95,6 +95,8 @@ pub struct Resource {
     pub tags: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity: Option<resource::Identity>,
 }
 pub mod resource {
     use super::*;
@@ -106,6 +108,23 @@ pub mod resource {
         FhirStu3,
         #[serde(rename = "fhir-R4")]
         FhirR4,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Identity {
+        #[serde(rename = "principalId", skip_serializing)]
+        pub principal_id: Option<String>,
+        #[serde(rename = "tenantId", skip_serializing)]
+        pub tenant_id: Option<String>,
+        #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+        pub type_: Option<identity::Type>,
+    }
+    pub mod identity {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum Type {
+            SystemAssigned,
+            None,
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -140,10 +159,14 @@ pub struct OperationListResult {
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
+    #[serde(rename = "isDataAction", skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
     #[serde(skip_serializing)]
     pub origin: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OperationProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationDisplay {
@@ -156,6 +179,8 @@ pub struct OperationDisplay {
     #[serde(skip_serializing)]
     pub description: Option<String>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationProperties {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityParameters {
     pub name: String,

@@ -439,7 +439,7 @@ pub struct BillingProfileProperties {
     #[serde(rename = "isClassic", skip_serializing)]
     pub is_classic: Option<bool>,
     #[serde(rename = "invoiceDay", skip_serializing)]
-    pub invoice_day: Option<i64>,
+    pub invoice_day: Option<i32>,
     #[serde(skip_serializing)]
     pub currency: Option<String>,
     #[serde(rename = "enabledAzureSKUs", skip_serializing_if = "Vec::is_empty")]
@@ -858,7 +858,7 @@ pub struct TransactionsSummaryProperties {
     #[serde(rename = "transactionAmount", skip_serializing_if = "Option::is_none")]
     pub transaction_amount: Option<Amount>,
     #[serde(skip_serializing)]
-    pub quantity: Option<i64>,
+    pub quantity: Option<i32>,
     #[serde(rename = "customerId", skip_serializing)]
     pub customer_id: Option<String>,
     #[serde(rename = "customerDisplayName", skip_serializing)]

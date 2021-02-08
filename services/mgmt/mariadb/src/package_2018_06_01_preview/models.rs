@@ -468,6 +468,13 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerSecurityAlertPolicyListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<ServerSecurityAlertPolicy>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudErrorBody {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,

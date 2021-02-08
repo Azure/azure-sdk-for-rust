@@ -1,4 +1,4 @@
-mod queue_account_client;
+mod pop_receipt_client;
 mod queue_client;
-pub use queue_account_client::QueueAccountClient;
-pub use queue_client::QueueClient;
+pub use pop_receipt_client::{AsPopReceiptClient, PopReceiptClient};
+pub use queue_client::{AsQueueClient, QueueClient};

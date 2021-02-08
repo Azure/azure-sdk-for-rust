@@ -759,24 +759,9 @@ pub mod caches {
         let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                Ok(delete::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                Ok(delete::Response::Accepted202(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                Ok(delete::Response::NoContent204(rsp_value))
-            }
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
@@ -794,9 +779,9 @@ pub mod caches {
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(serde_json::Value),
-            Accepted202(serde_json::Value),
-            NoContent204(serde_json::Value),
+            Ok200,
+            Accepted202,
+            NoContent204,
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -940,24 +925,9 @@ pub mod caches {
         let req = req_builder.body(req_body).context(flush::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(flush::ExecuteRequestError)?;
         match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(flush::DeserializeError { body: rsp_body.clone() })?;
-                Ok(flush::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(flush::DeserializeError { body: rsp_body.clone() })?;
-                Ok(flush::Response::Accepted202(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(flush::DeserializeError { body: rsp_body.clone() })?;
-                Ok(flush::Response::NoContent204(rsp_value))
-            }
+            http::StatusCode::OK => Ok(flush::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(flush::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(flush::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(flush::DeserializeError { body: rsp_body.clone() })?;
@@ -974,9 +944,9 @@ pub mod caches {
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(serde_json::Value),
-            Accepted202(serde_json::Value),
-            NoContent204(serde_json::Value),
+            Ok200,
+            Accepted202,
+            NoContent204,
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -1037,24 +1007,9 @@ pub mod caches {
         let req = req_builder.body(req_body).context(start::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(start::ExecuteRequestError)?;
         match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(start::DeserializeError { body: rsp_body.clone() })?;
-                Ok(start::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(start::DeserializeError { body: rsp_body.clone() })?;
-                Ok(start::Response::Accepted202(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(start::DeserializeError { body: rsp_body.clone() })?;
-                Ok(start::Response::NoContent204(rsp_value))
-            }
+            http::StatusCode::OK => Ok(start::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(start::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(start::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(start::DeserializeError { body: rsp_body.clone() })?;
@@ -1071,9 +1026,9 @@ pub mod caches {
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(serde_json::Value),
-            Accepted202(serde_json::Value),
-            NoContent204(serde_json::Value),
+            Ok200,
+            Accepted202,
+            NoContent204,
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -1134,24 +1089,9 @@ pub mod caches {
         let req = req_builder.body(req_body).context(stop::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(stop::ExecuteRequestError)?;
         match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(stop::DeserializeError { body: rsp_body.clone() })?;
-                Ok(stop::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(stop::DeserializeError { body: rsp_body.clone() })?;
-                Ok(stop::Response::Accepted202(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(stop::DeserializeError { body: rsp_body.clone() })?;
-                Ok(stop::Response::NoContent204(rsp_value))
-            }
+            http::StatusCode::OK => Ok(stop::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(stop::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(stop::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(stop::DeserializeError { body: rsp_body.clone() })?;
@@ -1168,9 +1108,9 @@ pub mod caches {
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(serde_json::Value),
-            Accepted202(serde_json::Value),
-            NoContent204(serde_json::Value),
+            Ok200,
+            Accepted202,
+            NoContent204,
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -1234,24 +1174,9 @@ pub mod caches {
             .await
             .context(upgrade_firmware::ExecuteRequestError)?;
         match rsp.status() {
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(upgrade_firmware::DeserializeError { body: rsp_body.clone() })?;
-                Ok(upgrade_firmware::Response::Created201(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(upgrade_firmware::DeserializeError { body: rsp_body.clone() })?;
-                Ok(upgrade_firmware::Response::Accepted202(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(upgrade_firmware::DeserializeError { body: rsp_body.clone() })?;
-                Ok(upgrade_firmware::Response::NoContent204(rsp_value))
-            }
+            http::StatusCode::CREATED => Ok(upgrade_firmware::Response::Created201),
+            http::StatusCode::ACCEPTED => Ok(upgrade_firmware::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(upgrade_firmware::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
@@ -1269,9 +1194,9 @@ pub mod caches {
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
-            Created201(serde_json::Value),
-            Accepted202(serde_json::Value),
-            NoContent204(serde_json::Value),
+            Created201,
+            Accepted202,
+            NoContent204,
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -1598,24 +1523,9 @@ pub mod storage_targets {
         let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                Ok(delete::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                Ok(delete::Response::Accepted202(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                Ok(delete::Response::NoContent204(rsp_value))
-            }
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
@@ -1633,9 +1543,9 @@ pub mod storage_targets {
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(serde_json::Value),
-            Accepted202(serde_json::Value),
-            NoContent204(serde_json::Value),
+            Ok200,
+            Accepted202,
+            NoContent204,
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]

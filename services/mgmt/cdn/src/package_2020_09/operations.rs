@@ -266,7 +266,7 @@ pub mod profiles {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(profile).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -361,7 +361,7 @@ pub mod profiles {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(profile_update_parameters).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -949,7 +949,7 @@ pub mod endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(endpoint).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -1046,7 +1046,7 @@ pub mod endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(endpoint_update_properties).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -1401,7 +1401,7 @@ pub mod endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(content_file_paths).context(purge_content::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(purge_content::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(purge_content::ExecuteRequestError)?;
@@ -1484,7 +1484,7 @@ pub mod endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(content_file_paths).context(load_content::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(load_content::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(load_content::ExecuteRequestError)?;
@@ -1567,7 +1567,7 @@ pub mod endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(custom_domain_properties).context(validate_custom_domain::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(validate_custom_domain::BuildRequestError)?;
         let rsp = http_client
@@ -1909,7 +1909,7 @@ pub mod origins {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(origin).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -2008,7 +2008,7 @@ pub mod origins {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(origin_update_properties).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -2355,7 +2355,7 @@ pub mod origin_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(origin_group).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -2457,7 +2457,7 @@ pub mod origin_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(origin_group_update_properties).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -2806,7 +2806,7 @@ pub mod custom_domains {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(custom_domain_properties).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -3177,7 +3177,7 @@ pub async fn check_name_availability(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    let req_body = azure_core::to_json(check_name_availability_input).context(check_name_availability::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).context(check_name_availability::BuildRequestError)?;
     let rsp = http_client
@@ -3256,7 +3256,7 @@ pub async fn check_name_availability_with_subscription(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    let req_body = azure_core::to_json(check_name_availability_input).context(check_name_availability_with_subscription::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
@@ -3337,7 +3337,7 @@ pub async fn validate_probe(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    let req_body = azure_core::to_json(validate_probe_input).context(validate_probe::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).context(validate_probe::BuildRequestError)?;
     let rsp = http_client
@@ -3730,7 +3730,7 @@ pub mod afd_profiles {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(check_host_name_availability_input).context(check_host_name_availability::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -3983,7 +3983,7 @@ pub mod afd_custom_domains {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(custom_domain).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -3997,6 +3997,11 @@ pub mod afd_custom_domains {
                 let rsp_body = rsp.body();
                 let rsp_value: AfdDomain = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: AfdDomain = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -4017,6 +4022,7 @@ pub mod afd_custom_domains {
         pub enum Response {
             Ok200(AfdDomain),
             Created201(AfdDomain),
+            Accepted202(AfdDomain),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -4074,7 +4080,7 @@ pub mod afd_custom_domains {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(custom_domain_update_properties).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -4170,6 +4176,7 @@ pub mod afd_custom_domains {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -4189,6 +4196,7 @@ pub mod afd_custom_domains {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -4498,7 +4506,7 @@ pub mod afd_endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(endpoint).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -4514,6 +4522,12 @@ pub mod afd_endpoints {
                 let rsp_value: AfdEndpoint =
                     serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: AfdEndpoint =
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -4534,6 +4548,7 @@ pub mod afd_endpoints {
         pub enum Response {
             Ok200(AfdEndpoint),
             Created201(AfdEndpoint),
+            Accepted202(AfdEndpoint),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -4591,7 +4606,7 @@ pub mod afd_endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(endpoint_update_properties).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -4689,6 +4704,7 @@ pub mod afd_endpoints {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -4708,6 +4724,7 @@ pub mod afd_endpoints {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -4766,7 +4783,7 @@ pub mod afd_endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(contents).context(purge_content::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(purge_content::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(purge_content::ExecuteRequestError)?;
@@ -4934,7 +4951,7 @@ pub mod afd_endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(custom_domain_properties).context(validate_custom_domain::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(validate_custom_domain::BuildRequestError)?;
         let rsp = http_client
@@ -5186,7 +5203,7 @@ pub mod afd_origin_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(origin_group).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -5202,6 +5219,12 @@ pub mod afd_origin_groups {
                 let rsp_value: AfdOriginGroup =
                     serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: AfdOriginGroup =
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -5222,6 +5245,7 @@ pub mod afd_origin_groups {
         pub enum Response {
             Ok200(AfdOriginGroup),
             Created201(AfdOriginGroup),
+            Accepted202(AfdOriginGroup),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -5279,7 +5303,7 @@ pub mod afd_origin_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(origin_group_update_properties).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -5377,6 +5401,7 @@ pub mod afd_origin_groups {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -5396,6 +5421,7 @@ pub mod afd_origin_groups {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -5711,7 +5737,7 @@ pub mod afd_origins {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(origin).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -5725,6 +5751,11 @@ pub mod afd_origins {
                 let rsp_body = rsp.body();
                 let rsp_value: AfdOrigin = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: AfdOrigin = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -5745,6 +5776,7 @@ pub mod afd_origins {
         pub enum Response {
             Ok200(AfdOrigin),
             Created201(AfdOrigin),
+            Accepted202(AfdOrigin),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -5804,7 +5836,7 @@ pub mod afd_origins {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(origin_update_properties).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -5902,6 +5934,7 @@ pub mod afd_origins {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -5921,6 +5954,7 @@ pub mod afd_origins {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -6151,7 +6185,7 @@ pub mod routes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(route).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -6165,6 +6199,11 @@ pub mod routes {
                 let rsp_body = rsp.body();
                 let rsp_value: Route = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: Route = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -6185,6 +6224,7 @@ pub mod routes {
         pub enum Response {
             Ok200(Route),
             Created201(Route),
+            Accepted202(Route),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -6244,7 +6284,7 @@ pub mod routes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(route_update_properties).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -6342,6 +6382,7 @@ pub mod routes {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -6361,6 +6402,7 @@ pub mod routes {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -6585,7 +6627,7 @@ pub mod rule_sets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(rule_set).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -6599,6 +6641,11 @@ pub mod rule_sets {
                 let rsp_body = rsp.body();
                 let rsp_value: RuleSet = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: RuleSet = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -6619,6 +6666,7 @@ pub mod rule_sets {
         pub enum Response {
             Ok200(RuleSet),
             Created201(RuleSet),
+            Accepted202(RuleSet),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -7015,7 +7063,7 @@ pub mod rules {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(rule).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -7029,6 +7077,11 @@ pub mod rules {
                 let rsp_body = rsp.body();
                 let rsp_value: Rule = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: Rule = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -7049,6 +7102,7 @@ pub mod rules {
         pub enum Response {
             Ok200(Rule),
             Created201(Rule),
+            Accepted202(Rule),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -7108,7 +7162,7 @@ pub mod rules {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(rule_update_properties).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -7206,6 +7260,7 @@ pub mod rules {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -7225,6 +7280,7 @@ pub mod rules {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -7450,7 +7506,7 @@ pub mod security_policies {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(security_policy).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -7466,6 +7522,12 @@ pub mod security_policies {
                 let rsp_value: SecurityPolicy =
                     serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: SecurityPolicy =
+                    serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -7486,6 +7548,7 @@ pub mod security_policies {
         pub enum Response {
             Ok200(SecurityPolicy),
             Created201(SecurityPolicy),
+            Accepted202(SecurityPolicy),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -7520,7 +7583,7 @@ pub mod security_policies {
         resource_group_name: &str,
         profile_name: &str,
         security_policy_name: &str,
-        security_policy_parameters: &SecurityPolicyWebApplicationFirewallParameters,
+        security_policy_properties: &SecurityPolicyProperties,
         subscription_id: &str,
     ) -> std::result::Result<patch::Response, patch::Error> {
         let http_client = operation_config.http_client();
@@ -7543,7 +7606,7 @@ pub mod security_policies {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(security_policy_properties).context(patch::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(patch::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(patch::ExecuteRequestError)?;
@@ -7641,6 +7704,7 @@ pub mod security_policies {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -7660,6 +7724,7 @@ pub mod security_policies {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -7884,7 +7949,7 @@ pub mod secrets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(secret).context(create::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(create::ExecuteRequestError)?;
@@ -7898,6 +7963,11 @@ pub mod secrets {
                 let rsp_body = rsp.body();
                 let rsp_value: Secret = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
                 Ok(create::Response::Created201(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: Secret = serde_json::from_slice(rsp_body).context(create::DeserializeError { body: rsp_body.clone() })?;
+                Ok(create::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -7918,6 +7988,7 @@ pub mod secrets {
         pub enum Response {
             Ok200(Secret),
             Created201(Secret),
+            Accepted202(Secret),
         }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
@@ -7975,7 +8046,7 @@ pub mod secrets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(secret_properties).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -8071,6 +8142,7 @@ pub mod secrets {
         let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -8090,6 +8162,7 @@ pub mod secrets {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, Snafu)]
@@ -8146,7 +8219,7 @@ pub mod validate {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(validate_secret_input).context(secret::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(secret::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(secret::ExecuteRequestError)?;
@@ -8305,7 +8378,7 @@ pub mod log_analytics {
         profile_name: &str,
         rankings: &Vec<&str>,
         metrics: &Vec<&str>,
-        max_ranking: f64,
+        max_ranking: i32,
         date_time_begin: &str,
         date_time_end: &str,
         custom_domains: &Vec<&str>,
@@ -8655,7 +8728,7 @@ pub mod log_analytics {
         metrics: &Vec<&str>,
         date_time_begin: &str,
         date_time_end: &str,
-        max_ranking: f64,
+        max_ranking: i32,
         rankings: &Vec<&str>,
         actions: &Vec<&str>,
         rule_types: &Vec<&str>,
@@ -8927,7 +9000,7 @@ pub mod policies {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(cdn_web_application_firewall_policy).context(create_or_update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
         let rsp = http_client
@@ -9028,7 +9101,7 @@ pub mod policies {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(cdn_web_application_firewall_policy_patch_parameters).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;

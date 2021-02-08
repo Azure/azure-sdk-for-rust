@@ -38,6 +38,7 @@ pub struct StorageAccountClient {
     blob_storage_url: Url,
     table_storage_url: Url,
     queue_storage_url: Url,
+    queue_storage_secondary_url: Url,
     filesystem_url: Url,
 }
 
@@ -81,6 +82,11 @@ impl StorageAccountClient {
                 .unwrap(),
             queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))
                 .unwrap(),
+            queue_storage_secondary_url: Url::parse(&format!(
+                "https://{}-secondary.queue.core.windows.net",
+                &account
+            ))
+            .unwrap(),
             filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
                 .unwrap(),
             storage_credentials: StorageCredentials::Key(account, key.into()),
@@ -105,7 +111,8 @@ impl StorageAccountClient {
         Arc::new(Self {
             blob_storage_url,
             table_storage_url,
-            queue_storage_url,
+            queue_storage_url: queue_storage_url.clone(),
+            queue_storage_secondary_url: queue_storage_url,
             filesystem_url,
             storage_credentials: StorageCredentials::Key(
         "devstoreaccount1".to_owned(),
@@ -127,14 +134,14 @@ impl StorageAccountClient {
         let account = account.into();
 
         Ok(Arc::new(Self {
-            blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
-                .unwrap(),
-            table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
-                .unwrap(),
-            queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))
-                .unwrap(),
-            filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
-                .unwrap(),
+            blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))?,
+            table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))?,
+            queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))?,
+            queue_storage_secondary_url: Url::parse(&format!(
+                "https://{}-secondary.queue.core.windows.net",
+                &account
+            ))?,
+            filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))?,
             storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
                 sas_token.as_ref(),
             )?),
@@ -161,6 +168,11 @@ impl StorageAccountClient {
                 .unwrap(),
             queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))
                 .unwrap(),
+            queue_storage_secondary_url: Url::parse(&format!(
+                "https://{}-secondary.queue.core.windows.net",
+                &account
+            ))
+            .unwrap(),
             filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
                 .unwrap(),
             storage_credentials: StorageCredentials::BearerToken(bearer_token),
@@ -184,6 +196,7 @@ impl StorageAccountClient {
                 ..
             } => {
                 log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
+
                 Ok(Arc::new(Self {
                     storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
                         sas_token,
@@ -191,6 +204,7 @@ impl StorageAccountClient {
                     blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                     table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
                     queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
+                    queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
                     filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                     http_client,
                 }))
@@ -208,6 +222,7 @@ impl StorageAccountClient {
                 blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                 table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
                 queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
+                queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
                 filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                 http_client,
             })),
@@ -224,6 +239,7 @@ impl StorageAccountClient {
                 blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                 table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
                 queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
+                queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
                 filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                 http_client,
             })),
@@ -250,6 +266,10 @@ impl StorageAccountClient {
 
     pub fn queue_storage_url(&self) -> &Url {
         &self.queue_storage_url
+    }
+
+    pub fn queue_storage_secondary_url(&self) -> &Url {
+        &self.queue_storage_secondary_url
     }
 
     pub fn filesystem_url(&self) -> &Url {
@@ -579,13 +599,16 @@ fn lexy_sort<'a>(
     v_values
 }
 
-fn get_endpoint_uri(
-    url: Option<&str>,
+fn get_endpoint_uri<URL>(
+    url: Option<URL>,
     account: &str,
     endpoint_type: &str,
-) -> Result<url::Url, url::ParseError> {
+) -> Result<url::Url, url::ParseError>
+where
+    URL: AsRef<str>,
+{
     Ok(match url {
-        Some(value) => url::Url::parse(value)?,
+        Some(value) => url::Url::parse(value.as_ref())?,
         None => url::Url::parse(&format!(
             "https://{}.{}.core.windows.net",
             account, endpoint_type

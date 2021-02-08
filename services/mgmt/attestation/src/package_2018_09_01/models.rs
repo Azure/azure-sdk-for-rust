@@ -109,7 +109,8 @@ pub struct JsonWebKeySet {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonWebKey {
-    pub alg: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alg: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub crv: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -122,7 +123,8 @@ pub struct JsonWebKey {
     pub e: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub k: Option<String>,
-    pub kid: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kid: Option<String>,
     pub kty: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub n: Option<String>,
@@ -132,8 +134,8 @@ pub struct JsonWebKey {
     pub q: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub qi: Option<String>,
-    #[serde(rename = "use")]
-    pub use_: String,
+    #[serde(rename = "use", skip_serializing_if = "Option::is_none")]
+    pub use_: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub x: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]

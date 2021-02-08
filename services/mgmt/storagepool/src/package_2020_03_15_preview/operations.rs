@@ -318,7 +318,7 @@ pub mod disk_pools {
         subscription_id: &str,
         resource_group_name: &str,
         disk_pool_name: &str,
-        disk_pool_payload: &DiskPool,
+        disk_pool_create_payload: &DiskPoolCreate,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -339,7 +339,7 @@ pub mod disk_pools {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(disk_pool_create_payload).context(create_or_update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
         let rsp = http_client
@@ -412,8 +412,8 @@ pub mod disk_pools {
         subscription_id: &str,
         resource_group_name: &str,
         disk_pool_name: &str,
-        disk_pool_payload: &DiskPool,
-    ) -> std::result::Result<DiskPool, update::Error> {
+        disk_pool_update_payload: &DiskPoolUpdate,
+    ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StoragePool/diskPools/{}",
@@ -433,7 +433,7 @@ pub mod disk_pools {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(disk_pool_update_payload).context(update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(update::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
@@ -441,7 +441,12 @@ pub mod disk_pools {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: DiskPool = serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
-                Ok(rsp_value)
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: DiskPool = serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -457,6 +462,11 @@ pub mod disk_pools {
     pub mod update {
         use crate::{models, models::*};
         use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(DiskPool),
+            Accepted202(DiskPool),
+        }
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
@@ -737,7 +747,7 @@ pub mod iscsi_targets {
         resource_group_name: &str,
         disk_pool_name: &str,
         iscsi_target_name: &str,
-        iscsi_target_payload: &IscsiTarget,
+        iscsi_target_create_payload: &IscsiTargetCreate,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -759,7 +769,7 @@ pub mod iscsi_targets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(iscsi_target_create_payload).context(create_or_update::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
         let rsp = http_client
@@ -792,6 +802,98 @@ pub mod iscsi_targets {
         }
     }
     pub mod create_or_update {
+        use crate::{models, models::*};
+        use snafu::Snafu;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(IscsiTarget),
+            Accepted202(IscsiTarget),
+        }
+        #[derive(Debug, Snafu)]
+        #[snafu(visibility(pub(crate)))]
+        pub enum Error {
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
+        }
+    }
+    pub async fn update(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        disk_pool_name: &str,
+        iscsi_target_name: &str,
+        iscsi_target_update_payload: &IscsiTargetUpdate,
+    ) -> std::result::Result<update::Response, update::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StoragePool/diskPools/{}/iscsiTargets/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            disk_pool_name,
+            iscsi_target_name
+        );
+        let mut url = url::Url::parse(url_str).context(update::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PATCH);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .context(update::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(iscsi_target_update_payload).context(update::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(update::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: IscsiTarget =
+                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: IscsiTarget =
+                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                Ok(update::Response::Accepted202(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: Error = serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                update::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                }
+                .fail()
+            }
+        }
+    }
+    pub mod update {
         use crate::{models, models::*};
         use snafu::Snafu;
         #[derive(Debug)]

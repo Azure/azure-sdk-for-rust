@@ -59,7 +59,7 @@ pub struct JobDetails {
     #[serde(rename = "cancelRequested", skip_serializing_if = "Option::is_none")]
     pub cancel_requested: Option<bool>,
     #[serde(rename = "percentComplete", skip_serializing_if = "Option::is_none")]
-    pub percent_complete: Option<i64>,
+    pub percent_complete: Option<i32>,
     #[serde(rename = "incompleteBlobListUri", skip_serializing_if = "Option::is_none")]
     pub incomplete_blob_list_uri: Option<String>,
     #[serde(rename = "driveList", skip_serializing_if = "Vec::is_empty")]
@@ -144,6 +144,8 @@ pub struct ListJobsResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobResponse {
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
     #[serde(skip_serializing)]
     pub id: Option<String>,
     #[serde(skip_serializing)]
@@ -209,6 +211,8 @@ pub mod location {
         pub country_or_region: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub phone: Option<String>,
+        #[serde(rename = "additionalShippingInformation", skip_serializing_if = "Option::is_none")]
+        pub additional_shipping_information: Option<String>,
         #[serde(rename = "supportedCarriers", skip_serializing_if = "Vec::is_empty")]
         pub supported_carriers: Vec<String>,
         #[serde(rename = "alternateLocations", skip_serializing_if = "Vec::is_empty")]
@@ -242,19 +246,20 @@ pub struct ReturnShipping {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShippingInformation {
-    #[serde(rename = "recipientName")]
-    pub recipient_name: String,
-    #[serde(rename = "streetAddress1")]
-    pub street_address1: String,
+    #[serde(rename = "recipientName", skip_serializing_if = "Option::is_none")]
+    pub recipient_name: Option<String>,
+    #[serde(rename = "streetAddress1", skip_serializing_if = "Option::is_none")]
+    pub street_address1: Option<String>,
     #[serde(rename = "streetAddress2", skip_serializing_if = "Option::is_none")]
     pub street_address2: Option<String>,
-    pub city: String,
-    #[serde(rename = "stateOrProvince")]
-    pub state_or_province: String,
-    #[serde(rename = "postalCode")]
-    pub postal_code: String,
-    #[serde(rename = "countryOrRegion")]
-    pub country_or_region: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    #[serde(rename = "stateOrProvince", skip_serializing_if = "Option::is_none")]
+    pub state_or_province: Option<String>,
+    #[serde(rename = "postalCode", skip_serializing_if = "Option::is_none")]
+    pub postal_code: Option<String>,
+    #[serde(rename = "countryOrRegion", skip_serializing_if = "Option::is_none")]
+    pub country_or_region: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub phone: Option<String>,
     #[serde(rename = "additionalInformation", skip_serializing)]
@@ -299,7 +304,7 @@ pub struct DriveStatus {
     #[serde(rename = "copyStatus", skip_serializing_if = "Option::is_none")]
     pub copy_status: Option<String>,
     #[serde(rename = "percentComplete", skip_serializing_if = "Option::is_none")]
-    pub percent_complete: Option<i64>,
+    pub percent_complete: Option<i32>,
     #[serde(rename = "verboseLogUri", skip_serializing_if = "Option::is_none")]
     pub verbose_log_uri: Option<String>,
     #[serde(rename = "errorLogUri", skip_serializing_if = "Option::is_none")]
@@ -360,4 +365,36 @@ pub struct DriveBitLockerKey {
 pub struct ListOperationsResponse {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }

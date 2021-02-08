@@ -478,9 +478,9 @@ pub mod data_transfer_details_validation_response_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DcAccessSecurityCode {
-    #[serde(rename = "reverseDcAccessCode", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "reverseDCAccessCode", skip_serializing_if = "Option::is_none")]
     pub reverse_dc_access_code: Option<String>,
-    #[serde(rename = "forwardDcAccessCode", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "forwardDCAccessCode", skip_serializing_if = "Option::is_none")]
     pub forward_dc_access_code: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -492,8 +492,8 @@ pub struct Details {
 pub struct DiskScheduleAvailabilityRequest {
     #[serde(flatten)]
     pub schedule_availability_request: ScheduleAvailabilityRequest,
-    #[serde(rename = "expectedDataSizeInTerabytes")]
-    pub expected_data_size_in_terabytes: i32,
+    #[serde(rename = "expectedDataSizeInTeraBytes")]
+    pub expected_data_size_in_tera_bytes: i32,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskSecret {
@@ -584,8 +584,8 @@ pub struct JobDetails {
     pub chain_of_custody_sas_key: Option<String>,
     #[serde(rename = "keyEncryptionKey", skip_serializing_if = "Option::is_none")]
     pub key_encryption_key: Option<KeyEncryptionKey>,
-    #[serde(rename = "expectedDataSizeInTerabytes", skip_serializing_if = "Option::is_none")]
-    pub expected_data_size_in_terabytes: Option<i32>,
+    #[serde(rename = "expectedDataSizeInTeraBytes", skip_serializing_if = "Option::is_none")]
+    pub expected_data_size_in_tera_bytes: Option<i32>,
 }
 pub mod job_details {
     use super::*;
@@ -974,7 +974,6 @@ pub mod share_credential_details {
         PageBlob,
         AzureFile,
         ManagedDisk,
-        AzurePremiumFiles,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

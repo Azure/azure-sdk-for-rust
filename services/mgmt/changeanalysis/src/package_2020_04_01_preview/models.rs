@@ -62,20 +62,16 @@ pub struct SystemData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationProfileResource {
     #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
+    pub extended_proxy_resource: ExtendedProxyResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identity: Option<ResourceIdentity>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProfileResourceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProxyResource {
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
-    #[serde(skip_serializing)]
-    pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
-    pub type_: Option<String>,
+pub struct ExtendedProxyResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[serde(rename = "systemData", skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -105,9 +101,41 @@ pub struct ResourceProviderOperationList {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Error {
+pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(skip_serializing)]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub message: Option<String>,
+    #[serde(skip_serializing)]
+    pub target: Option<String>,
+    #[serde(skip_serializing)]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", skip_serializing)]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing)]
+    pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxyResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
 }
