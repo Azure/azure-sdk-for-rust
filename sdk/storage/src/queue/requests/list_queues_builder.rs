@@ -1,5 +1,3 @@
-use crate::core::*;
-use crate::queue::clients::QueueAccountClient;
 use crate::core::prelude::*;
 use crate::queue::responses::*;
 use azure_core::headers::add_optional_header;

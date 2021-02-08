@@ -1,6 +1,6 @@
 use azure_core::errors::AzureError;
 use azure_core::headers::CommonStorageResponseHeaders;
-use azure_core::NextMarker;
+use azure_core::prelude::*;
 use bytes::Bytes;
 use http::response::Response;
 use std::convert::TryInto;
