@@ -1,5 +1,5 @@
 use super::AuthorizationToken;
-use crate::errors::{self, TokenParsingError};
+use crate::errors::TokenParsingError;
 
 const PERMISSION_TYPE_PREFIX: &str = "type=";
 const VERSION_PREFIX: &str = "ver=";
@@ -40,14 +40,14 @@ impl std::fmt::Display for PermissionToken {
 }
 
 impl std::convert::TryFrom<String> for PermissionToken {
-    type Error = failure::Error;
+    type Error = TokenParsingError;
     fn try_from(s: String) -> Result<Self, Self::Error> {
         Self::try_from(s.as_str())
     }
 }
 
 impl std::convert::TryFrom<&str> for PermissionToken {
-    type Error = failure::Error;
+    type Error = TokenParsingError;
     fn try_from(s: &str) -> Result<Self, Self::Error> {
         trace!("converting {} into PermissionToken", s);
 
@@ -61,27 +61,45 @@ impl std::convert::TryFrom<&str> for PermissionToken {
             }
             .into());
         }
-        let version = errors::item_or_error(s, &tokens, VERSION_PREFIX)?;
+        let version = get_item(s, &tokens, VERSION_PREFIX)?;
         if version != "1.0" && version != "1" {
-            return Err(failure::format_err!(
-                "unrecognized version number: {}",
-                version
-            ));
+            return Err(TokenParsingError::UnrecognizedVersionNumber {
+                provided_version: version.to_owned(),
+            });
         }
 
-        let permission_type = errors::item_or_error(s, &tokens, PERMISSION_TYPE_PREFIX)?;
-        let signature = errors::item_or_error(s, &tokens, SIGNATURE_PREFIX)?.to_owned();
+        let permission_type = get_item(s, &tokens, PERMISSION_TYPE_PREFIX)?;
+        let signature = get_item(s, &tokens, SIGNATURE_PREFIX)?.to_owned();
         let token = match permission_type {
             "master" => AuthorizationToken::Primary(base64::decode(signature)?),
             "resource" => AuthorizationToken::Resource(signature),
             _ => {
-                return Err(failure::format_err!(
-                    "Unrecognized error permission type {}",
-                    permission_type
-                ))
+                return Err(TokenParsingError::UnrecognizedPermissionType {
+                    provided_type: permission_type.to_owned(),
+                })
             }
         };
         Ok(Self { token })
+    }
+}
+
+fn get_item<'a>(s: &'a str, tokens: &[&'a str], token: &str) -> Result<&'a str, TokenParsingError> {
+    let mut tokens = tokens.iter().filter(|t| t.starts_with(token));
+
+    match tokens.next() {
+        Some(t) if tokens.next().is_some() => Err(TokenParsingError::ReplicatedToken {
+            s: s.to_owned(),
+            token: token.to_owned(),
+            occurrences: 2 + tokens.count() as u32,
+        }),
+        Some(t) => {
+            // we checked for < 1 and > 1 so this is == 1
+            Ok(&t[token.len()..])
+        }
+        None => Err(TokenParsingError::MissingToken {
+            s: s.to_owned(),
+            missing_token: token.to_owned(),
+        }),
     }
 }
 

@@ -123,7 +123,7 @@ impl HttpClient for reqwest::Client {
 }
 
 /// Serialize to json
-pub fn to_json<T>(value: &T) -> Result<Bytes, Box<dyn std::error::Error + Sync + Send>>
+pub fn to_json<T>(value: &T) -> Result<Bytes, serde_json::Error>
 where
     T: ?Sized + Serialize,
 {

@@ -9,6 +9,30 @@ use std::string;
 use url::ParseError as URLParseError;
 use xml::BuilderError as XMLError;
 
+#[derive(Debug, thiserror::Error)]
+pub enum HeaderError {
+    #[error("The header '{}' was not utf8: {}", name, 0)]
+    ValueNotUtf8 { name: String },
+    #[error("The header '{}' was expected but not found", name)]
+    NotFound { name: String },
+    #[error(
+        "An error was encountered when parsing the '{}' header: {}",
+        name,
+        error
+    )]
+    ParsingError {
+        name: String,
+        #[source]
+        error: Box<dyn std::error::Error + Send + Sync>,
+    },
+}
+
+impl HeaderError {
+    pub fn not_found(name: String) -> Self {
+        Self::NotFound { name }
+    }
+}
+
 #[derive(Debug)]
 pub enum ParsingError {
     ElementNotFound(String),

@@ -1,5 +1,5 @@
 use super::PermissionToken;
-use crate::{resources::Resource, CosmosError};
+use crate::resources::Resource;
 
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -87,7 +87,7 @@ impl<'a> PermissionMode<'a> {
 }
 
 impl<'a> std::convert::TryFrom<&[u8]> for Permission<'a> {
-    type Error = CosmosError;
+    type Error = serde_json::Error;
 
     fn try_from(slice: &[u8]) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice(slice)?)

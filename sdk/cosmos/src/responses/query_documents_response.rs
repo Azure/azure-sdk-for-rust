@@ -22,7 +22,7 @@ impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for DocumentQueryResult<T>
 where
     T: DeserializeOwned,
 {
-    type Error = CosmosError;
+    type Error = serde_json::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice(response.body())?)
@@ -38,7 +38,7 @@ pub struct QueryResponseMeta {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for QueryResponseMeta {
-    type Error = CosmosError;
+    type Error = serde_json::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice(response.body())?)
@@ -159,7 +159,6 @@ where
             gateway_version: gateway_version_from_headers(headers)?.to_owned(),
             continuation_token: continuation_token_from_headers_optional(headers)?,
             date: date_from_headers(headers)?,
-
             query_response_meta: response.try_into()?,
         })
     }
@@ -169,7 +168,6 @@ where
 pub struct QueryDocumentsResponseRaw<T> {
     pub query_response_meta: QueryResponseMeta,
     pub results: Vec<T>,
-
     pub last_state_change: DateTime<Utc>,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
@@ -241,7 +239,6 @@ impl<T> std::convert::From<QueryDocumentsResponse<T>> for QueryDocumentsResponse
 pub struct QueryDocumentsResponseDocuments<T> {
     pub query_response_meta: QueryResponseMeta,
     pub results: Vec<DocumentQueryResult<T>>,
-
     pub last_state_change: DateTime<Utc>,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
@@ -273,26 +270,16 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
 
     #[inline]
     fn try_from(q: QueryDocumentsResponse<T>) -> Result<Self, Self::Error> {
-        // first check if there is a Raw document. In case we bail out
-        if q.results.iter().any(|r| match r {
-            QueryResult::Document(_) => false,
-            QueryResult::Raw(_) => true,
-        }) {
-            return Err(ConversionToDocumentError::RawElementFound {});
-        }
-
         Ok(Self {
             query_response_meta: q.query_response_meta,
             results: q
                 .results
                 .into_iter()
                 .map(|r| match r {
-                    QueryResult::Document(document) => document,
-                    QueryResult::Raw(_) => {
-                        panic!("this should have been caugth by the previous check")
-                    }
+                    QueryResult::Document(document) => Ok(document),
+                    QueryResult::Raw(_) => Err(ConversionToDocumentError::RawElementFound {}),
                 })
-                .collect(),
+                .collect::<Result<Vec<_>, _>>()?,
             last_state_change: q.last_state_change,
             resource_quota: q.resource_quota,
             resource_usage: q.resource_usage,

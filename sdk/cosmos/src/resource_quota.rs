@@ -35,7 +35,7 @@ const FUNCTIONS: &str = "functions=";
 const CLIENT_ENCRYPTION_KEYS: &str = "clientEncryptionKeys=";
 
 /// Parse a collection of [`ResourceQuota`] from a string
-pub(crate) fn resource_quotas_from_str(s: &str) -> Result<Vec<ResourceQuota>, failure::Error> {
+pub(crate) fn resource_quotas_from_str(s: &str) -> Result<Vec<ResourceQuota>, TokenParsingError> {
     debug!("resource_quotas_from_str(\"{}\") called", s);
     let tokens: Vec<&str> = s.split(';').collect();
     let mut v = Vec::with_capacity(tokens.len());
@@ -71,8 +71,7 @@ pub(crate) fn resource_quotas_from_str(s: &str) -> Result<Vec<ResourceQuota>, fa
             return Err(TokenParsingError::UnsupportedToken {
                 token: token.to_string(),
                 s: s.to_owned(),
-            }
-            .into());
+            });
         }
 
         debug!("v == {:#?}", v);
