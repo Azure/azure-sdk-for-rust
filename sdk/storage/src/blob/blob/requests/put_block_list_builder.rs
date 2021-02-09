@@ -1,7 +1,7 @@
 use crate::blob::blob::responses::PutBlockListResponse;
 use crate::blob::prelude::*;
 use crate::core::prelude::*;
-use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
+use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 use std::borrow::Borrow;
 
@@ -18,7 +18,7 @@ where
     content_language: Option<ContentLanguage<'a>>,
     content_disposition: Option<ContentDisposition<'a>>,
     metadata: Option<&'a Metadata>,
-    access_tier: AccessTier,
+    access_tier: Option<AccessTier>,
     // TODO: Support tags
     lease_id: Option<&'a LeaseId>,
     client_request_id: Option<ClientRequestId<'a>>,
@@ -39,7 +39,7 @@ where
             content_language: None,
             content_disposition: None,
             metadata: None,
-            access_tier: AccessTier::Hot,
+            access_tier: Some(AccessTier::Hot),
             lease_id: None,
             client_request_id: None,
             timeout: None,
@@ -86,7 +86,7 @@ where
                 request = add_optional_header(&self.content_language, request);
                 request = add_optional_header(&self.content_disposition, request);
                 request = add_optional_header(&self.metadata, request);
-                request = add_mandatory_header(&self.access_tier, request);
+                request = add_optional_header(&self.access_tier, request);
                 request = add_optional_header_ref(&self.lease_id, request);
                 request = add_optional_header(&self.client_request_id, request);
                 request

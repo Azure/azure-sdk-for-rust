@@ -2,7 +2,7 @@ use crate::blob::blob::responses::PutBlockBlobResponse;
 use crate::blob::prelude::*;
 use crate::core::prelude::*;
 use azure_core::headers::BLOB_TYPE;
-use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
+use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 
 #[derive(Debug, Clone)]
@@ -15,7 +15,7 @@ pub struct PutBlockBlobBuilder<'a> {
     content_language: Option<ContentLanguage<'a>>,
     content_disposition: Option<ContentDisposition<'a>>,
     metadata: Option<&'a Metadata>,
-    access_tier: AccessTier,
+    access_tier: Option<AccessTier>,
     // TODO: Support tags
     lease_id: Option<&'a LeaseId>,
     client_request_id: Option<ClientRequestId<'a>>,
@@ -33,7 +33,7 @@ impl<'a> PutBlockBlobBuilder<'a> {
             content_language: None,
             content_disposition: None,
             metadata: None,
-            access_tier: AccessTier::Hot,
+            access_tier: Some(AccessTier::Hot),
             lease_id: None,
             client_request_id: None,
             timeout: None,
@@ -47,7 +47,7 @@ impl<'a> PutBlockBlobBuilder<'a> {
         content_language: ContentLanguage<'a> => Some(content_language),
         content_disposition: ContentDisposition<'a> => Some(content_disposition),
         metadata: &'a Metadata => Some(metadata),
-        access_tier: AccessTier => access_tier,
+        access_tier: AccessTier => Some(access_tier),
         lease_id: &'a LeaseId => Some(lease_id),
         client_request_id: ClientRequestId<'a> => Some(client_request_id),
         timeout: Timeout => Some(timeout),
@@ -81,7 +81,7 @@ impl<'a> PutBlockBlobBuilder<'a> {
                 request = add_optional_header(&self.content_language, request);
                 request = add_optional_header(&self.content_disposition, request);
                 request = add_optional_header(&self.metadata, request);
-                request = add_mandatory_header(&self.access_tier, request);
+                request = add_optional_header(&self.access_tier, request);
                 request = add_optional_header_ref(&self.lease_id, request);
                 request = add_optional_header(&self.client_request_id, request);
                 request
