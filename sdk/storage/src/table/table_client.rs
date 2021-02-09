@@ -171,10 +171,7 @@ where
             log::trace!("Request: {}", body);
         }
 
-        let request_vec: Option<&[u8]> = match request_str {
-            Some(s) => Some(s.as_bytes()),
-            None => None,
-        };
+        let request_vec: Option<&[u8]> = request_str.map(|s| s.as_bytes());
 
         self.client
             .perform_table_request(segment, method, http_header_adder, request_vec)

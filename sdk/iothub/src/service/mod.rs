@@ -213,11 +213,11 @@ impl ServiceClient {
             }
 
             if val.contains("SharedAccessKeyName=") {
-                key_name = Some(&val[start..val.len()]);
+                key_name = Some(&val[start..]);
             }
 
             if val.contains("SharedAccessKey=") {
-                primary_key = Some(&val[start..val.len()]);
+                primary_key = Some(&val[start..]);
             }
         }
 

@@ -54,11 +54,7 @@ pub trait TimeoutOption {
     fn timeout(&self) -> Option<u64>;
 
     fn to_uri_parameter(&self) -> Option<String> {
-        if let Some(nm) = self.timeout() {
-            Some(format!("timeout={}", nm))
-        } else {
-            None
-        }
+        self.timeout().map(|nm| format!("timeout={}", nm))
     }
 
     fn append_to_url(&self, url: &mut url::Url) {
@@ -95,11 +91,8 @@ pub trait MaxResultsOption {
     fn max_results(&self) -> Option<u32>;
 
     fn to_uri_parameter(&self) -> Option<String> {
-        if let Some(ref nm) = self.max_results() {
-            Some(format!("maxresults={}", nm))
-        } else {
-            None
-        }
+        self.max_results()
+            .map(|ref nm| format!("maxresults={}", nm))
     }
 
     fn append_to_url(&self, url: &mut url::Url) {
@@ -164,11 +157,7 @@ pub trait NextMarkerOption<'a> {
     fn next_marker(&self) -> Option<&'a str>;
 
     fn to_uri_parameter(&self) -> Option<String> {
-        if let Some(ref nm) = self.next_marker() {
-            Some(format!("marker={}", nm))
-        } else {
-            None
-        }
+        self.next_marker().map(|ref nm| format!("marker={}", nm))
     }
 
     fn append_to_url(&self, url: &mut url::Url) {
@@ -181,11 +170,7 @@ pub trait PrefixOption<'a> {
     fn prefix(&self) -> Option<&'a str>;
 
     fn to_uri_parameter(&self) -> Option<String> {
-        if let Some(ref nm) = self.prefix() {
-            Some(format!("prefix={}", nm))
-        } else {
-            None
-        }
+        self.prefix().map(|ref nm| format!("prefix={}", nm))
     }
 
     fn append_to_url(&self, url: &mut url::Url) {

@@ -98,10 +98,10 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
                         Err(err) => return Some((Err(err), None)),
                     };
 
-                    let continuation_token = match &response.continuation_token {
-                        Some(ct) => Some(States::Continuation(ct.to_owned())),
-                        None => None,
-                    };
+                    let continuation_token = response
+                        .continuation_token
+                        .as_ref()
+                        .map(|ct| States::Continuation(ct.to_owned()));
 
                     Some((Ok(response), continuation_token))
                 }
