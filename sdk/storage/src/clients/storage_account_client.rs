@@ -45,7 +45,7 @@ pub struct StorageAccountClient {
 fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>, url::ParseError> {
     // Any base url will do: we just need to parse the SAS token
     // to get its query pairs.
-    let base_url = Url::parse("https://blob.core.windows.net").unwrap();
+    let base_url = Url::parse("https://blob.core.windows.net")?;
 
     let url = Url::options().base_url(Some(&base_url));
 

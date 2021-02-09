@@ -104,8 +104,7 @@ where
     pub async fn create_table<T: Into<String>>(&self, table_name: T) -> Result<(), AzureError> {
         let body = &serde_json::to_string(&TableData {
             table_name: table_name.into(),
-        })
-        .unwrap();
+        })?;
         log::debug!("body == {}", body);
         let future_response = self
             .request_with_default_header(
