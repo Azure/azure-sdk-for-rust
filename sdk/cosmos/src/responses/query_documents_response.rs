@@ -1,4 +1,3 @@
-use crate::errors::ConversionToDocumentError;
 use crate::headers::from_headers::*;
 use crate::resources::document::DocumentAttributes;
 use crate::{CosmosError, ResourceQuota};
@@ -277,7 +276,7 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
                 .into_iter()
                 .map(|r| match r {
                     QueryResult::Document(document) => Ok(document),
-                    QueryResult::Raw(_) => Err(ConversionToDocumentError::RawElementFound {}),
+                    QueryResult::Raw(_) => Err(ConversionToDocumentError::RawElementFound),
                 })
                 .collect::<Result<Vec<_>, _>>()?,
             last_state_change: q.last_state_change,
@@ -306,4 +305,10 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
             date: q.date,
         })
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ConversionToDocumentError {
+    #[error("Conversion to document failed because at lease one element is raw.")]
+    RawElementFound,
 }

@@ -23,12 +23,7 @@ pub(crate) fn number_of_read_regions_from_headers(headers: &HeaderMap) -> Result
 }
 
 pub(crate) fn activity_id_from_headers(headers: &HeaderMap) -> Result<uuid::Uuid, HeaderError> {
-    extract_with_parse(headers, HEADER_ACTIVITY_ID, |s| {
-        uuid::Uuid::parse_str(s).map_err(|e| HeaderError::ParsingError {
-            name: HEADER_ACTIVITY_ID.to_owned(),
-            error: e.into(),
-        })
-    })
+    extract_with_parse(headers, HEADER_ACTIVITY_ID, uuid::Uuid::parse_str)
 }
 
 pub(crate) fn content_path_from_headers(headers: &HeaderMap) -> Result<&str, HeaderError> {
@@ -42,22 +37,13 @@ pub(crate) fn alt_content_path_from_headers(headers: &HeaderMap) -> Result<&str,
 pub(crate) fn resource_quota_from_headers(
     headers: &HeaderMap,
 ) -> Result<Vec<ResourceQuota>, HeaderError> {
-    extract_with_parse(headers, HEADER_RESOURCE_QUOTA, |s| {
-        resource_quotas_from_str(s).map_err(|e| HeaderError::ParsingError {
-            name: HEADER_RESOURCE_QUOTA.to_owned(),
-            error: e.into(),
-        })
-    })
+    extract_with_parse(headers, HEADER_RESOURCE_QUOTA, resource_quotas_from_str)
 }
 
 pub(crate) fn resource_usage_from_headers(
     headers: &HeaderMap,
 ) -> Result<Vec<ResourceQuota>, HeaderError> {
-    let s = extract(headers, HEADER_RESOURCE_USAGE)?;
-    resource_quotas_from_str(s).map_err(|e| HeaderError::ParsingError {
-        name: HEADER_RESOURCE_USAGE.to_owned(),
-        error: e.into(),
-    })
+    extract_with_parse(headers, HEADER_RESOURCE_USAGE, resource_quotas_from_str)
 }
 
 pub(crate) fn quorum_acked_lsn_from_headers(headers: &HeaderMap) -> Result<u64, HeaderError> {
@@ -128,10 +114,6 @@ pub(crate) fn global_committed_lsn_from_headers(headers: &HeaderMap) -> Result<u
             Ok(0)
         } else {
             s.parse()
-                .map_err(|e: std::num::ParseIntError| HeaderError::ParsingError {
-                    name: HEADER_GLOBAL_COMMITTED_LSN.to_owned(),
-                    error: e.into(),
-                })
         }
     })
 }
@@ -222,70 +204,72 @@ pub(crate) fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, He
     _date_from_headers(headers, http::header::DATE.as_str())
 }
 
-fn extract_with_parse<'a, F, T>(
-    headers: &'a HeaderMap,
-    name: &str,
-    parse: F,
-) -> Result<T, HeaderError>
+/// Get header with `name` from `headers` and parse it as `T`
+fn parse<T>(headers: &HeaderMap, name: &str) -> Result<T, HeaderError>
 where
-    F: Fn(&'a str) -> Result<T, HeaderError>,
+    T: std::str::FromStr,
+    T::Err: Send + Sync + std::error::Error + 'static,
 {
-    parse(
-        headers
-            .get(name)
-            .ok_or_else(|| HeaderError::not_found(name.to_owned()))?
-            .to_str()
-            .map_err(|e| HeaderError::ValueNotUtf8 {
-                name: name.to_owned(),
-            })?,
-    )
+    extract_with_parse(headers, name, |val| val.parse())
 }
 
-fn extract_optional_with_parse<'a, F, T>(
+/// Get header with `name` from `headers` and parse it as `T` or return `None` if it's not there
+fn parse_optional<T>(headers: &HeaderMap, name: &str) -> Result<Option<T>, HeaderError>
+where
+    T: std::str::FromStr,
+    T::Err: Send + Sync + std::error::Error + 'static,
+{
+    extract_optional_with_parse(headers, name, |val| val.parse())
+}
+
+fn extract_optional_with_parse<'a, F, T, E>(
     headers: &'a HeaderMap,
     name: &str,
     parse: F,
 ) -> Result<Option<T>, HeaderError>
 where
-    F: Fn(&'a str) -> Result<T, HeaderError>,
+    F: Fn(&'a str) -> Result<T, E>,
+    E: std::error::Error + Send + Sync + 'static,
 {
-    let val = headers
+    let val = extract_optional(headers, name)?;
+    val.map(parse)
+        .transpose()
+        .map_err(|e| HeaderError::ParsingError {
+            name: name.to_owned(),
+            error: e.into(),
+        })
+}
+
+fn extract_with_parse<'a, F, T, E>(
+    headers: &'a HeaderMap,
+    name: &str,
+    parse: F,
+) -> Result<T, HeaderError>
+where
+    F: Fn(&'a str) -> Result<T, E>,
+    E: std::error::Error + Send + Sync + 'static,
+{
+    let val = extract(headers, name)?;
+    parse(val).map_err(|e| HeaderError::ParsingError {
+        name: name.to_owned(),
+        error: e.into(),
+    })
+}
+
+fn extract<'a>(headers: &'a HeaderMap, name: &str) -> Result<&'a str, HeaderError> {
+    extract_optional(headers, name)?.ok_or_else(|| HeaderError::not_found(name.to_owned()))
+}
+
+fn extract_optional<'a>(
+    headers: &'a HeaderMap,
+    name: &str,
+) -> Result<Option<&'a str>, HeaderError> {
+    headers
         .get(name)
         .map(|v| {
             v.to_str().map_err(|e| HeaderError::ValueNotUtf8 {
                 name: name.to_owned(),
             })
         })
-        .transpose()?;
-    val.map(parse).transpose()
-}
-
-fn extract<'a>(headers: &'a HeaderMap, name: &str) -> Result<&'a str, HeaderError> {
-    extract_with_parse(headers, name, |val| Ok(val))
-}
-
-fn parse<T>(headers: &HeaderMap, name: &str) -> Result<T, HeaderError>
-where
-    T: std::str::FromStr,
-    T::Err: Send + Sync + std::error::Error + 'static,
-{
-    extract_with_parse(headers, name, |val| {
-        val.parse().map_err(|e: T::Err| HeaderError::ParsingError {
-            name: name.to_owned(),
-            error: e.into(),
-        })
-    })
-}
-
-fn parse_optional<T>(headers: &HeaderMap, name: &str) -> Result<Option<T>, HeaderError>
-where
-    T: std::str::FromStr,
-    T::Err: Send + Sync + std::error::Error + 'static,
-{
-    extract_optional_with_parse(headers, name, |val| {
-        val.parse().map_err(|e: T::Err| HeaderError::ParsingError {
-            name: name.to_owned(),
-            error: e.into(),
-        })
-    })
+        .transpose()
 }

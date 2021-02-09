@@ -115,13 +115,6 @@ pub use max_item_count::MaxItemCount;
 pub use partition_keys::PartitionKeys;
 pub use resource_quota::ResourceQuota;
 
-/// A general error having to do with Cosmos.
-#[derive(Debug, thiserror::Error)]
-pub enum CosmosError {
-    #[error("An error parsing json occured: {}", 0)]
-    JsonError(#[from] serde_json::Error),
-    #[error("An error in building a request occured: {}", 0)]
-    RequestBuilderError(#[from] http::Error),
-}
+pub use errors::CosmosError;
 
 type ReadonlyString = std::borrow::Cow<'static, str>;
