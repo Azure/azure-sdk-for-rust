@@ -91,7 +91,7 @@ fn get_item<'a>(
     let mut tokens = parts.iter().filter(|t| t.starts_with(name));
 
     match tokens.next() {
-        Some(t) if tokens.next().is_some() => Err(PermissionTokenParsingError::DuplicatePart {
+        Some(_t) if tokens.next().is_some() => Err(PermissionTokenParsingError::DuplicatePart {
             token_string: token_string.to_owned(),
             part: name.to_owned(),
             // Add 2 since we've already called `next` twice

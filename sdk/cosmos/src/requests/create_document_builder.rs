@@ -95,14 +95,18 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b> {
             return Err(UnexpectedHTTPResult::new(
                 StatusCode::CREATED,
                 response.status(),
-                std::str::from_utf8(response.body())?,
+                std::str::from_utf8(response.body()).map_err(|e| {
+                    Box::new(e) as Box<dyn std::error::Error + Sync + Send + 'static>
+                })?,
             )
             .into());
         } else if response.status() != StatusCode::CREATED && response.status() != StatusCode::OK {
             return Err(UnexpectedHTTPResult::new_multiple(
                 vec![StatusCode::CREATED, StatusCode::OK],
                 response.status(),
-                std::str::from_utf8(response.body())?,
+                std::str::from_utf8(response.body()).map_err(|e| {
+                    Box::new(e) as Box<dyn std::error::Error + Sync + Send + 'static>
+                })?,
             )
             .into());
         }

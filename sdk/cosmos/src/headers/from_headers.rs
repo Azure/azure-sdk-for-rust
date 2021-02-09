@@ -267,7 +267,7 @@ fn extract_optional<'a>(
     headers
         .get(name)
         .map(|v| {
-            v.to_str().map_err(|e| HeaderError::ValueNotUtf8 {
+            v.to_str().map_err(|_| HeaderError::ValueNotUtf8 {
                 name: name.to_owned(),
             })
         })

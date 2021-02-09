@@ -33,8 +33,9 @@ impl HeaderError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum ParsingError {
+    #[error("Element not found: {}", 0)]
     ElementNotFound(String),
 }
 
