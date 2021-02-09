@@ -305,9 +305,13 @@ pub struct IpRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkRule {
     pub id: String,
+    #[serde(rename = "ignoreMissingVnetServiceEndpoint", skip_serializing_if = "Option::is_none")]
+    pub ignore_missing_vnet_service_endpoint: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionItem {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
@@ -423,6 +427,8 @@ pub struct OperationProperties {
 pub struct ServiceSpecification {
     #[serde(rename = "logSpecifications", skip_serializing_if = "Vec::is_empty")]
     pub log_specifications: Vec<LogSpecification>,
+    #[serde(rename = "metricSpecifications", skip_serializing_if = "Vec::is_empty")]
+    pub metric_specifications: Vec<MetricSpecification>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSpecification {
@@ -432,6 +438,40 @@ pub struct LogSpecification {
     pub display_name: Option<String>,
     #[serde(rename = "blobDuration", skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricSpecification {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "displayDescription", skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+    #[serde(rename = "aggregationType", skip_serializing_if = "Option::is_none")]
+    pub aggregation_type: Option<String>,
+    #[serde(rename = "supportedAggregationTypes", skip_serializing_if = "Vec::is_empty")]
+    pub supported_aggregation_types: Vec<String>,
+    #[serde(rename = "supportedTimeGrainTypes", skip_serializing_if = "Vec::is_empty")]
+    pub supported_time_grain_types: Vec<String>,
+    #[serde(rename = "lockAggregationType", skip_serializing_if = "Option::is_none")]
+    pub lock_aggregation_type: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub dimensions: Vec<DimensionProperties>,
+    #[serde(rename = "fillGapWithZero", skip_serializing_if = "Option::is_none")]
+    pub fill_gap_with_zero: Option<bool>,
+    #[serde(rename = "internalMetricName", skip_serializing_if = "Option::is_none")]
+    pub internal_metric_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DimensionProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "toBeExportedForShoebox", skip_serializing_if = "Option::is_none")]
+    pub to_be_exported_for_shoebox: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedHsmSku {

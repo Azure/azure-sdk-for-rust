@@ -3,67 +3,76 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use crate::models::*;
-use snafu::{ResultExt, Snafu};
 pub mod operations {
     use crate::models::*;
-    use snafu::{ResultExt, Snafu};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ResourceProviderOperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.DesktopVirtualization/operations",
             operation_config.base_path(),
         );
-        let mut url = url::Url::parse(url_str).context(list::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list::GetTokenError)?;
+                .map_err(|source| list::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(list::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: ResourceProviderOperationList =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list::UnexpectedResponse {
+                Err(list::Error::UnexpectedResponse {
                     status_code,
                     body: rsp_body.clone(),
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("UnexpectedResponse")]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("ParseUrlError")]
             ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
             BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
             ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
             SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
             GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }
 pub mod workspaces {
     use crate::models::*;
-    use snafu::{ResultExt, Snafu};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -78,67 +87,69 @@ pub mod workspaces {
             resource_group_name,
             workspace_name
         );
-        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(get::GetTokenError)?;
+                .map_err(|source| get::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Workspace = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: Workspace = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
-                get::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod get {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn create_or_update(
@@ -156,83 +167,85 @@ pub mod workspaces {
             resource_group_name,
             workspace_name
         );
-        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| create_or_update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PUT);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(create_or_update::GetTokenError)?;
+                .map_err(|source| create_or_update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(workspace).context(create_or_update::SerializeError)?;
+        let req_body = azure_core::to_json(workspace).map_err(|source| create_or_update::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| create_or_update::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .context(create_or_update::ExecuteRequestError)?;
+            .map_err(|source| create_or_update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: Workspace =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
                 let rsp_value: Workspace =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
-                create_or_update::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(create_or_update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
             Ok200(Workspace),
             Created201(Workspace),
         }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn update(
@@ -250,72 +263,73 @@ pub mod workspaces {
             resource_group_name,
             workspace_name
         );
-        let mut url = url::Url::parse(url_str).context(update::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PATCH);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(update::GetTokenError)?;
+                .map_err(|source| update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(workspace) = workspace {
-            azure_core::to_json(workspace).context(update::SerializeError)?
+            azure_core::to_json(workspace).map_err(|source| update::Error::SerializeError { source })?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
         };
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(update::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| update::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Workspace = serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: Workspace = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
-                update::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod update {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn delete(
@@ -332,70 +346,68 @@ pub mod workspaces {
             resource_group_name,
             workspace_name
         );
-        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::DELETE);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(delete::GetTokenError)?;
+                .map_err(|source| delete::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| delete::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                delete::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(delete::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod delete {
         use crate::{models, models::*};
-        use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
         }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn list_by_resource_group(
@@ -410,72 +422,71 @@ pub mod workspaces {
             subscription_id,
             resource_group_name
         );
-        let mut url = url::Url::parse(url_str).context(list_by_resource_group::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_resource_group::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list_by_resource_group::GetTokenError)?;
+                .map_err(|source| list_by_resource_group::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list_by_resource_group::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_resource_group::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .context(list_by_resource_group::ExecuteRequestError)?;
+            .map_err(|source| list_by_resource_group::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: WorkspaceList =
-                    serde_json::from_slice(rsp_body).context(list_by_resource_group::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(list_by_resource_group::DeserializeError { body: rsp_body.clone() })?;
-                list_by_resource_group::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list_by_resource_group {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn list_by_subscription(
@@ -488,78 +499,76 @@ pub mod workspaces {
             operation_config.base_path(),
             subscription_id
         );
-        let mut url = url::Url::parse(url_str).context(list_by_subscription::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_subscription::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list_by_subscription::GetTokenError)?;
+                .map_err(|source| list_by_subscription::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list_by_subscription::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_subscription::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .context(list_by_subscription::ExecuteRequestError)?;
+            .map_err(|source| list_by_subscription::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: WorkspaceList =
-                    serde_json::from_slice(rsp_body).context(list_by_subscription::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_subscription::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(list_by_subscription::DeserializeError { body: rsp_body.clone() })?;
-                list_by_subscription::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_subscription::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list_by_subscription {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }
 pub mod application_groups {
     use crate::models::*;
-    use snafu::{ResultExt, Snafu};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -574,68 +583,69 @@ pub mod application_groups {
             resource_group_name,
             application_group_name
         );
-        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(get::GetTokenError)?;
+                .map_err(|source| get::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationGroup =
-                    serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: ApplicationGroup = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
-                get::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod get {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn create_or_update(
@@ -653,83 +663,85 @@ pub mod application_groups {
             resource_group_name,
             application_group_name
         );
-        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| create_or_update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PUT);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(create_or_update::GetTokenError)?;
+                .map_err(|source| create_or_update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(application_group).context(create_or_update::SerializeError)?;
+        let req_body = azure_core::to_json(application_group).map_err(|source| create_or_update::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| create_or_update::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .context(create_or_update::ExecuteRequestError)?;
+            .map_err(|source| create_or_update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: ApplicationGroup =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
                 let rsp_value: ApplicationGroup =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
-                create_or_update::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(create_or_update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
             Ok200(ApplicationGroup),
             Created201(ApplicationGroup),
         }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn update(
@@ -747,73 +759,73 @@ pub mod application_groups {
             resource_group_name,
             application_group_name
         );
-        let mut url = url::Url::parse(url_str).context(update::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PATCH);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(update::GetTokenError)?;
+                .map_err(|source| update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(application_group) = application_group {
-            azure_core::to_json(application_group).context(update::SerializeError)?
+            azure_core::to_json(application_group).map_err(|source| update::Error::SerializeError { source })?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
         };
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(update::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| update::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationGroup =
-                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: ApplicationGroup = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
-                update::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod update {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn delete(
@@ -830,70 +842,68 @@ pub mod application_groups {
             resource_group_name,
             application_group_name
         );
-        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::DELETE);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(delete::GetTokenError)?;
+                .map_err(|source| delete::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| delete::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                delete::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(delete::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod delete {
         use crate::{models, models::*};
-        use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
         }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn list_by_resource_group(
@@ -909,14 +919,14 @@ pub mod application_groups {
             subscription_id,
             resource_group_name
         );
-        let mut url = url::Url::parse(url_str).context(list_by_resource_group::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_resource_group::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list_by_resource_group::GetTokenError)?;
+                .map_err(|source| list_by_resource_group::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -925,59 +935,58 @@ pub mod application_groups {
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list_by_resource_group::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_resource_group::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .context(list_by_resource_group::ExecuteRequestError)?;
+            .map_err(|source| list_by_resource_group::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: ApplicationGroupList =
-                    serde_json::from_slice(rsp_body).context(list_by_resource_group::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(list_by_resource_group::DeserializeError { body: rsp_body.clone() })?;
-                list_by_resource_group::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list_by_resource_group {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn list_by_subscription(
@@ -991,14 +1000,14 @@ pub mod application_groups {
             operation_config.base_path(),
             subscription_id
         );
-        let mut url = url::Url::parse(url_str).context(list_by_subscription::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_subscription::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list_by_subscription::GetTokenError)?;
+                .map_err(|source| list_by_subscription::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -1007,65 +1016,63 @@ pub mod application_groups {
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list_by_subscription::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_subscription::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .context(list_by_subscription::ExecuteRequestError)?;
+            .map_err(|source| list_by_subscription::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: ApplicationGroupList =
-                    serde_json::from_slice(rsp_body).context(list_by_subscription::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_subscription::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(list_by_subscription::DeserializeError { body: rsp_body.clone() })?;
-                list_by_subscription::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_subscription::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list_by_subscription {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }
 pub mod start_menu_items {
     use crate::models::*;
-    use snafu::{ResultExt, Snafu};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1080,74 +1087,74 @@ pub mod start_menu_items {
             resource_group_name,
             application_group_name
         );
-        let mut url = url::Url::parse(url_str).context(list::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list::GetTokenError)?;
+                .map_err(|source| list::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(list::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StartMenuItemList =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: StartMenuItemList = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
-                list::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }
 pub mod applications {
     use crate::models::*;
-    use snafu::{ResultExt, Snafu};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1164,67 +1171,69 @@ pub mod applications {
             application_group_name,
             application_name
         );
-        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(get::GetTokenError)?;
+                .map_err(|source| get::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Application = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: Application = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
-                get::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod get {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn create_or_update(
@@ -1244,83 +1253,85 @@ pub mod applications {
             application_group_name,
             application_name
         );
-        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| create_or_update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PUT);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(create_or_update::GetTokenError)?;
+                .map_err(|source| create_or_update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(application).context(create_or_update::SerializeError)?;
+        let req_body = azure_core::to_json(application).map_err(|source| create_or_update::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| create_or_update::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .context(create_or_update::ExecuteRequestError)?;
+            .map_err(|source| create_or_update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: Application =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
                 let rsp_value: Application =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
-                create_or_update::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(create_or_update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
             Ok200(Application),
             Created201(Application),
         }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn update(
@@ -1340,73 +1351,73 @@ pub mod applications {
             application_group_name,
             application_name
         );
-        let mut url = url::Url::parse(url_str).context(update::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PATCH);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(update::GetTokenError)?;
+                .map_err(|source| update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(application) = application {
-            azure_core::to_json(application).context(update::SerializeError)?
+            azure_core::to_json(application).map_err(|source| update::Error::SerializeError { source })?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
         };
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(update::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| update::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Application =
-                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: Application = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
-                update::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod update {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn delete(
@@ -1425,70 +1436,68 @@ pub mod applications {
             application_group_name,
             application_name
         );
-        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::DELETE);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(delete::GetTokenError)?;
+                .map_err(|source| delete::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| delete::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                delete::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(delete::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod delete {
         use crate::{models, models::*};
-        use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
         }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn list(
@@ -1505,74 +1514,74 @@ pub mod applications {
             resource_group_name,
             application_group_name
         );
-        let mut url = url::Url::parse(url_str).context(list::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list::GetTokenError)?;
+                .map_err(|source| list::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(list::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationList =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: ApplicationList = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
-                list::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }
 pub mod desktops {
     use crate::models::*;
-    use snafu::{ResultExt, Snafu};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1589,67 +1598,69 @@ pub mod desktops {
             application_group_name,
             desktop_name
         );
-        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(get::GetTokenError)?;
+                .map_err(|source| get::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Desktop = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: Desktop = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
-                get::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod get {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn update(
@@ -1669,72 +1680,73 @@ pub mod desktops {
             application_group_name,
             desktop_name
         );
-        let mut url = url::Url::parse(url_str).context(update::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PATCH);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(update::GetTokenError)?;
+                .map_err(|source| update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(desktop) = desktop {
-            azure_core::to_json(desktop).context(update::SerializeError)?
+            azure_core::to_json(desktop).map_err(|source| update::Error::SerializeError { source })?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
         };
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(update::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| update::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Desktop = serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: Desktop = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
-                update::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod update {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn list(
@@ -1751,73 +1763,74 @@ pub mod desktops {
             resource_group_name,
             application_group_name
         );
-        let mut url = url::Url::parse(url_str).context(list::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list::GetTokenError)?;
+                .map_err(|source| list::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(list::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DesktopList = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: DesktopList = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
-                list::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }
 pub mod host_pools {
     use crate::models::*;
-    use snafu::{ResultExt, Snafu};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1832,67 +1845,69 @@ pub mod host_pools {
             resource_group_name,
             host_pool_name
         );
-        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(get::GetTokenError)?;
+                .map_err(|source| get::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HostPool = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: HostPool = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
-                get::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod get {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn create_or_update(
@@ -1910,83 +1925,83 @@ pub mod host_pools {
             resource_group_name,
             host_pool_name
         );
-        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| create_or_update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PUT);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(create_or_update::GetTokenError)?;
+                .map_err(|source| create_or_update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(host_pool).context(create_or_update::SerializeError)?;
+        let req_body = azure_core::to_json(host_pool).map_err(|source| create_or_update::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| create_or_update::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .context(create_or_update::ExecuteRequestError)?;
+            .map_err(|source| create_or_update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HostPool =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: HostPool = serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: HostPool =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: HostPool = serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
-                create_or_update::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(create_or_update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
             Ok200(HostPool),
             Created201(HostPool),
         }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn update(
@@ -2004,72 +2019,73 @@ pub mod host_pools {
             resource_group_name,
             host_pool_name
         );
-        let mut url = url::Url::parse(url_str).context(update::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PATCH);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(update::GetTokenError)?;
+                .map_err(|source| update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(host_pool) = host_pool {
-            azure_core::to_json(host_pool).context(update::SerializeError)?
+            azure_core::to_json(host_pool).map_err(|source| update::Error::SerializeError { source })?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
         };
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(update::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| update::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HostPool = serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: HostPool = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
-                update::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod update {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn delete(
@@ -2087,14 +2103,14 @@ pub mod host_pools {
             resource_group_name,
             host_pool_name
         );
-        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::DELETE);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(delete::GetTokenError)?;
+                .map_err(|source| delete::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -2103,57 +2119,55 @@ pub mod host_pools {
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| delete::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                delete::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(delete::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod delete {
         use crate::{models, models::*};
-        use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
         }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn list_by_resource_group(
@@ -2168,72 +2182,71 @@ pub mod host_pools {
             subscription_id,
             resource_group_name
         );
-        let mut url = url::Url::parse(url_str).context(list_by_resource_group::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_resource_group::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list_by_resource_group::GetTokenError)?;
+                .map_err(|source| list_by_resource_group::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list_by_resource_group::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_resource_group::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .context(list_by_resource_group::ExecuteRequestError)?;
+            .map_err(|source| list_by_resource_group::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: HostPoolList =
-                    serde_json::from_slice(rsp_body).context(list_by_resource_group::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(list_by_resource_group::DeserializeError { body: rsp_body.clone() })?;
-                list_by_resource_group::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list_by_resource_group {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn list(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<HostPoolList, list::Error> {
@@ -2243,74 +2256,74 @@ pub mod host_pools {
             operation_config.base_path(),
             subscription_id
         );
-        let mut url = url::Url::parse(url_str).context(list::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list::GetTokenError)?;
+                .map_err(|source| list::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(list::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HostPoolList =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: HostPoolList = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
-                list::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }
 pub mod user_sessions {
     use crate::models::*;
-    use snafu::{ResultExt, Snafu};
     pub async fn list_by_host_pool(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2326,14 +2339,14 @@ pub mod user_sessions {
             resource_group_name,
             host_pool_name
         );
-        let mut url = url::Url::parse(url_str).context(list_by_host_pool::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_host_pool::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list_by_host_pool::GetTokenError)?;
+                .map_err(|source| list_by_host_pool::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -2342,59 +2355,58 @@ pub mod user_sessions {
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list_by_host_pool::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_host_pool::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .context(list_by_host_pool::ExecuteRequestError)?;
+            .map_err(|source| list_by_host_pool::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: UserSessionList =
-                    serde_json::from_slice(rsp_body).context(list_by_host_pool::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_host_pool::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(list_by_host_pool::DeserializeError { body: rsp_body.clone() })?;
-                list_by_host_pool::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_host_pool::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_by_host_pool::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list_by_host_pool {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn get(
@@ -2415,67 +2427,69 @@ pub mod user_sessions {
             session_host_name,
             user_session_id
         );
-        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(get::GetTokenError)?;
+                .map_err(|source| get::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UserSession = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: UserSession = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
-                get::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod get {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn delete(
@@ -2497,14 +2511,14 @@ pub mod user_sessions {
             session_host_name,
             user_session_id
         );
-        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::DELETE);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(delete::GetTokenError)?;
+                .map_err(|source| delete::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -2513,57 +2527,55 @@ pub mod user_sessions {
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| delete::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                delete::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(delete::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod delete {
         use crate::{models, models::*};
-        use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
         }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn list(
@@ -2582,68 +2594,69 @@ pub mod user_sessions {
             host_pool_name,
             session_host_name
         );
-        let mut url = url::Url::parse(url_str).context(list::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list::GetTokenError)?;
+                .map_err(|source| list::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(list::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UserSessionList =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: UserSessionList = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
-                list::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn disconnect(
@@ -2656,65 +2669,63 @@ pub mod user_sessions {
     ) -> std::result::Result<(), disconnect::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DesktopVirtualization/hostPools/{}/sessionHosts/{}/userSessions/{}/disconnect" , operation_config . base_path () , subscription_id , resource_group_name , host_pool_name , session_host_name , user_session_id) ;
-        let mut url = url::Url::parse(url_str).context(disconnect::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| disconnect::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(disconnect::GetTokenError)?;
+                .map_err(|source| disconnect::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(disconnect::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(disconnect::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| disconnect::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| disconnect::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(disconnect::DeserializeError { body: rsp_body.clone() })?;
-                disconnect::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| disconnect::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(disconnect::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod disconnect {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn send_message(
@@ -2728,74 +2739,71 @@ pub mod user_sessions {
     ) -> std::result::Result<(), send_message::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DesktopVirtualization/hostPools/{}/sessionHosts/{}/userSessions/{}/sendMessage" , operation_config . base_path () , subscription_id , resource_group_name , host_pool_name , session_host_name , user_session_id) ;
-        let mut url = url::Url::parse(url_str).context(send_message::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| send_message::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(send_message::GetTokenError)?;
+                .map_err(|source| send_message::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(send_message) = send_message {
-            azure_core::to_json(send_message).context(send_message::SerializeError)?
+            azure_core::to_json(send_message).map_err(|source| send_message::Error::SerializeError { source })?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
         };
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(send_message::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(send_message::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| send_message::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| send_message::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(send_message::DeserializeError { body: rsp_body.clone() })?;
-                send_message::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| send_message::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(send_message::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod send_message {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }
 pub mod session_hosts {
     use crate::models::*;
-    use snafu::{ResultExt, Snafu};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2812,67 +2820,69 @@ pub mod session_hosts {
             host_pool_name,
             session_host_name
         );
-        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(get::GetTokenError)?;
+                .map_err(|source| get::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SessionHost = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: SessionHost = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
-                get::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod get {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn update(
@@ -2892,73 +2902,73 @@ pub mod session_hosts {
             host_pool_name,
             session_host_name
         );
-        let mut url = url::Url::parse(url_str).context(update::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PATCH);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(update::GetTokenError)?;
+                .map_err(|source| update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(session_host) = session_host {
-            azure_core::to_json(session_host).context(update::SerializeError)?
+            azure_core::to_json(session_host).map_err(|source| update::Error::SerializeError { source })?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
         };
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(update::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| update::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SessionHost =
-                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: SessionHost = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
-                update::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod update {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn delete(
@@ -2978,14 +2988,14 @@ pub mod session_hosts {
             host_pool_name,
             session_host_name
         );
-        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::DELETE);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(delete::GetTokenError)?;
+                .map_err(|source| delete::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -2994,57 +3004,55 @@ pub mod session_hosts {
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| delete::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                delete::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(delete::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod delete {
         use crate::{models, models::*};
-        use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
         }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn list(
@@ -3061,74 +3069,74 @@ pub mod session_hosts {
             resource_group_name,
             host_pool_name
         );
-        let mut url = url::Url::parse(url_str).context(list::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list::GetTokenError)?;
+                .map_err(|source| list::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(list::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SessionHostList =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: SessionHostList = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
-                list::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }
 pub mod msix_packages {
     use crate::models::*;
-    use snafu::{ResultExt, Snafu};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -3145,67 +3153,69 @@ pub mod msix_packages {
             host_pool_name,
             msix_package_full_name
         );
-        let mut url = url::Url::parse(url_str).context(get::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(get::GetTokenError)?;
+                .map_err(|source| get::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(get::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(get::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsixPackage = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: MsixPackage = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(get::DeserializeError { body: rsp_body.clone() })?;
-                get::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod get {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn create_or_update(
@@ -3225,83 +3235,85 @@ pub mod msix_packages {
             host_pool_name,
             msix_package_full_name
         );
-        let mut url = url::Url::parse(url_str).context(create_or_update::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| create_or_update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PUT);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(create_or_update::GetTokenError)?;
+                .map_err(|source| create_or_update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(msix_package).context(create_or_update::SerializeError)?;
+        let req_body = azure_core::to_json(msix_package).map_err(|source| create_or_update::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(create_or_update::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| create_or_update::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .context(create_or_update::ExecuteRequestError)?;
+            .map_err(|source| create_or_update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: MsixPackage =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
                 let rsp_value: MsixPackage =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(create_or_update::DeserializeError { body: rsp_body.clone() })?;
-                create_or_update::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(create_or_update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod create_or_update {
         use crate::{models, models::*};
-        use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
             Ok200(MsixPackage),
             Created201(MsixPackage),
         }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn update(
@@ -3321,73 +3333,73 @@ pub mod msix_packages {
             host_pool_name,
             msix_package_full_name
         );
-        let mut url = url::Url::parse(url_str).context(update::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PATCH);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(update::GetTokenError)?;
+                .map_err(|source| update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(msix_package) = msix_package {
-            azure_core::to_json(msix_package).context(update::SerializeError)?
+            azure_core::to_json(msix_package).map_err(|source| update::Error::SerializeError { source })?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
         };
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(update::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(update::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| update::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsixPackage =
-                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: MsixPackage = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(update::DeserializeError { body: rsp_body.clone() })?;
-                update::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod update {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn delete(
@@ -3406,70 +3418,68 @@ pub mod msix_packages {
             host_pool_name,
             msix_package_full_name
         );
-        let mut url = url::Url::parse(url_str).context(delete::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::DELETE);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(delete::GetTokenError)?;
+                .map_err(|source| delete::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(delete::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(delete::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| delete::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(delete::DeserializeError { body: rsp_body.clone() })?;
-                delete::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(delete::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod delete {
         use crate::{models, models::*};
-        use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
             NoContent204,
         }
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
     pub async fn list(
@@ -3486,74 +3496,74 @@ pub mod msix_packages {
             resource_group_name,
             host_pool_name
         );
-        let mut url = url::Url::parse(url_str).context(list::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list::GetTokenError)?;
+                .map_err(|source| list::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(list::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsixPackageList =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: MsixPackageList = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
-                list::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }
 pub mod msix_images {
     use crate::models::*;
-    use snafu::{ResultExt, Snafu};
     pub async fn expand(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -3569,69 +3579,70 @@ pub mod msix_images {
             resource_group_name,
             host_pool_name
         );
-        let mut url = url::Url::parse(url_str).context(expand::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| expand::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(expand::GetTokenError)?;
+                .map_err(|source| expand::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(msix_image_uri).context(expand::SerializeError)?;
+        let req_body = azure_core::to_json(msix_image_uri).map_err(|source| expand::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(expand::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.context(expand::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| expand::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| expand::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: ExpandMsixImageList =
-                    serde_json::from_slice(rsp_body).context(expand::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| expand::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).context(expand::DeserializeError { body: rsp_body.clone() })?;
-                expand::DefaultResponse {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| expand::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(expand::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod expand {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("DefaultResponse")]
             DefaultResponse {
                 status_code: http::StatusCode,
                 value: models::CloudError,
             },
-            ParseUrlError {
-                source: url::ParseError,
-            },
-            BuildRequestError {
-                source: http::Error,
-            },
-            ExecuteRequestError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            SerializeError {
-                source: Box<dyn std::error::Error + Sync + Send>,
-            },
-            DeserializeError {
-                source: serde_json::Error,
-                body: bytes::Bytes,
-            },
-            GetTokenError {
-                source: azure_core::errors::AzureError,
-            },
+            #[error("ParseUrlError")]
+            ParseUrlError { source: url::ParseError },
+            #[error("BuildRequestError")]
+            BuildRequestError { source: http::Error },
+            #[error("ExecuteRequestError")]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("SerializeError")]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("DeserializeError")]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("GetTokenError")]
+            GetTokenError { source: azure_core::errors::AzureError },
         }
     }
 }
