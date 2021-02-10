@@ -32,6 +32,48 @@ impl HeaderError {
         Self::NotFound { name }
     }
 }
+#[derive(Debug, thiserror::Error)]
+pub enum HttpRequestError {
+    #[error("Failed to serialize request body as json: {}", 0)]
+    BodySerializationError(serde_json::Error),
+    #[error("Tried to build an invalid HTTP request: {}", 0)]
+    InvalidRequest(http::Error),
+    #[error("Failed to make the HTTP request: {}", 0)]
+    ErrorInTransit(Box<dyn std::error::Error + Send + Sync + 'static>),
+    #[error(transparent)]
+    UnexpectedHttpStatus(#[from] UnexpectedHTTPResult),
+    #[error(transparent)]
+    ResponseDeserializationError(#[from] ResponseDeserializationError),
+}
+
+impl HttpRequestError {
+    pub fn check_response(
+        response: http::Response<bytes::Bytes>,
+        expected: Vec<http::StatusCode>,
+    ) -> Result<http::Response<bytes::Bytes>, Self> {
+        if let Some(e) = UnexpectedHTTPResult::from_response(&response, expected) {
+            Err(e.into())
+        } else {
+            Ok(response)
+        }
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ResponseDeserializationError {
+    #[error("Failed to deserialize response body as json: {}", 0)]
+    BodyDeserializationError(#[from] serde_json::Error),
+    #[error(transparent)]
+    HeaderError(#[from] HeaderError),
+    #[error("Other error when deserializing body: {}", 0)]
+    Other(#[from] Box<dyn std::error::Error + Send + Sync + 'static>),
+}
+
+impl From<AzureError> for ResponseDeserializationError {
+    fn from(error: AzureError) -> Self {
+        ResponseDeserializationError::Other(error.into())
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum ParsingError {
@@ -93,20 +135,31 @@ pub struct UnexpectedHTTPResult {
 }
 
 impl UnexpectedHTTPResult {
-    pub fn new(expected: StatusCode, received: StatusCode, body: &str) -> UnexpectedHTTPResult {
-        UnexpectedHTTPResult {
+    pub fn from_response(
+        response: &http::Response<bytes::Bytes>,
+        expected: Vec<StatusCode>,
+    ) -> Option<Self> {
+        let status = response.status();
+        if !expected.iter().any(|&s| status == s) {
+            Some(Self {
+                expected,
+                received: status,
+                body: String::from_utf8_lossy(response.body().as_ref()).into_owned(),
+            })
+        } else {
+            None
+        }
+    }
+    pub fn new(expected: StatusCode, received: StatusCode, body: &str) -> Self {
+        Self {
             expected: vec![expected],
             received,
             body: body.to_owned(),
         }
     }
 
-    pub fn new_multiple(
-        allowed: Vec<StatusCode>,
-        received: StatusCode,
-        body: &str,
-    ) -> UnexpectedHTTPResult {
-        UnexpectedHTTPResult {
+    pub fn new_multiple(allowed: Vec<StatusCode>, received: StatusCode, body: &str) -> Self {
+        Self {
             expected: allowed,
             received,
             body: body.to_owned(),
@@ -128,15 +181,7 @@ impl std::fmt::Display for UnexpectedHTTPResult {
     }
 }
 
-impl std::error::Error for UnexpectedHTTPResult {
-    fn description(&self) -> &str {
-        "Unexpected HTTP result"
-    }
-
-    fn cause(&self) -> Option<&dyn std::error::Error> {
-        None
-    }
-}
+impl std::error::Error for UnexpectedHTTPResult {}
 
 quick_error! {
     #[derive(Debug)]

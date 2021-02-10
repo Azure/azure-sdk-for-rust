@@ -84,6 +84,7 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b> {
             .http_client()
             .execute_request_check_status(req, StatusCode::OK)
             .await?
-            .try_into()?)
+            .try_into()
+            .map_err(HttpRequestError::ResponseDeserializationError)?)
     }
 }

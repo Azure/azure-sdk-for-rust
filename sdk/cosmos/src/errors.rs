@@ -7,6 +7,9 @@ pub enum CosmosError {
     /// An error when building a request
     #[error("An error in building a request occured: {}", 0)]
     RequestBuilderError(#[from] http::Error),
+    /// An http error occured
+    #[error("An error occurred when making an http request")]
+    HttpRequestError(#[from] azure_core::errors::HttpRequestError),
     /// An unexpected http result
     #[error("An unexpected http error occured: {}", 0)]
     UnexpectedHTTPResult(#[from] azure_core::errors::UnexpectedHTTPResult),

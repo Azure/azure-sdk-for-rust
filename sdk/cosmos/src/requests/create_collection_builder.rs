@@ -46,7 +46,7 @@ impl<'a> CreateCollectionBuilder<'a> {
     pub async fn execute<C: AsRef<str>>(
         &self,
         collection_name: C,
-    ) -> Result<CreateCollectionResponse, CosmosError> {
+    ) -> Result<CreateCollectionResponse, HttpRequestError> {
         trace!("CreateCollectionBuilder::execute called");
 
         let mut req = self.database_client.cosmos_client().prepare_request(
@@ -69,18 +69,22 @@ impl<'a> CreateCollectionBuilder<'a> {
             partition_key: &self.partition_key,
         };
 
-        let body = azure_core::to_json(&collection)?;
+        let body =
+            azure_core::to_json(&collection).map_err(HttpRequestError::BodySerializationError)?;
         debug!("body == {:?}", body);
 
-        let req = req.body(body)?;
+        let req = req.body(body).map_err(HttpRequestError::InvalidRequest)?;
         debug!("\nreq == {:?}", req);
 
-        Ok(self
+        let response = self
             .database_client
             .http_client()
-            .execute_request_check_status(req, StatusCode::CREATED)
-            .await?
-            .try_into()?)
+            .execute_request(req)
+            .await
+            .map_err(HttpRequestError::ErrorInTransit)
+            .and_then(|r| HttpRequestError::check_response(r, vec![StatusCode::CREATED]))?;
+
+        Ok(response.try_into()?)
     }
 }
 
