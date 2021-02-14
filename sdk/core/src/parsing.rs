@@ -30,10 +30,7 @@ impl FromStringOptional<bool> for bool {
 
 impl FromStringOptional<chrono::DateTime<chrono::Utc>> for chrono::DateTime<chrono::Utc> {
     fn from_str_optional(s: &str) -> Result<chrono::DateTime<chrono::Utc>, TraversingError> {
-        match from_azure_time(s) {
-            Err(e) => Err(TraversingError::DateTimeParseError(e)),
-            Ok(dt) => Ok(dt),
-        }
+        from_azure_time(s).map_err(|e| TraversingError::DateTimeParseError(e))
     }
 }
 

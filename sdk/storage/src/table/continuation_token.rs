@@ -126,10 +126,10 @@ impl ContinuationToken {
         let result = if let Some(partition_key) = headers.get(HEADER_NEXTPARTITIONKEY) {
             debug!("partition_key == {:?}", partition_key.to_str());
 
-            let row_key = match headers.get(HEADER_NEXTROWKEY) {
-                Some(row_key) => Some(row_key.to_str()?),
-                None => None,
-            };
+            let row_key = headers
+                .get(HEADER_NEXTROWKEY)
+                .map(|row_key| row_key.to_str())
+                .transpose()?;
             debug!("row_key == {:?}", row_key);
 
             Some(Self::new(previous_url, partition_key.to_str()?, row_key))

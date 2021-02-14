@@ -26,10 +26,9 @@ impl<'de> Visitor<'de> for TimestampVisitor {
     where
         E: Error,
     {
-        match value.parse::<DateTime<Utc>>() {
-            Ok(date) => Ok(date),
-            Err(e) => Err(E::custom(format!("Parse error {} for {}", e, value))),
-        }
+        value
+            .parse::<DateTime<Utc>>()
+            .map_err(|e| E::custom(format!("Parse error {} for {}", e, value)))
     }
 }
 

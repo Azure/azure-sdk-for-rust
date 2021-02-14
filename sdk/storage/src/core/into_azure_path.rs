@@ -24,25 +24,18 @@ where
 
 impl<'a> IntoAzurePath for &'a str {
     fn container_name(&self) -> Result<&str, AzurePathParseError> {
-        match split(self.borrow()) {
-            Ok((container_name, _blob_name)) => Ok(container_name),
-            Err(error) => Err(error),
-        }
+        split(self.borrow()).map(|(container_name, _blob_name)| container_name)
     }
 
     fn blob_name(&self) -> Result<&str, AzurePathParseError> {
-        match split(self.borrow()) {
-            Ok((_container_name, blob_name)) => Ok(blob_name),
-            Err(error) => Err(error),
-        }
+        split(self.borrow()).map(|(_container_name, blob_name)| blob_name)
     }
 }
 
 fn split(b: &str) -> Result<(&str, &str), AzurePathParseError> {
-    let slash_pos = match b.find('/') {
-        Some(p) => p,
-        None => return Err(AzurePathParseError::PathSeparatorNotFoundError),
-    };
+    let slash_pos = b
+        .find('/')
+        .ok_or_else(|| AzurePathParseError::PathSeparatorNotFoundError)?;
 
     if slash_pos == 0 {
         return Err(AzurePathParseError::MissingContainerError);

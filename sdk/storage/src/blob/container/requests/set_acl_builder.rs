@@ -61,10 +61,7 @@ impl<'a> SetACLBuilder<'a> {
                 request = add_optional_header_ref(&self.lease_id, request);
                 request
             },
-            match xml {
-                Some(x) => Some(Bytes::from(x)),
-                None => None,
-            },
+            xml.map(|x| Bytes::from(x)),
         )?;
 
         let response = self

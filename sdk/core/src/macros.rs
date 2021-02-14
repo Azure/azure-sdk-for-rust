@@ -78,10 +78,7 @@ macro_rules! create_enum {
 
         impl $crate::parsing::FromStringOptional<$name> for $name {
             fn from_str_optional(s : &str) -> ::std::result::Result<$name, $crate::errors::TraversingError> {
-                match s.parse::<$name>() {
-                    Ok(v) => Ok(v),
-                    Err(e) => Err($crate::errors::TraversingError::ParsingError(e)),
-                }
+                s.parse::<$name>().map_err(|e| { $crate::errors::TraversingError::ParsingError(e) })
             }
         }
 
