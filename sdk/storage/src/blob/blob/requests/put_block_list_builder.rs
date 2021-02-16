@@ -47,7 +47,7 @@ impl<'a> PutBlockListBuilder<'a> {
         content_disposition: ContentDisposition<'a> => Some(content_disposition),
         content_md5: BlobContentMD5 => Some(content_md5),
         metadata: &'a Metadata => Some(metadata),
-        access_tier: AccessTier => access_tier,
+        access_tier: AccessTier => Some(access_tier),
         lease_id: &'a LeaseId => Some(lease_id),
         client_request_id: ClientRequestId<'a> => Some(client_request_id),
         timeout: Timeout => Some(timeout),
