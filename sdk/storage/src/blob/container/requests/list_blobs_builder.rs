@@ -132,9 +132,8 @@ impl<'a> ListBlobsBuilder<'a> {
             .await?;
 
         Ok(ListBlobsResponse::from_response(
-            self.container_client.container_name(),
             response.headers(),
-            &std::str::from_utf8(response.body())?,
+            &std::str::from_utf8(&response.body()[3..])?,
         )?)
     }
 
@@ -168,9 +167,9 @@ impl<'a> ListBlobsBuilder<'a> {
                 };
 
                 let next_marker = response
-                    .incomplete_vector
-                    .next_marker()
-                    .map(|next_marker| States::NextMarker(next_marker.clone()));
+                    .next_marker
+                    .clone()
+                    .map(|next_marker| States::NextMarker(next_marker));
 
                 Some((Ok(response), next_marker))
             }

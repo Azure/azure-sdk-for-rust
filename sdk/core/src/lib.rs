@@ -12,6 +12,7 @@ extern crate serde_derive;
 mod macros;
 
 pub mod errors;
+mod etag;
 pub mod headers;
 mod http_client;
 pub mod incompletevector;

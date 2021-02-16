@@ -61,16 +61,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .execute()
         .await?;
 
-    println!("List blob returned {} blobs.", iv.incomplete_vector.len());
-    for cont in iv.incomplete_vector.iter() {
-        println!("\t{}\t{} bytes", cont.name, cont.content_length);
+    println!("List blob returned {} blobs.", iv.blobs.blobs.len());
+    for cont in iv.blobs.blobs.iter() {
+        println!("\t{}\t{} bytes", cont.name, cont.properties.content_length);
     }
 
     let mut stream = Box::pin(container.list_blobs().max_results(max_results).stream());
 
     let mut cnt: i32 = 0;
     while let Some(value) = stream.next().await {
-        let len = value?.incomplete_vector.len();
+        let len = value?.blobs.blobs.len();
         println!("received {} blobs", len);
         match cnt {
             0 | 1 | 2 => assert_eq!(len, 3),

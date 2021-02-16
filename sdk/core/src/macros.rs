@@ -59,7 +59,7 @@ macro_rules! setters {
 #[macro_export]
 macro_rules! create_enum {
     ($name:ident, $(($variant:ident, $value:expr)), *) => (
-        #[derive(Debug, PartialEq, PartialOrd, Clone, Copy, ::serde::Serialize, ::serde::Deserialize)]
+        #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
         pub enum $name {
             $(
                 $variant,
@@ -92,6 +92,29 @@ macro_rules! create_enum {
                     )*
                     _ => Err($crate::errors::ParsingError::ElementNotFound(s.to_owned())),
                 }
+            }
+        }
+
+        impl<'de> serde::Deserialize<'de> for $name {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+
+                match s.as_ref() {
+                    $(
+                        $value => Ok(Self::$variant),
+                    )*
+                    _ => Err(serde::de::Error::custom("unsupported value")),
+                }
+            }
+        }
+
+        impl serde::Serialize for $name {
+            fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+            where S: serde::Serializer {
+                return s.serialize_str(&self.to_string())
             }
         }
 

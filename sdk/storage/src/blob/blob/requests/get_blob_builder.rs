@@ -79,11 +79,7 @@ impl<'a> GetBlobBuilder<'a> {
 
         debug!("response.headers() == {:#?}", response.headers());
 
-        let blob = Blob::from_headers(
-            self.blob_client.blob_name(),
-            self.blob_client.container_client().container_name(),
-            response.headers(),
-        )?;
+        let blob = Blob::from_headers(self.blob_client.blob_name(), response.headers())?;
         Ok(GetBlobResponse::from_response(
             response.headers(),
             blob,
