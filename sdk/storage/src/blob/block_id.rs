@@ -1,11 +1,12 @@
 use azure_core::AppendToUrlQuery;
+use bytes::Bytes;
 
-#[derive(Debug, Clone)]
-pub struct BlockId(Vec<u8>);
+#[derive(Debug, Clone, PartialEq)]
+pub struct BlockId(Bytes);
 
 impl BlockId {
-    pub fn new(block_id: Vec<u8>) -> Self {
-        Self(block_id)
+    pub fn new(block_id: impl Into<Bytes>) -> Self {
+        Self(block_id.into())
     }
 }
 
@@ -16,20 +17,17 @@ impl AppendToUrlQuery for BlockId {
     }
 }
 
-impl From<Vec<u8>> for BlockId {
-    fn from(v: Vec<u8>) -> Self {
-        Self(v)
+impl<B> From<B> for BlockId
+where
+    B: Into<Bytes>,
+{
+    fn from(v: B) -> Self {
+        Self::new(v)
     }
 }
 
-impl From<&[u8]> for BlockId {
-    fn from(slice: &[u8]) -> Self {
-        Self(slice.to_owned())
-    }
-}
-
-impl From<&str> for BlockId {
-    fn from(s: &str) -> Self {
-        Self(s.as_bytes().to_owned())
+impl AsRef<[u8]> for BlockId {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_ref()
     }
 }

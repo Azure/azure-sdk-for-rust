@@ -1,5 +1,6 @@
 mod access_tier;
 pub mod blob;
+mod blob_content_md5;
 mod block_id;
 mod condition_append_position;
 mod condition_max_size;
@@ -11,9 +12,10 @@ pub mod prelude;
 mod snapshot;
 mod version_id;
 
-use crate::core::Client;
+use crate::core::{Client, No};
 pub use access_tier::AccessTier;
-use azure_core::{AddAsHeader, AppendToUrlQuery, No};
+use azure_core::{AddAsHeader, AppendToUrlQuery};
+pub use blob_content_md5::BlobContentMD5;
 pub use block_id::BlockId;
 pub use condition_append_position::ConditionAppendPosition;
 pub use condition_max_size::ConditionMaxSize;

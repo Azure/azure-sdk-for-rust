@@ -196,13 +196,6 @@ pub struct SaasAppPlan {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Tags {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SaasRpModernEligibility {
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
-    #[serde(rename = "isModern", skip_serializing_if = "Option::is_none")]
-    pub is_modern: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeleteOptions {
     #[serde(rename = "unsubscribeOnly", skip_serializing_if = "Option::is_none")]
     pub unsubscribe_only: Option<bool>,

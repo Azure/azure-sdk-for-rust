@@ -40,10 +40,10 @@ impl StoredAccessPolicyList {
     }
 
     pub fn from_xml(xml: &str) -> Result<StoredAccessPolicyList, AzureError> {
-        let mut sal = StoredAccessPolicyList {
-            stored_access: Vec::new(),
-        };
-        let sis: SignedIdentifiers = serde_xml_rs::de::from_reader(xml.as_bytes())?;
+        debug!("{}", xml);
+
+        let mut sal = StoredAccessPolicyList::default();
+        let sis: SignedIdentifiers = serde_xml_rs::de::from_str(xml)?;
 
         if let Some(sis) = sis.signed_identifiers {
             for si in sis {
@@ -94,20 +94,17 @@ struct SignedIdentifiers {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
 struct SignedIdentifier {
-    #[serde(rename = "Id")]
     id: String,
-    #[serde(rename = "AccessPolicy")]
     access_policy: AccessPolicy,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
 struct AccessPolicy {
-    #[serde(rename = "Start")]
     start: String,
-    #[serde(rename = "Expiry")]
     expiry: String,
-    #[serde(rename = "Permission")]
     permission: String,
 }
 

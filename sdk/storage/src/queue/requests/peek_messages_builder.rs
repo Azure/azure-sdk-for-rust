@@ -1,30 +1,20 @@
-use crate::core::prelude::*;
 use crate::queue::clients::QueueClient;
 use crate::queue::prelude::*;
-use crate::queue::HasStorageClient;
 use crate::responses::*;
-use azure_core::errors::AzureError;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
-use hyper::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct PeekMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    queue_client: &'a QueueClient<C>,
-    number_of_messages: Option<u32>,
+pub struct PeekMessagesBuilder<'a> {
+    queue_client: &'a QueueClient,
+    number_of_messages: Option<NumberOfMessages>,
     timeout: Option<Timeout>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 
-impl<'a, C> PeekMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    pub(crate) fn new(queue_client: &'a QueueClient<C>) -> Self {
+impl<'a> PeekMessagesBuilder<'a> {
+    pub(crate) fn new(queue_client: &'a QueueClient) -> Self {
         PeekMessagesBuilder {
             queue_client,
             number_of_messages: None,
@@ -32,71 +22,42 @@ where
             client_request_id: None,
         }
     }
-}
 
-//set mandatory no traits methods
-impl<'a, C> NumberOfMessagesOption for PeekMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    fn number_of_messages(&self) -> Option<u32> {
-        self.number_of_messages
-    }
-}
-
-impl<'a, C> NumberOfMessagesSupport for PeekMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
-    type O = Self;
-
-    fn with_number_of_messages(self, number_of_messages: u32) -> Self::O {
-        Self {
-            queue_client: self.queue_client,
-            number_of_messages: Some(number_of_messages),
-            timeout: self.timeout,
-            client_request_id: self.client_request_id,
-        }
-    }
-}
-
-// methods callable only when every mandatory field has been filled
-impl<'a, C> PeekMessagesBuilder<'a, C>
-where
-    C: Client + Clone,
-{
     setters! {
+        number_of_messages: NumberOfMessages => Some(number_of_messages),
         timeout: Timeout => Some(timeout),
         client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
-    pub async fn execute(self) -> Result<PeekMessagesResponse, AzureError> {
-        let mut url = url::Url::parse(&format!(
-            "{}/{}/messages",
-            self.queue_client.storage_client().queue_uri(),
-            self.queue_client.queue_name()
-        ))?;
+    pub async fn execute(
+        &self,
+    ) -> Result<PeekMessagesResponse, Box<dyn std::error::Error + Sync + Send>> {
+        let mut url = self.queue_client.queue_url()?.join("messages")?;
 
         url.query_pairs_mut().append_pair("peekonly", "true");
-        AppendToUrlQuery::append_to_url_query(&self.timeout, &mut url);
-        NumberOfMessagesOption::append_to_url(&self, &mut url);
+        self.number_of_messages.append_to_url_query(&mut url);
+        self.timeout.append_to_url_query(&mut url);
 
         debug!("url == {}", url);
 
-        let perform_request_response = self.queue_client.storage_client().perform_request(
+        let request = self.queue_client.storage_client().prepare_request(
             url.as_str(),
-            &http::Method::GET,
+            &http::method::Method::GET,
             &|mut request| {
                 request = add_optional_header(&self.client_request_id, request);
                 request
             },
-            Some(&[]),
+            None,
         )?;
 
-        let (headers, body) = perform_request_response
-            .check_status_extract_headers_and_body(StatusCode::OK)
+        let response = self
+            .queue_client
+            .storage_client()
+            .storage_account_client()
+            .http_client()
+            .execute_request_check_status(request.0, http::status::StatusCode::OK)
             .await?;
 
-        (&headers, &body as &[u8]).try_into()
+        Ok((&response).try_into()?)
     }
 }

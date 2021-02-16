@@ -1,41 +1,29 @@
 use crate::prelude::*;
 use crate::responses::ReplaceStoredProcedureResponse;
 use azure_core::prelude::*;
-use azure_core::{No, ToAssign, Yes};
 use http::StatusCode;
 use std::convert::TryInto;
-use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
+pub struct ReplaceStoredProcedureBuilder<'a, 'b> {
     stored_procedure_client: &'a StoredProcedureClient,
-    body: Option<&'b str>,
     user_agent: Option<UserAgent<'b>>,
     activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    p_body: PhantomData<BodySet>,
 }
 
-impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, No> {
+impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b> {
     pub(crate) fn new(stored_procedure_client: &'a StoredProcedureClient) -> Self {
         Self {
             stored_procedure_client,
-            body: None,
             user_agent: None,
             activity_id: None,
             consistency_level: None,
-            p_body: PhantomData,
         }
     }
 }
 
-impl<'a, 'b, BodySet> ReplaceStoredProcedureBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
+impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b> {
     setters! {
         user_agent: &'b str => Some(UserAgent::new(user_agent)),
         activity_id: &'b str => Some(ActivityId::new(activity_id)),
@@ -43,15 +31,17 @@ where
     }
 }
 
-impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
-    pub async fn execute(&self) -> Result<ReplaceStoredProcedureResponse, CosmosError> {
+impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b> {
+    pub async fn execute<B: AsRef<str>>(
+        &self,
+        body: B,
+    ) -> Result<ReplaceStoredProcedureResponse, CosmosError> {
         trace!("ReplaceStoredProcedureBuilder::execute called");
 
         let req = self
             .stored_procedure_client
             .prepare_request_with_stored_procedure_name(http::Method::PUT);
 
-        // add trait headers
         let req = azure_core::headers::add_optional_header(&self.user_agent, req);
         let req = azure_core::headers::add_optional_header(&self.activity_id, req);
         let req = azure_core::headers::add_optional_header(&self.consistency_level, req);
@@ -64,12 +54,12 @@ impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
             id: &'a str,
         }
         let request = Request {
-            body: self.body.unwrap(),
+            body: body.as_ref(),
             id: self.stored_procedure_client.stored_procedure_name(),
         };
 
-        let request = serde_json::to_string(&request)?;
-        let request = req.body(request.as_bytes())?;
+        let request = azure_core::to_json(&request)?;
+        let request = req.body(request)?;
 
         Ok(self
             .stored_procedure_client
@@ -77,18 +67,5 @@ impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
             .execute_request_check_status(request, StatusCode::OK)
             .await?
             .try_into()?)
-    }
-}
-
-impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b, No> {
-    pub fn body(self, body: &'b str) -> ReplaceStoredProcedureBuilder<'a, 'b, Yes> {
-        ReplaceStoredProcedureBuilder {
-            stored_procedure_client: self.stored_procedure_client,
-            p_body: PhantomData,
-            body: Some(body),
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-        }
     }
 }

@@ -3,6 +3,7 @@ use crate::clients::{StorageAccountClient, StorageClient};
 use crate::container::requests::*;
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
+use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
 use std::sync::Arc;
@@ -87,8 +88,8 @@ impl ContainerClient {
         url: &str,
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
-        request_body: Option<&'a [u8]>,
-    ) -> Result<(Request<&'a [u8]>, url::Url), AzureError> {
+        request_body: Option<Bytes>,
+    ) -> Result<(Request<Bytes>, url::Url), AzureError> {
         self.storage_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

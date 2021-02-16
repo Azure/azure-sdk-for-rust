@@ -12,7 +12,7 @@ pub struct Resource {
     pub type_: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -39,17 +39,17 @@ pub struct HanaInstanceProperties {
     pub os_profile: Option<OsProfile>,
     #[serde(rename = "networkProfile", skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<NetworkProfile>,
-    #[serde(rename = "hanaInstanceId", skip_serializing)]
+    #[serde(rename = "hanaInstanceId", skip_serializing_if = "Option::is_none")]
     pub hana_instance_id: Option<String>,
-    #[serde(rename = "powerState", skip_serializing)]
+    #[serde(rename = "powerState", skip_serializing_if = "Option::is_none")]
     pub power_state: Option<hana_instance_properties::PowerState>,
-    #[serde(rename = "proximityPlacementGroup", skip_serializing)]
+    #[serde(rename = "proximityPlacementGroup", skip_serializing_if = "Option::is_none")]
     pub proximity_placement_group: Option<String>,
-    #[serde(rename = "hwRevision", skip_serializing)]
+    #[serde(rename = "hwRevision", skip_serializing_if = "Option::is_none")]
     pub hw_revision: Option<String>,
     #[serde(rename = "partnerNodeId", skip_serializing_if = "Option::is_none")]
     pub partner_node_id: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<hana_instance_properties::ProvisioningState>,
 }
 pub mod hana_instance_properties {
@@ -82,9 +82,9 @@ pub mod hana_instance_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HardwareProfile {
-    #[serde(rename = "hardwareType", skip_serializing)]
+    #[serde(rename = "hardwareType", skip_serializing_if = "Option::is_none")]
     pub hardware_type: Option<hardware_profile::HardwareType>,
-    #[serde(rename = "hanaInstanceSize", skip_serializing)]
+    #[serde(rename = "hanaInstanceSize", skip_serializing_if = "Option::is_none")]
     pub hana_instance_size: Option<hardware_profile::HanaInstanceSize>,
 }
 pub mod hardware_profile {
@@ -154,7 +154,7 @@ pub struct Disk {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageProfile {
-    #[serde(rename = "nfsIpAddress", skip_serializing)]
+    #[serde(rename = "nfsIpAddress", skip_serializing_if = "Option::is_none")]
     pub nfs_ip_address: Option<String>,
     #[serde(rename = "osDisks", skip_serializing_if = "Vec::is_empty")]
     pub os_disks: Vec<Disk>,
@@ -163,9 +163,9 @@ pub struct StorageProfile {
 pub struct OsProfile {
     #[serde(rename = "computerName", skip_serializing_if = "Option::is_none")]
     pub computer_name: Option<String>,
-    #[serde(rename = "osType", skip_serializing)]
+    #[serde(rename = "osType", skip_serializing_if = "Option::is_none")]
     pub os_type: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[serde(rename = "sshPublicKey", skip_serializing_if = "Option::is_none")]
     pub ssh_public_key: Option<String>,
@@ -174,7 +174,7 @@ pub struct OsProfile {
 pub struct NetworkProfile {
     #[serde(rename = "networkInterfaces", skip_serializing_if = "Vec::is_empty")]
     pub network_interfaces: Vec<IpAddress>,
-    #[serde(rename = "circuitId", skip_serializing)]
+    #[serde(rename = "circuitId", skip_serializing_if = "Option::is_none")]
     pub circuit_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -210,9 +210,17 @@ pub struct Display {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+    pub error: Option<error_response::Error>,
+}
+pub mod error_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Error {
+        #[serde(skip_serializing)]
+        pub code: Option<String>,
+        #[serde(skip_serializing)]
+        pub message: Option<String>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Tags {
@@ -233,64 +241,4 @@ pub struct MonitoringDetails {
     pub hana_db_username: Option<String>,
     #[serde(rename = "hanaDbPassword", skip_serializing_if = "Option::is_none")]
     pub hana_db_password: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SapMonitorListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SapMonitor>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SapMonitor {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SapMonitorProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SapMonitorProperties {
-    #[serde(rename = "hanaSubnet", skip_serializing_if = "Option::is_none")]
-    pub hana_subnet: Option<String>,
-    #[serde(rename = "hanaHostname", skip_serializing_if = "Option::is_none")]
-    pub hana_hostname: Option<String>,
-    #[serde(rename = "hanaDbName", skip_serializing_if = "Option::is_none")]
-    pub hana_db_name: Option<String>,
-    #[serde(rename = "hanaDbSqlPort", skip_serializing_if = "Option::is_none")]
-    pub hana_db_sql_port: Option<i64>,
-    #[serde(rename = "hanaDbUsername", skip_serializing_if = "Option::is_none")]
-    pub hana_db_username: Option<String>,
-    #[serde(rename = "hanaDbPassword", skip_serializing_if = "Option::is_none")]
-    pub hana_db_password: Option<String>,
-    #[serde(rename = "hanaDbPasswordKeyVaultUrl", skip_serializing_if = "Option::is_none")]
-    pub hana_db_password_key_vault_url: Option<String>,
-    #[serde(rename = "hanaDbCredentialsMsiId", skip_serializing_if = "Option::is_none")]
-    pub hana_db_credentials_msi_id: Option<String>,
-    #[serde(rename = "keyVaultId", skip_serializing_if = "Option::is_none")]
-    pub key_vault_id: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<sap_monitor_properties::ProvisioningState>,
-    #[serde(rename = "managedResourceGroupName", skip_serializing)]
-    pub managed_resource_group_name: Option<String>,
-    #[serde(rename = "logAnalyticsWorkspaceArmId", skip_serializing_if = "Option::is_none")]
-    pub log_analytics_workspace_arm_id: Option<String>,
-    #[serde(rename = "enableCustomerAnalytics", skip_serializing_if = "Option::is_none")]
-    pub enable_customer_analytics: Option<bool>,
-    #[serde(rename = "logAnalyticsWorkspaceId", skip_serializing_if = "Option::is_none")]
-    pub log_analytics_workspace_id: Option<String>,
-    #[serde(rename = "logAnalyticsWorkspaceSharedKey", skip_serializing_if = "Option::is_none")]
-    pub log_analytics_workspace_shared_key: Option<String>,
-}
-pub mod sap_monitor_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Accepted,
-        Creating,
-        Updating,
-        Failed,
-        Succeeded,
-        Deleting,
-        Migrating,
-    }
 }

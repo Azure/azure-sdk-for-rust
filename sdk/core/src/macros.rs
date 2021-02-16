@@ -78,10 +78,7 @@ macro_rules! create_enum {
 
         impl $crate::parsing::FromStringOptional<$name> for $name {
             fn from_str_optional(s : &str) -> ::std::result::Result<$name, $crate::errors::TraversingError> {
-                match s.parse::<$name>() {
-                    Ok(v) => Ok(v),
-                    Err(e) => Err($crate::errors::TraversingError::ParsingError(e)),
-                }
+                s.parse::<$name>().map_err(|e| { $crate::errors::TraversingError::ParsingError(e) })
             }
         }
 
@@ -118,6 +115,31 @@ macro_rules! create_enum {
             }
         }
     )
+}
+
+#[macro_export]
+macro_rules! response_from_headers {
+    ($cn:ident, $($fh:path => $na:ident: $typ:ty),+) => {
+        use http::HeaderMap;
+
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct $cn {
+             $(pub $na: $typ),+,
+        }
+
+        impl $cn {
+            pub(crate) fn from_headers(headers: &HeaderMap) -> Result<$cn, $crate::errors::AzureError> {
+               $(
+                    let $na = $fh(headers)?;
+                )+
+
+                Ok($cn {
+                    $($na,)+
+                })
+            }
+
+        }
+    };
 }
 
 #[cfg(test)]

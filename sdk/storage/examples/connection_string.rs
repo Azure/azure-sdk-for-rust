@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     for i in 0..10u8 {
         container
             .as_blob_client(format!("blob{}.txt", i))
-            .put_block_blob("somedata".as_bytes())
+            .put_block_blob("somedata")
             .content_type("text/plain")
             .execute()
             .await?;
@@ -68,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let mut stream = Box::pin(container.list_blobs().max_results(max_results).stream());
 
-    let mut cnt = 0;
+    let mut cnt: i32 = 0;
     while let Some(value) = stream.next().await {
         let len = value?.incomplete_vector.len();
         println!("received {} blobs", len);

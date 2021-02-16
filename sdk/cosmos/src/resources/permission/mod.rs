@@ -13,10 +13,12 @@ use crate::headers;
 use azure_core::AddAsHeader;
 use http::request::Builder;
 
+/// The amount of time before authorization expires
 #[derive(Debug, Clone, Copy)]
 pub struct ExpirySeconds(u64);
 
 impl ExpirySeconds {
+    /// Create an `ExpirySeconds` from a `u64`
     pub fn new(secs: u64) -> Self {
         Self(secs)
     }

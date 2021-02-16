@@ -1073,6 +1073,8 @@ pub struct WebApplicationFirewallPolicyProperties {
     pub frontend_endpoint_links: Vec<FrontendEndpointLink>,
     #[serde(rename = "routingRuleLinks", skip_serializing)]
     pub routing_rule_links: Vec<RoutingRuleLink>,
+    #[serde(rename = "securityPolicyLinks", skip_serializing)]
+    pub security_policy_links: Vec<SecurityPolicyLink>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
     #[serde(rename = "resourceState", skip_serializing)]
@@ -1337,6 +1339,7 @@ pub mod managed_rule_exclusion {
         RequestCookieNames,
         QueryStringArgNames,
         RequestBodyPostArgNames,
+        RequestBodyJsonArgNames,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SelectorMatchOperator {
@@ -1372,6 +1375,11 @@ pub struct FrontendEndpointLink {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoutingRuleLink {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecurityPolicyLink {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }

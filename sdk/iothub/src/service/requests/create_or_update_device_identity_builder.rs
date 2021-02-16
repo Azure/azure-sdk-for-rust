@@ -1,0 +1,109 @@
+use std::convert::TryInto;
+
+use azure_core::errors::AzureError;
+use http::Method;
+use serde::Serialize;
+
+use crate::service::resources::{
+    identity::DesiredCapability, identity::IdentityOperation, AuthenticationMechanism,
+    DeviceCapabilities, Status,
+};
+use crate::service::responses::DeviceIdentityResponse;
+use crate::service::{IoTHubError, ServiceClient, API_VERSION};
+
+/// The CreateOrUpdateDeviceIdentityBuilder is used to construct a new device identity
+/// or the update an existing one.
+pub struct CreateOrUpdateDeviceIdentityBuilder<'a> {
+    service_client: &'a ServiceClient,
+    capabilities: DeviceCapabilities,
+    etag: Option<String>,
+    operation: IdentityOperation,
+}
+
+impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
+    pub(crate) fn new(
+        service_client: &'a ServiceClient,
+        operation: IdentityOperation,
+        etag: Option<String>,
+    ) -> Self {
+        Self {
+            service_client,
+            capabilities: DeviceCapabilities::default(),
+            etag,
+            operation,
+        }
+    }
+
+    /// Sets a device capability on the device
+    pub fn device_capability(mut self, desired_capability: DesiredCapability) -> Self {
+        match desired_capability {
+            DesiredCapability::IotEdge => self.capabilities.iotedge = true,
+        }
+        self
+    }
+
+    /// Performs the create or update request on the device identity
+    pub async fn execute<S>(
+        self,
+        device_id: S,
+        status: Status,
+        authentication: AuthenticationMechanism,
+    ) -> Result<DeviceIdentityResponse, IoTHubError>
+    where
+        S: AsRef<str>,
+    {
+        let uri = format!(
+            "https://{}.azure-devices.net/devices/{}?api-version={}",
+            self.service_client.iothub_name,
+            device_id.as_ref(),
+            API_VERSION
+        );
+
+        let mut request = self.service_client.prepare_request(&uri, Method::PUT);
+
+        if self.operation == IdentityOperation::Update {
+            match &self.etag {
+                Some(etag) => {
+                    request = request.header(http::header::IF_MATCH, format!("\"{}\"", etag));
+                }
+                None => {
+                    return Err(Box::new(AzureError::GenericErrorWithText(
+                        "etag is not set".to_string(),
+                    )))
+                }
+            }
+        }
+
+        let body = CreateOrUpdateDeviceIdentityBody {
+            authentication,
+            device_id: device_id.as_ref(),
+            status,
+            capabilities: self.capabilities,
+            etag: self.etag,
+        };
+
+        let body = azure_core::to_json(&body)?;
+        let request = request.body(body)?;
+
+        Ok(self
+            .service_client
+            .http_client()
+            .execute_request_check_statuses(
+                request,
+                &[http::StatusCode::OK, http::StatusCode::CREATED],
+            )
+            .await?
+            .try_into()?)
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateOrUpdateDeviceIdentityBody<'a> {
+    authentication: AuthenticationMechanism,
+    device_id: &'a str,
+    status: Status,
+    capabilities: DeviceCapabilities,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    etag: Option<String>,
+}

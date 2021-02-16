@@ -3,31 +3,35 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use crate::models::*;
-use reqwest::StatusCode;
 use snafu::{ResultExt, Snafu};
 pub async fn get_locations(operation_config: &crate::OperationConfig) -> std::result::Result<LocationCollection, get_locations::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!("{}/providers/Microsoft.Intune/locations", &operation_config.base_path,);
-    let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
+    let http_client = operation_config.http_client();
+    let url_str = &format!("{}/providers/Microsoft.Intune/locations", operation_config.base_path(),);
+    let mut url = url::Url::parse(url_str).context(get_locations::ParseUrlError)?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::GET);
+    if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
+            .get_token(operation_config.token_credential_resource())
             .await
             .context(get_locations::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-    let req = req_builder.build().context(get_locations::BuildRequestError)?;
-    let rsp = client.execute(req).await.context(get_locations::ExecuteRequestError)?;
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder.body(req_body).context(get_locations::BuildRequestError)?;
+    let rsp = http_client.execute_request(req).await.context(get_locations::ExecuteRequestError)?;
     match rsp.status() {
-        StatusCode::OK => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_locations::ResponseBytesError)?;
-            let rsp_value: LocationCollection = serde_json::from_slice(&body).context(get_locations::DeserializeError { body })?;
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
+            let rsp_value: LocationCollection =
+                serde_json::from_slice(rsp_body).context(get_locations::DeserializeError { body: rsp_body.clone() })?;
             Ok(rsp_value)
         }
         status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_locations::ResponseBytesError)?;
-            let rsp_value: Error = serde_json::from_slice(&body).context(get_locations::DeserializeError { body })?;
+            let rsp_body = rsp.body();
+            let rsp_value: Error = serde_json::from_slice(rsp_body).context(get_locations::DeserializeError { body: rsp_body.clone() })?;
             get_locations::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -38,44 +42,69 @@ pub async fn get_locations(operation_config: &crate::OperationConfig) -> std::re
 }
 pub mod get_locations {
     use crate::{models, models::*};
-    use reqwest::StatusCode;
     use snafu::Snafu;
     #[derive(Debug, Snafu)]
     #[snafu(visibility(pub(crate)))]
     pub enum Error {
-        DefaultResponse { status_code: StatusCode, value: models::Error },
-        BuildRequestError { source: reqwest::Error },
-        ExecuteRequestError { source: reqwest::Error },
-        ResponseBytesError { source: reqwest::Error },
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        GetTokenError { source: azure_core::errors::AzureError },
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::Error,
+        },
+        ParseUrlError {
+            source: url::ParseError,
+        },
+        BuildRequestError {
+            source: http::Error,
+        },
+        ExecuteRequestError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        SerializeError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
     }
 }
 pub async fn get_location_by_host_name(
     operation_config: &crate::OperationConfig,
 ) -> std::result::Result<Location, get_location_by_host_name::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!("{}/providers/Microsoft.Intune/locations/hostName", &operation_config.base_path,);
-    let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
+    let http_client = operation_config.http_client();
+    let url_str = &format!("{}/providers/Microsoft.Intune/locations/hostName", operation_config.base_path(),);
+    let mut url = url::Url::parse(url_str).context(get_location_by_host_name::ParseUrlError)?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::GET);
+    if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
+            .get_token(operation_config.token_credential_resource())
             .await
             .context(get_location_by_host_name::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-    let req = req_builder.build().context(get_location_by_host_name::BuildRequestError)?;
-    let rsp = client.execute(req).await.context(get_location_by_host_name::ExecuteRequestError)?;
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder.body(req_body).context(get_location_by_host_name::BuildRequestError)?;
+    let rsp = http_client
+        .execute_request(req)
+        .await
+        .context(get_location_by_host_name::ExecuteRequestError)?;
     match rsp.status() {
-        StatusCode::OK => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_location_by_host_name::ResponseBytesError)?;
-            let rsp_value: Location = serde_json::from_slice(&body).context(get_location_by_host_name::DeserializeError { body })?;
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
+            let rsp_value: Location =
+                serde_json::from_slice(rsp_body).context(get_location_by_host_name::DeserializeError { body: rsp_body.clone() })?;
             Ok(rsp_value)
         }
         status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_location_by_host_name::ResponseBytesError)?;
-            let rsp_value: Error = serde_json::from_slice(&body).context(get_location_by_host_name::DeserializeError { body })?;
+            let rsp_body = rsp.body();
+            let rsp_value: Error =
+                serde_json::from_slice(rsp_body).context(get_location_by_host_name::DeserializeError { body: rsp_body.clone() })?;
             get_location_by_host_name::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -86,17 +115,33 @@ pub async fn get_location_by_host_name(
 }
 pub mod get_location_by_host_name {
     use crate::{models, models::*};
-    use reqwest::StatusCode;
     use snafu::Snafu;
     #[derive(Debug, Snafu)]
     #[snafu(visibility(pub(crate)))]
     pub enum Error {
-        DefaultResponse { status_code: StatusCode, value: models::Error },
-        BuildRequestError { source: reqwest::Error },
-        ExecuteRequestError { source: reqwest::Error },
-        ResponseBytesError { source: reqwest::Error },
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        GetTokenError { source: azure_core::errors::AzureError },
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::Error,
+        },
+        ParseUrlError {
+            source: url::ParseError,
+        },
+        BuildRequestError {
+            source: http::Error,
+        },
+        ExecuteRequestError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        SerializeError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
     }
 }
 pub async fn get_apps(
@@ -106,40 +151,46 @@ pub async fn get_apps(
     top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<ApplicationCollection, get_apps::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!(
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/apps",
-        &operation_config.base_path, host_name
+        operation_config.base_path(),
+        host_name
     );
-    let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
+    let mut url = url::Url::parse(url_str).context(get_apps::ParseUrlError)?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::GET);
+    if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
+            .get_token(operation_config.token_credential_resource())
             .await
             .context(get_apps::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     if let Some(filter) = filter {
-        req_builder = req_builder.query(&[("$filter", filter)]);
+        url.query_pairs_mut().append_pair("$filter", filter);
     }
     if let Some(top) = top {
-        req_builder = req_builder.query(&[("$top", top)]);
+        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
     }
     if let Some(select) = select {
-        req_builder = req_builder.query(&[("$select", select)]);
+        url.query_pairs_mut().append_pair("$select", select);
     }
-    let req = req_builder.build().context(get_apps::BuildRequestError)?;
-    let rsp = client.execute(req).await.context(get_apps::ExecuteRequestError)?;
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder.body(req_body).context(get_apps::BuildRequestError)?;
+    let rsp = http_client.execute_request(req).await.context(get_apps::ExecuteRequestError)?;
     match rsp.status() {
-        StatusCode::OK => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_apps::ResponseBytesError)?;
-            let rsp_value: ApplicationCollection = serde_json::from_slice(&body).context(get_apps::DeserializeError { body })?;
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
+            let rsp_value: ApplicationCollection =
+                serde_json::from_slice(rsp_body).context(get_apps::DeserializeError { body: rsp_body.clone() })?;
             Ok(rsp_value)
         }
         status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_apps::ResponseBytesError)?;
-            let rsp_value: Error = serde_json::from_slice(&body).context(get_apps::DeserializeError { body })?;
+            let rsp_body = rsp.body();
+            let rsp_value: Error = serde_json::from_slice(rsp_body).context(get_apps::DeserializeError { body: rsp_body.clone() })?;
             get_apps::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -150,17 +201,33 @@ pub async fn get_apps(
 }
 pub mod get_apps {
     use crate::{models, models::*};
-    use reqwest::StatusCode;
     use snafu::Snafu;
     #[derive(Debug, Snafu)]
     #[snafu(visibility(pub(crate)))]
     pub enum Error {
-        DefaultResponse { status_code: StatusCode, value: models::Error },
-        BuildRequestError { source: reqwest::Error },
-        ExecuteRequestError { source: reqwest::Error },
-        ResponseBytesError { source: reqwest::Error },
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        GetTokenError { source: azure_core::errors::AzureError },
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::Error,
+        },
+        ParseUrlError {
+            source: url::ParseError,
+        },
+        BuildRequestError {
+            source: http::Error,
+        },
+        ExecuteRequestError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        SerializeError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
     }
 }
 pub async fn get_mam_user_devices(
@@ -171,40 +238,51 @@ pub async fn get_mam_user_devices(
     top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<DeviceCollection, get_mam_user_devices::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!(
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices",
-        &operation_config.base_path, host_name, user_name
+        operation_config.base_path(),
+        host_name,
+        user_name
     );
-    let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
+    let mut url = url::Url::parse(url_str).context(get_mam_user_devices::ParseUrlError)?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::GET);
+    if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
+            .get_token(operation_config.token_credential_resource())
             .await
             .context(get_mam_user_devices::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     if let Some(filter) = filter {
-        req_builder = req_builder.query(&[("$filter", filter)]);
+        url.query_pairs_mut().append_pair("$filter", filter);
     }
     if let Some(top) = top {
-        req_builder = req_builder.query(&[("$top", top)]);
+        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
     }
     if let Some(select) = select {
-        req_builder = req_builder.query(&[("$select", select)]);
+        url.query_pairs_mut().append_pair("$select", select);
     }
-    let req = req_builder.build().context(get_mam_user_devices::BuildRequestError)?;
-    let rsp = client.execute(req).await.context(get_mam_user_devices::ExecuteRequestError)?;
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder.body(req_body).context(get_mam_user_devices::BuildRequestError)?;
+    let rsp = http_client
+        .execute_request(req)
+        .await
+        .context(get_mam_user_devices::ExecuteRequestError)?;
     match rsp.status() {
-        StatusCode::OK => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_mam_user_devices::ResponseBytesError)?;
-            let rsp_value: DeviceCollection = serde_json::from_slice(&body).context(get_mam_user_devices::DeserializeError { body })?;
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
+            let rsp_value: DeviceCollection =
+                serde_json::from_slice(rsp_body).context(get_mam_user_devices::DeserializeError { body: rsp_body.clone() })?;
             Ok(rsp_value)
         }
         status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_mam_user_devices::ResponseBytesError)?;
-            let rsp_value: Error = serde_json::from_slice(&body).context(get_mam_user_devices::DeserializeError { body })?;
+            let rsp_body = rsp.body();
+            let rsp_value: Error =
+                serde_json::from_slice(rsp_body).context(get_mam_user_devices::DeserializeError { body: rsp_body.clone() })?;
             get_mam_user_devices::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -215,17 +293,33 @@ pub async fn get_mam_user_devices(
 }
 pub mod get_mam_user_devices {
     use crate::{models, models::*};
-    use reqwest::StatusCode;
     use snafu::Snafu;
     #[derive(Debug, Snafu)]
     #[snafu(visibility(pub(crate)))]
     pub enum Error {
-        DefaultResponse { status_code: StatusCode, value: models::Error },
-        BuildRequestError { source: reqwest::Error },
-        ExecuteRequestError { source: reqwest::Error },
-        ResponseBytesError { source: reqwest::Error },
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        GetTokenError { source: azure_core::errors::AzureError },
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::Error,
+        },
+        ParseUrlError {
+            source: url::ParseError,
+        },
+        BuildRequestError {
+            source: http::Error,
+        },
+        ExecuteRequestError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        SerializeError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
     }
 }
 pub async fn get_mam_user_device_by_device_name(
@@ -235,37 +329,48 @@ pub async fn get_mam_user_device_by_device_name(
     device_name: &str,
     select: Option<&str>,
 ) -> std::result::Result<Device, get_mam_user_device_by_device_name::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!(
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}",
-        &operation_config.base_path, host_name, user_name, device_name
+        operation_config.base_path(),
+        host_name,
+        user_name,
+        device_name
     );
-    let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
+    let mut url = url::Url::parse(url_str).context(get_mam_user_device_by_device_name::ParseUrlError)?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::GET);
+    if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
+            .get_token(operation_config.token_credential_resource())
             .await
             .context(get_mam_user_device_by_device_name::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     if let Some(select) = select {
-        req_builder = req_builder.query(&[("$select", select)]);
+        url.query_pairs_mut().append_pair("$select", select);
     }
-    let req = req_builder.build().context(get_mam_user_device_by_device_name::BuildRequestError)?;
-    let rsp = client
-        .execute(req)
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder
+        .body(req_body)
+        .context(get_mam_user_device_by_device_name::BuildRequestError)?;
+    let rsp = http_client
+        .execute_request(req)
         .await
         .context(get_mam_user_device_by_device_name::ExecuteRequestError)?;
     match rsp.status() {
-        StatusCode::OK => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_mam_user_device_by_device_name::ResponseBytesError)?;
-            let rsp_value: Device = serde_json::from_slice(&body).context(get_mam_user_device_by_device_name::DeserializeError { body })?;
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
+            let rsp_value: Device = serde_json::from_slice(rsp_body)
+                .context(get_mam_user_device_by_device_name::DeserializeError { body: rsp_body.clone() })?;
             Ok(rsp_value)
         }
         status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_mam_user_device_by_device_name::ResponseBytesError)?;
-            let rsp_value: Error = serde_json::from_slice(&body).context(get_mam_user_device_by_device_name::DeserializeError { body })?;
+            let rsp_body = rsp.body();
+            let rsp_value: Error = serde_json::from_slice(rsp_body)
+                .context(get_mam_user_device_by_device_name::DeserializeError { body: rsp_body.clone() })?;
             get_mam_user_device_by_device_name::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -276,17 +381,33 @@ pub async fn get_mam_user_device_by_device_name(
 }
 pub mod get_mam_user_device_by_device_name {
     use crate::{models, models::*};
-    use reqwest::StatusCode;
     use snafu::Snafu;
     #[derive(Debug, Snafu)]
     #[snafu(visibility(pub(crate)))]
     pub enum Error {
-        DefaultResponse { status_code: StatusCode, value: models::Error },
-        BuildRequestError { source: reqwest::Error },
-        ExecuteRequestError { source: reqwest::Error },
-        ResponseBytesError { source: reqwest::Error },
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        GetTokenError { source: azure_core::errors::AzureError },
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::Error,
+        },
+        ParseUrlError {
+            source: url::ParseError,
+        },
+        BuildRequestError {
+            source: http::Error,
+        },
+        ExecuteRequestError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        SerializeError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
     }
 }
 pub async fn wipe_mam_user_device(
@@ -295,33 +416,44 @@ pub async fn wipe_mam_user_device(
     user_name: &str,
     device_name: &str,
 ) -> std::result::Result<WipeDeviceOperationResult, wipe_mam_user_device::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!(
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}/wipe",
-        &operation_config.base_path, host_name, user_name, device_name
+        operation_config.base_path(),
+        host_name,
+        user_name,
+        device_name
     );
-    let mut req_builder = client.post(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
+    let mut url = url::Url::parse(url_str).context(wipe_mam_user_device::ParseUrlError)?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::POST);
+    if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
+            .get_token(operation_config.token_credential_resource())
             .await
             .context(wipe_mam_user_device::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-    req_builder = req_builder.header(reqwest::header::CONTENT_LENGTH, 0);
-    let req = req_builder.build().context(wipe_mam_user_device::BuildRequestError)?;
-    let rsp = client.execute(req).await.context(wipe_mam_user_device::ExecuteRequestError)?;
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder.body(req_body).context(wipe_mam_user_device::BuildRequestError)?;
+    let rsp = http_client
+        .execute_request(req)
+        .await
+        .context(wipe_mam_user_device::ExecuteRequestError)?;
     match rsp.status() {
-        StatusCode::OK => {
-            let body: bytes::Bytes = rsp.bytes().await.context(wipe_mam_user_device::ResponseBytesError)?;
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
             let rsp_value: WipeDeviceOperationResult =
-                serde_json::from_slice(&body).context(wipe_mam_user_device::DeserializeError { body })?;
+                serde_json::from_slice(rsp_body).context(wipe_mam_user_device::DeserializeError { body: rsp_body.clone() })?;
             Ok(rsp_value)
         }
         status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(wipe_mam_user_device::ResponseBytesError)?;
-            let rsp_value: Error = serde_json::from_slice(&body).context(wipe_mam_user_device::DeserializeError { body })?;
+            let rsp_body = rsp.body();
+            let rsp_value: Error =
+                serde_json::from_slice(rsp_body).context(wipe_mam_user_device::DeserializeError { body: rsp_body.clone() })?;
             wipe_mam_user_device::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -332,17 +464,33 @@ pub async fn wipe_mam_user_device(
 }
 pub mod wipe_mam_user_device {
     use crate::{models, models::*};
-    use reqwest::StatusCode;
     use snafu::Snafu;
     #[derive(Debug, Snafu)]
     #[snafu(visibility(pub(crate)))]
     pub enum Error {
-        DefaultResponse { status_code: StatusCode, value: models::Error },
-        BuildRequestError { source: reqwest::Error },
-        ExecuteRequestError { source: reqwest::Error },
-        ResponseBytesError { source: reqwest::Error },
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        GetTokenError { source: azure_core::errors::AzureError },
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::Error,
+        },
+        ParseUrlError {
+            source: url::ParseError,
+        },
+        BuildRequestError {
+            source: http::Error,
+        },
+        ExecuteRequestError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        SerializeError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
     }
 }
 pub async fn get_operation_results(
@@ -352,41 +500,50 @@ pub async fn get_operation_results(
     top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<OperationResultCollection, get_operation_results::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!(
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/operationResults",
-        &operation_config.base_path, host_name
+        operation_config.base_path(),
+        host_name
     );
-    let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
+    let mut url = url::Url::parse(url_str).context(get_operation_results::ParseUrlError)?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::GET);
+    if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
+            .get_token(operation_config.token_credential_resource())
             .await
             .context(get_operation_results::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     if let Some(filter) = filter {
-        req_builder = req_builder.query(&[("$filter", filter)]);
+        url.query_pairs_mut().append_pair("$filter", filter);
     }
     if let Some(top) = top {
-        req_builder = req_builder.query(&[("$top", top)]);
+        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
     }
     if let Some(select) = select {
-        req_builder = req_builder.query(&[("$select", select)]);
+        url.query_pairs_mut().append_pair("$select", select);
     }
-    let req = req_builder.build().context(get_operation_results::BuildRequestError)?;
-    let rsp = client.execute(req).await.context(get_operation_results::ExecuteRequestError)?;
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder.body(req_body).context(get_operation_results::BuildRequestError)?;
+    let rsp = http_client
+        .execute_request(req)
+        .await
+        .context(get_operation_results::ExecuteRequestError)?;
     match rsp.status() {
-        StatusCode::OK => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_operation_results::ResponseBytesError)?;
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
             let rsp_value: OperationResultCollection =
-                serde_json::from_slice(&body).context(get_operation_results::DeserializeError { body })?;
+                serde_json::from_slice(rsp_body).context(get_operation_results::DeserializeError { body: rsp_body.clone() })?;
             Ok(rsp_value)
         }
         status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_operation_results::ResponseBytesError)?;
-            let rsp_value: Error = serde_json::from_slice(&body).context(get_operation_results::DeserializeError { body })?;
+            let rsp_body = rsp.body();
+            let rsp_value: Error =
+                serde_json::from_slice(rsp_body).context(get_operation_results::DeserializeError { body: rsp_body.clone() })?;
             get_operation_results::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -397,48 +554,74 @@ pub async fn get_operation_results(
 }
 pub mod get_operation_results {
     use crate::{models, models::*};
-    use reqwest::StatusCode;
     use snafu::Snafu;
     #[derive(Debug, Snafu)]
     #[snafu(visibility(pub(crate)))]
     pub enum Error {
-        DefaultResponse { status_code: StatusCode, value: models::Error },
-        BuildRequestError { source: reqwest::Error },
-        ExecuteRequestError { source: reqwest::Error },
-        ResponseBytesError { source: reqwest::Error },
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        GetTokenError { source: azure_core::errors::AzureError },
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::Error,
+        },
+        ParseUrlError {
+            source: url::ParseError,
+        },
+        BuildRequestError {
+            source: http::Error,
+        },
+        ExecuteRequestError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        SerializeError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
     }
 }
 pub async fn get_mam_statuses(
     operation_config: &crate::OperationConfig,
     host_name: &str,
 ) -> std::result::Result<StatusesDefault, get_mam_statuses::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!(
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/statuses/default",
-        &operation_config.base_path, host_name
+        operation_config.base_path(),
+        host_name
     );
-    let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
+    let mut url = url::Url::parse(url_str).context(get_mam_statuses::ParseUrlError)?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::GET);
+    if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
+            .get_token(operation_config.token_credential_resource())
             .await
             .context(get_mam_statuses::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-    let req = req_builder.build().context(get_mam_statuses::BuildRequestError)?;
-    let rsp = client.execute(req).await.context(get_mam_statuses::ExecuteRequestError)?;
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder.body(req_body).context(get_mam_statuses::BuildRequestError)?;
+    let rsp = http_client
+        .execute_request(req)
+        .await
+        .context(get_mam_statuses::ExecuteRequestError)?;
     match rsp.status() {
-        StatusCode::OK => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_mam_statuses::ResponseBytesError)?;
-            let rsp_value: StatusesDefault = serde_json::from_slice(&body).context(get_mam_statuses::DeserializeError { body })?;
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
+            let rsp_value: StatusesDefault =
+                serde_json::from_slice(rsp_body).context(get_mam_statuses::DeserializeError { body: rsp_body.clone() })?;
             Ok(rsp_value)
         }
         status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_mam_statuses::ResponseBytesError)?;
-            let rsp_value: Error = serde_json::from_slice(&body).context(get_mam_statuses::DeserializeError { body })?;
+            let rsp_body = rsp.body();
+            let rsp_value: Error =
+                serde_json::from_slice(rsp_body).context(get_mam_statuses::DeserializeError { body: rsp_body.clone() })?;
             get_mam_statuses::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -449,17 +632,33 @@ pub async fn get_mam_statuses(
 }
 pub mod get_mam_statuses {
     use crate::{models, models::*};
-    use reqwest::StatusCode;
     use snafu::Snafu;
     #[derive(Debug, Snafu)]
     #[snafu(visibility(pub(crate)))]
     pub enum Error {
-        DefaultResponse { status_code: StatusCode, value: models::Error },
-        BuildRequestError { source: reqwest::Error },
-        ExecuteRequestError { source: reqwest::Error },
-        ResponseBytesError { source: reqwest::Error },
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        GetTokenError { source: azure_core::errors::AzureError },
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::Error,
+        },
+        ParseUrlError {
+            source: url::ParseError,
+        },
+        BuildRequestError {
+            source: http::Error,
+        },
+        ExecuteRequestError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        SerializeError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
     }
 }
 pub async fn get_mam_flagged_users(
@@ -469,41 +668,50 @@ pub async fn get_mam_flagged_users(
     top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<FlaggedUserCollection, get_mam_flagged_users::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!(
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers",
-        &operation_config.base_path, host_name
+        operation_config.base_path(),
+        host_name
     );
-    let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
+    let mut url = url::Url::parse(url_str).context(get_mam_flagged_users::ParseUrlError)?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::GET);
+    if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
+            .get_token(operation_config.token_credential_resource())
             .await
             .context(get_mam_flagged_users::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     if let Some(filter) = filter {
-        req_builder = req_builder.query(&[("$filter", filter)]);
+        url.query_pairs_mut().append_pair("$filter", filter);
     }
     if let Some(top) = top {
-        req_builder = req_builder.query(&[("$top", top)]);
+        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
     }
     if let Some(select) = select {
-        req_builder = req_builder.query(&[("$select", select)]);
+        url.query_pairs_mut().append_pair("$select", select);
     }
-    let req = req_builder.build().context(get_mam_flagged_users::BuildRequestError)?;
-    let rsp = client.execute(req).await.context(get_mam_flagged_users::ExecuteRequestError)?;
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder.body(req_body).context(get_mam_flagged_users::BuildRequestError)?;
+    let rsp = http_client
+        .execute_request(req)
+        .await
+        .context(get_mam_flagged_users::ExecuteRequestError)?;
     match rsp.status() {
-        StatusCode::OK => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_mam_flagged_users::ResponseBytesError)?;
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
             let rsp_value: FlaggedUserCollection =
-                serde_json::from_slice(&body).context(get_mam_flagged_users::DeserializeError { body })?;
+                serde_json::from_slice(rsp_body).context(get_mam_flagged_users::DeserializeError { body: rsp_body.clone() })?;
             Ok(rsp_value)
         }
         status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_mam_flagged_users::ResponseBytesError)?;
-            let rsp_value: Error = serde_json::from_slice(&body).context(get_mam_flagged_users::DeserializeError { body })?;
+            let rsp_body = rsp.body();
+            let rsp_value: Error =
+                serde_json::from_slice(rsp_body).context(get_mam_flagged_users::DeserializeError { body: rsp_body.clone() })?;
             get_mam_flagged_users::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -514,17 +722,33 @@ pub async fn get_mam_flagged_users(
 }
 pub mod get_mam_flagged_users {
     use crate::{models, models::*};
-    use reqwest::StatusCode;
     use snafu::Snafu;
     #[derive(Debug, Snafu)]
     #[snafu(visibility(pub(crate)))]
     pub enum Error {
-        DefaultResponse { status_code: StatusCode, value: models::Error },
-        BuildRequestError { source: reqwest::Error },
-        ExecuteRequestError { source: reqwest::Error },
-        ResponseBytesError { source: reqwest::Error },
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        GetTokenError { source: azure_core::errors::AzureError },
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::Error,
+        },
+        ParseUrlError {
+            source: url::ParseError,
+        },
+        BuildRequestError {
+            source: http::Error,
+        },
+        ExecuteRequestError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        SerializeError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
     }
 }
 pub async fn get_mam_flagged_user_by_name(
@@ -533,37 +757,47 @@ pub async fn get_mam_flagged_user_by_name(
     user_name: &str,
     select: Option<&str>,
 ) -> std::result::Result<FlaggedUser, get_mam_flagged_user_by_name::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!(
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}",
-        &operation_config.base_path, host_name, user_name
+        operation_config.base_path(),
+        host_name,
+        user_name
     );
-    let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
+    let mut url = url::Url::parse(url_str).context(get_mam_flagged_user_by_name::ParseUrlError)?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::GET);
+    if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
+            .get_token(operation_config.token_credential_resource())
             .await
             .context(get_mam_flagged_user_by_name::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     if let Some(select) = select {
-        req_builder = req_builder.query(&[("$select", select)]);
+        url.query_pairs_mut().append_pair("$select", select);
     }
-    let req = req_builder.build().context(get_mam_flagged_user_by_name::BuildRequestError)?;
-    let rsp = client
-        .execute(req)
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder
+        .body(req_body)
+        .context(get_mam_flagged_user_by_name::BuildRequestError)?;
+    let rsp = http_client
+        .execute_request(req)
         .await
         .context(get_mam_flagged_user_by_name::ExecuteRequestError)?;
     match rsp.status() {
-        StatusCode::OK => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_mam_flagged_user_by_name::ResponseBytesError)?;
-            let rsp_value: FlaggedUser = serde_json::from_slice(&body).context(get_mam_flagged_user_by_name::DeserializeError { body })?;
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
+            let rsp_value: FlaggedUser =
+                serde_json::from_slice(rsp_body).context(get_mam_flagged_user_by_name::DeserializeError { body: rsp_body.clone() })?;
             Ok(rsp_value)
         }
         status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_mam_flagged_user_by_name::ResponseBytesError)?;
-            let rsp_value: Error = serde_json::from_slice(&body).context(get_mam_flagged_user_by_name::DeserializeError { body })?;
+            let rsp_body = rsp.body();
+            let rsp_value: Error =
+                serde_json::from_slice(rsp_body).context(get_mam_flagged_user_by_name::DeserializeError { body: rsp_body.clone() })?;
             get_mam_flagged_user_by_name::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -574,17 +808,33 @@ pub async fn get_mam_flagged_user_by_name(
 }
 pub mod get_mam_flagged_user_by_name {
     use crate::{models, models::*};
-    use reqwest::StatusCode;
     use snafu::Snafu;
     #[derive(Debug, Snafu)]
     #[snafu(visibility(pub(crate)))]
     pub enum Error {
-        DefaultResponse { status_code: StatusCode, value: models::Error },
-        BuildRequestError { source: reqwest::Error },
-        ExecuteRequestError { source: reqwest::Error },
-        ResponseBytesError { source: reqwest::Error },
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        GetTokenError { source: azure_core::errors::AzureError },
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::Error,
+        },
+        ParseUrlError {
+            source: url::ParseError,
+        },
+        BuildRequestError {
+            source: http::Error,
+        },
+        ExecuteRequestError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        SerializeError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
     }
 }
 pub async fn get_mam_user_flagged_enrolled_apps(
@@ -595,44 +845,53 @@ pub async fn get_mam_user_flagged_enrolled_apps(
     top: Option<i32>,
     select: Option<&str>,
 ) -> std::result::Result<FlaggedEnrolledAppCollection, get_mam_user_flagged_enrolled_apps::Error> {
-    let client = &operation_config.client;
-    let uri_str = &format!(
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}/flaggedEnrolledApps",
-        &operation_config.base_path, host_name, user_name
+        operation_config.base_path(),
+        host_name,
+        user_name
     );
-    let mut req_builder = client.get(uri_str);
-    if let Some(token_credential) = &operation_config.token_credential {
+    let mut url = url::Url::parse(url_str).context(get_mam_user_flagged_enrolled_apps::ParseUrlError)?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::GET);
+    if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
-            .get_token(&operation_config.token_credential_resource)
+            .get_token(operation_config.token_credential_resource())
             .await
             .context(get_mam_user_flagged_enrolled_apps::GetTokenError)?;
-        req_builder = req_builder.bearer_auth(token_response.token.secret());
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     if let Some(filter) = filter {
-        req_builder = req_builder.query(&[("$filter", filter)]);
+        url.query_pairs_mut().append_pair("$filter", filter);
     }
     if let Some(top) = top {
-        req_builder = req_builder.query(&[("$top", top)]);
+        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
     }
     if let Some(select) = select {
-        req_builder = req_builder.query(&[("$select", select)]);
+        url.query_pairs_mut().append_pair("$select", select);
     }
-    let req = req_builder.build().context(get_mam_user_flagged_enrolled_apps::BuildRequestError)?;
-    let rsp = client
-        .execute(req)
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder
+        .body(req_body)
+        .context(get_mam_user_flagged_enrolled_apps::BuildRequestError)?;
+    let rsp = http_client
+        .execute_request(req)
         .await
         .context(get_mam_user_flagged_enrolled_apps::ExecuteRequestError)?;
     match rsp.status() {
-        StatusCode::OK => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_mam_user_flagged_enrolled_apps::ResponseBytesError)?;
-            let rsp_value: FlaggedEnrolledAppCollection =
-                serde_json::from_slice(&body).context(get_mam_user_flagged_enrolled_apps::DeserializeError { body })?;
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
+            let rsp_value: FlaggedEnrolledAppCollection = serde_json::from_slice(rsp_body)
+                .context(get_mam_user_flagged_enrolled_apps::DeserializeError { body: rsp_body.clone() })?;
             Ok(rsp_value)
         }
         status_code => {
-            let body: bytes::Bytes = rsp.bytes().await.context(get_mam_user_flagged_enrolled_apps::ResponseBytesError)?;
-            let rsp_value: Error = serde_json::from_slice(&body).context(get_mam_user_flagged_enrolled_apps::DeserializeError { body })?;
+            let rsp_body = rsp.body();
+            let rsp_value: Error = serde_json::from_slice(rsp_body)
+                .context(get_mam_user_flagged_enrolled_apps::DeserializeError { body: rsp_body.clone() })?;
             get_mam_user_flagged_enrolled_apps::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -643,22 +902,37 @@ pub async fn get_mam_user_flagged_enrolled_apps(
 }
 pub mod get_mam_user_flagged_enrolled_apps {
     use crate::{models, models::*};
-    use reqwest::StatusCode;
     use snafu::Snafu;
     #[derive(Debug, Snafu)]
     #[snafu(visibility(pub(crate)))]
     pub enum Error {
-        DefaultResponse { status_code: StatusCode, value: models::Error },
-        BuildRequestError { source: reqwest::Error },
-        ExecuteRequestError { source: reqwest::Error },
-        ResponseBytesError { source: reqwest::Error },
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        GetTokenError { source: azure_core::errors::AzureError },
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::Error,
+        },
+        ParseUrlError {
+            source: url::ParseError,
+        },
+        BuildRequestError {
+            source: http::Error,
+        },
+        ExecuteRequestError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        SerializeError {
+            source: Box<dyn std::error::Error + Sync + Send>,
+        },
+        DeserializeError {
+            source: serde_json::Error,
+            body: bytes::Bytes,
+        },
+        GetTokenError {
+            source: azure_core::errors::AzureError,
+        },
     }
 }
 pub mod ios {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get_mam_policies(
         operation_config: &crate::OperationConfig,
@@ -667,41 +941,50 @@ pub mod ios {
         top: Option<i32>,
         select: Option<&str>,
     ) -> std::result::Result<IosmamPolicyCollection, get_mam_policies::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies",
-            &operation_config.base_path, host_name
+            operation_config.base_path(),
+            host_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_mam_policies::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_mam_policies::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(filter) = filter {
-            req_builder = req_builder.query(&[("$filter", filter)]);
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(top) = top {
-            req_builder = req_builder.query(&[("$top", top)]);
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         if let Some(select) = select {
-            req_builder = req_builder.query(&[("$select", select)]);
+            url.query_pairs_mut().append_pair("$select", select);
         }
-        let req = req_builder.build().context(get_mam_policies::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_mam_policies::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_mam_policies::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_mam_policies::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_mam_policies::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: IosmamPolicyCollection =
-                    serde_json::from_slice(&body).context(get_mam_policies::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_mam_policies::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_mam_policies::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(get_mam_policies::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(get_mam_policies::DeserializeError { body: rsp_body.clone() })?;
                 get_mam_policies::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -712,17 +995,33 @@ pub mod ios {
     }
     pub mod get_mam_policies {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_mam_policy_by_name(
@@ -731,34 +1030,45 @@ pub mod ios {
         policy_name: &str,
         select: Option<&str>,
     ) -> std::result::Result<IOsmamPolicy, get_mam_policy_by_name::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_mam_policy_by_name::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_mam_policy_by_name::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(select) = select {
-            req_builder = req_builder.query(&[("$select", select)]);
+            url.query_pairs_mut().append_pair("$select", select);
         }
-        let req = req_builder.build().context(get_mam_policy_by_name::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_mam_policy_by_name::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_mam_policy_by_name::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_mam_policy_by_name::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_mam_policy_by_name::ResponseBytesError)?;
-                let rsp_value: IOsmamPolicy = serde_json::from_slice(&body).context(get_mam_policy_by_name::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: IOsmamPolicy =
+                    serde_json::from_slice(rsp_body).context(get_mam_policy_by_name::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_mam_policy_by_name::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(get_mam_policy_by_name::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(get_mam_policy_by_name::DeserializeError { body: rsp_body.clone() })?;
                 get_mam_policy_by_name::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -769,17 +1079,33 @@ pub mod ios {
     }
     pub mod get_mam_policy_by_name {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update_mam_policy(
@@ -788,36 +1114,42 @@ pub mod ios {
         policy_name: &str,
         parameters: &IOsmamPolicy,
     ) -> std::result::Result<IOsmamPolicy, create_or_update_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create_or_update_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_or_update_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(create_or_update_mam_policy::BuildRequestError)?;
-        let rsp = client
-            .execute(req)
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).context(create_or_update_mam_policy::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create_or_update_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
             .await
             .context(create_or_update_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_mam_policy::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: IOsmamPolicy =
-                    serde_json::from_slice(&body).context(create_or_update_mam_policy::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(create_or_update_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(create_or_update_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(create_or_update_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -828,17 +1160,33 @@ pub mod ios {
     }
     pub mod create_or_update_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn patch_mam_policy(
@@ -847,32 +1195,42 @@ pub mod ios {
         policy_name: &str,
         parameters: &IOsmamPolicy,
     ) -> std::result::Result<IOsmamPolicy, patch_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
-        let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(patch_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PATCH);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(patch_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(patch_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(patch_mam_policy::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).context(patch_mam_policy::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(patch_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(patch_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(patch_mam_policy::ResponseBytesError)?;
-                let rsp_value: IOsmamPolicy = serde_json::from_slice(&body).context(patch_mam_policy::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: IOsmamPolicy =
+                    serde_json::from_slice(rsp_body).context(patch_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(patch_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(patch_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(patch_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 patch_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -883,17 +1241,33 @@ pub mod ios {
     }
     pub mod patch_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_mam_policy(
@@ -901,28 +1275,38 @@ pub mod ios {
         host_name: &str,
         policy_name: &str,
     ) -> std::result::Result<delete_mam_policy::Response, delete_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete_mam_policy::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(delete_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete_mam_policy::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete_mam_policy::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete_mam_policy::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete_mam_policy::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(delete_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(delete_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 delete_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -933,7 +1317,6 @@ pub mod ios {
     }
     pub mod delete_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -943,12 +1326,29 @@ pub mod ios {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_app_for_mam_policy(
@@ -959,41 +1359,51 @@ pub mod ios {
         top: Option<i32>,
         select: Option<&str>,
     ) -> std::result::Result<ApplicationCollection, get_app_for_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_app_for_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_app_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(filter) = filter {
-            req_builder = req_builder.query(&[("$filter", filter)]);
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(top) = top {
-            req_builder = req_builder.query(&[("$top", top)]);
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         if let Some(select) = select {
-            req_builder = req_builder.query(&[("$select", select)]);
+            url.query_pairs_mut().append_pair("$select", select);
         }
-        let req = req_builder.build().context(get_app_for_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_app_for_mam_policy::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_app_for_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_app_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_app_for_mam_policy::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: ApplicationCollection =
-                    serde_json::from_slice(&body).context(get_app_for_mam_policy::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_app_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_app_for_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(get_app_for_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(get_app_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 get_app_for_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1004,17 +1414,33 @@ pub mod ios {
     }
     pub mod get_app_for_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn add_app_for_mam_policy(
@@ -1024,29 +1450,39 @@ pub mod ios {
         app_name: &str,
         parameters: &MamPolicyAppIdOrGroupIdPayload,
     ) -> std::result::Result<add_app_for_mam_policy::Response, add_app_for_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
-            &operation_config.base_path, host_name, policy_name, app_name
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            app_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(add_app_for_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(add_app_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(add_app_for_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(add_app_for_mam_policy::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).context(add_app_for_mam_policy::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(add_app_for_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(add_app_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(add_app_for_mam_policy::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(add_app_for_mam_policy::Response::NoContent204),
+            http::StatusCode::OK => Ok(add_app_for_mam_policy::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(add_app_for_mam_policy::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(add_app_for_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(add_app_for_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(add_app_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 add_app_for_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1057,7 +1493,6 @@ pub mod ios {
     }
     pub mod add_app_for_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -1067,12 +1502,29 @@ pub mod ios {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_app_for_mam_policy(
@@ -1081,28 +1533,39 @@ pub mod ios {
         policy_name: &str,
         app_name: &str,
     ) -> std::result::Result<delete_app_for_mam_policy::Response, delete_app_for_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
-            &operation_config.base_path, host_name, policy_name, app_name
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            app_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete_app_for_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete_app_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete_app_for_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete_app_for_mam_policy::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete_app_for_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(delete_app_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete_app_for_mam_policy::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete_app_for_mam_policy::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete_app_for_mam_policy::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete_app_for_mam_policy::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete_app_for_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(delete_app_for_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(delete_app_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 delete_app_for_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1113,7 +1576,6 @@ pub mod ios {
     }
     pub mod delete_app_for_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -1123,12 +1585,29 @@ pub mod ios {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_groups_for_mam_policy(
@@ -1136,32 +1615,42 @@ pub mod ios {
         host_name: &str,
         policy_name: &str,
     ) -> std::result::Result<GroupsCollection, get_groups_for_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_groups_for_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_groups_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get_groups_for_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_groups_for_mam_policy::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_groups_for_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_groups_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_groups_for_mam_policy::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: GroupsCollection =
-                    serde_json::from_slice(&body).context(get_groups_for_mam_policy::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_groups_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_groups_for_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(get_groups_for_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(get_groups_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 get_groups_for_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1172,17 +1661,33 @@ pub mod ios {
     }
     pub mod get_groups_for_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn add_group_for_mam_policy(
@@ -1192,29 +1697,39 @@ pub mod ios {
         group_id: &str,
         parameters: &MamPolicyAppIdOrGroupIdPayload,
     ) -> std::result::Result<add_group_for_mam_policy::Response, add_group_for_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
-            &operation_config.base_path, host_name, policy_name, group_id
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            group_id
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(add_group_for_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(add_group_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(add_group_for_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(add_group_for_mam_policy::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).context(add_group_for_mam_policy::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(add_group_for_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(add_group_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(add_group_for_mam_policy::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(add_group_for_mam_policy::Response::NoContent204),
+            http::StatusCode::OK => Ok(add_group_for_mam_policy::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(add_group_for_mam_policy::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(add_group_for_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(add_group_for_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(add_group_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 add_group_for_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1225,7 +1740,6 @@ pub mod ios {
     }
     pub mod add_group_for_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -1235,12 +1749,29 @@ pub mod ios {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_group_for_mam_policy(
@@ -1249,31 +1780,39 @@ pub mod ios {
         policy_name: &str,
         group_id: &str,
     ) -> std::result::Result<delete_group_for_mam_policy::Response, delete_group_for_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
-            &operation_config.base_path, host_name, policy_name, group_id
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            group_id
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete_group_for_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete_group_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete_group_for_mam_policy::BuildRequestError)?;
-        let rsp = client
-            .execute(req)
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete_group_for_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
             .await
             .context(delete_group_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete_group_for_mam_policy::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete_group_for_mam_policy::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete_group_for_mam_policy::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete_group_for_mam_policy::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete_group_for_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(delete_group_for_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(delete_group_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 delete_group_for_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1284,7 +1823,6 @@ pub mod ios {
     }
     pub mod delete_group_for_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -1294,18 +1832,34 @@ pub mod ios {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }
 pub mod android {
     use crate::models::*;
-    use reqwest::StatusCode;
     use snafu::{ResultExt, Snafu};
     pub async fn get_mam_policies(
         operation_config: &crate::OperationConfig,
@@ -1314,41 +1868,50 @@ pub mod android {
         top: Option<i32>,
         select: Option<&str>,
     ) -> std::result::Result<AndroidMamPolicyCollection, get_mam_policies::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies",
-            &operation_config.base_path, host_name
+            operation_config.base_path(),
+            host_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_mam_policies::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_mam_policies::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(filter) = filter {
-            req_builder = req_builder.query(&[("$filter", filter)]);
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(top) = top {
-            req_builder = req_builder.query(&[("$top", top)]);
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         if let Some(select) = select {
-            req_builder = req_builder.query(&[("$select", select)]);
+            url.query_pairs_mut().append_pair("$select", select);
         }
-        let req = req_builder.build().context(get_mam_policies::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_mam_policies::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_mam_policies::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_mam_policies::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_mam_policies::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: AndroidMamPolicyCollection =
-                    serde_json::from_slice(&body).context(get_mam_policies::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_mam_policies::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_mam_policies::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(get_mam_policies::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(get_mam_policies::DeserializeError { body: rsp_body.clone() })?;
                 get_mam_policies::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1359,17 +1922,33 @@ pub mod android {
     }
     pub mod get_mam_policies {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_mam_policy_by_name(
@@ -1378,35 +1957,45 @@ pub mod android {
         policy_name: &str,
         select: Option<&str>,
     ) -> std::result::Result<AndroidMamPolicy, get_mam_policy_by_name::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_mam_policy_by_name::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_mam_policy_by_name::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(select) = select {
-            req_builder = req_builder.query(&[("$select", select)]);
+            url.query_pairs_mut().append_pair("$select", select);
         }
-        let req = req_builder.build().context(get_mam_policy_by_name::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_mam_policy_by_name::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_mam_policy_by_name::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_mam_policy_by_name::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_mam_policy_by_name::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: AndroidMamPolicy =
-                    serde_json::from_slice(&body).context(get_mam_policy_by_name::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_mam_policy_by_name::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_mam_policy_by_name::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(get_mam_policy_by_name::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(get_mam_policy_by_name::DeserializeError { body: rsp_body.clone() })?;
                 get_mam_policy_by_name::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1417,17 +2006,33 @@ pub mod android {
     }
     pub mod get_mam_policy_by_name {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn create_or_update_mam_policy(
@@ -1436,36 +2041,42 @@ pub mod android {
         policy_name: &str,
         parameters: &AndroidMamPolicy,
     ) -> std::result::Result<AndroidMamPolicy, create_or_update_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(create_or_update_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(create_or_update_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(create_or_update_mam_policy::BuildRequestError)?;
-        let rsp = client
-            .execute(req)
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).context(create_or_update_mam_policy::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(create_or_update_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
             .await
             .context(create_or_update_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_mam_policy::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: AndroidMamPolicy =
-                    serde_json::from_slice(&body).context(create_or_update_mam_policy::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(create_or_update_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(create_or_update_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(create_or_update_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(create_or_update_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 create_or_update_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1476,17 +2087,33 @@ pub mod android {
     }
     pub mod create_or_update_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn patch_mam_policy(
@@ -1495,32 +2122,42 @@ pub mod android {
         policy_name: &str,
         parameters: &AndroidMamPolicy,
     ) -> std::result::Result<AndroidMamPolicy, patch_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
-        let mut req_builder = client.patch(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(patch_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PATCH);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(patch_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(patch_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(patch_mam_policy::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).context(patch_mam_policy::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(patch_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(patch_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(patch_mam_policy::ResponseBytesError)?;
-                let rsp_value: AndroidMamPolicy = serde_json::from_slice(&body).context(patch_mam_policy::DeserializeError { body })?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: AndroidMamPolicy =
+                    serde_json::from_slice(rsp_body).context(patch_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(patch_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(patch_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(patch_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 patch_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1531,17 +2168,33 @@ pub mod android {
     }
     pub mod patch_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_mam_policy(
@@ -1549,28 +2202,38 @@ pub mod android {
         host_name: &str,
         policy_name: &str,
     ) -> std::result::Result<delete_mam_policy::Response, delete_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete_mam_policy::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(delete_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete_mam_policy::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete_mam_policy::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete_mam_policy::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete_mam_policy::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(delete_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(delete_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 delete_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1581,7 +2244,6 @@ pub mod android {
     }
     pub mod delete_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -1591,12 +2253,29 @@ pub mod android {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_app_for_mam_policy(
@@ -1607,41 +2286,51 @@ pub mod android {
         top: Option<i32>,
         select: Option<&str>,
     ) -> std::result::Result<ApplicationCollection, get_app_for_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/AndroidPolicies/{}/apps",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_app_for_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_app_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         if let Some(filter) = filter {
-            req_builder = req_builder.query(&[("$filter", filter)]);
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(top) = top {
-            req_builder = req_builder.query(&[("$top", top)]);
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         if let Some(select) = select {
-            req_builder = req_builder.query(&[("$select", select)]);
+            url.query_pairs_mut().append_pair("$select", select);
         }
-        let req = req_builder.build().context(get_app_for_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_app_for_mam_policy::ExecuteRequestError)?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_app_for_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_app_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_app_for_mam_policy::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: ApplicationCollection =
-                    serde_json::from_slice(&body).context(get_app_for_mam_policy::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_app_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_app_for_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(get_app_for_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(get_app_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 get_app_for_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1652,17 +2341,33 @@ pub mod android {
     }
     pub mod get_app_for_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn add_app_for_mam_policy(
@@ -1672,29 +2377,39 @@ pub mod android {
         app_name: &str,
         parameters: &MamPolicyAppIdOrGroupIdPayload,
     ) -> std::result::Result<add_app_for_mam_policy::Response, add_app_for_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
-            &operation_config.base_path, host_name, policy_name, app_name
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            app_name
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(add_app_for_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(add_app_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(add_app_for_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(add_app_for_mam_policy::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).context(add_app_for_mam_policy::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(add_app_for_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(add_app_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(add_app_for_mam_policy::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(add_app_for_mam_policy::Response::NoContent204),
+            http::StatusCode::OK => Ok(add_app_for_mam_policy::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(add_app_for_mam_policy::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(add_app_for_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(add_app_for_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(add_app_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 add_app_for_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1705,7 +2420,6 @@ pub mod android {
     }
     pub mod add_app_for_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -1715,12 +2429,29 @@ pub mod android {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_app_for_mam_policy(
@@ -1729,28 +2460,39 @@ pub mod android {
         policy_name: &str,
         app_name: &str,
     ) -> std::result::Result<delete_app_for_mam_policy::Response, delete_app_for_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
-            &operation_config.base_path, host_name, policy_name, app_name
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            app_name
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete_app_for_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete_app_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete_app_for_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(delete_app_for_mam_policy::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete_app_for_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(delete_app_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete_app_for_mam_policy::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete_app_for_mam_policy::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete_app_for_mam_policy::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete_app_for_mam_policy::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete_app_for_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(delete_app_for_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(delete_app_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 delete_app_for_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1761,7 +2503,6 @@ pub mod android {
     }
     pub mod delete_app_for_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -1771,12 +2512,29 @@ pub mod android {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn get_groups_for_mam_policy(
@@ -1784,32 +2542,42 @@ pub mod android {
         host_name: &str,
         policy_name: &str,
     ) -> std::result::Result<GroupsCollection, get_groups_for_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups",
-            &operation_config.base_path, host_name, policy_name
+            operation_config.base_path(),
+            host_name,
+            policy_name
         );
-        let mut req_builder = client.get(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(get_groups_for_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(get_groups_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(get_groups_for_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(get_groups_for_mam_policy::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(get_groups_for_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(get_groups_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_groups_for_mam_policy::ResponseBytesError)?;
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
                 let rsp_value: GroupsCollection =
-                    serde_json::from_slice(&body).context(get_groups_for_mam_policy::DeserializeError { body })?;
+                    serde_json::from_slice(rsp_body).context(get_groups_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 Ok(rsp_value)
             }
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(get_groups_for_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(get_groups_for_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(get_groups_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 get_groups_for_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1820,17 +2588,33 @@ pub mod android {
     }
     pub mod get_groups_for_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn add_group_for_mam_policy(
@@ -1840,29 +2624,39 @@ pub mod android {
         group_id: &str,
         parameters: &MamPolicyAppIdOrGroupIdPayload,
     ) -> std::result::Result<add_group_for_mam_policy::Response, add_group_for_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
-            &operation_config.base_path, host_name, policy_name, group_id
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            group_id
         );
-        let mut req_builder = client.put(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(add_group_for_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(add_group_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        req_builder = req_builder.json(parameters);
-        let req = req_builder.build().context(add_group_for_mam_policy::BuildRequestError)?;
-        let rsp = client.execute(req).await.context(add_group_for_mam_policy::ExecuteRequestError)?;
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).context(add_group_for_mam_policy::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(add_group_for_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .context(add_group_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(add_group_for_mam_policy::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(add_group_for_mam_policy::Response::NoContent204),
+            http::StatusCode::OK => Ok(add_group_for_mam_policy::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(add_group_for_mam_policy::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(add_group_for_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(add_group_for_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(add_group_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 add_group_for_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1873,7 +2667,6 @@ pub mod android {
     }
     pub mod add_group_for_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -1883,12 +2676,29 @@ pub mod android {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
     pub async fn delete_group_for_mam_policy(
@@ -1897,31 +2707,39 @@ pub mod android {
         policy_name: &str,
         group_id: &str,
     ) -> std::result::Result<delete_group_for_mam_policy::Response, delete_group_for_mam_policy::Error> {
-        let client = &operation_config.client;
-        let uri_str = &format!(
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
-            &operation_config.base_path, host_name, policy_name, group_id
+            operation_config.base_path(),
+            host_name,
+            policy_name,
+            group_id
         );
-        let mut req_builder = client.delete(uri_str);
-        if let Some(token_credential) = &operation_config.token_credential {
+        let mut url = url::Url::parse(url_str).context(delete_group_for_mam_policy::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
-                .get_token(&operation_config.token_credential_resource)
+                .get_token(operation_config.token_credential_resource())
                 .await
                 .context(delete_group_for_mam_policy::GetTokenError)?;
-            req_builder = req_builder.bearer_auth(token_response.token.secret());
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.query(&[("api-version", &operation_config.api_version)]);
-        let req = req_builder.build().context(delete_group_for_mam_policy::BuildRequestError)?;
-        let rsp = client
-            .execute(req)
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).context(delete_group_for_mam_policy::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
             .await
             .context(delete_group_for_mam_policy::ExecuteRequestError)?;
         match rsp.status() {
-            StatusCode::OK => Ok(delete_group_for_mam_policy::Response::Ok200),
-            StatusCode::NO_CONTENT => Ok(delete_group_for_mam_policy::Response::NoContent204),
+            http::StatusCode::OK => Ok(delete_group_for_mam_policy::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete_group_for_mam_policy::Response::NoContent204),
             status_code => {
-                let body: bytes::Bytes = rsp.bytes().await.context(delete_group_for_mam_policy::ResponseBytesError)?;
-                let rsp_value: Error = serde_json::from_slice(&body).context(delete_group_for_mam_policy::DeserializeError { body })?;
+                let rsp_body = rsp.body();
+                let rsp_value: Error =
+                    serde_json::from_slice(rsp_body).context(delete_group_for_mam_policy::DeserializeError { body: rsp_body.clone() })?;
                 delete_group_for_mam_policy::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1932,7 +2750,6 @@ pub mod android {
     }
     pub mod delete_group_for_mam_policy {
         use crate::{models, models::*};
-        use reqwest::StatusCode;
         use snafu::Snafu;
         #[derive(Debug)]
         pub enum Response {
@@ -1942,12 +2759,29 @@ pub mod android {
         #[derive(Debug, Snafu)]
         #[snafu(visibility(pub(crate)))]
         pub enum Error {
-            DefaultResponse { status_code: StatusCode, value: models::Error },
-            BuildRequestError { source: reqwest::Error },
-            ExecuteRequestError { source: reqwest::Error },
-            ResponseBytesError { source: reqwest::Error },
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            GetTokenError { source: azure_core::errors::AzureError },
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::Error,
+            },
+            ParseUrlError {
+                source: url::ParseError,
+            },
+            BuildRequestError {
+                source: http::Error,
+            },
+            ExecuteRequestError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            SerializeError {
+                source: Box<dyn std::error::Error + Sync + Send>,
+            },
+            DeserializeError {
+                source: serde_json::Error,
+                body: bytes::Bytes,
+            },
+            GetTokenError {
+                source: azure_core::errors::AzureError,
+            },
         }
     }
 }

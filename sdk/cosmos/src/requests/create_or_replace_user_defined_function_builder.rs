@@ -1,25 +1,19 @@
 use crate::prelude::*;
 use crate::responses::CreateUserDefinedFunctionResponse;
-use azure_core::{ActivityId, No, ToAssign, UserAgent, Yes};
+use azure_core::prelude::*;
 use http::StatusCode;
 use std::convert::TryInto;
-use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
+pub struct CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b> {
     user_defined_function_client: &'a UserDefinedFunctionClient,
     is_create: bool,
-    body: Option<&'b str>,
     user_agent: Option<UserAgent<'b>>,
     activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    p_body: PhantomData<BodySet>,
 }
 
-impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No> {
+impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b> {
     pub(crate) fn new(
         user_defined_function_client: &'a UserDefinedFunctionClient,
         is_create: bool,
@@ -27,19 +21,14 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No> {
         Self {
             user_defined_function_client,
             is_create,
-            body: None,
             user_agent: None,
             activity_id: None,
             consistency_level: None,
-            p_body: PhantomData,
         }
     }
 }
 
-impl<'a, 'b, BodySet> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, BodySet>
-where
-    BodySet: ToAssign,
-{
+impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b> {
     setters! {
         user_agent: &'b str => Some(UserAgent::new(user_agent)),
         activity_id: &'b str => Some(ActivityId::new(activity_id)),
@@ -47,28 +36,11 @@ where
     }
 }
 
-impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
-    fn body(&self) -> &'b str {
-        self.body.unwrap()
-    }
-}
-
-impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, No> {
-    pub fn body(self, body: &'b str) -> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
-        CreateOrReplaceUserDefinedFunctionBuilder {
-            body: Some(body),
-            user_defined_function_client: self.user_defined_function_client,
-            is_create: self.is_create,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            p_body: PhantomData,
-        }
-    }
-}
-
-impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
-    pub async fn execute(&self) -> Result<CreateUserDefinedFunctionResponse, CosmosError> {
+impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b> {
+    pub async fn execute<B: AsRef<str>>(
+        &self,
+        body: B,
+    ) -> Result<CreateUserDefinedFunctionResponse, CosmosError> {
         trace!("CreateOrReplaceUserDefinedFunctionBuilder::execute called");
 
         // Create is POST with no name in the URL. Expected return is CREATED.
@@ -97,27 +69,26 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b, Yes> {
             id: &'a str,
         }
         let request = Request {
-            body: self.body(),
+            body: body.as_ref(),
             id: self
                 .user_defined_function_client
                 .user_defined_function_name(),
         };
 
-        let request = serde_json::to_string(&request)?;
-        let request = req.body(request.as_bytes())?;
+        let request = azure_core::to_json(&request)?;
+        let request = req.body(request)?;
 
-        Ok(if self.is_create {
+        let result = if self.is_create {
             self.user_defined_function_client
                 .http_client()
                 .execute_request_check_status(request, StatusCode::CREATED)
                 .await?
-                .try_into()?
         } else {
             self.user_defined_function_client
                 .http_client()
                 .execute_request_check_status(request, StatusCode::OK)
                 .await?
-                .try_into()?
-        })
+        };
+        Ok(result.try_into()?)
     }
 }

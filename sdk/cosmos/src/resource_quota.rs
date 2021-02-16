@@ -4,6 +4,7 @@ use crate::errors::TokenParsingError;
 ///
 /// A collection of this type is often returned in responses allowing you to
 /// know how much of a given resource you can use.
+#[allow(missing_docs)]
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum ResourceQuota {
     Databases(u64),

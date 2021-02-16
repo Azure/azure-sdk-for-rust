@@ -1,6 +1,7 @@
 use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
+use bytes::Bytes;
 use std::error::Error;
 use std::sync::Arc;
 
@@ -31,7 +32,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("{:?}", res);
 
-    let data = b"something";
+    let data = Bytes::from_static(b"something");
 
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
@@ -39,7 +40,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let res = container
         .as_blob_client("blob0.txt")
-        .put_block_blob(data)
+        .put_block_blob(data.clone())
         .content_type("text/plain")
         .hash(&hash)
         .execute()
@@ -48,7 +49,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let res = container
         .as_blob_client("blob1.txt")
-        .put_block_blob(data)
+        .put_block_blob(data.clone())
         .content_type("text/plain")
         .hash(&hash)
         .execute()

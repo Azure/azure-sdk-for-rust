@@ -16,10 +16,10 @@ pub struct CreatePermissionResponse<'a> {
     pub alt_content_path: String,
 }
 
-impl<'a> std::convert::TryFrom<Response<Vec<u8>>> for CreatePermissionResponse<'a> {
+impl<'a> std::convert::TryFrom<Response<bytes::Bytes>> for CreatePermissionResponse<'a> {
     type Error = CosmosError;
 
-    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
         let body: &[u8] = response.body();
 

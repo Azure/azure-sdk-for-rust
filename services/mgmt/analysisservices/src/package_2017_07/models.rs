@@ -23,6 +23,57 @@ pub struct OperationDetail {
     pub display: Option<OperationDisplay>,
     #[serde(skip_serializing)]
     pub origin: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<operation_detail::Properties>,
+}
+pub mod operation_detail {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "serviceSpecification", skip_serializing_if = "Option::is_none")]
+        pub service_specification: Option<properties::ServiceSpecification>,
+    }
+    pub mod properties {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub struct ServiceSpecification {
+            #[serde(rename = "metricSpecifications", skip_serializing)]
+            pub metric_specifications: Vec<MetricSpecifications>,
+            #[serde(rename = "logSpecifications", skip_serializing)]
+            pub log_specifications: Vec<LogSpecifications>,
+        }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricSpecifications {
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing)]
+    pub display_name: Option<String>,
+    #[serde(rename = "displayDescription", skip_serializing)]
+    pub display_description: Option<String>,
+    #[serde(skip_serializing)]
+    pub unit: Option<String>,
+    #[serde(rename = "aggregationType", skip_serializing)]
+    pub aggregation_type: Option<String>,
+    #[serde(skip_serializing)]
+    pub dimensions: Vec<MetricDimensions>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogSpecifications {
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing)]
+    pub display_name: Option<String>,
+    #[serde(rename = "blobDuration", skip_serializing)]
+    pub blob_duration: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricDimensions {
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing)]
+    pub display_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
@@ -233,6 +284,26 @@ pub struct OperationsErrorResponse {
     pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(skip_serializing)]
+    pub code: Option<String>,
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+    #[serde(skip_serializing)]
+    pub target: Option<String>,
+    #[serde(skip_serializing)]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", skip_serializing)]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing)]
+    pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
@@ -245,5 +316,7 @@ pub mod error_response {
         pub code: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
+        #[serde(skip_serializing)]
+        pub details: Vec<ErrorDetail>,
     }
 }

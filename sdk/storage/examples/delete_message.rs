@@ -1,12 +1,14 @@
 #[macro_use]
 extern crate log;
+use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage::queue::prelude::*;
 use std::error::Error;
+use std::sync::Arc;
 use std::time::Duration;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // First we retrieve the account name and master key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
@@ -17,27 +19,34 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .nth(1)
         .expect("Please pass the queue name as first parameter");
 
-    let queue: QueueAccountClient<_> = client::with_access_key(&account, &master_key).into();
-    let queue = queue.into_queue_client(&queue_name);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+
+    let queue = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+        .as_storage_client()
+        .as_queue_client(queue_name);
 
     trace!("getting messages");
 
     let get_response = queue
         .get_messages()
-        .with_number_of_messages(2)
-        .with_visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
+        .number_of_messages(2)
+        .visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
         .execute()
         .await?;
 
     println!("get_response == {:#?}", get_response);
 
     if get_response.messages.is_empty() {
-        trace!("no message to delete");
+        println!("no message to delete");
     } else {
-        for message in get_response.messages {
-            trace!("deleting message {}", message.message_id);
+        for message_to_delete in get_response.messages {
+            println!("deleting message {:?}", message_to_delete);
 
-            let delete_response = queue.delete_message(message.into()).execute().await?;
+            let delete_response = queue
+                .as_pop_receipt_client(message_to_delete)
+                .delete()
+                .execute()
+                .await?;
 
             println!("delete_response == {:#?}", delete_response);
         }

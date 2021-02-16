@@ -625,6 +625,13 @@ pub struct ServerSecurityAlertPolicy {
     pub properties: Option<SecurityAlertPolicyProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerSecurityAlertPolicyListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<ServerSecurityAlertPolicy>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateEndpoint", skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpointProperty>,
@@ -694,6 +701,131 @@ pub mod query_performance_insight_reset_data_result {
         Succeeded,
         Failed,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryTextProperties {
+    #[serde(rename = "queryId", skip_serializing_if = "Option::is_none")]
+    pub query_id: Option<String>,
+    #[serde(rename = "queryText", skip_serializing_if = "Option::is_none")]
+    pub query_text: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryText {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<QueryTextProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryTextsResultList {
+    #[serde(skip_serializing)]
+    pub value: Vec<QueryText>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TopQueryStatisticsInputProperties {
+    #[serde(rename = "numberOfTopQueries")]
+    pub number_of_top_queries: i32,
+    #[serde(rename = "aggregationFunction")]
+    pub aggregation_function: String,
+    #[serde(rename = "observedMetric")]
+    pub observed_metric: String,
+    #[serde(rename = "observationStartTime")]
+    pub observation_start_time: String,
+    #[serde(rename = "observationEndTime")]
+    pub observation_end_time: String,
+    #[serde(rename = "aggregationWindow")]
+    pub aggregation_window: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TopQueryStatisticsInput {
+    pub properties: TopQueryStatisticsInputProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryStatisticProperties {
+    #[serde(rename = "queryId", skip_serializing_if = "Option::is_none")]
+    pub query_id: Option<String>,
+    #[serde(rename = "startTime", skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(rename = "aggregationFunction", skip_serializing_if = "Option::is_none")]
+    pub aggregation_function: Option<String>,
+    #[serde(rename = "databaseNames", skip_serializing_if = "Vec::is_empty")]
+    pub database_names: Vec<String>,
+    #[serde(rename = "queryExecutionCount", skip_serializing_if = "Option::is_none")]
+    pub query_execution_count: Option<i64>,
+    #[serde(rename = "metricName", skip_serializing_if = "Option::is_none")]
+    pub metric_name: Option<String>,
+    #[serde(rename = "metricDisplayName", skip_serializing_if = "Option::is_none")]
+    pub metric_display_name: Option<String>,
+    #[serde(rename = "metricValue", skip_serializing_if = "Option::is_none")]
+    pub metric_value: Option<f64>,
+    #[serde(rename = "metricValueUnit", skip_serializing_if = "Option::is_none")]
+    pub metric_value_unit: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryStatistic {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<QueryStatisticProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TopQueryStatisticsResultList {
+    #[serde(skip_serializing)]
+    pub value: Vec<QueryStatistic>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WaitStatisticsInputProperties {
+    #[serde(rename = "observationStartTime")]
+    pub observation_start_time: String,
+    #[serde(rename = "observationEndTime")]
+    pub observation_end_time: String,
+    #[serde(rename = "aggregationWindow")]
+    pub aggregation_window: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WaitStatisticsInput {
+    pub properties: WaitStatisticsInputProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WaitStatisticProperties {
+    #[serde(rename = "startTime", skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(rename = "eventName", skip_serializing_if = "Option::is_none")]
+    pub event_name: Option<String>,
+    #[serde(rename = "eventTypeName", skip_serializing_if = "Option::is_none")]
+    pub event_type_name: Option<String>,
+    #[serde(rename = "queryId", skip_serializing_if = "Option::is_none")]
+    pub query_id: Option<i64>,
+    #[serde(rename = "databaseName", skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
+    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+    #[serde(rename = "totalTimeInMs", skip_serializing_if = "Option::is_none")]
+    pub total_time_in_ms: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WaitStatistic {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<WaitStatisticProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WaitStatisticsResultList {
+    #[serde(skip_serializing)]
+    pub value: Vec<WaitStatistic>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {

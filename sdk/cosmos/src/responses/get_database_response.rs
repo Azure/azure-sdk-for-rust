@@ -20,10 +20,10 @@ pub struct GetDatabaseResponse {
     pub gateway_version: String,
 }
 
-impl std::convert::TryFrom<Response<Vec<u8>>> for GetDatabaseResponse {
+impl std::convert::TryFrom<Response<bytes::Bytes>> for GetDatabaseResponse {
     type Error = CosmosError;
 
-    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
         let body = response.body();
 

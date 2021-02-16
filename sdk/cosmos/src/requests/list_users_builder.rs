@@ -47,7 +47,7 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
             ResourceType::Users,
         );
 
-        let req = req.body(EMPTY_BODY.as_ref())?;
+        let req = req.body(bytes::Bytes::from_static(EMPTY_BODY))?;
         debug!("\nreq == {:?}", req);
 
         Ok(self
@@ -63,7 +63,7 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
         enum States {
             Init,
             Continuation(String),
-        };
+        }
 
         unfold(
             Some(States::Init),
@@ -88,10 +88,10 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
                         Err(err) => return Some((Err(err), None)),
                     };
 
-                    let continuation_token = match &response.continuation_token {
-                        Some(ct) => Some(States::Continuation(ct.to_owned())),
-                        None => None,
-                    };
+                    let continuation_token = response
+                        .continuation_token
+                        .as_ref()
+                        .map(|ct| States::Continuation(ct.to_owned()));
 
                     Some((Ok(response), continuation_token))
                 }

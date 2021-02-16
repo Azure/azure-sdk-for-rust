@@ -4,11 +4,12 @@ use crate::core::prelude::*;
 use azure_core::headers::BLOB_TYPE;
 use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
+use bytes::Bytes;
 
 #[derive(Debug, Clone)]
 pub struct PutBlockBlobBuilder<'a> {
     blob_client: &'a BlobClient,
-    body: &'a [u8],
+    body: Bytes,
     hash: Option<&'a Hash>,
     content_type: Option<ContentType<'a>>,
     content_encoding: Option<ContentEncoding<'a>>,
@@ -23,10 +24,10 @@ pub struct PutBlockBlobBuilder<'a> {
 }
 
 impl<'a> PutBlockBlobBuilder<'a> {
-    pub(crate) fn new(blob_client: &'a BlobClient, body: &'a [u8]) -> Self {
+    pub(crate) fn new(blob_client: &'a BlobClient, body: impl Into<Bytes>) -> Self {
         Self {
             blob_client,
-            body,
+            body: body.into(),
             hash: None,
             content_type: None,
             content_encoding: None,
@@ -86,7 +87,7 @@ impl<'a> PutBlockBlobBuilder<'a> {
                 request = add_optional_header(&self.client_request_id, request);
                 request
             },
-            Some(self.body),
+            Some(self.body.clone()),
         )?;
 
         let response = self

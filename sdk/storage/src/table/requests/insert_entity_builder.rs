@@ -2,6 +2,7 @@ use crate::clients::TableClient;
 use crate::table::requests::{PartitionKeyMissing, PartitionKeySet, RowKeyMissing, RowKeySet};
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
+use bytes::Bytes;
 use http::method::Method;
 use http::status::StatusCode;
 use serde::Serialize;
@@ -127,7 +128,7 @@ where
                 request = add_optional_header(&self.client_request_id, request);
                 request
             },
-            Some(json.as_bytes()),
+            Some(Bytes::from(json)),
         )?;
 
         println!("request == {:?}", request);

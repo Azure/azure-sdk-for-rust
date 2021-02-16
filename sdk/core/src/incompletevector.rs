@@ -3,8 +3,8 @@ use std::ops::{Deref, DerefMut};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct IncompleteVector<T> {
-    pub next_marker: Option<NextMarker>,
-    pub vector: Vec<T>,
+    next_marker: Option<NextMarker>,
+    vector: Vec<T>,
 }
 
 impl<T> IncompleteVector<T> {
@@ -20,17 +20,7 @@ impl<T> IncompleteVector<T> {
     }
 
     pub fn next_marker(&self) -> Option<&NextMarker> {
-        if let Some(ref t) = self.next_marker.as_ref() {
-            Some(t)
-        } else {
-            None
-        }
-    }
-}
-
-impl<T> DerefMut for IncompleteVector<T> {
-    fn deref_mut(&mut self) -> &mut [T] {
-        &mut self.vector
+        self.next_marker.as_ref()
     }
 }
 
@@ -39,6 +29,12 @@ impl<T> Deref for IncompleteVector<T> {
 
     fn deref(&self) -> &[T] {
         &self.vector
+    }
+}
+
+impl<T> DerefMut for IncompleteVector<T> {
+    fn deref_mut(&mut self) -> &mut [T] {
+        &mut self.vector
     }
 }
 

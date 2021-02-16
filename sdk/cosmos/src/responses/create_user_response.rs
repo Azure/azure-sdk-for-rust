@@ -14,10 +14,10 @@ pub struct CreateUserResponse {
     pub session_token: String,
 }
 
-impl std::convert::TryFrom<Response<Vec<u8>>> for CreateUserResponse {
+impl std::convert::TryFrom<Response<bytes::Bytes>> for CreateUserResponse {
     type Error = CosmosError;
 
-    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
         let body: &[u8] = response.body();
 

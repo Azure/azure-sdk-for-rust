@@ -1,5 +1,5 @@
 use azure_core::headers::*;
-use azure_core::lease::LeaseId;
+use azure_core::prelude::*;
 use azure_core::RequestId;
 use chrono::{DateTime, Utc};
 

@@ -13,10 +13,10 @@ pub struct DeleteDatabaseResponse {
     pub resource_usage: Vec<ResourceQuota>,
 }
 
-impl std::convert::TryFrom<Response<Vec<u8>>> for DeleteDatabaseResponse {
+impl std::convert::TryFrom<Response<bytes::Bytes>> for DeleteDatabaseResponse {
     type Error = CosmosError;
 
-    fn try_from(response: Response<Vec<u8>>) -> Result<Self, Self::Error> {
+    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
 
         let charge = request_charge_from_headers(headers)?;

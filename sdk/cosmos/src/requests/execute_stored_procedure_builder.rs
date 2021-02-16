@@ -2,6 +2,7 @@ use crate::prelude::*;
 use crate::resources::stored_procedure::Parameters;
 use crate::responses::ExecuteStoredProcedureResponse;
 use azure_core::prelude::*;
+use bytes::Bytes;
 use http::StatusCode;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
@@ -16,6 +17,8 @@ pub struct ExecuteStoredProcedureBuilder<'a, 'b> {
     allow_tentative_writes: TenativeWritesAllowance,
     partition_keys: Option<&'b PartitionKeys>,
 }
+
+static EMPTY_LIST: &[u8; 2] = b"[]";
 
 impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
     pub(crate) fn new(stored_procedure_client: &'a StoredProcedureClient) -> Self {
@@ -36,13 +39,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         allow_tentative_writes: TenativeWritesAllowance,
         partition_keys: &'b PartitionKeys => Some(partition_keys),
-    }
-
-    pub fn parameters<P: Into<Parameters>>(self, p: P) -> Self {
-        Self {
-            parameters: Some(p.into()),
-            ..self
-        }
+        parameters: Parameters => Some(parameters),
     }
 
     pub async fn execute<T>(&self) -> Result<ExecuteStoredProcedureResponse<T>, CosmosError>
@@ -55,7 +52,6 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
             .stored_procedure_client
             .prepare_request_with_stored_procedure_name(http::Method::POST);
 
-        // add trait headers
         let request = azure_core::headers::add_optional_header(&self.user_agent, request);
         let request = azure_core::headers::add_optional_header(&self.activity_id, request);
         let request = azure_core::headers::add_optional_header(&self.consistency_level, request);
@@ -66,12 +62,12 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         let request = request.header(http::header::CONTENT_TYPE, "application/json");
 
         let body = if let Some(parameters) = self.parameters.as_ref() {
-            parameters.to_json()
+            Bytes::from(parameters.to_json())
         } else {
-            String::from("[]")
+            Bytes::from_static(EMPTY_LIST)
         };
 
-        let request = request.body(body.as_bytes())?;
+        let request = request.body(body)?;
 
         Ok(self
             .stored_procedure_client

@@ -4,7 +4,11 @@ pub use crate::core::container_sas_builder::ContainerSASBuilder;
 pub use crate::core::{client, CopyId, IPRange};
 pub use crate::core::{Client, ClientRequired, KeyClientRequired};
 
-pub use crate::core::SharedAccessSignatureSupport;
+pub use crate::core::{
+    ClientRequestIdOption, ClientRequestIdSupport, ContinuationOption, ContinuationSupport,
+    IncludeMetadataSupport, MaxResultsOption, MaxResultsSupport, PrefixOption, PrefixSupport,
+    SharedAccessSignatureSupport, TimeoutOption, TimeoutSupport,
+};
 
 pub use crate::clients::{AsContainerClient, AsStorageClient, AsTableClient};
 

@@ -265,14 +265,26 @@ pub struct ValidateSubscriptionTransferEligibilityError {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SubscriptionTransferValidationErrorCode {
-    InvalidSource,
-    SubscriptionNotActive,
-    InsufficientPermissionOnSource,
-    InsufficientPermissionOnDestination,
-    DestinationBillingProfilePastDue,
-    SubscriptionTypeNotSupported,
+    BillingAccountInactive,
     CrossBillingAccountNotAllowed,
+    DestinationBillingProfileInactive,
+    DestinationBillingProfileNotFound,
+    DestinationBillingProfilePastDue,
+    DestinationInvoiceSectionInactive,
+    DestinationInvoiceSectionNotFound,
+    InsufficientPermissionOnDestination,
+    InsufficientPermissionOnSource,
+    InvalidDestination,
+    InvalidSource,
+    MarketplaceNotEnabledOnDestination,
     NotAvailableForDestinationMarket,
+    ProductInactive,
+    ProductNotFound,
+    ProductTypeNotSupported,
+    SourceBillingProfilePastDue,
+    SourceInvoiceSectionInactive,
+    SubscriptionNotActive,
+    SubscriptionTypeNotSupported,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAutoRenewOperation {
@@ -560,7 +572,7 @@ pub struct BillingProfileProperties {
     #[serde(rename = "invoiceEmailOptIn", skip_serializing_if = "Option::is_none")]
     pub invoice_email_opt_in: Option<bool>,
     #[serde(rename = "invoiceDay", skip_serializing)]
-    pub invoice_day: Option<i64>,
+    pub invoice_day: Option<i32>,
     #[serde(skip_serializing)]
     pub currency: Option<String>,
     #[serde(rename = "enabledAzurePlans", skip_serializing_if = "Vec::is_empty")]
@@ -1128,7 +1140,7 @@ pub struct TransactionProperties {
     #[serde(rename = "transactionAmount", skip_serializing_if = "Option::is_none")]
     pub transaction_amount: Option<Amount>,
     #[serde(skip_serializing)]
-    pub quantity: Option<i64>,
+    pub quantity: Option<i32>,
     #[serde(rename = "invoiceSectionId", skip_serializing)]
     pub invoice_section_id: Option<String>,
     #[serde(rename = "invoiceSectionDisplayName", skip_serializing)]

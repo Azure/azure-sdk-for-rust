@@ -3,18 +3,13 @@ use crate::resources::ResourceType;
 use crate::responses::CreateDocumentResponse;
 use azure_core::errors::UnexpectedHTTPResult;
 use azure_core::prelude::*;
-use azure_core::{ActivityId, No, ToAssign, UserAgent, Yes};
 use chrono::{DateTime, Utc};
 use http::StatusCode;
 use serde::Serialize;
 use std::convert::TryFrom;
-use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
-where
-    PartitionKeysSet: ToAssign,
-{
+pub struct CreateDocumentBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
     partition_keys: Option<PartitionKeys>,
     is_upsert: IsUpsert,
@@ -25,10 +20,9 @@ where
     activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     allow_tentative_writes: TenativeWritesAllowance,
-    p_partition_keys: PhantomData<PartitionKeysSet>,
 }
 
-impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
+impl<'a, 'b> CreateDocumentBuilder<'a, 'b> {
     pub(crate) fn new(collection_client: &'a CollectionClient) -> Self {
         Self {
             collection_client,
@@ -41,15 +35,11 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
             activity_id: None,
             consistency_level: None,
             allow_tentative_writes: TenativeWritesAllowance::Deny,
-            p_partition_keys: PhantomData,
         }
     }
 }
 
-impl<'a, 'b, PartitionKeysSet> CreateDocumentBuilder<'a, 'b, PartitionKeysSet>
-where
-    PartitionKeysSet: ToAssign,
-{
+impl<'a, 'b> CreateDocumentBuilder<'a, 'b> {
     setters! {
         user_agent: &'b str => Some(UserAgent::new(user_agent)),
         activity_id: &'b str => Some(ActivityId::new(activity_id)),
@@ -59,38 +49,15 @@ where
         allow_tentative_writes: TenativeWritesAllowance,
         is_upsert: bool => if is_upsert { IsUpsert::Yes } else { IsUpsert::No },
         indexing_directive: IndexingDirective,
+        partition_keys: PartitionKeys => Some(partition_keys),
     }
 }
 
-impl<'a, 'b> CreateDocumentBuilder<'a, 'b, No> {
-    pub fn partition_keys<P: Into<PartitionKeys>>(
-        self,
-        partition_keys: P,
-    ) -> CreateDocumentBuilder<'a, 'b, Yes> {
-        CreateDocumentBuilder {
-            partition_keys: Some(partition_keys.into()),
-            collection_client: self.collection_client,
-            is_upsert: self.is_upsert,
-            indexing_directive: self.indexing_directive,
-            if_match_condition: self.if_match_condition,
-            if_modified_since: self.if_modified_since,
-            user_agent: self.user_agent,
-            activity_id: self.activity_id,
-            consistency_level: self.consistency_level,
-            allow_tentative_writes: self.allow_tentative_writes,
-            p_partition_keys: PhantomData,
-        }
-    }
-}
-
-impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
-    pub async fn execute_with_document<T>(
+impl<'a, 'b> CreateDocumentBuilder<'a, 'b> {
+    pub async fn execute<T: Serialize>(
         &self,
         document: &T,
-    ) -> Result<CreateDocumentResponse, CosmosError>
-    where
-        T: Serialize,
-    {
+    ) -> Result<CreateDocumentResponse, CosmosError> {
         let mut req = self.collection_client.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs",
@@ -101,20 +68,18 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
             ResourceType::Documents,
         );
 
-        // add trait headers
         req = azure_core::headers::add_optional_header(&self.if_match_condition, req);
         req = azure_core::headers::add_optional_header(&self.if_modified_since, req);
         req = azure_core::headers::add_optional_header(&self.user_agent, req);
         req = azure_core::headers::add_optional_header(&self.activity_id, req);
         req = azure_core::headers::add_optional_header(&self.consistency_level, req);
-        req =
-            azure_core::headers::add_mandatory_header(&self.partition_keys.as_ref().unwrap(), req);
+        req = azure_core::headers::add_optional_header(&self.partition_keys.as_ref(), req);
         req = azure_core::headers::add_mandatory_header(&self.is_upsert, req);
         req = azure_core::headers::add_mandatory_header(&self.indexing_directive, req);
         req = azure_core::headers::add_mandatory_header(&self.allow_tentative_writes, req);
 
-        let serialized = serde_json::to_string(document)?;
-        let req = req.body(serialized.as_bytes())?;
+        let serialized = azure_core::to_json(document)?;
+        let req = req.body(serialized)?;
 
         let response = self
             .collection_client
@@ -126,8 +91,6 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b, Yes> {
         debug!("headers == {:?}", response.headers());
         debug!("whole body == {:#?}", response.body());
 
-        // expect CREATED is IsUpsert is off. Otherwise either
-        // CREATED or OK means success.
         if self.is_upsert == IsUpsert::No && response.status() != StatusCode::CREATED {
             return Err(UnexpectedHTTPResult::new(
                 StatusCode::CREATED,

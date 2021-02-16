@@ -10,27 +10,39 @@ pub use offer::Offer;
 /// You can learn more about Collections [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/collections).
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub struct Collection {
+    /// The collection id
     pub id: String,
+    /// The indexing policy
     #[serde(rename = "indexingPolicy")]
     pub indexing_policy: IndexingPolicy,
+    /// The partition key
     #[serde(rename = "partitionKey")]
     pub parition_key: PartitionKey,
+    /// The resource id
     #[serde(rename = "_rid")]
     pub rid: String,
+    /// The last updated timestamp
     #[serde(rename = "_ts")]
     pub ts: u64,
+    /// The resource's uri
     #[serde(rename = "_self")]
     pub _self: String,
+    /// The resource's etag used for concurrency control
     #[serde(rename = "_etag")]
     pub etag: String,
+    /// the addressable path of the documents resource
     #[serde(rename = "_docs")]
     pub docs: String,
+    /// the addressable path of the stored procedures resource
     #[serde(rename = "_sprocs")]
     pub sprocs: String,
+    /// the addressable path of the triggers resource
     #[serde(rename = "_triggers")]
     pub triggers: String,
+    /// the addressable path of the user-defined functions (udfs) resource
     #[serde(rename = "_udfs")]
     pub udfs: String,
+    /// the addressable path of the conflicts resource
     #[serde(rename = "_conflicts")]
     pub conflicts: String,
 }
@@ -48,13 +60,19 @@ impl Resource for &Collection {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+/// The type of index
 pub enum KeyKind {
+    /// useful for equality comparisons
     Hash,
+    /// seful for equality, range comparisons and sorting
     Range,
+    /// useful for spatial queries
     Spatial,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+/// The datatype for which the indexing behavior is applied to
+#[allow(missing_docs)]
 pub enum DataType {
     String,
     Number,
@@ -63,13 +81,18 @@ pub enum DataType {
     LineString,
 }
 
+/// The indexing mode
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum IndexingMode {
+    /// indexing occurs synchronously during insertion, replacment or deletion of documents
     Consistent,
+    /// indexing occurs asynchronously during insertion, replacment or deletion of documents
     Lazy,
 }
 
+/// Path to be indexed
+#[allow(missing_docs)]
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub struct IncludedPath {
     pub path: String,
@@ -78,17 +101,23 @@ pub struct IncludedPath {
     pub indexes: Option<Vec<IncludedPathIndex>>,
 }
 
+/// An indexed description
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub struct IncludedPathIndex {
+    /// The datatype for which the indexing behavior is applied to
     #[serde(rename = "dataType")]
     pub data_type: DataType,
+    /// The precision of the index
     #[serde(skip_serializing_if = "Option::is_none")]
     pub precision: Option<i8>,
+    /// The type of index
     pub kind: KeyKind,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+/// Path that is excluded from indexing
 pub struct ExcludedPath {
+    #[allow(missing_docs)]
     pub path: String,
 }
 
@@ -99,8 +128,11 @@ impl From<String> for ExcludedPath {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+/// The partitioning configuration settings for collection
 pub struct PartitionKey {
+    /// An array of paths using which data within the collection can be partitioned
     pub paths: Vec<String>,
+    /// The algorithm used for partitioning
     pub kind: KeyKind,
 }
 
@@ -126,10 +158,15 @@ where
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+/// The indexing policy for a collection
 #[serde(rename_all = "camelCase")]
 pub struct IndexingPolicy {
+    /// Whether automatic indexing is on or off
     pub automatic: bool,
+    /// The mode of indexing
     pub indexing_mode: IndexingMode,
+    /// Array containing document paths to be indexed
     pub included_paths: Vec<IncludedPath>,
+    /// Array containing document paths to be excluded from indexing
     pub excluded_paths: Vec<ExcludedPath>,
 }

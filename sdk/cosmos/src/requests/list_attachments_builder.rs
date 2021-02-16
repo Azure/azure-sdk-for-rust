@@ -65,7 +65,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
 
         req = crate::headers::add_partition_keys_header(self.document_client.partition_keys(), req);
 
-        let req = req.body(EMPTY_BODY.as_ref())?;
+        let req = req.body(bytes::Bytes::from_static(EMPTY_BODY))?;
 
         Ok(self
             .document_client
@@ -80,7 +80,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
         enum States {
             Init,
             Continuation(String),
-        };
+        }
 
         unfold(
             Some(States::Init),
@@ -105,10 +105,10 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
                         Err(err) => return Some((Err(err), None)),
                     };
 
-                    let continuation_token = match &response.continuation_token {
-                        Some(ct) => Some(States::Continuation(ct.to_owned())),
-                        None => None,
-                    };
+                    let continuation_token = response
+                        .continuation_token
+                        .as_ref()
+                        .map(|ct| States::Continuation(ct.to_owned()));
 
                     Some((Ok(response), continuation_token))
                 }

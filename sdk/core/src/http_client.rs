@@ -1,21 +1,22 @@
 use crate::errors::{AzureError, UnexpectedHTTPResult};
 use async_trait::async_trait;
+use bytes::Bytes;
 use http::{Request, Response, StatusCode};
-use hyper::{self, body, Body};
 use hyper_rustls::HttpsConnector;
+use serde::Serialize;
 
 #[async_trait]
 pub trait HttpClient: Send + Sync + std::fmt::Debug {
     async fn execute_request(
         &self,
-        request: Request<&[u8]>,
-    ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>>;
+        request: Request<Bytes>,
+    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>>;
 
     async fn execute_request_check_status(
         &self,
-        request: Request<&[u8]>,
+        request: Request<Bytes>,
         expected_status: StatusCode,
-    ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
         let response = self.execute_request(request).await?;
         if expected_status != response.status() {
             Err(Box::new(AzureError::from(UnexpectedHTTPResult::new(
@@ -30,9 +31,9 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 
     async fn execute_request_check_statuses(
         &self,
-        request: Request<&[u8]>,
+        request: Request<Bytes>,
         expected_statuses: &[StatusCode],
-    ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
         let response = self.execute_request(request).await?;
         if !expected_statuses
             .iter()
@@ -59,14 +60,12 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     }
 }
 
-pub static EMPTY_BODY: [u8; 0] = [];
-
 #[async_trait]
 impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
     async fn execute_request(
         &self,
-        request: Request<&[u8]>,
-    ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>> {
+        request: Request<Bytes>,
+    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
         let mut hyper_request = hyper::Request::builder()
             .uri(request.uri())
             .method(request.method());
@@ -75,7 +74,7 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
             hyper_request = hyper_request.header(header.0, header.1);
         }
 
-        let hyper_request = hyper_request.body(Body::from(request.body().to_vec()))?;
+        let hyper_request = hyper_request.body(hyper::Body::from(request.into_body()))?;
 
         let hyper_response = self.request(hyper_request).await?;
 
@@ -87,7 +86,7 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
             response = response.header(key, value);
         }
 
-        let response = response.body(body::to_bytes(hyper_response.into_body()).await?.to_vec())?;
+        let response = response.body(hyper::body::to_bytes(hyper_response.into_body()).await?)?;
 
         Ok(response)
     }
@@ -97,16 +96,15 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
 impl HttpClient for reqwest::Client {
     async fn execute_request(
         &self,
-        request: Request<&[u8]>,
-    ) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error + Sync + Send>> {
+        request: Request<Bytes>,
+    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
         let mut reqwest_request =
             self.request(request.method().clone(), &request.uri().to_string());
         for header in request.headers() {
             reqwest_request = reqwest_request.header(header.0, header.1);
         }
 
-        let body = String::from_utf8(request.body().to_vec())?;
-        let reqwest_request = reqwest_request.body(body).build()?;
+        let reqwest_request = reqwest_request.body(request.into_body()).build()?;
 
         let reqwest_response = self.execute(reqwest_request).await?;
 
@@ -118,8 +116,16 @@ impl HttpClient for reqwest::Client {
             response = response.header(key, value);
         }
 
-        let response = response.body(reqwest_response.bytes().await?.to_vec())?;
+        let response = response.body(reqwest_response.bytes().await?)?;
 
         Ok(response)
     }
+}
+
+/// Serialize to json
+pub fn to_json<T>(value: &T) -> Result<Bytes, Box<dyn std::error::Error + Sync + Send>>
+where
+    T: ?Sized + Serialize,
+{
+    Ok(Bytes::from(serde_json::to_vec(value)?))
 }

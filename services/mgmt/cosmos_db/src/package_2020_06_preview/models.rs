@@ -1469,6 +1469,8 @@ pub struct PeriodicModeProperties {
     pub backup_interval_in_minutes: Option<i32>,
     #[serde(rename = "backupRetentionIntervalInHours", skip_serializing_if = "Option::is_none")]
     pub backup_retention_interval_in_hours: Option<i32>,
+    #[serde(rename = "backupStorageRedundancy", skip_serializing_if = "Option::is_none")]
+    pub backup_storage_redundancy: Option<BackupStorageRedundancy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableDatabaseAccountsListResult {
@@ -1477,10 +1479,16 @@ pub struct RestorableDatabaseAccountsListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableDatabaseAccountGetResult {
-    #[serde(flatten)]
-    pub arm_resource_properties: ArmResourceProperties,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<RestorableDatabaseAccountProperties>,
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableDatabaseAccountProperties {
@@ -1515,6 +1523,12 @@ pub struct RestorableLocationResource {
     pub creation_time: Option<String>,
     #[serde(rename = "deletionTime", skip_serializing)]
     pub deletion_time: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum BackupStorageRedundancy {
+    Geo,
+    Local,
+    Zone,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NotebookWorkspaceCreateUpdateParameters {
@@ -1623,10 +1637,14 @@ pub struct RestorableSqlDatabasesListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableSqlDatabaseGetResult {
-    #[serde(flatten)]
-    pub arm_resource_properties: ArmResourceProperties,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<RestorableSqlDatabaseProperties>,
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableSqlDatabaseProperties {
@@ -1674,10 +1692,14 @@ pub struct RestorableSqlContainersListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableSqlContainerGetResult {
-    #[serde(flatten)]
-    pub arm_resource_properties: ArmResourceProperties,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<RestorableSqlContainerProperties>,
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableSqlContainerProperties {
@@ -1726,10 +1748,14 @@ pub struct RestorableMongodbDatabasesListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableMongodbDatabaseGetResult {
-    #[serde(flatten)]
-    pub arm_resource_properties: ArmResourceProperties,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<RestorableMongodbDatabaseProperties>,
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableMongodbDatabaseProperties {
@@ -1759,10 +1785,14 @@ pub struct RestorableMongodbCollectionsListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableMongodbCollectionGetResult {
-    #[serde(flatten)]
-    pub arm_resource_properties: ArmResourceProperties,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<RestorableMongodbCollectionProperties>,
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableMongodbCollectionProperties {

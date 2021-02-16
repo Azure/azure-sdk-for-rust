@@ -1,5 +1,6 @@
 use crate::clients::{ServiceType, StorageAccountClient};
 use azure_core::errors::AzureError;
+use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
 use std::sync::Arc;
@@ -34,13 +35,33 @@ impl StorageClient {
         crate::container::requests::ListContainersBuilder::new(self)
     }
 
+    pub fn list_queues(&self) -> crate::queue::requests::ListQueuesBuilder {
+        crate::queue::requests::ListQueuesBuilder::new(self)
+    }
+
+    pub fn get_queue_service_properties(
+        &self,
+    ) -> crate::queue::requests::GetQueueServicePropertiesBuilder {
+        crate::queue::requests::GetQueueServicePropertiesBuilder::new(self)
+    }
+
+    pub fn set_queue_service_properties(
+        &self,
+    ) -> crate::queue::requests::SetQueueServicePropertiesBuilder {
+        crate::queue::requests::SetQueueServicePropertiesBuilder::new(self)
+    }
+
+    pub fn get_queue_service_stats(&self) -> crate::queue::requests::GetQueueServiceStatsBuilder {
+        crate::queue::requests::GetQueueServiceStatsBuilder::new(self)
+    }
+
     pub(crate) fn prepare_request<'a>(
         &self,
         url: &str,
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
-        request_body: Option<&'a [u8]>,
-    ) -> Result<(Request<&'a [u8]>, url::Url), AzureError> {
+        request_body: Option<Bytes>,
+    ) -> Result<(Request<Bytes>, url::Url), AzureError> {
         self.storage_account_client.prepare_request(
             url,
             method,

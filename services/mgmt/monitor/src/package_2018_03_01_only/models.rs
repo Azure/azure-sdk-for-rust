@@ -177,7 +177,6 @@ pub struct MetricAlertProperties {
     pub description: Option<String>,
     pub severity: i32,
     pub enabled: bool,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub scopes: Vec<String>,
     #[serde(rename = "evaluationFrequency")]
     pub evaluation_frequency: String,
@@ -194,6 +193,8 @@ pub struct MetricAlertProperties {
     pub actions: Vec<MetricAlertAction>,
     #[serde(rename = "lastUpdatedTime", skip_serializing)]
     pub last_updated_time: Option<String>,
+    #[serde(rename = "isMigrated", skip_serializing)]
+    pub is_migrated: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertPropertiesPatch {
@@ -221,6 +222,8 @@ pub struct MetricAlertPropertiesPatch {
     pub actions: Vec<MetricAlertAction>,
     #[serde(rename = "lastUpdatedTime", skip_serializing)]
     pub last_updated_time: Option<String>,
+    #[serde(rename = "isMigrated", skip_serializing)]
+    pub is_migrated: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertResource {

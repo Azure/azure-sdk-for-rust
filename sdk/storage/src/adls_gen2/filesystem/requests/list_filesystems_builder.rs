@@ -1,7 +1,6 @@
 use crate::core::prelude::*;
 use crate::filesystem::responses::ListFilesystemsResponse;
 use azure_core::errors::AzureError;
-use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use hyper::{Method, StatusCode};
 
@@ -237,7 +236,7 @@ where
         enum States {
             Init,
             Continuation(String),
-        };
+        }
 
         unfold(Some(States::Init), move |continuation: Option<States>| {
             let req = self.clone();
@@ -258,10 +257,10 @@ where
                     Err(err) => return Some((Err(err), None)),
                 };
 
-                let continuation = match response.incomplete_vector.next_marker() {
-                    Some(ct) => Some(States::Continuation(ct.as_str().to_owned())),
-                    None => None,
-                };
+                let continuation = response
+                    .incomplete_vector
+                    .next_marker()
+                    .map(|ct| States::Continuation(ct.as_str().to_owned()));
 
                 Some((Ok(response), continuation))
             }

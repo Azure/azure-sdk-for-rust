@@ -1,7 +1,7 @@
 use crate::requests;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
-use azure_core::{HttpClient, No};
+use azure_core::HttpClient;
 
 use super::*;
 
@@ -13,6 +13,7 @@ pub struct AttachmentClient {
 }
 
 impl AttachmentClient {
+    /// Create a new client
     pub(crate) fn new<S: Into<ReadonlyString>>(
         document_client: DocumentClient,
         attachment_name: S,
@@ -43,11 +44,6 @@ impl AttachmentClient {
         &self.document_client
     }
 
-    /// Get a raw [`HttpClient`].
-    pub fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
-    }
-
     /// Get the attachment name.
     pub fn attachment_name(&self) -> &str {
         &self.attachment_name
@@ -64,23 +60,28 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to create an attachment with a slug.
-    pub fn create_slug(&self) -> requests::CreateSlugAttachmentBuilder<'_, '_, No, No> {
+    pub fn create_slug(&self) -> requests::CreateSlugAttachmentBuilder<'_, '_> {
         requests::CreateSlugAttachmentBuilder::new(self)
     }
 
     /// Initiate a request to replace an attachment.
-    pub fn replace_slug(&self) -> requests::ReplaceSlugAttachmentBuilder<'_, '_, No, No> {
+    pub fn replace_slug(&self) -> requests::ReplaceSlugAttachmentBuilder<'_, '_> {
         requests::ReplaceSlugAttachmentBuilder::new(self)
     }
 
     /// Initiate a request to create an attachment.
-    pub fn create_reference(&self) -> requests::CreateReferenceAttachmentBuilder<'_, '_, No, No> {
+    pub fn create_reference(&self) -> requests::CreateReferenceAttachmentBuilder<'_, '_> {
         requests::CreateReferenceAttachmentBuilder::new(self)
     }
 
     /// Initiate a request to replace an attachment.
-    pub fn replace_reference(&self) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_, No, No> {
+    pub fn replace_reference(&self) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_> {
         requests::ReplaceReferenceAttachmentBuilder::new(self)
+    }
+
+    /// Get a raw [`HttpClient`].
+    pub(crate) fn http_client(&self) -> &dyn HttpClient {
+        self.cosmos_client().http_client()
     }
 
     pub(crate) fn prepare_request(&self, method: http::Method) -> http::request::Builder {

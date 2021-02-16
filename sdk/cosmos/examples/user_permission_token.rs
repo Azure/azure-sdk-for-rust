@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_permission_response = permission_client
         .create_permission()
         .expiry_seconds(18000u64) // 5 hours, max!
-        .execute_with_permission(&permission_mode)
+        .execute(&permission_mode)
         .await?;
     println!(
         "create_permission_response == {:#?}",
@@ -118,7 +118,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_document()
         .is_upsert(true)
         .partition_keys(["Gianluigi Bombatomica"])
-        .execute_with_document(&document)
+        .execute(&document)
         .await
     {
         Ok(_) => panic!("this should not happen!"),
@@ -132,7 +132,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_permission_response = permission_client
         .create_permission()
         .expiry_seconds(18000u64) // 5 hours, max!
-        .execute_with_permission(&permission_mode)
+        .execute(&permission_mode)
         .await?;
     println!(
         "create_permission_response == {:#?}",
@@ -158,7 +158,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_document()
         .is_upsert(true)
         .partition_keys(["Gianluigi Bombatomica"])
-        .execute_with_document(&document)
+        .execute(&document)
         .await?;
     println!(
         "create_document_response == {:#?}",

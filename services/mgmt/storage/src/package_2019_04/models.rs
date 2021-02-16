@@ -355,6 +355,8 @@ pub struct StorageAccountPropertiesCreateParameters {
     pub allow_blob_public_access: Option<bool>,
     #[serde(rename = "minimumTlsVersion", skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<storage_account_properties_create_parameters::MinimumTlsVersion>,
+    #[serde(rename = "allowSharedKeyAccess", skip_serializing_if = "Option::is_none")]
+    pub allow_shared_key_access: Option<bool>,
 }
 pub mod storage_account_properties_create_parameters {
     use super::*;
@@ -494,6 +496,8 @@ pub struct StorageAccountProperties {
     pub allow_blob_public_access: Option<bool>,
     #[serde(rename = "minimumTlsVersion", skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<storage_account_properties::MinimumTlsVersion>,
+    #[serde(rename = "allowSharedKeyAccess", skip_serializing_if = "Option::is_none")]
+    pub allow_shared_key_access: Option<bool>,
 }
 pub mod storage_account_properties {
     use super::*;
@@ -616,6 +620,8 @@ pub struct StorageAccountPropertiesUpdateParameters {
     pub allow_blob_public_access: Option<bool>,
     #[serde(rename = "minimumTlsVersion", skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<storage_account_properties_update_parameters::MinimumTlsVersion>,
+    #[serde(rename = "allowSharedKeyAccess", skip_serializing_if = "Option::is_none")]
+    pub allow_shared_key_access: Option<bool>,
 }
 pub mod storage_account_properties_update_parameters {
     use super::*;

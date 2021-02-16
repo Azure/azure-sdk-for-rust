@@ -42,8 +42,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let ret = user_defined_function_client
         .create_user_defined_function()
-        .body("body")
-        .execute()
+        .execute("body")
         .await?;
     println!("Creeate response object:\n{:#?}", ret);
 
@@ -63,17 +62,15 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let ret = user_defined_function_client
         .replace_user_defined_function()
         .consistency_level(&ret)
-        .body(FN_BODY)
-        .execute()
+        .execute(FN_BODY)
         .await?;
     println!("Replace response object:\n{:#?}", ret);
 
     let ret = collection_client
         .query_documents()
-        .query(&"SELECT udf.test15(100)".into())
         .consistency_level(&ret)
-        .max_item_count(2)
-        .execute::<serde_json::Value>()
+        .max_item_count(2i32)
+        .execute::<serde_json::Value, _>("SELECT udf.test15(100)")
         .await?
         .into_raw();
     println!("Query response object:\n{:#?}", ret);

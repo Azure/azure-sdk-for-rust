@@ -75,7 +75,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .create_document()
             .partition_keys([&document_to_insert.document.a_number])
             .is_upsert(true) // this option will overwrite a preexisting document (if any)
-            .execute_with_document(&document_to_insert)
+            .execute(&document_to_insert)
             .await?;
     }
     // wow that was easy and fast, wasn't it? :)
@@ -87,6 +87,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 !*/
 
 #![warn(unused_extern_crates)]
+#![deny(missing_docs)]
 #![recursion_limit = "256"]
 #[macro_use]
 extern crate log;

@@ -49,7 +49,7 @@ impl<'a> ListDatabasesBuilder<'a> {
         let request = azure_core::headers::add_optional_header(&self.continuation, request);
         let request = azure_core::headers::add_mandatory_header(&self.max_item_count, request);
 
-        let request = request.body(EMPTY_BODY.as_ref())?;
+        let request = request.body(bytes::Bytes::from_static(EMPTY_BODY))?;
 
         Ok(self
             .cosmos_client
@@ -64,7 +64,7 @@ impl<'a> ListDatabasesBuilder<'a> {
         enum States {
             Init,
             Continuation(String),
-        };
+        }
 
         unfold(
             Some(States::Init),
@@ -89,10 +89,10 @@ impl<'a> ListDatabasesBuilder<'a> {
                         Err(err) => return Some((Err(err), None)),
                     };
 
-                    let continuation_token = match &response.continuation_token {
-                        Some(ct) => Some(States::Continuation(ct.to_owned())),
-                        None => None,
-                    };
+                    let continuation_token = response
+                        .continuation_token
+                        .as_ref()
+                        .map(|ct| States::Continuation(ct.to_owned()));
 
                     Some((Ok(response), continuation_token))
                 }

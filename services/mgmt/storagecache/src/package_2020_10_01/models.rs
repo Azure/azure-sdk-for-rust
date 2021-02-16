@@ -79,6 +79,13 @@ pub struct AscOperation {
     pub status: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AscOperationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AscOperationProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
@@ -113,7 +120,7 @@ pub mod cache {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
         #[serde(rename = "cacheSizeGB", skip_serializing_if = "Option::is_none")]
-        pub cache_size_gb: Option<i64>,
+        pub cache_size_gb: Option<i32>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub health: Option<CacheHealth>,
         #[serde(rename = "mountAddresses", skip_serializing)]
@@ -171,7 +178,7 @@ pub mod cache_identity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheNetworkSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub mtu: Option<i64>,
+    pub mtu: Option<i32>,
     #[serde(rename = "utilityAddresses", skip_serializing)]
     pub utility_addresses: Vec<String>,
 }
@@ -225,8 +232,8 @@ pub mod cache_active_directory_settings {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheUsernameDownloadSettings {
-    #[serde(rename = "extendedGroupsEnabled", skip_serializing_if = "Option::is_none")]
-    pub extended_groups_enabled: Option<bool>,
+    #[serde(rename = "extendedGroups", skip_serializing_if = "Option::is_none")]
+    pub extended_groups: Option<bool>,
     #[serde(rename = "usernameSource", skip_serializing_if = "Option::is_none")]
     pub username_source: Option<cache_username_download_settings::UsernameSource>,
     #[serde(rename = "groupFileURI", skip_serializing_if = "Option::is_none")]
@@ -235,7 +242,7 @@ pub struct CacheUsernameDownloadSettings {
     pub user_file_uri: Option<String>,
     #[serde(rename = "ldapServer", skip_serializing_if = "Option::is_none")]
     pub ldap_server: Option<String>,
-    #[serde(rename = "ldapBaseDn", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ldapBaseDN", skip_serializing_if = "Option::is_none")]
     pub ldap_base_dn: Option<String>,
     #[serde(rename = "encryptLdapConnection", skip_serializing_if = "Option::is_none")]
     pub encrypt_ldap_connection: Option<bool>,

@@ -34,3 +34,5 @@ mod copy_blob_from_url_response;
 pub use copy_blob_from_url_response::CopyBlobFromUrlResponse;
 mod copy_blob_response;
 pub use copy_blob_response::CopyBlobResponse;
+mod get_blob_metadata_response;
+pub use get_blob_metadata_response::GetBlobMetadataResponse;
