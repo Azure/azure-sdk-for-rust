@@ -347,32 +347,6 @@ impl Blob {
     }
 }
 
-//#[inline]
-//pub(crate) fn incomplete_vector_from_response(
-//    body: &str,
-//    container_name: &str,
-//) -> Result<IncompleteVector<Blob>, AzureError> {
-//    println!("body = {}", body);
-//
-//    let elem: Element = body.parse()?;
-//
-//    let next_marker = match cast_optional::<String>(&elem, &["NextMarker"])? {
-//        Some(ref nm) if nm == "" => None,
-//        Some(nm) => Some(nm.into()),
-//        None => None,
-//    };
-//
-//    debug!("next_marker == {:?}", next_marker);
-//
-//    let mut v = Vec::new();
-//    for node_blob in traverse(&elem, &["Blobs", "Blob"], true)? {
-//        //trace!("{:?}", node_blob);
-//        v.push(Blob::parse(node_blob, container_name)?);
-//    }
-//
-//    Ok(IncompleteVector::<Blob>::new(next_marker, v))
-//}
-
 #[inline]
 pub(crate) fn generate_blob_uri<C>(
     t: &C,
