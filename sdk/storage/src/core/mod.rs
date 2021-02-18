@@ -5,6 +5,8 @@ mod client_endpoint;
 mod connection_string;
 mod connection_string_builder;
 mod container_sas_builder;
+mod copy_id;
+mod copy_progress;
 mod hyper_client_endpoint;
 mod into_azure_path;
 pub mod key_client;
@@ -22,11 +24,11 @@ pub use self::rest_client::{
 use crate::key_client::KeyClient;
 use azure_core::errors::AzureError;
 use azure_core::headers::*;
-use azure_core::util::HeaderMapExt;
 pub use client::Client;
 pub use client_endpoint::ClientEndpoint;
+pub use copy_id::{copy_id_from_headers, CopyId};
+pub use copy_progress::CopyProgress;
 use http::request::Builder;
-use http::HeaderMap;
 pub use hyper_client_endpoint::HyperClientEndpoint;
 pub use perform_request_response::PerformRequestResponse;
 
@@ -224,13 +226,4 @@ pub trait SharedAccessSignatureRequired<'a> {
 pub struct IPRange {
     pub start: std::net::IpAddr,
     pub end: std::net::IpAddr,
-}
-
-pub type CopyId = uuid::Uuid;
-
-pub fn copy_id_from_headers(headers: &HeaderMap) -> Result<CopyId, AzureError> {
-    let copy_id = headers
-        .get_as_str(COPY_ID)
-        .ok_or_else(|| AzureError::HeaderNotFound(COPY_ID.to_owned()))?;
-    Ok(uuid::Uuid::parse_str(copy_id)?)
 }

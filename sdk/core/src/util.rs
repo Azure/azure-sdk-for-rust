@@ -1,7 +1,11 @@
 use bytes::Bytes;
 use http::{self, request::Builder};
 use hyper::header::{AsHeaderName, HeaderMap, HeaderName, HeaderValue};
-use std::{convert::TryFrom, fmt::Display, str::FromStr};
+use std::{
+    convert::TryFrom,
+    fmt::Display,
+    str::{from_utf8, FromStr},
+};
 
 pub fn format_header_value<D: Display>(value: D) -> Result<HeaderValue, http::Error> {
     let value: &str = &format(value);
@@ -89,4 +93,14 @@ impl RequestBuilderExt for Builder {
 
 fn format<D: Display>(value: D) -> String {
     format!("{}", value)
+}
+
+pub fn to_str_without_bom(bytes: &bytes::Bytes) -> Result<&str, std::str::Utf8Error> {
+    let s = from_utf8(bytes)?;
+
+    Ok(if s.starts_with('\u{FEFF}') {
+        &s[3..]
+    } else {
+        s
+    })
 }

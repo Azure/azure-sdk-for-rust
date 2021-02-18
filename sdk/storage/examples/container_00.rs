@@ -42,12 +42,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .execute()
         .await?;
 
-    println!("List blob returned {} blobs.", iv.incomplete_vector.len());
-    for cont in iv.incomplete_vector.iter() {
+    println!("List blob returned {} blobs.", iv.blobs.blobs.len());
+    for cont in iv.blobs.blobs.iter() {
         println!(
             "\t{}\t{} MB",
             cont.name,
-            cont.content_length / (1024 * 1024)
+            cont.properties.content_length / (1024 * 1024)
         );
     }
 

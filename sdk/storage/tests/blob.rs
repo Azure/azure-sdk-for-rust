@@ -376,7 +376,7 @@ async fn put_block_blob_and_get_properties() {
 
     let blob_properties = blob.get_properties().execute().await.unwrap();
 
-    assert_eq!(blob_properties.blob.content_length, 6);
+    assert_eq!(blob_properties.blob.properties.content_length, 6);
 
     let _ = requires_send_future(blob.get_properties().execute());
 }
