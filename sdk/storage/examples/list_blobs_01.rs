@@ -54,6 +54,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .execute()
         .await?;
 
+    assert!(iv.blobs.blobs.is_empty());
+
     println!("Adding blobs");
 
     // create 4 root blobs
