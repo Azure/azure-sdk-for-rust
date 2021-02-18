@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use crate::blob::blob::responses::ListBlobsResponse;
 use crate::clients::ContainerClient;
 use azure_core::headers::add_optional_header;
@@ -131,10 +133,7 @@ impl<'a> ListBlobsBuilder<'a> {
             .execute_request_check_status(request.0, StatusCode::OK)
             .await?;
 
-        Ok(ListBlobsResponse::from_response(
-            response.headers(),
-            &std::str::from_utf8(&response.body()[3..])?,
-        )?)
+        Ok((&response).try_into()?)
     }
 
     pub fn stream(

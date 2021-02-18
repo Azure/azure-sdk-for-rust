@@ -59,8 +59,7 @@ pub mod rfc2822_time_format {
     where
         S: Serializer,
     {
-        let s = format!("{}", date.to_rfc2822());
-        serializer.serialize_str(&s)
+        serializer.serialize_str(&date.to_rfc2822())
     }
 }
 

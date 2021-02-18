@@ -2,9 +2,11 @@ use crate::blob::blob::Blob;
 use azure_core::errors::AzureError;
 use azure_core::headers::{date_from_headers, request_id_from_headers};
 use azure_core::prelude::NextMarker;
+use azure_core::util::to_str_without_bom;
 use azure_core::RequestId;
+use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListBlobsResponse {
@@ -41,22 +43,25 @@ pub struct BlobPrefix {
     pub name: String,
 }
 
-impl ListBlobsResponse {
-    pub(crate) fn from_response(
-        headers: &HeaderMap,
-        body: &str,
-    ) -> Result<ListBlobsResponse, AzureError> {
+impl TryFrom<&http::Response<Bytes>> for ListBlobsResponse {
+    type Error = AzureError;
+
+    fn try_from(response: &http::Response<Bytes>) -> Result<Self, Self::Error> {
+        let body = to_str_without_bom(response.body())?;
+
         trace!("body == {}", body);
-        let response: ListBlobsResponseInternal = serde_xml_rs::from_str(body)?;
+        let list_blobs_response_internal: ListBlobsResponseInternal = serde_xml_rs::from_str(body)?;
 
         Ok(Self {
-            request_id: request_id_from_headers(headers)?,
-            date: date_from_headers(headers)?,
-            prefix: response.prefix,
-            max_results: response.max_results,
-            delimiter: response.delimiter,
-            blobs: response.blobs,
-            next_marker: NextMarker::from_possibly_empty_string(response.next_marker),
+            request_id: request_id_from_headers(response.headers())?,
+            date: date_from_headers(response.headers())?,
+            prefix: list_blobs_response_internal.prefix,
+            max_results: list_blobs_response_internal.max_results,
+            delimiter: list_blobs_response_internal.delimiter,
+            blobs: list_blobs_response_internal.blobs,
+            next_marker: NextMarker::from_possibly_empty_string(
+                list_blobs_response_internal.next_marker,
+            ),
         })
     }
 }
