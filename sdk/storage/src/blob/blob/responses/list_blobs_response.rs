@@ -33,7 +33,7 @@ struct ListBlobsResponseInternal {
 #[serde(rename_all = "PascalCase")]
 pub struct Blobs {
     pub blob_prefix: Option<Vec<BlobPrefix>>,
-    #[serde(rename = "Blob")]
+    #[serde(rename = "Blob", default = "Vec::new")]
     pub blobs: Vec<Blob>,
 }
 

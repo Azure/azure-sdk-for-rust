@@ -45,6 +45,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("Container {} created", container_name);
 
+    println!("Checking that container is empty");
+
+    let iv = container
+        .list_blobs()
+        .max_results(NonZeroU32::new(100u32).unwrap())
+        .delimiter("/")
+        .execute()
+        .await?;
+
+    assert!(iv.blobs.blobs.is_empty());
+
     println!("Adding blobs");
 
     // create 4 root blobs
