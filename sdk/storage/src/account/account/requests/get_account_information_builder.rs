@@ -1,54 +1,47 @@
 use crate::account::account::responses::GetAccountInformationResponse;
 use crate::core::prelude::*;
-use azure_core::errors::AzureError;
-use hyper::{Method, StatusCode};
 
 #[derive(Debug, Clone)]
-pub struct GetAccountInformationBuilder<'a, C>
-where
-    C: Client,
-{
-    client: &'a C,
+pub struct GetAccountInformationBuilder<'a> {
+    storage_client: &'a StorageClient,
 }
 
-impl<'a, C> GetAccountInformationBuilder<'a, C>
-where
-    C: Client,
-{
-    #[inline]
-    pub(crate) fn new(client: &'a C) -> GetAccountInformationBuilder<'a, C> {
-        GetAccountInformationBuilder { client }
+impl<'a> GetAccountInformationBuilder<'a> {
+    pub(crate) fn new(storage_client: &'a StorageClient) -> Self {
+        Self { storage_client }
     }
 }
 
-impl<'a, C> ClientRequired<'a, C> for GetAccountInformationBuilder<'a, C>
-where
-    C: Client,
-{
-    #[inline]
-    fn client(&self) -> &'a C {
-        self.client
-    }
-}
+impl<'a> GetAccountInformationBuilder<'a> {
+    pub async fn execute(
+        self,
+    ) -> Result<GetAccountInformationResponse, Box<dyn std::error::Error + Send + Sync>> {
+        let mut url = self
+            .storage_client
+            .storage_account_client()
+            .blob_storage_url()
+            .to_owned();
 
-// methods callable only when every mandatory field has been filled
-impl<'a, C> GetAccountInformationBuilder<'a, C>
-where
-    C: Client,
-{
-    #[inline]
-    pub async fn finalize(self) -> Result<GetAccountInformationResponse, AzureError> {
-        let uri = format!(
-            "{}/?restype=account&comp=properties",
-            self.client.blob_uri()
-        );
-        trace!("uri == {:?}", uri);
+        url.query_pairs_mut().append_pair("restype", "account");
+        url.query_pairs_mut().append_pair("comp", "properties");
 
-        let (headers, _) = self
-            .client()
-            .perform_request(&uri, &Method::GET, &|request| request, None)?
-            .check_status_extract_headers_and_body(StatusCode::OK)
+        trace!("url == {:?}", url);
+
+        let (request, _url) = self.storage_client.prepare_request(
+            url.as_str(),
+            &http::Method::GET,
+            &|request| request,
+            None,
+        )?;
+
+        let response = self
+            .storage_client
+            .http_client()
+            .execute_request_check_status(request, http::StatusCode::OK)
             .await?;
-        GetAccountInformationResponse::from_headers(&headers)
+
+        Ok(GetAccountInformationResponse::from_headers(
+            response.headers(),
+        )?)
     }
 }

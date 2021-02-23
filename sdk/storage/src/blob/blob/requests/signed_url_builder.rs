@@ -1,10 +1,6 @@
 use crate::blob::blob::generate_blob_uri;
 use crate::core::prelude::*;
-use crate::core::{
-    shared_access_signature::SharedAccessSignature, BlobNameRequired, BlobNameSupport,
-    ContainerNameRequired, ContainerNameSupport, No, SharedAccessSignatureRequired,
-    SharedAccessSignatureSupport, ToAssign, Yes,
-};
+use crate::core::{shared_access_signature::SharedAccessSignature, No, ToAssign, Yes};
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
@@ -40,71 +36,18 @@ where
     }
 }
 
-impl<'a, C, ContainerNameSet, BlobNameSet, SignatureSet> ClientRequired<'a, C>
-    for SignedUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SignatureSet>
+impl<'a, C, ContainerNameSet, BlobNameSet, SignatureSet>
+    SignedUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SignatureSet>
 where
     C: Client,
     ContainerNameSet: ToAssign,
     BlobNameSet: ToAssign,
     SignatureSet: ToAssign,
 {
-    #[inline]
-    fn client(&self) -> &'a C {
-        &self.client
-    }
-}
-
-impl<'a, C, BlobNameSet, SignatureSet> ContainerNameRequired<'a>
-    for SignedUrlBuilder<'a, C, Yes, BlobNameSet, SignatureSet>
-where
-    C: Client,
-    BlobNameSet: ToAssign,
-    SignatureSet: ToAssign,
-{
-    #[inline]
-    fn container_name(&self) -> &'a str {
-        self.container_name.unwrap()
-    }
-}
-
-impl<'a, C, ContainerNameSet, SignatureSet> BlobNameRequired<'a>
-    for SignedUrlBuilder<'a, C, ContainerNameSet, Yes, SignatureSet>
-where
-    C: Client,
-    ContainerNameSet: ToAssign,
-    SignatureSet: ToAssign,
-{
-    #[inline]
-    fn blob_name(&self) -> &'a str {
-        self.blob_name.unwrap()
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet> SharedAccessSignatureRequired<'a>
-    for SignedUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>
-where
-    C: Client,
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-{
-    #[inline]
-    fn shared_access_signature(&self) -> &'a SharedAccessSignature {
-        self.signature.unwrap()
-    }
-}
-
-impl<'a, C, ContainerNameSet, BlobNameSet, SignatureSet> ContainerNameSupport<'a>
-    for SignedUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SignatureSet>
-where
-    C: Client,
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SignatureSet: ToAssign,
-{
-    type O = SignedUrlBuilder<'a, C, Yes, BlobNameSet, SignatureSet>;
-
-    #[inline]
-    fn with_container_name(self, container_name: &'a str) -> Self::O {
+    pub fn with_container_name(
+        self,
+        container_name: &'a str,
+    ) -> SignedUrlBuilder<'a, C, Yes, BlobNameSet, SignatureSet> {
         SignedUrlBuilder {
             client: self.client,
             p_container_name: PhantomData {},
@@ -115,20 +58,11 @@ where
             signature: self.signature,
         }
     }
-}
 
-impl<'a, C, ContainerNameSet, BlobNameSet, SignatureSet> BlobNameSupport<'a>
-    for SignedUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SignatureSet>
-where
-    C: Client,
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SignatureSet: ToAssign,
-{
-    type O = SignedUrlBuilder<'a, C, ContainerNameSet, Yes, SignatureSet>;
-
-    #[inline]
-    fn with_blob_name(self, blob_name: &'a str) -> Self::O {
+    pub fn with_blob_name(
+        self,
+        blob_name: &'a str,
+    ) -> SignedUrlBuilder<'a, C, ContainerNameSet, Yes, SignatureSet> {
         SignedUrlBuilder {
             client: self.client,
             p_container_name: PhantomData {},
@@ -139,20 +73,11 @@ where
             signature: self.signature,
         }
     }
-}
 
-impl<'a, C, ContainerNameSet, BlobNameSet, SignatureSet> SharedAccessSignatureSupport<'a>
-    for SignedUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, SignatureSet>
-where
-    C: Client,
-    ContainerNameSet: ToAssign,
-    BlobNameSet: ToAssign,
-    SignatureSet: ToAssign,
-{
-    type O = SignedUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes>;
-
-    #[inline]
-    fn with_shared_access_signature(self, signature: &'a SharedAccessSignature) -> Self::O {
+    pub fn with_shared_access_signature(
+        self,
+        signature: &'a SharedAccessSignature,
+    ) -> SignedUrlBuilder<'a, C, ContainerNameSet, BlobNameSet, Yes> {
         SignedUrlBuilder {
             client: self.client,
             p_container_name: PhantomData {},
@@ -171,10 +96,15 @@ where
 {
     #[inline]
     pub fn finalize(self) -> String {
+        // the following unwraps
+        // are statically guaranteed to be Some
+        // because of the type signature.
+        // Unfortunately
+        // Rust cannot reason about this on its own.
         generate_blob_uri(
-            self.client(),
-            self.container_name(),
-            self.blob_name(),
+            self.client,
+            self.container_name.unwrap(),
+            self.blob_name.unwrap(),
             Some(&self.signature.unwrap().token()),
         )
     }
