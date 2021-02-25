@@ -31,6 +31,16 @@ impl StorageClient {
         self.storage_account_client.as_ref()
     }
 
+    pub(crate) fn http_client(&self) -> &dyn azure_core::HttpClient {
+        self.storage_account_client.http_client()
+    }
+
+    pub fn get_account_information(
+        &self,
+    ) -> crate::account::account::requests::GetAccountInformationBuilder {
+        crate::account::account::requests::GetAccountInformationBuilder::new(self)
+    }
+
     pub fn list_containers(&self) -> crate::container::requests::ListContainersBuilder {
         crate::container::requests::ListContainersBuilder::new(self)
     }
