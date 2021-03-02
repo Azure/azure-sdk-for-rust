@@ -1,4 +1,4 @@
-# Azure SDK for Rust
+# \[Unofficial\] Azure SDK for Rust
 
 This repository is for the development of the *unofficial* Azure SDK for Rust. Users of the SDK may wish to learn more about this crate on [crates.io](https://crates.io/crates/azure_sdk_for_rust).
 
