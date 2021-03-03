@@ -1,5 +1,5 @@
 use crate::queue::clients::PopReceiptClient;
-use crate::responses::*;
+use crate::queue::responses::*;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use std::convert::TryInto;

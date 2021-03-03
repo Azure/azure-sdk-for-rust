@@ -29,6 +29,9 @@ quick_error! {
         ParsingError { msg: String } {
             display("{}", msg)
         }
+        UnsupportedProtocol { protocol: String } {
+            display("unsupported protocol {}", protocol)
+        }
     }
 }
 
@@ -188,17 +191,24 @@ impl<'a> ConnectionString<'a> {
                     let protocol = match v {
                         "http" => EndpointProtocol::Http,
                         "https" => EndpointProtocol::Https,
-                        _ => panic!(format!("Unexpected default endpoints protocol: {}", v)),
+                        _ => {
+                            return Err(ConnectionStringError::UnsupportedProtocol {
+                                protocol: v.to_owned(),
+                            })
+                        }
                     };
                     default_endpoints_protocol = Some(protocol);
                 }
                 USE_DEVELOPMENT_STORAGE_KEY_NAME => match v {
                     "true" => use_development_storage = Some(true),
                     "false" => use_development_storage = Some(false),
-                    _ => panic!(format!(
+                    _ => {
+                        return Err(ConnectionStringError::ParsingError {
+                            msg: format!(
                         "Unexpected value for {}: {}. Please specify either 'true' or 'false'.",
-                        USE_DEVELOPMENT_STORAGE_KEY_NAME, v
-                    )),
+                        USE_DEVELOPMENT_STORAGE_KEY_NAME, v),
+                        })
+                    }
                 },
                 DEVELOPMENT_STORAGE_PROXY_URI_KEY_NAME => development_storage_proxy_uri = Some(v),
                 BLOB_ENDPOINT_KEY_NAME => blob_endpoint = Some(v),

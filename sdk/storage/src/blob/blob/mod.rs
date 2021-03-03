@@ -50,19 +50,6 @@ fn get_creation_time(h: &header::HeaderMap) -> Result<Option<DateTime<Utc>>, Azu
     }
 }
 
-pub trait BlockListTypeSupport {
-    type O;
-    fn with_block_list_type(self, block_list_type: BlockListType) -> Self::O;
-}
-
-pub trait BlockListTypeRequired {
-    fn block_list_type(&self) -> BlockListType;
-
-    fn to_uri_parameter(&self) -> String {
-        format!("blocklisttype={}", self.block_list_type().to_str())
-    }
-}
-
 create_enum!(
     BlobType,
     (BlockBlob, "BlockBlob"),

@@ -3,7 +3,6 @@ pub mod requests;
 pub mod responses;
 
 use azure_core::incompletevector::IncompleteVector;
-use azure_core::StoredAccessPolicyList;
 use azure_core::{
     errors::AzureError,
     headers::{
@@ -47,32 +46,6 @@ pub(crate) fn public_access_from_header(
         None => PublicAccess::None,
     };
     Ok(pa)
-}
-
-pub trait PublicAccessSupport {
-    type O;
-    fn with_public_access(self, public_access: PublicAccess) -> Self::O;
-}
-
-pub trait PublicAccessRequired {
-    fn public_access(&self) -> PublicAccess;
-
-    #[must_use]
-    fn add_optional_header(&self, mut builder: Builder) -> Builder {
-        if self.public_access() != PublicAccess::None {
-            builder = builder.header(BLOB_PUBLIC_ACCESS, self.public_access().as_ref());
-        }
-        builder
-    }
-}
-
-pub trait StoredAccessPolicyListOption<'a> {
-    fn stored_access_policy_list(&self) -> Option<&'a StoredAccessPolicyList>;
-}
-
-pub trait StoredAccessPolicyListSupport<'a> {
-    type O;
-    fn with_stored_access_policy_list(self, sapl: &'a StoredAccessPolicyList) -> Self::O;
 }
 
 #[derive(Debug, Clone)]

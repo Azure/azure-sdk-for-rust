@@ -47,11 +47,12 @@ url = "2.2"
 reqwest = "0.11"
 
 [features]
-default = ["account", "blob", "queue", "table"]
-test_e2e = ["adls_gen2", "account", "blob", "queue", "table"]
+default = ["account", "blob", "queue", "table", "data_lake"]
+test_e2e = ["adls_gen2", "account", "blob", "queue", "table", "data_lake"]
 account = []
 azurite_workaround = []
 blob = []
 queue = []
 table = []
 adls_gen2 = []
+data_lake = []
