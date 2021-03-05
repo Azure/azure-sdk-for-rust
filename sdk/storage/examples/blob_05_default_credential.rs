@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let response = blob.get().execute().await?;
 
-    let s_content = String::from_utf8(response.data)?;
+    let s_content = String::from_utf8(response.data.to_vec())?;
     println!("blob == {:?}", blob);
     println!("s_content == {}", s_content);
 

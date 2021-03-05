@@ -1,4 +1,5 @@
 use azure_core::prelude::*;
+use azure_storage::blob::blob::responses::GetBlobResponse;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
 use std::sync::Arc;
@@ -43,7 +44,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
 fn get_blob_stream<'a>(
     blob: &'a BlobClient,
-) -> impl futures::Stream<Item = Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>>> + 'a {
+) -> impl futures::Stream<Item = Result<GetBlobResponse, Box<dyn std::error::Error + Send + Sync>>> + 'a
+{
     let stream = blob.get().stream(1024);
     stream
 }

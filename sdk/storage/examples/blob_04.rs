@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let retrieved_blob = blob.get().execute().await?;
     println!("retrieved_blob == {:?}", retrieved_blob);
 
-    let s = String::from_utf8(retrieved_blob.data)?;
+    let s = String::from_utf8(retrieved_blob.data.to_vec())?;
     println!("retrieved contents == {}", s);
 
     Ok(())

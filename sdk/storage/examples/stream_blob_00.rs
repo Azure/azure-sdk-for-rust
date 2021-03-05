@@ -2,6 +2,8 @@ use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::Arc;
 
 // This example shows how to stream data from a blob. We will create a simple blob first, the we
@@ -51,12 +53,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // just to make sure to loop at least twice.
     let mut stream = Box::pin(blob.get().stream(128));
 
-    let result = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+    let result = Rc::new(RefCell::new(Vec::new()));
 
     {
         let mut res_closure = result.borrow_mut();
         while let Some(value) = stream.next().await {
-            let mut value = value?;
+            let mut value = value?.data.to_vec();
             println!("received {:?} bytes", value.len());
             res_closure.append(&mut value);
         }
