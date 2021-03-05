@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use crate::blob::blob::responses::GetBlobResponse;
 use crate::blob::prelude::*;
 use crate::clients::BlobClient;
@@ -77,20 +79,14 @@ impl<'a> GetBlobBuilder<'a> {
             .execute_request_check_status(request, expected_status_code)
             .await?;
 
-        debug!("response.headers() == {:#?}", response.headers());
-
-        let blob = Blob::from_headers(self.blob_client.blob_name(), response.headers())?;
-        Ok(GetBlobResponse::from_response(
-            response.headers(),
-            blob,
-            response.body(),
-        )?)
+        Ok((self.blob_client.blob_name(), response).try_into()?)
     }
 
     pub fn stream(
         self,
         chunk_size: u64,
-    ) -> impl Stream<Item = Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>>> + 'a {
+    ) -> impl Stream<Item = Result<GetBlobResponse, Box<dyn std::error::Error + Send + Sync>>> + 'a
+    {
         enum States {
             Init,
             Progress(Range),
@@ -119,31 +115,30 @@ impl<'a> GetBlobBuilder<'a> {
                 Err(err) => return Some((Err(err), States::End)),
             };
 
-            Some((
-                Ok(response.data),
-                if remaining.end > range.end {
-                    if self.range.is_some() {
-                        States::Progress(Range::new(range.end, remaining.end))
-                    } else {
-                        // if we are here it means the user have not specified a
-                        // range and we didn't get the whole blob in one passing.
-                        // We specified u64::MAX as the first range but now
-                        // we need to find the correct size to avoid requesting data
-                        // outside the valid range.
-                        debug!("content-range == {:?}", response.content_range);
-                        // this unwrap should always be safe since we did not
-                        // get the whole blob in the previous call.
-                        let content_range = response.content_range.unwrap();
-                        let ridx =
-                            match content_range.find('/') {
-                                Some(ridx) => ridx,
-                                None => return Some((
-                                    Err("The returned content-range is invalid: / is not present"
-                                        .into()),
-                                    States::End,
-                                )),
-                            };
-                        let total =
+            let next_state = if remaining.end > range.end {
+                if self.range.is_some() {
+                    States::Progress(Range::new(range.end, remaining.end))
+                } else {
+                    // if we are here it means the user have not specified a
+                    // range and we didn't get the whole blob in one passing.
+                    // We specified u64::MAX as the first range but now
+                    // we need to find the correct size to avoid requesting data
+                    // outside the valid range.
+                    debug!("content-range == {:?}", response.content_range);
+                    // this unwrap should always be safe since we did not
+                    // get the whole blob in the previous call.
+                    let content_range = response.content_range.clone().unwrap();
+                    let ridx = match content_range.find('/') {
+                        Some(ridx) => ridx,
+                        None => {
+                            return Some((
+                                Err("The returned content-range is invalid: / is not present"
+                                    .into()),
+                                States::End,
+                            ))
+                        }
+                    };
+                    let total =
                             match str::parse(&content_range[ridx + 1..]) {
                                 Ok(total) => total,
                                 Err(_err) => return Some((
@@ -153,12 +148,13 @@ impl<'a> GetBlobBuilder<'a> {
                                 )),
                             };
 
-                        States::Progress(Range::new(range.end, total))
-                    }
-                } else {
-                    States::End
-                },
-            ))
+                    States::Progress(Range::new(range.end, total))
+                }
+            } else {
+                States::End
+            };
+
+            Some((Ok(response), next_state))
         })
     }
 }

@@ -47,10 +47,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let mut stream = Box::pin(blob_client.get().stream(128));
     while let Some(value) = stream.next().await {
-        println!("received {:?} bytes", value?.len());
+        println!("received {:?} bytes", value?.data.len());
     }
 
-    let s_content = String::from_utf8(response.data)?;
+    let s_content = String::from_utf8(response.data.to_vec())?;
     println!("blob == {:?}", blob);
     println!("s_content == {}", s_content);
 

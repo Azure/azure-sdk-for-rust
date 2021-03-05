@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("\nStreaming");
     let mut chunk: usize = 0;
     while let Some(value) = stream.next().await {
-        let value = value?;
+        let value = value?.data;
         println!("received {:?} bytes", value.len());
         println!("received {}", std::str::from_utf8(&value)?);
 

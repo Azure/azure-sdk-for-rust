@@ -72,7 +72,7 @@ async fn code() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         {
             let mut res_closure = result.borrow_mut();
             while let Some(value) = stream.next().await {
-                let mut value = value?;
+                let mut value = value?.data.to_vec();
                 assert!(value.len() as u64 <= chunk_size);
                 println!("received {:?} bytes", value.len());
                 res_closure.append(&mut value);
