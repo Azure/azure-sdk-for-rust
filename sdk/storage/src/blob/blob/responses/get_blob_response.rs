@@ -10,15 +10,16 @@ use std::convert::TryFrom;
 #[derive(Debug, Clone)]
 pub struct GetBlobResponse {
     pub request_id: RequestId,
+    pub blob: Blob,
     pub data: Bytes,
     pub date: DateTime<Utc>,
     pub content_range: Option<String>,
 }
 
-impl TryFrom<Response<Bytes>> for GetBlobResponse {
+impl TryFrom<(&str, Response<Bytes>)> for GetBlobResponse {
     type Error = AzureError;
-    fn try_from(response: Response<Bytes>) -> Result<Self, Self::Error> {
-        println!("response.headers() == {:#?}", response.headers());
+    fn try_from((blob_name, response): (&str, Response<Bytes>)) -> Result<Self, Self::Error> {
+        debug!("response.headers() == {:#?}", response.headers());
 
         let request_id = request_id_from_headers(response.headers())?;
         let date = date_from_headers(response.headers())?;
@@ -30,6 +31,7 @@ impl TryFrom<Response<Bytes>> for GetBlobResponse {
 
         Ok(GetBlobResponse {
             request_id,
+            blob: Blob::from_headers(blob_name, response.headers())?,
             data: response.into_body(),
             date,
             content_range,

@@ -79,11 +79,7 @@ impl<'a> GetBlobBuilder<'a> {
             .execute_request_check_status(request, expected_status_code)
             .await?;
 
-        debug!("response.headers() == {:#?}", response.headers());
-
-        let blob = Blob::from_headers(self.blob_client.blob_name(), response.headers())?;
-
-        Ok(response.try_into()?)
+        Ok((self.blob_client.blob_name(), response).try_into()?)
     }
 
     pub fn stream(

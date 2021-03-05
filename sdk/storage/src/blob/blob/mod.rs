@@ -117,9 +117,9 @@ pub struct BlobProperties {
     #[serde(rename = "Content-Disposition")]
     pub content_disposition: String,
     #[serde(rename = "Content-MD5")]
-    pub content_md5: String,
+    pub content_md5: Option<String>,
     #[serde(rename = "Content-CRC64")]
-    pub content_crc64: String,
+    pub content_crc64: Option<String>,
     #[serde(rename = "Cache-Control")]
     pub cache_control: String,
     #[serde(rename = "x-ms-blob-sequence-number")]
@@ -157,7 +157,10 @@ pub struct BlobProperties {
 }
 
 impl Blob {
-    pub(crate) fn from_headers(blob_name: &str, h: &header::HeaderMap) -> Result<Blob, AzureError> {
+    pub(crate) fn from_headers<BN: Into<String>>(
+        blob_name: BN,
+        h: &header::HeaderMap,
+    ) -> Result<Blob, AzureError> {
         trace!("\n{:?}", h);
 
         #[cfg(not(feature = "azurite_workaround"))]
@@ -295,27 +298,30 @@ impl Blob {
             Some(metadata)
         };
 
+        let content_md5 = h.get_as_string("x-ms-blob-content-md5");
+        let content_crc64 = h.get_as_string("x-ms-content-crc64");
+
         // TODO: Retrieve the snapshot time from
         // the headers
         let snapshot = None;
 
         Ok(Blob {
-            name: blob_name.to_owned(),
+            name: blob_name.into(),
             snapshot,
             deleted: None,            //TODO
             is_current_version: None, //TODO
             version_id: None,         //TODO
             properties: BlobProperties {
                 creation_time,
-                last_modified: last_modified,
+                last_modified,
                 last_access_time: None, // TODO
                 etag: etag,
                 content_length,
-                content_type: content_type,
+                content_type,
                 content_encoding,
                 content_language,
                 content_md5,
-                content_crc64: "".to_owned(), // TODO
+                content_crc64,
                 cache_control,
                 content_disposition,
                 blob_sequence_number,
