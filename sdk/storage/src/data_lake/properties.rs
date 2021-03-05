@@ -31,17 +31,15 @@ impl<'a, 'b> Properties<'a, 'b> {
 
 impl<'a, 'b> AddAsHeader for Properties<'a, 'b> {
     fn add_as_header(&self, builder: Builder) -> Builder {
-        // the header is a comma separated list of key=base64(value)
-        // see
+        // the header is a comma separated list of key=base64(value) see
         // [https://docs.microsoft.com/en-us/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers](https://docs.microsoft.com/en-us/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers)
         let mut s = String::new();
         self.0.iter().for_each(|(k, v)| {
             s.push_str(&format!("{}={},", k.as_ref(), base64::encode(v.as_ref())));
         });
 
-        // since we added a comma to the last entry,
-        // we will strip it to the exported
-        // header:
+        // since we added a comma to the last entry, we will strip it to the exported header (this
+        // is safe since we know that comma is 1 byte in UTF8):
         builder.header(HEADER, &s[..s.len() - 1])
     }
 }
@@ -69,18 +67,16 @@ impl TryFrom<&HeaderMap> for Properties<'static, 'static> {
             .split(',') // The list is a CSV so we split by comma
             .map(|key_value_pair| {
                 let mut key_and_value = key_value_pair.split('=').into_iter(); // Each entry is key and value separated by =
-                let key = if let Some(key) = key_and_value.next() {
-                    key
-                } else {
-                    // must have both key and value
-                    return Err(AzureError::GenericErrorWithText("missing key".to_owned()));
-                };
-                let value = if let Some(value) = key_and_value.next() {
-                    value
-                } else {
-                    // must have both key and value
-                    return Err(AzureError::GenericErrorWithText("missing value".to_owned()));
-                };
+
+                // we must have a key and a value (so two entries)
+                let key = key_and_value
+                    .next()
+                    .ok_or(AzureError::GenericErrorWithText("missing key".to_owned()))?;
+                let value = key_and_value
+                    .next()
+                    .ok_or(AzureError::GenericErrorWithText("missing value".to_owned()))?;
+
+                // we do not check if there are more entries. We just ignore them.
                 Ok((key, value))
             })
             .collect::<Result<Vec<(&str, &str)>, AzureError>>()? // if we have an error, return error

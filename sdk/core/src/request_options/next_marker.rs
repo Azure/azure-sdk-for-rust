@@ -35,15 +35,9 @@ impl NextMarker {
             .map(|item| item.to_str())
             .transpose()?;
 
-        Ok(if let Some(nm) = header_as_str {
-            if nm.is_empty() {
-                None
-            } else {
-                Some(NextMarker::new(nm.to_owned()))
-            }
-        } else {
-            None
-        })
+        Ok(header_as_str
+            .filter(|h| !h.is_empty())
+            .map(|h| NextMarker::new(h.to_owned())))
     }
 }
 
