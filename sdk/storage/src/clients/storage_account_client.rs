@@ -13,7 +13,7 @@ use url::Url;
 
 pub(crate) const HEADER_VERSION: &str = "x-ms-version";
 
-pub(crate) const AZURE_VERSION: &str = "2019-07-07";
+pub(crate) const AZURE_VERSION: &str = "2019-12-12";
 //pub(crate) const SAS_VERSION: &str = "2019-02-02";
 
 #[derive(Debug, Clone, PartialEq, Eq)]

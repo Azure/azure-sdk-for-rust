@@ -60,23 +60,6 @@ impl AddAsHeader for RehydratePriority {
     }
 }
 
-pub trait RehydratePrioritySupport {
-    type O;
-    fn with_rehydrate_priority(self, rehydrate_priority: RehydratePriority) -> Self::O;
-}
-
-pub trait RehydratePriorityOption {
-    fn rehydrate_priority(&self) -> Option<RehydratePriority>;
-
-    #[must_use]
-    fn add_optional_header(&self, mut builder: Builder) -> Builder {
-        if let Some(rehydrate_priority) = self.rehydrate_priority() {
-            builder = builder.header(headers::REHYDRATE_PRIORITY, rehydrate_priority.as_ref());
-        }
-        builder
-    }
-}
-
 pub trait Blob<C>
 where
     C: Client,
