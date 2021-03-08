@@ -19,7 +19,7 @@ pub struct QueryDocumentsBuilder<'a, 'b> {
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<Continuation<'b>>,
     max_item_count: MaxItemCount,
-    partition_key: Option<String>,
+    partition_key_serialized: Option<String>,
     query_cross_partition: QueryCrossPartition,
     parallelize_cross_partition_query: ParallelizeCrossPartition,
 }
@@ -35,7 +35,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
             consistency_level: None,
             continuation: None,
             max_item_count: MaxItemCount::new(-1),
-            partition_key: None,
+            partition_key_serialized: None,
             query_cross_partition: QueryCrossPartition::No,
             // TODO: use this in request
             parallelize_cross_partition_query: ParallelizeCrossPartition::No,
@@ -58,7 +58,9 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
 
     pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> Result<Self, serde_json::Error> {
         Ok(Self {
-            partition_key: Some(crate::cosmos_entity::serialize_partition_key_to_string(pk)?),
+            partition_key_serialized: Some(
+                crate::cosmos_entity::serialize_partition_key_to_string(pk)?,
+            ),
             ..self
         })
     }
@@ -80,8 +82,11 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
             ResourceType::Documents,
         );
 
-        let req = if let Some(pk) = self.partition_key.as_ref() {
-            crate::cosmos_entity::add_as_partition_key_header_serialized(&pk, req)
+        let req = if let Some(partition_key_serialized) = self.partition_key_serialized.as_ref() {
+            crate::cosmos_entity::add_as_partition_key_header_serialized(
+                &partition_key_serialized,
+                req,
+            )
         } else {
             req
         };
