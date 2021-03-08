@@ -15,7 +15,7 @@ pub struct ExecuteStoredProcedureBuilder<'a, 'b> {
     activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
     allow_tentative_writes: TenativeWritesAllowance,
-    partition_keys: Option<&'b PartitionKeys>,
+    partition_key: Option<String>,
 }
 
 static EMPTY_LIST: &[u8; 2] = b"[]";
@@ -29,7 +29,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
             activity_id: None,
             consistency_level: None,
             allow_tentative_writes: TenativeWritesAllowance::Deny,
-            partition_keys: None,
+            partition_key: None,
         }
     }
 
@@ -38,8 +38,14 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         activity_id: &'b str => Some(ActivityId::new(activity_id)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
         allow_tentative_writes: TenativeWritesAllowance,
-        partition_keys: &'b PartitionKeys => Some(partition_keys),
         parameters: Parameters => Some(parameters),
+    }
+
+    pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> Result<Self, serde_json::Error> {
+        Ok(Self {
+            partition_key: Some(crate::cosmos_entity::serialize_partition_key_to_string(pk)?),
+            ..self
+        })
     }
 
     pub async fn execute<T>(&self) -> Result<ExecuteStoredProcedureResponse<T>, CosmosError>
@@ -52,12 +58,17 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
             .stored_procedure_client
             .prepare_request_with_stored_procedure_name(http::Method::POST);
 
+        let request = if let Some(pk) = self.partition_key.as_ref() {
+            crate::cosmos_entity::add_as_partition_key_header_serialized(&pk, request)
+        } else {
+            request
+        };
+
         let request = azure_core::headers::add_optional_header(&self.user_agent, request);
         let request = azure_core::headers::add_optional_header(&self.activity_id, request);
         let request = azure_core::headers::add_optional_header(&self.consistency_level, request);
         let request =
             azure_core::headers::add_mandatory_header(&self.allow_tentative_writes, request);
-        let request = azure_core::headers::add_optional_header(&self.partition_keys, request);
 
         let request = request.header(http::header::CONTENT_TYPE, "application/json");
 

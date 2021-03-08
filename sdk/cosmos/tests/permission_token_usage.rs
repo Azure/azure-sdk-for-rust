@@ -1,8 +1,23 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_cosmos::prelude::*;
 use collection::*;
+use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 
 mod setup;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+struct MySampleStruct<'a> {
+    id: Cow<'a, str>,
+    age: u32,
+    phones: Vec<Cow<'a, str>>,
+}
+
+impl<'a> azure_cosmos::CosmosEntity<'a, &'a str> for MySampleStruct<'a> {
+    fn partition_key(&'a self) -> &'a str {
+        self.id.as_ref()
+    }
+}
 
 #[tokio::test]
 async fn permission_token_usage() {
@@ -75,20 +90,15 @@ async fn permission_token_usage() {
 
     // Now we try to insert a document with the "read-only"
     // authorization_token just created. It must fail.
-    let data = r#"
-        {
-            "id": "Gianluigi Bombatomica",
-            "age": 43,
-            "phones": [
-                "+39 1234567",
-                "+39 2345678"
-            ]
-        }"#;
-    let document = Document::new(serde_json::from_str::<serde_json::Value>(data).unwrap());
+    let document = MySampleStruct {
+        id: Cow::Borrowed("Gianluigi Bombatomica"),
+        age: 43,
+        phones: vec![Cow::Borrowed("+39 1234567"), Cow::Borrowed("+39 2345678")],
+    };
+
     new_collection_client
         .create_document()
         .is_upsert(true)
-        .partition_keys(["Gianluigi Bombatomica"])
         .execute(&document)
         .await
         .unwrap_err();
@@ -121,7 +131,6 @@ async fn permission_token_usage() {
     let create_document_response = new_collection_client
         .create_document()
         .is_upsert(true)
-        .partition_keys(["Gianluigi Bombatomica"])
         .execute(&document)
         .await
         .unwrap();

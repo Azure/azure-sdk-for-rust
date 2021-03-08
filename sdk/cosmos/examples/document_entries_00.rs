@@ -21,6 +21,12 @@ struct MySampleStruct<'a> {
     a_timestamp: i64,
 }
 
+impl<'a> azure_cosmos::CosmosEntity<'a, &'a str> for MySampleStruct<'a> {
+    fn partition_key(&'a self) -> &'a str {
+        self.id.as_ref()
+    }
+}
+
 // This example expects you to have created a collection
 // with partitionKey on "id".
 #[tokio::main]
@@ -45,21 +51,15 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let mut response = None;
     for i in 0u64..5 {
-        let doc = Document::new(MySampleStruct {
+        let doc = MySampleStruct {
             id: Cow::Owned(format!("unique_id{}", i)),
             a_string: Cow::Borrowed("Something here"),
             a_number: i,
             a_timestamp: chrono::Utc::now().timestamp(),
-        });
+        };
 
         // let's add an entity.
-        response = Some(
-            client
-                .create_document()
-                .partition_keys([&doc.document.id])
-                .execute(&doc)
-                .await?,
-        );
+        response = Some(client.create_document().execute(&doc).await?);
     }
 
     println!("Created 5 documents.");
@@ -120,11 +120,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("\n\nLooking for a specific item");
     let id = format!("unique_id{}", 3);
-    let partition_keys = PartitionKeys::from([&id]);
+    let partition_key = &id;
 
     let response = client
         .clone()
-        .into_document_client(id.clone(), partition_keys.clone())
+        .into_document_client(id.clone(), partition_key)?
         .get_document()
         .consistency_level(session_token)
         .execute::<MySampleStruct>()
@@ -144,8 +144,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("\n\nReplacing document");
     let replace_document_response = client
-        .replace_document(&id)
-        .partition_keys(partition_keys)
+        .clone()
+        .into_document_client(id.clone(), &id)?
+        .replace_document()
         .consistency_level(ConsistencyLevel::from(&response))
         .if_match_condition(IfMatchCondition::Match(&doc.etag)) // use optimistic concurrency check
         .execute(&doc.document)
@@ -160,11 +161,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // has_been_found == false
     println!("\n\nLooking for non-existing item");
     let id = format!("unique_id{}", 100);
-    let partition_keys = PartitionKeys::from([&id]);
 
     let response = client
         .clone()
-        .into_document_client(id.clone(), partition_keys)
+        .into_document_client(id.clone(), &id)?
         .get_document()
         .consistency_level(&response)
         .execute::<MySampleStruct>()
@@ -178,10 +178,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     for i in 0u64..5 {
         let id = format!("unique_id{}", i);
-        let partition_keys = PartitionKeys::from([&id]);
         client
             .clone()
-            .into_document_client(id, partition_keys)
+            .into_document_client(id.clone(), &id)?
             .delete_document()
             .consistency_level(&response)
             .execute()

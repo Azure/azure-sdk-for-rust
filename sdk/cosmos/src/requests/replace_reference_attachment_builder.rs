@@ -54,8 +54,10 @@ impl<'a, 'b> ReplaceReferenceAttachmentBuilder<'a, 'b> {
         req = azure_core::headers::add_optional_header(&self.activity_id, req);
         req = azure_core::headers::add_optional_header(&self.consistency_level, req);
 
-        req = crate::headers::add_partition_keys_header(
-            self.attachment_client.document_client().partition_keys(),
+        req = crate::cosmos_entity::add_as_partition_key_header_serialized(
+            self.attachment_client
+                .document_client()
+                .partition_key_serialized(),
             req,
         );
 

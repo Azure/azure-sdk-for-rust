@@ -1,27 +1,35 @@
 use super::{AttachmentClient, CollectionClient, CosmosClient, DatabaseClient};
 use crate::resources::ResourceType;
-use crate::{requests, PartitionKeys, ReadonlyString};
+use crate::{requests, ReadonlyString};
 use azure_core::HttpClient;
+use serde::Serialize;
 
 /// A client for Cosmos document resources.
 #[derive(Debug, Clone)]
 pub struct DocumentClient {
     collection_client: CollectionClient,
-    document_name: ReadonlyString,
-    partition_keys: PartitionKeys,
+    document_name: String,
+    partition_key_serialized: String,
 }
 
 impl DocumentClient {
-    pub(crate) fn new<S: Into<ReadonlyString>>(
+    /// This function creates a new instance of a DocumentClient. A document is identified by its
+    /// primary key and its partition key. Partition key is eagerly evaluated: the json
+    /// representation is generated as soon as you call the `new` function. This avoids doing the
+    /// serialization over and over, saving time. It also releases the borrow since the serialized
+    /// string is owned by the DocumentClient.
+    pub(crate) fn new<S: Into<String>, PK: Serialize>(
         collection_client: CollectionClient,
         document_name: S,
-        partition_keys: PartitionKeys,
-    ) -> Self {
-        Self {
+        partition_key: &PK,
+    ) -> Result<Self, serde_json::Error> {
+        Ok(Self {
             collection_client,
             document_name: document_name.into(),
-            partition_keys,
-        }
+            partition_key_serialized: crate::cosmos_entity::serialize_partition_key_to_string(
+                partition_key,
+            )?,
+        })
     }
 
     /// Get a [`CosmosClient`]
@@ -44,9 +52,14 @@ impl DocumentClient {
         &self.document_name
     }
 
-    /// Get the partition keys
-    pub fn partition_keys(&self) -> &PartitionKeys {
-        &self.partition_keys
+    /// Get the partition key
+    pub fn partition_key_serialized(&self) -> &str {
+        &self.partition_key_serialized
+    }
+
+    /// replace a document in a collection
+    pub fn replace_document<'a>(&'a self) -> requests::ReplaceDocumentBuilder<'a, '_> {
+        requests::ReplaceDocumentBuilder::new(self)
     }
 
     /// Get a document

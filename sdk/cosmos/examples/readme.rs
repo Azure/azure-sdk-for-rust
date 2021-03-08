@@ -18,6 +18,13 @@ struct MySampleStruct<'a> {
     a_timestamp: i64,
 }
 
+// Here we mark "a_number" as partition key.
+impl<'a> azure_cosmos::CosmosEntity<'a, u64> for MySampleStruct<'a> {
+    fn partition_key(&'a self) -> u64 {
+        self.a_number
+    }
+}
+
 // This code will perform these tasks:
 // 1. Create 10 documents in the collection.
 // 2. Stream all the documents.
@@ -59,18 +66,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut session_token = None;
     for i in 0..10 {
         // define the document.
-        let document_to_insert = Document::new(MySampleStruct {
+        let document_to_insert = MySampleStruct {
             id: Cow::Owned(format!("unique_id{}", i)),
             a_string: Cow::Borrowed("Something here"),
             a_number: i * 100, // this is the partition key
             a_timestamp: chrono::Utc::now().timestamp(),
-        });
+        };
 
         // insert it and store the returned session token for later use!
         session_token = Some(
             collection_client
                 .create_document()
-                .partition_keys([&document_to_insert.document.a_number])
                 .is_upsert(true) // this option will overwrite a preexisting document (if any)
                 .execute(&document_to_insert)
                 .await?
@@ -137,10 +143,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // to spice the delete a little we use optimistic concurreny
         collection_client
             .clone()
-            .into_document_client(
-                document.result.id.clone().into_owned(),
-                [document.result.a_number],
-            )
+            .into_document_client(document.result.id.clone(), &document.result.a_number)?
             .delete_document()
             .consistency_level(session_token.clone())
             .if_match_condition(&document.document_attributes)

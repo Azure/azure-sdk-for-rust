@@ -1,18 +1,8 @@
 use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::error::Error;
 use std::sync::Arc;
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct MyStruct {
-    color: String,
-    myvalue: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct MyStruct2 {}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -51,14 +41,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                         "+44 2345678"
                     ]
                 }"#;
-                let v: Value = serde_json::from_str(data)?;
+                let document: Value = serde_json::from_str(data)?;
 
-                let document = Document::new(v);
                 let resp = collection_client
                     .create_document()
-                    .partition_keys([43u32])
                     .is_upsert(true)
-                    .execute(&document)
+                    .execute_with_partition_key(&document, &43u32)
                     .await?;
 
                 println!("resp == {:?}", resp);

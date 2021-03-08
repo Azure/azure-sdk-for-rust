@@ -10,12 +10,18 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::sync::Arc;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 struct MySampleStruct<'a> {
     id: Cow<'a, str>,
     a_string: Cow<'a, str>,
     a_number: u64,
     a_timestamp: i64,
+}
+
+impl<'a> azure_cosmos::CosmosEntity<'a, &'a str> for MySampleStruct<'a> {
+    fn partition_key(&'a self) -> &'a str {
+        self.id.as_ref()
+    }
 }
 
 const DATABASE: &str = "azuresdktestdb";
@@ -123,12 +129,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Now that we have a database and a collection we can insert
     // data in them. Let's create a Document. The only constraint
     // is that we need an id and an arbitrary, Serializable type.
-    let doc = Document::new(MySampleStruct {
+    let doc = MySampleStruct {
         id: Cow::Owned("unique_id100".to_owned()),
         a_string: Cow::Borrowed("Something here"),
         a_number: 100,
         a_timestamp: chrono::Utc::now().timestamp(),
-    });
+    };
 
     // Now we store the struct in Azure Cosmos DB.
     // Notice how easy it is! :)
@@ -139,11 +145,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // The method create_document will return, upon success,
     // the document attributes.
-    let create_document_response = collection_client
-        .create_document()
-        .partition_keys([&doc.document.id])
-        .execute(&doc)
-        .await?;
+
+    let create_document_response = collection_client.create_document().execute(&doc).await?;
     println!(
         "create_document_response == {:#?}",
         create_document_response
@@ -162,10 +165,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     // Now we get the same document by id.
-    println!("getting document by id {}", &doc.document.id);
+    println!("getting document by id {}", &doc.id);
     let get_document_response = collection_client
         .clone()
-        .into_document_client(doc.document.id.clone().into_owned(), [&doc.document.id])
+        .into_document_client(doc.id.clone(), &doc.id)?
         .get_document()
         .execute::<MySampleStruct>()
         .await?;
@@ -182,8 +185,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // changes every time the document is updated. If the passed etag is different in
         // CosmosDB it means something else updated the document before us!
         let replace_document_response = collection_client
-            .replace_document(&doc.document.id)
-            .partition_keys([&doc.document.id])
+            .clone()
+            .into_document_client(doc.id.clone(), &doc.id)?
+            .replace_document()
             .if_match_condition(IfMatchCondition::Match(&document.etag))
             .execute(&doc)
             .await?;

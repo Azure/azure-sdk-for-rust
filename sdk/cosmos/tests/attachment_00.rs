@@ -19,6 +19,12 @@ struct MySampleStruct<'a> {
     a_timestamp: i64,
 }
 
+impl<'a> azure_cosmos::CosmosEntity<'a, &'a str> for MySampleStruct<'a> {
+    fn partition_key(&'a self) -> &'a str {
+        self.id.as_ref()
+    }
+}
+
 #[tokio::test]
 async fn attachment() -> Result<(), CosmosError> {
     const DATABASE_NAME: &str = "test-cosmos-db-attachment";
@@ -70,24 +76,21 @@ async fn attachment() -> Result<(), CosmosError> {
 
     let id = format!("unique_id{}", 100);
 
-    let doc = Document::new(MySampleStruct {
+    let doc = MySampleStruct {
         id: Cow::Borrowed(&id),
         a_string: Cow::Borrowed("Something here"),
         a_number: 100,
         a_timestamp: chrono::Utc::now().timestamp(),
-    });
+    };
 
     // let's add an entity.
     let session_token: ConsistencyLevel = collection_client
         .create_document()
-        .partition_keys([&doc.document.id])
         .execute(&doc)
         .await?
         .into();
 
-    let mut partition_keys = PartitionKeys::new();
-    partition_keys.push(doc.document.id)?;
-    let document_client = collection_client.into_document_client(id, partition_keys);
+    let document_client = collection_client.into_document_client(id.clone(), &doc.id)?;
 
     // list attachments, there must be none.
     let ret = document_client

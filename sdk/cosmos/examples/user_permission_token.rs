@@ -105,11 +105,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 "+39 2345678"
             ]
         }"#;
-    let document = Document::new(serde_json::from_str::<serde_json::Value>(data)?);
-    println!(
-        "Trying to insert {:#?} into the collection with a read-only authorization_token.",
-        document
-    );
+    let document = serde_json::from_str::<serde_json::Value>(data)?;
 
     match client
         .clone()
@@ -117,8 +113,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_collection_client(collection_name.clone())
         .create_document()
         .is_upsert(true)
-        .partition_keys(["Gianluigi Bombatomica"])
-        .execute(&document)
+        .execute_with_partition_key(&document, &"Gianluigi Bombatomica")
         .await
     {
         Ok(_) => panic!("this should not happen!"),
@@ -157,8 +152,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_collection_client(collection_name)
         .create_document()
         .is_upsert(true)
-        .partition_keys(["Gianluigi Bombatomica"])
-        .execute(&document)
+        .execute_with_partition_key(&document, &"Gianluigi Bombatomica")
         .await?;
     println!(
         "create_document_response == {:#?}",

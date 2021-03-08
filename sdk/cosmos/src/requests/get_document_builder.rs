@@ -51,7 +51,10 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
         req = azure_core::headers::add_optional_header(&self.activity_id, req);
         req = azure_core::headers::add_optional_header(&self.consistency_level, req);
 
-        req = crate::headers::add_partition_keys_header(self.document_client.partition_keys(), req);
+        req = crate::cosmos_entity::add_as_partition_key_header_serialized(
+            self.document_client.partition_key_serialized(),
+            req,
+        );
 
         let req = req.body(bytes::Bytes::from_static(EMPTY_BODY))?;
 

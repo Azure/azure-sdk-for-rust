@@ -14,6 +14,12 @@ struct MyDocument {
     hello: u32,
 }
 
+impl<'a> azure_cosmos::CosmosEntity<'a, &'a str> for MyDocument {
+    fn partition_key(&'a self) -> &'a str {
+        self.id.as_ref()
+    }
+}
+
 #[tokio::test]
 async fn create_and_delete_document() {
     const DATABASE_NAME: &str = "test-cosmos-db-create-and-delete-document";
@@ -51,13 +57,12 @@ async fn create_and_delete_document() {
         .into_collection_client(COLLECTION_NAME);
 
     // create a new document
-    let document_data = Document::new(MyDocument {
+    let document_data = MyDocument {
         id: DOCUMENT_NAME.to_owned(),
         hello: 42,
-    });
+    };
     collection_client
         .create_document()
-        .partition_keys([&DOCUMENT_NAME])
         .execute(&document_data)
         .await
         .unwrap();
@@ -71,10 +76,10 @@ async fn create_and_delete_document() {
     assert!(documents.len() == 1);
 
     // try to get the contents of the previously created document
-    let partition_keys = DOCUMENT_NAME;
     let document_client = collection_client
         .clone()
-        .into_document_client(DOCUMENT_NAME, [partition_keys]);
+        .into_document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
+        .unwrap();
 
     let document_after_get = document_client
         .get_document()
@@ -83,7 +88,7 @@ async fn create_and_delete_document() {
         .unwrap();
 
     if let GetDocumentResponse::Found(document) = document_after_get {
-        assert_eq!(document.document.document, document_data.document);
+        assert_eq!(document.document.document, document_data);
     } else {
         panic!("document not found");
     }
@@ -138,13 +143,12 @@ async fn query_documents() {
         .into_collection_client(COLLECTION_NAME);
 
     // create a new document
-    let document_data = Document::new(MyDocument {
+    let document_data = MyDocument {
         id: DOCUMENT_NAME.to_owned(),
         hello: 42,
-    });
+    };
     collection_client
         .create_document()
-        .partition_keys([&document_data.document.id])
         .execute(&document_data)
         .await
         .unwrap();
@@ -170,7 +174,7 @@ async fn query_documents() {
 
     assert!(query_result.len() == 1);
     assert!(query_result[0].document_attributes.rid() == documents[0].document_attributes.rid());
-    assert_eq!(query_result[0].result, document_data.document);
+    assert_eq!(query_result[0].result, document_data);
 
     database_client.delete_database().execute().await.unwrap();
 }
@@ -211,13 +215,12 @@ async fn replace_document() {
         .into_collection_client(COLLECTION_NAME);
 
     // create a new document
-    let mut document_data = Document::new(MyDocument {
+    let mut document_data = MyDocument {
         id: DOCUMENT_NAME.to_owned(),
         hello: 42,
-    });
+    };
     collection_client
         .create_document()
-        .partition_keys([&document_data.document.id])
         .execute(&document_data)
         .await
         .unwrap();
@@ -230,10 +233,12 @@ async fn replace_document() {
     assert!(documents.documents.len() == 1);
 
     // replace document with optimistic concurrency and session token
-    document_data.document.hello = 190;
+    document_data.hello = 190;
     collection_client
-        .replace_document(&document_data.document.id)
-        .partition_keys([&document_data.document.id])
+        .clone()
+        .into_document_client(document_data.id.clone(), &document_data.id)
+        .unwrap()
+        .replace_document()
         .consistency_level(ConsistencyLevel::from(&documents))
         .if_match_condition(IfMatchCondition::Match(
             &documents.documents[0].document_attributes.etag(),
@@ -243,8 +248,9 @@ async fn replace_document() {
         .unwrap();
 
     // now get the replaced document
-    let partition_keys = DOCUMENT_NAME;
-    let document_client = collection_client.into_document_client(DOCUMENT_NAME, [partition_keys]);
+    let document_client = collection_client
+        .into_document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
+        .unwrap();
     let document_after_get = document_client
         .get_document()
         .execute::<MyDocument>()

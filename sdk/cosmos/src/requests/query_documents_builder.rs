@@ -19,7 +19,7 @@ pub struct QueryDocumentsBuilder<'a, 'b> {
     consistency_level: Option<ConsistencyLevel>,
     continuation: Option<Continuation<'b>>,
     max_item_count: MaxItemCount,
-    partition_keys: Option<&'b PartitionKeys>,
+    partition_key: Option<String>,
     query_cross_partition: QueryCrossPartition,
     parallelize_cross_partition_query: ParallelizeCrossPartition,
 }
@@ -35,7 +35,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
             consistency_level: None,
             continuation: None,
             max_item_count: MaxItemCount::new(-1),
-            partition_keys: None,
+            partition_key: None,
             query_cross_partition: QueryCrossPartition::No,
             // TODO: use this in request
             parallelize_cross_partition_query: ParallelizeCrossPartition::No,
@@ -52,13 +52,17 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
         continuation: &'b str => Some(Continuation::new(continuation)),
         max_item_count: i32 => MaxItemCount::new(max_item_count),
         if_modified_since: &'b DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
-        partition_keys: &'b PartitionKeys => Some(partition_keys),
         query_cross_partition: bool => if query_cross_partition { QueryCrossPartition::Yes } else { QueryCrossPartition::No },
         parallelize_cross_partition_query: bool => if parallelize_cross_partition_query { ParallelizeCrossPartition::Yes } else { ParallelizeCrossPartition::No },
     }
-}
 
-impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
+    pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> Result<Self, serde_json::Error> {
+        Ok(Self {
+            partition_key: Some(crate::cosmos_entity::serialize_partition_key_to_string(pk)?),
+            ..self
+        })
+    }
+
     pub async fn execute<T, Q>(&self, query: Q) -> Result<QueryDocumentsResponse<T>, CosmosError>
     where
         T: DeserializeOwned,
@@ -76,6 +80,12 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
             ResourceType::Documents,
         );
 
+        let req = if let Some(pk) = self.partition_key.as_ref() {
+            crate::cosmos_entity::add_as_partition_key_header_serialized(&pk, req)
+        } else {
+            req
+        };
+
         // signal that this is a query
         let req = req.header(crate::headers::HEADER_DOCUMENTDB_ISQUERY, true.to_string());
         let req = req.header(http::header::CONTENT_TYPE, "application/query+json");
@@ -88,7 +98,6 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
         let req = azure_core::headers::add_optional_header(&self.consistency_level, req);
         let req = azure_core::headers::add_optional_header(&self.continuation, req);
         let req = azure_core::headers::add_mandatory_header(&self.max_item_count, req);
-        let req = azure_core::headers::add_optional_header(&self.partition_keys, req);
         let req = azure_core::headers::add_mandatory_header(&self.query_cross_partition, req);
 
         let body = azure_core::to_json(&query.into())?;
