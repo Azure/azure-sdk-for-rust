@@ -225,7 +225,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
                     .into_iter()
                     .map(|s| KeyVaultSecretBaseIdentifier {
                         id: s.id.to_owned(),
-                        name: s.id.to_owned().split("/").last().unwrap().to_owned(),
+                        name: s.id.split('/').last().unwrap().to_owned(),
                         enabled: s.attributes.enabled,
                         time_created: s.attributes.created,
                         time_updated: s.attributes.updated,
@@ -290,7 +290,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
                     .into_iter()
                     .map(|s| KeyVaultSecretBaseIdentifier {
                         id: s.id.to_owned(),
-                        name: s.id.to_owned().split("/").last().unwrap().to_owned(),
+                        name: s.id.split('/').last().unwrap().to_owned(),
                         enabled: s.attributes.enabled,
                         time_created: s.attributes.created,
                         time_updated: s.attributes.updated,
@@ -639,7 +639,6 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
 mod tests {
     use super::*;
 
-    use async_trait;
     use azure_core::errors::AzureError;
     use azure_core::{TokenCredential, TokenResponse};
     use chrono::{Duration, Utc};
@@ -736,7 +735,7 @@ mod tests {
                             "updated": time_updated_1.timestamp(),
                         }
                     }],
-                    "nextLink": format!("{}/secrets/text-secret/versions?api-version={}&maxresults=1&$skiptoken=SKIP_TOKEN_MOCK", mockito::server_url().to_string(), API_VERSION)
+                    "nextLink": format!("{}/secrets/text-secret/versions?api-version={}&maxresults=1&$skiptoken=SKIP_TOKEN_MOCK", mockito::server_url(), API_VERSION)
                 })
                 .to_string(),
             )

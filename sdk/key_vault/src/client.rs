@@ -77,8 +77,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         }
 
         let mut resource = format!("https://{}", &self.endpoint_suffix);
-        if !self.endpoint_suffix.ends_with("/") {
-            resource.push_str("/");
+        if !self.endpoint_suffix.ends_with('/') {
+            resource.push('/');
         }
 
         let token = self
@@ -86,7 +86,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
             .get_token(&resource)
             .await
             .with_context(|| "Failed to authenticate to Azure Active Directory")
-            .map_err(|e| KeyVaultError::AuthorizationError(e))?;
+            .map_err(KeyVaultError::AuthorizationError)?;
         self.token = Some(token);
         Ok(())
     }
@@ -143,6 +143,16 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         let resp = req.send().await.unwrap();
 
         let body = resp.text().await.unwrap();
+
+        let body_serialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
+        if let Some(err) = body_serialized.get("error") {
+            return Err(KeyVaultError::GeneralError(
+                err.get("message")
+                    .expect("Received an error accessing the Key Vault, which could not be parsed as expected.")
+                    .to_string(),
+            ));
+        }
+
         Ok(body)
     }
 

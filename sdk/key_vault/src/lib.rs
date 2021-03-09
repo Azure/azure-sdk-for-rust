@@ -1,5 +1,8 @@
 mod client;
+pub mod key;
 pub mod secret;
+pub mod sign;
+
 pub use client::KeyVaultClient;
 pub use secret::RecoveryLevel;
 
