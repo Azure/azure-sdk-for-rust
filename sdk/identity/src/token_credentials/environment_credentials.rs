@@ -72,8 +72,9 @@ impl TokenCredential for EnvironmentCredential {
         } else if username.is_ok() && password.is_ok() {
             // Could use multiple if-let with #![feature(let_chains)] once stabilised - see https://github.com/rust-lang/rust/issues/53667
             // TODO: username & password credential
-        } else if let Ok(_) = client_certificate_path {
+        } else if let Ok(_path) = client_certificate_path {
             // TODO: client certificate credential
+            todo!()
         }
 
         Err(AzureError::GenericErrorWithText(

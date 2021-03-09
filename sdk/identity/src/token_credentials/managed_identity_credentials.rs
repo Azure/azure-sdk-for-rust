@@ -22,7 +22,7 @@ pub struct ManagedIdentityCredential;
 impl TokenCredential for ManagedIdentityCredential {
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError> {
         let msi_endpoint = std::env::var(MSI_ENDPOINT_ENV_KEY)
-            .unwrap_or("http://169.254.169.254/metadata/identity/oauth2/token".to_owned());
+            .unwrap_or_else(|_| "http://169.254.169.254/metadata/identity/oauth2/token".to_owned());
 
         let query_items = vec![("api-version", MSI_API_VERSION), ("resource", resource)];
 
