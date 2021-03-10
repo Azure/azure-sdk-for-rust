@@ -29,9 +29,9 @@ pub struct KeyBundle {
 #[serde(rename_all = "camelCase")]
 pub struct KeyAttributes {
     /// Creation time in UTC.
-    created: u64,
+    created: Option<u64>,
     /// Determines whether the object is enabled.
-    enabled: bool,
+    enabled: Option<bool>,
     /// Expiry date in UTC.
     exp: Option<u64>,
     /// Not before date in UTC.
@@ -41,7 +41,7 @@ pub struct KeyAttributes {
     /// Reflects the deletion recovery level currently in effect for keys in the current vault. If it contains 'Purgeable' the key can be permanently deleted by a privileged user; otherwise, only the system can purge the key, at the end of the retention interval.
     recovery_level: Option<String>,
     /// Last updated time in UTC.
-    updated: u64,
+    updated: Option<u64>,
 }
 
 #[derive(Debug, Deserialize, Getters)]
