@@ -33,7 +33,7 @@ pub struct KeyAttributes {
     /// Determines whether the object is enabled.
     enabled: bool,
     /// Expiry date in UTC.
-    exp: u64,
+    exp: Option<u64>,
     /// Not before date in UTC.
     nbf: u64,
     /// softDelete data retention days. Value should be >=7 and <=90 when softDelete enabled, otherwise 0.
