@@ -35,11 +35,11 @@ pub struct KeyAttributes {
     /// Expiry date in UTC.
     exp: Option<u64>,
     /// Not before date in UTC.
-    nbf: u64,
+    nbf: Option<u64>,
     /// softDelete data retention days. Value should be >=7 and <=90 when softDelete enabled, otherwise 0.
     recoverable_days: Option<u8>,
     /// Reflects the deletion recovery level currently in effect for keys in the current vault. If it contains 'Purgeable' the key can be permanently deleted by a privileged user; otherwise, only the system can purge the key, at the end of the retention interval.
-    recovery_level: String,
+    recovery_level: Option<String>,
     /// Last updated time in UTC.
     updated: u64,
 }
