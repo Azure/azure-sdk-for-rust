@@ -1,7 +1,8 @@
 use std::fmt::{Debug, Display};
 
-use anyhow::Context;
 use azure_core::TokenCredential;
+use chrono::serde::ts_seconds_option;
+use chrono::{DateTime, Utc};
 use getset::Getters;
 use serde::Deserialize;
 use serde_json::{Map, Value};
@@ -29,19 +30,23 @@ pub struct KeyBundle {
 #[serde(rename_all = "camelCase")]
 pub struct KeyAttributes {
     /// Creation time in UTC.
-    created: Option<u64>,
+    #[serde(with = "ts_seconds_option", default)]
+    created: Option<DateTime<Utc>>,
     /// Determines whether the object is enabled.
     enabled: Option<bool>,
     /// Expiry date in UTC.
-    exp: Option<u64>,
+    #[serde(with = "ts_seconds_option", default)]
+    exp: Option<DateTime<Utc>>,
     /// Not before date in UTC.
-    nbf: Option<u64>,
+    #[serde(with = "ts_seconds_option", default)]
+    nbf: Option<DateTime<Utc>>,
     /// softDelete data retention days. Value should be >=7 and <=90 when softDelete enabled, otherwise 0.
     recoverable_days: Option<u8>,
     /// Reflects the deletion recovery level currently in effect for keys in the current vault. If it contains 'Purgeable' the key can be permanently deleted by a privileged user; otherwise, only the system can purge the key, at the end of the retention interval.
     recovery_level: Option<String>,
     /// Last updated time in UTC.
-    updated: Option<u64>,
+    #[serde(with = "ts_seconds_option", default)]
+    updated: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Deserialize, Getters)]
@@ -95,6 +100,13 @@ pub struct JsonWebKey {
     y: Option<String>,
 }
 
+#[derive(Debug, Deserialize, Getters)]
+#[getset(get = "pub")]
+pub struct KeyOperationResult {
+    kid: String,
+    value: String,
+}
+
 /// The signing/verification algorithm identifier
 #[derive(Debug)]
 pub enum JsonWebKeySignatureAlgorithm {
@@ -137,8 +149,186 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         )
         .unwrap();
         let resp_body = self.get_authed(uri.to_string()).await?;
-        let response = serde_json::from_str::<KeyBundle>(&resp_body)
-            .with_context(|| format!("Failed to parse response from Key Vault: {}", resp_body))?;
+        let response = serde_json::from_str::<KeyBundle>(&resp_body)?;
         Ok(response)
+    }
+
+    /// Creates a signature from a digest using the specified key.
+    /// The SIGN operation is applicable to asymmetric and symmetric keys stored in Azure Key Vault since this operation uses the private portion of the key.
+    /// This operation requires the keys/sign permission.
+    pub async fn sign(
+        &mut self,
+        key_name: &str,
+        key_version: &str,
+        value: &str,
+        alg: JsonWebKeySignatureAlgorithm,
+    ) -> Result<KeyOperationResult, KeyVaultError> {
+        // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/sign?api-version=7.1
+        let uri = Url::parse_with_params(
+            &format!(
+                "{}/keys/{}/{}/sign",
+                self.keyvault_endpoint, key_name, key_version
+            ),
+            &[("api-version", API_VERSION)],
+        )
+        .unwrap();
+
+        let mut request_body = Map::new();
+        request_body.insert("alg".to_owned(), Value::String(alg.to_string()));
+        request_body.insert("value".to_owned(), Value::String(value.to_owned()));
+
+        let response = self
+            .post_authed(
+                uri.to_string(),
+                Some(Value::Object(request_body).to_string()),
+            )
+            .await?;
+
+        let result = serde_json::from_str::<KeyOperationResult>(&response)?;
+
+        Ok(result)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use azure_core::errors::AzureError;
+    use azure_core::TokenResponse;
+    use chrono::{DateTime, Duration, Utc};
+    use mockito::{mock, Matcher};
+    use oauth2::AccessToken;
+    use serde_json::json;
+
+    struct MockKeyCredential;
+
+    #[async_trait::async_trait]
+    impl TokenCredential for MockKeyCredential {
+        async fn get_token(&self, _resource: &str) -> Result<TokenResponse, AzureError> {
+            Ok(TokenResponse::new(
+                AccessToken::new("TOKEN".to_owned()),
+                Utc::now() + Duration::days(14),
+            ))
+        }
+    }
+
+    macro_rules! mock_client {
+        ($creds:expr, $keyvault_name:expr) => {{
+            let mut client = KeyVaultClient::new($creds, $keyvault_name);
+            client.keyvault_endpoint = mockito::server_url();
+            client
+        }};
+    }
+
+    fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
+        if first > second {
+            first - second
+        } else {
+            second - first
+        }
+    }
+
+    #[tokio::test]
+    async fn can_get_key() {
+        let time_created = Utc::now() - Duration::days(7);
+        let time_updated = Utc::now();
+        let _m = mock("GET", "/keys/test-key/78deebed173b48e48f55abf87ed4cf71")
+            .match_query(Matcher::UrlEncoded("api-version".into(), API_VERSION.into()))
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "key": {
+                        "kid": "https://test-keyvault.vault.azure.net/keys/test-key/78deebed173b48e48f55abf87ed4cf71",
+                        "kty": "RSA",
+                        "key_ops": [
+                            "encrypt",
+                            "decrypt",
+                            "sign",
+                            "verify",
+                            "wrapKey",
+                            "unwrapKey"
+                        ],
+                        "n": "2HJAE5fU3Cw2Rt9hEuq-F6XjINKGa-zskfISVqopqUy60GOs2eyhxbWbJBeUXNor_gf-tXtNeuqeBgitLeVa640UDvnEjYTKWjCniTxZRaU7ewY8BfTSk-7KxoDdLsPSpX_MX4rwlAx-_1UGk5t4sQgTbm9T6Fm2oqFd37dsz5-Gj27UP2GTAShfJPFD7MqU_zIgOI0pfqsbNL5xTQVM29K6rX4jSPtylZV3uWJtkoQIQnrIHhk1d0SC0KwlBV3V7R_LVYjiXLyIXsFzSNYgQ68ZjAwt8iL7I8Osa-ehQLM13DVvLASaf7Jnu3sC3CWl3Gyirgded6cfMmswJzY87w",
+                        "e": "AQAB"
+                    },
+                    "attributes": {
+                        "enabled": true,
+                        "created": time_created.timestamp(),
+                        "updated": time_updated.timestamp(),
+                        "recoveryLevel": "Recoverable+Purgeable"
+                      },
+                    "tags": {
+                        "purpose": "unit test",
+                        "test name ": "CreateGetDeleteKeyTest"
+                    }
+                })
+                .to_string(),
+            )
+            .with_status(200)
+            .create();
+
+        let creds = MockKeyCredential;
+        let mut client = mock_client!(&creds, &"test-keyvault");
+
+        let keybundle = client
+            .get_key("test-key", "78deebed173b48e48f55abf87ed4cf71")
+            .await
+            .unwrap();
+
+        let JsonWebKey { kid, n, .. } = keybundle.key;
+        let KeyAttributes {
+            created,
+            enabled,
+            updated,
+            ..
+        } = keybundle.attributes;
+        assert_eq!("2HJAE5fU3Cw2Rt9hEuq-F6XjINKGa-zskfISVqopqUy60GOs2eyhxbWbJBeUXNor_gf-tXtNeuqeBgitLeVa640UDvnEjYTKWjCniTxZRaU7ewY8BfTSk-7KxoDdLsPSpX_MX4rwlAx-_1UGk5t4sQgTbm9T6Fm2oqFd37dsz5-Gj27UP2GTAShfJPFD7MqU_zIgOI0pfqsbNL5xTQVM29K6rX4jSPtylZV3uWJtkoQIQnrIHhk1d0SC0KwlBV3V7R_LVYjiXLyIXsFzSNYgQ68ZjAwt8iL7I8Osa-ehQLM13DVvLASaf7Jnu3sC3CWl3Gyirgded6cfMmswJzY87w", n.unwrap());
+        assert_eq!(
+            "https://test-keyvault.vault.azure.net/keys/test-key/78deebed173b48e48f55abf87ed4cf71",
+            kid.unwrap()
+        );
+
+        assert_eq!(true, enabled.unwrap());
+        assert!(diff(time_created, created.unwrap()) < Duration::seconds(1));
+        assert!(diff(time_updated, updated.unwrap()) < Duration::seconds(1));
+    }
+
+    #[tokio::test]
+    async fn can_sign() {
+        let _m = mock("POST", "/keys/test-key/78deebed173b48e48f55abf87ed4cf71/sign")
+            .match_query(Matcher::UrlEncoded("api-version".into(), API_VERSION.into()))
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "kid": "https://myvault.vault.azure.net/keys/testkey/9885aa558e8d448789683188f8c194b0",
+                    "value": "aKFG8NXcfTzqyR44rW42484K_zZI_T7zZuebvWuNgAoEI1gXYmxrshp42CunSmmu4oqo4-IrCikPkNIBkHXnAW2cv03Ad0UpwXhVfepK8zzDBaJPMKVGS-ZRz8CshEyGDKaLlb3J3zEkXpM3RrSEr0mdV6hndHD_mznLB5RmFui5DsKAhez4vUqajgtkgcPfCekMqeSwp6r9ItVL-gEoAohx8XMDsPedqu-7BuZcBcdayaPuBRL4wWoTDULA11P-UN_sJ5qMj3BbiRYhIlBWGR04wIGfZ3pkJjHJUpOvgH2QajdYPzUBauOCewMYbq9XkLRSzI_A7HkkDVycugSeAA"
+                })
+                .to_string(),
+            )
+            .with_status(200)
+            .create();
+
+        let creds = MockKeyCredential;
+        let mut client = mock_client!(&creds, &"test-keyvault");
+
+        let res = client
+            .sign(
+                "test-key",
+                "78deebed173b48e48f55abf87ed4cf71",
+                "base64msg2sign",
+                JsonWebKeySignatureAlgorithm::RS512,
+            )
+            .await
+            .unwrap();
+
+        let kid = res.kid;
+        let sig = res.value;
+
+        assert_eq!(
+            kid,
+            "https://myvault.vault.azure.net/keys/testkey/9885aa558e8d448789683188f8c194b0"
+        );
+        assert_eq!(sig, "aKFG8NXcfTzqyR44rW42484K_zZI_T7zZuebvWuNgAoEI1gXYmxrshp42CunSmmu4oqo4-IrCikPkNIBkHXnAW2cv03Ad0UpwXhVfepK8zzDBaJPMKVGS-ZRz8CshEyGDKaLlb3J3zEkXpM3RrSEr0mdV6hndHD_mznLB5RmFui5DsKAhez4vUqajgtkgcPfCekMqeSwp6r9ItVL-gEoAohx8XMDsPedqu-7BuZcBcdayaPuBRL4wWoTDULA11P-UN_sJ5qMj3BbiRYhIlBWGR04wIGfZ3pkJjHJUpOvgH2QajdYPzUBauOCewMYbq9XkLRSzI_A7HkkDVycugSeAA");
     }
 }

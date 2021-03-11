@@ -1,7 +1,6 @@
 mod client;
 pub mod key;
 pub mod secret;
-pub mod sign;
 
 pub use client::KeyVaultClient;
 pub use secret::RecoveryLevel;
@@ -14,8 +13,20 @@ pub enum KeyVaultError {
     KeyVaultDoesNotExist { keyvault_name: String },
 
     #[error("Azure Active Directory authorization error")]
-    AuthorizationError(#[from] anyhow::Error),
+    Authorization,
 
-    #[error("General error: {0}")]
-    GeneralError(String),
+    #[error("Received an error accessing the Key Vault, which could not be parsed as expected.")]
+    UnparsableError,
+
+    #[error(transparent)]
+    Reqwest(#[from] reqwest::Error),
+
+    #[error("Key Vault Error: {0}")]
+    General(String),
+
+    #[error("Failed to parse response from Key Vault: {0}")]
+    SerdeParse(#[from] serde_json::Error),
+
+    #[error(transparent)]
+    Error(#[from] anyhow::Error),
 }

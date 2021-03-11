@@ -1,5 +1,4 @@
 use crate::KeyVaultError;
-use anyhow::Context;
 use anyhow::Result;
 use azure_core::{TokenCredential, TokenResponse};
 
@@ -85,8 +84,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
             .token_credential
             .get_token(&resource)
             .await
-            .with_context(|| "Failed to authenticate to Azure Active Directory")
-            .map_err(KeyVaultError::AuthorizationError)?;
+            .map_err(|_| KeyVaultError::Authorization)?;
         self.token = Some(token);
         Ok(())
     }
@@ -119,7 +117,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
             .send()
             .await
             .unwrap();
-        let body = resp.text().await.unwrap();
+        let body = resp.text().await?;
         Ok(body)
     }
 
@@ -140,20 +138,18 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
             req = req.header("Content-Length", 0);
         }
 
-        let resp = req.send().await.unwrap();
+        let resp = req.send().await?;
 
-        let body = resp.text().await.unwrap();
+        let body = resp.text().await?;
 
         let body_serialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
-        if let Some(err) = body_serialized.get("error") {
-            return Err(KeyVaultError::GeneralError(
-                err.get("message")
-                    .expect("Received an error accessing the Key Vault, which could not be parsed as expected.")
-                    .to_string(),
-            ));
-        }
 
-        Ok(body)
+        if let Some(err) = body_serialized.get("error") {
+            let msg = err.get("message").ok_or(KeyVaultError::UnparsableError)?;
+            Err(KeyVaultError::General(msg.to_string()))
+        } else {
+            Ok(body)
+        }
     }
 
     pub(crate) async fn patch_authed(
@@ -175,15 +171,13 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         let body = resp.text().await.unwrap();
 
         let body_serialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
-        if let Some(err) = body_serialized.get("error") {
-            return Err(KeyVaultError::GeneralError(
-                err.get("message")
-                    .expect("Received an error accessing the Key Vault, which could not be parsed as expected.")
-                    .to_string(),
-            ));
-        }
 
-        Ok(body)
+        if let Some(err) = body_serialized.get("error") {
+            let msg = err.get("message").ok_or(KeyVaultError::UnparsableError)?;
+            Err(KeyVaultError::General(msg.to_string()))
+        } else {
+            Ok(body)
+        }
     }
 
     pub(crate) async fn delete_authed(&mut self, uri: String) -> Result<String, KeyVaultError> {
