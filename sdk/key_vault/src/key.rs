@@ -1,115 +1,228 @@
 use std::fmt::{Debug, Display};
 
 use azure_core::TokenCredential;
+use base64::{CharacterSet, Config};
 use chrono::serde::ts_seconds_option;
 use chrono::{DateTime, Utc};
 use getset::Getters;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Map, Value};
 use url::Url;
 
 use crate::client::API_VERSION;
-use crate::{KeyVaultClient, KeyVaultError};
+use crate::{KeyClient, KeyVaultError};
 
 /// A KeyBundle consisting of a WebKey plus its attributes.
-#[derive(Debug, Deserialize, Getters)]
-#[getset(get = "pub")]
-pub struct KeyBundle {
+#[derive(Debug, Deserialize)]
+pub struct KeyVaultKey {
     /// The key management attributes.
     attributes: KeyAttributes,
     /// The Json web key.
     key: JsonWebKey,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct KeyProperties {
+    #[serde(flatten)]
+    attributes: KeyAttributes,
     /// True if the key's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
     managed: Option<bool>,
     /// Application specific metadata in the form of key-value pairs.
     tags: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Getters)]
-#[getset(get = "pub")]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct KeyAttributes {
+struct KeyAttributes {
     /// Creation time in UTC.
-    #[serde(with = "ts_seconds_option", default)]
-    created: Option<DateTime<Utc>>,
+    #[serde(rename = "created", with = "ts_seconds_option", default)]
+    created_on: Option<DateTime<Utc>>,
     /// Determines whether the object is enabled.
     enabled: Option<bool>,
     /// Expiry date in UTC.
-    #[serde(with = "ts_seconds_option", default)]
-    exp: Option<DateTime<Utc>>,
+    #[serde(rename = "exp", with = "ts_seconds_option", default)]
+    expires_on: Option<DateTime<Utc>>,
     /// Not before date in UTC.
-    #[serde(with = "ts_seconds_option", default)]
-    nbf: Option<DateTime<Utc>>,
+    #[serde(rename = "nbf", with = "ts_seconds_option", default)]
+    not_before: Option<DateTime<Utc>>,
     /// softDelete data retention days. Value should be >=7 and <=90 when softDelete enabled, otherwise 0.
     recoverable_days: Option<u8>,
     /// Reflects the deletion recovery level currently in effect for keys in the current vault. If it contains 'Purgeable' the key can be permanently deleted by a privileged user; otherwise, only the system can purge the key, at the end of the retention interval.
     recovery_level: Option<String>,
     /// Last updated time in UTC.
-    #[serde(with = "ts_seconds_option", default)]
-    updated: Option<DateTime<Utc>>,
+    #[serde(rename = "updated", with = "ts_seconds_option", default)]
+    updated_on: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Deserialize, Getters)]
+#[derive(Debug, Serialize, Deserialize, Getters)]
 #[getset(get = "pub")]
 pub struct JsonWebKey {
     /// Elliptic curve name. For valid values, see JsonWebKeyCurveName.
     crv: Option<String>,
     /// RSA private exponent, or the D component of an EC private key.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    d: Option<String>,
+    #[serde(
+        serialize_with = "ser_base64_opt",
+        deserialize_with = "deser_base64_opt"
+    )]
+    #[serde(default)]
+    d: Option<Vec<u8>>,
     /// RSA private key parameter.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    dp: Option<String>,
+    #[serde(
+        serialize_with = "ser_base64_opt",
+        deserialize_with = "deser_base64_opt"
+    )]
+    #[serde(default)]
+    dp: Option<Vec<u8>>,
     /// RSA private key parameter.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    dq: Option<String>,
+    #[serde(
+        serialize_with = "ser_base64_opt",
+        deserialize_with = "deser_base64_opt"
+    )]
+    #[serde(default)]
+    dq: Option<Vec<u8>>,
     /// RSA public exponent.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    e: Option<String>,
+    #[serde(
+        serialize_with = "ser_base64_opt",
+        deserialize_with = "deser_base64_opt"
+    )]
+    #[serde(default)]
+    e: Option<Vec<u8>>,
     /// Symmetric key.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    k: Option<String>,
+    #[serde(
+        serialize_with = "ser_base64_opt",
+        deserialize_with = "deser_base64_opt"
+    )]
+    #[serde(default)]
+    k: Option<Vec<u8>>,
     /// HSM Token, used with 'Bring Your Own Key'.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    key_hsm: Option<String>,
+    #[serde(
+        serialize_with = "ser_base64_opt",
+        deserialize_with = "deser_base64_opt"
+    )]
+    #[serde(default)]
+    key_hsm: Option<Vec<u8>>,
     /// Supported key operations.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    key_ops: Vec<String>,
+    key_ops: Vec<KeyOperation>,
     /// Key identifier.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    kid: Option<String>,
+    #[serde(rename = "kid")]
+    key_id: Option<String>,
     /// JsonWebKey Key Type (kty), as defined in https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40.
-    kty: String,
+    #[serde(rename = "kty")]
+    key_type: String,
     /// RSA modulus.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    n: Option<String>,
+    #[serde(
+        serialize_with = "ser_base64_opt",
+        deserialize_with = "deser_base64_opt"
+    )]
+    #[serde(default)]
+    n: Option<Vec<u8>>,
     /// RSA secret prime.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    p: Option<String>,
+    #[serde(
+        serialize_with = "ser_base64_opt",
+        deserialize_with = "deser_base64_opt"
+    )]
+    #[serde(default)]
+    p: Option<Vec<u8>>,
     /// RSA secret prime, with p < q.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    q: Option<String>,
+    #[serde(
+        serialize_with = "ser_base64_opt",
+        deserialize_with = "deser_base64_opt"
+    )]
+    #[serde(default)]
+    q: Option<Vec<u8>>,
     /// RSA private key parameter.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    qi: Option<String>,
+    #[serde(
+        serialize_with = "ser_base64_opt",
+        deserialize_with = "deser_base64_opt"
+    )]
+    #[serde(default)]
+    qi: Option<Vec<u8>>,
     /// X component of an EC public key.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    x: Option<String>,
+    #[serde(
+        serialize_with = "ser_base64_opt",
+        deserialize_with = "deser_base64_opt"
+    )]
+    #[serde(default)]
+    x: Option<Vec<u8>>,
     /// Y component of an EC public key.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    y: Option<String>,
+    #[serde(
+        serialize_with = "ser_base64_opt",
+        deserialize_with = "deser_base64_opt"
+    )]
+    #[serde(default)]
+    y: Option<Vec<u8>>,
+}
+
+const BASE64_URL_SAFE: Config = Config::new(CharacterSet::UrlSafe, false);
+
+fn ser_base64_opt<S>(bytes: &Option<Vec<u8>>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    if let Some(bytes) = bytes {
+        let base_64 = base64::encode_config(bytes, BASE64_URL_SAFE);
+        serializer.serialize_str(&base_64)
+    } else {
+        serializer.serialize_none()
+    }
+}
+
+fn deser_base64<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: String = String::deserialize(deserializer)?;
+    let res = base64::decode_config(s, BASE64_URL_SAFE).map_err(serde::de::Error::custom)?;
+    Ok(res)
+}
+
+fn deser_base64_opt<'de, D>(deserializer: D) -> Result<Option<Vec<u8>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: Option<&str> = Option::deserialize(deserializer)?;
+    let res = match s {
+        Some(s) => {
+            Some(base64::decode_config(s, BASE64_URL_SAFE).map_err(serde::de::Error::custom)?)
+        }
+        None => None,
+    };
+    Ok(res)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", untagged)]
+pub enum KeyOperation {
+    Encrypt,
+    Decrypt,
+    Sign,
+    Verify,
+    WrapKey,
+    UnwrapKey,
+    Import,
+    Export,
+    Custom(String),
 }
 
 #[derive(Debug, Deserialize, Getters)]
 #[getset(get = "pub")]
-pub struct KeyOperationResult {
-    kid: String,
-    value: String,
+pub struct SignResult {
+    #[serde(
+        rename = "value",
+        serialize_with = "ser_base64",
+        deserialize_with = "deser_base64"
+    )]
+    signature: Vec<u8>,
+    #[serde(skip)]
+    algorithm: SignatureAlgorithm,
+    #[serde(rename = "kid")]
+    key_id: String,
 }
 
 /// The signing/verification algorithm identifier
-#[derive(Debug)]
-pub enum JsonWebKeySignatureAlgorithm {
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum SignatureAlgorithm {
     ES256,  // ECDSA using P-256 and SHA-256, as described in https://tools.ietf.org/html/rfc7518.
     ES256K, // ECDSA using P-256K and SHA-256, as described in https://tools.ietf.org/html/rfc7518
     ES384,  // ECDSA using P-384 and SHA-384, as described in https://tools.ietf.org/html/rfc7518
@@ -120,15 +233,22 @@ pub enum JsonWebKeySignatureAlgorithm {
     RS256, // RSASSA-PKCS1-v1_5 using SHA-256, as described in https://tools.ietf.org/html/rfc7518
     RS384, // RSASSA-PKCS1-v1_5 using SHA-384, as described in https://tools.ietf.org/html/rfc7518
     RS512, // RSASSA-PKCS1-v1_5 using SHA-512, as described in https://tools.ietf.org/html/rfc7518
+    Custom(String),
 }
 
-impl Display for JsonWebKeySignatureAlgorithm {
+impl Default for SignatureAlgorithm {
+    fn default() -> Self {
+        SignatureAlgorithm::Custom("Not Set".to_string())
+    }
+}
+
+impl Display for SignatureAlgorithm {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(self, f)
     }
 }
 
-impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
+impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// Gets the public part of a stored key.
     /// The get key operation is applicable to all key types.
     /// If the requested key is symmetric, then no key material is released in the response.
@@ -138,18 +258,17 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     pub async fn get_key(
         &mut self,
         key_name: &str,
-        key_version: &str,
-    ) -> Result<KeyBundle, KeyVaultError> {
-        let uri = Url::parse_with_params(
-            &format!(
-                "{}/keys/{}/{}",
-                self.keyvault_endpoint, key_name, key_version
-            ),
-            &[("api-version", API_VERSION)],
-        )
-        .unwrap();
+        key_version: Option<&str>,
+    ) -> Result<KeyVaultKey, KeyVaultError> {
+        let mut uri = format!("{}/keys/{}", self.keyvault_endpoint, key_name);
+        if let Some(ver) = key_version {
+            uri.push('/');
+            uri.push_str(ver);
+        }
+        let uri = Url::parse_with_params(&uri, &[("api-version", API_VERSION)]).unwrap();
+
         let resp_body = self.get_authed(uri.to_string()).await?;
-        let response = serde_json::from_str::<KeyBundle>(&resp_body)?;
+        let response = serde_json::from_str::<KeyVaultKey>(&resp_body)?;
         Ok(response)
     }
 
@@ -160,9 +279,9 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         &mut self,
         key_name: &str,
         key_version: &str,
-        value: &str,
-        alg: JsonWebKeySignatureAlgorithm,
-    ) -> Result<KeyOperationResult, KeyVaultError> {
+        digest: &str,
+        algorithm: SignatureAlgorithm,
+    ) -> Result<SignResult, KeyVaultError> {
         // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/sign?api-version=7.1
         let uri = Url::parse_with_params(
             &format!(
@@ -174,8 +293,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         .unwrap();
 
         let mut request_body = Map::new();
-        request_body.insert("alg".to_owned(), Value::String(alg.to_string()));
-        request_body.insert("value".to_owned(), Value::String(value.to_owned()));
+        request_body.insert("alg".to_owned(), Value::String(algorithm.to_string()));
+        request_body.insert("value".to_owned(), Value::String(digest.to_owned()));
 
         let response = self
             .post_authed(
@@ -184,8 +303,8 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
             )
             .await?;
 
-        let result = serde_json::from_str::<KeyOperationResult>(&response)?;
-
+        let mut result = serde_json::from_str::<SignResult>(&response)?;
+        result.algorithm = algorithm;
         Ok(result)
     }
 }
@@ -215,7 +334,7 @@ mod tests {
 
     macro_rules! mock_client {
         ($creds:expr, $keyvault_name:expr) => {{
-            let mut client = KeyVaultClient::new($creds, $keyvault_name);
+            let mut client = KeyClient::new($creds, $keyvault_name);
             client.keyvault_endpoint = mockito::server_url();
             client
         }};
@@ -247,7 +366,8 @@ mod tests {
                             "sign",
                             "verify",
                             "wrapKey",
-                            "unwrapKey"
+                            "unwrapKey",
+                            "destroy!"
                         ],
                         "n": "2HJAE5fU3Cw2Rt9hEuq-F6XjINKGa-zskfISVqopqUy60GOs2eyhxbWbJBeUXNor_gf-tXtNeuqeBgitLeVa640UDvnEjYTKWjCniTxZRaU7ewY8BfTSk-7KxoDdLsPSpX_MX4rwlAx-_1UGk5t4sQgTbm9T6Fm2oqFd37dsz5-Gj27UP2GTAShfJPFD7MqU_zIgOI0pfqsbNL5xTQVM29K6rX4jSPtylZV3uWJtkoQIQnrIHhk1d0SC0KwlBV3V7R_LVYjiXLyIXsFzSNYgQ68ZjAwt8iL7I8Osa-ehQLM13DVvLASaf7Jnu3sC3CWl3Gyirgded6cfMmswJzY87w",
                         "e": "AQAB"
@@ -272,26 +392,27 @@ mod tests {
         let mut client = mock_client!(&creds, &"test-keyvault");
 
         let keybundle = client
-            .get_key("test-key", "78deebed173b48e48f55abf87ed4cf71")
+            .get_key("test-key", Some("78deebed173b48e48f55abf87ed4cf71"))
             .await
             .unwrap();
 
-        let JsonWebKey { kid, n, .. } = keybundle.key;
+        let JsonWebKey { key_id, n, .. } = keybundle.key;
         let KeyAttributes {
-            created,
+            created_on,
             enabled,
-            updated,
+            updated_on,
             ..
         } = keybundle.attributes;
-        assert_eq!("2HJAE5fU3Cw2Rt9hEuq-F6XjINKGa-zskfISVqopqUy60GOs2eyhxbWbJBeUXNor_gf-tXtNeuqeBgitLeVa640UDvnEjYTKWjCniTxZRaU7ewY8BfTSk-7KxoDdLsPSpX_MX4rwlAx-_1UGk5t4sQgTbm9T6Fm2oqFd37dsz5-Gj27UP2GTAShfJPFD7MqU_zIgOI0pfqsbNL5xTQVM29K6rX4jSPtylZV3uWJtkoQIQnrIHhk1d0SC0KwlBV3V7R_LVYjiXLyIXsFzSNYgQ68ZjAwt8iL7I8Osa-ehQLM13DVvLASaf7Jnu3sC3CWl3Gyirgded6cfMmswJzY87w", n.unwrap());
+        let expected_n = base64::decode_config("2HJAE5fU3Cw2Rt9hEuq-F6XjINKGa-zskfISVqopqUy60GOs2eyhxbWbJBeUXNor_gf-tXtNeuqeBgitLeVa640UDvnEjYTKWjCniTxZRaU7ewY8BfTSk-7KxoDdLsPSpX_MX4rwlAx-_1UGk5t4sQgTbm9T6Fm2oqFd37dsz5-Gj27UP2GTAShfJPFD7MqU_zIgOI0pfqsbNL5xTQVM29K6rX4jSPtylZV3uWJtkoQIQnrIHhk1d0SC0KwlBV3V7R_LVYjiXLyIXsFzSNYgQ68ZjAwt8iL7I8Osa-ehQLM13DVvLASaf7Jnu3sC3CWl3Gyirgded6cfMmswJzY87w", BASE64_URL_SAFE).unwrap();
+        assert_eq!(expected_n, n.unwrap());
         assert_eq!(
             "https://test-keyvault.vault.azure.net/keys/test-key/78deebed173b48e48f55abf87ed4cf71",
-            kid.unwrap()
+            key_id.unwrap()
         );
 
         assert_eq!(true, enabled.unwrap());
-        assert!(diff(time_created, created.unwrap()) < Duration::seconds(1));
-        assert!(diff(time_updated, updated.unwrap()) < Duration::seconds(1));
+        assert!(diff(time_created, created_on.unwrap()) < Duration::seconds(1));
+        assert!(diff(time_updated, updated_on.unwrap()) < Duration::seconds(1));
     }
 
     #[tokio::test]
@@ -317,18 +438,21 @@ mod tests {
                 "test-key",
                 "78deebed173b48e48f55abf87ed4cf71",
                 "base64msg2sign",
-                JsonWebKeySignatureAlgorithm::RS512,
+                SignatureAlgorithm::RS512,
             )
             .await
             .unwrap();
 
-        let kid = res.kid;
-        let sig = res.value;
+        let kid = res.key_id;
+        let sig = res.signature;
+        let alg = res.algorithm;
 
         assert_eq!(
             kid,
             "https://myvault.vault.azure.net/keys/testkey/9885aa558e8d448789683188f8c194b0"
         );
-        assert_eq!(sig, "aKFG8NXcfTzqyR44rW42484K_zZI_T7zZuebvWuNgAoEI1gXYmxrshp42CunSmmu4oqo4-IrCikPkNIBkHXnAW2cv03Ad0UpwXhVfepK8zzDBaJPMKVGS-ZRz8CshEyGDKaLlb3J3zEkXpM3RrSEr0mdV6hndHD_mznLB5RmFui5DsKAhez4vUqajgtkgcPfCekMqeSwp6r9ItVL-gEoAohx8XMDsPedqu-7BuZcBcdayaPuBRL4wWoTDULA11P-UN_sJ5qMj3BbiRYhIlBWGR04wIGfZ3pkJjHJUpOvgH2QajdYPzUBauOCewMYbq9XkLRSzI_A7HkkDVycugSeAA");
+        let expected_sig = base64::decode_config("aKFG8NXcfTzqyR44rW42484K_zZI_T7zZuebvWuNgAoEI1gXYmxrshp42CunSmmu4oqo4-IrCikPkNIBkHXnAW2cv03Ad0UpwXhVfepK8zzDBaJPMKVGS-ZRz8CshEyGDKaLlb3J3zEkXpM3RrSEr0mdV6hndHD_mznLB5RmFui5DsKAhez4vUqajgtkgcPfCekMqeSwp6r9ItVL-gEoAohx8XMDsPedqu-7BuZcBcdayaPuBRL4wWoTDULA11P-UN_sJ5qMj3BbiRYhIlBWGR04wIGfZ3pkJjHJUpOvgH2QajdYPzUBauOCewMYbq9XkLRSzI_A7HkkDVycugSeAA", BASE64_URL_SAFE).unwrap();
+        assert_eq!(expected_sig, sig);
+        assert!(matches!(alg, SignatureAlgorithm::RS512));
     }
 }

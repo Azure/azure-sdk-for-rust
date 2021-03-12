@@ -10,13 +10,13 @@ pub(crate) const API_VERSION: &str = "7.0";
 /// # Example
 ///
 /// ```no_run
-/// use azure_key_vault::KeyVaultClient;
+/// use azure_key_vault::KeyClient;
 /// use azure_identity::token_credentials::DefaultCredential;
 /// let creds = DefaultCredential::default();
-/// let client = KeyVaultClient::new(&creds, &"test-key-vault");
+/// let client = KeyClient::new(&creds, &"test-key-vault");
 /// ```
 #[derive(Debug)]
-pub struct KeyVaultClient<'a, T> {
+pub struct KeyClient<'a, T> {
     pub(crate) token_credential: &'a T,
     pub(crate) keyvault_name: &'a str,
     pub(crate) endpoint_suffix: String,
@@ -24,17 +24,17 @@ pub struct KeyVaultClient<'a, T> {
     pub(crate) token: Option<TokenResponse>,
 }
 
-impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
-    /// Creates a new `KeyVaultClient` with an endpoint suffix. Useful for non-public Azure clouds.
-    /// For the default public environment, use `KeyVaultClient::new`.
+impl<'a, T: TokenCredential> KeyClient<'a, T> {
+    /// Creates a new `KeyClient` with an endpoint suffix. Useful for non-public Azure clouds.
+    /// For the default public environment, use `KeyClient::new`.
     ///
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// let creds = DefaultCredential::default();
-    /// let client = KeyVaultClient::with_endpoint_suffix(&creds, &"test-keyvault", "vault.azure.net".to_owned());
+    /// let client = KeyClient::with_endpoint_suffix(&creds, &"test-keyvault", "vault.azure.net".to_owned());
     /// ```
     pub fn with_endpoint_suffix(
         token_credential: &'a T,
@@ -51,18 +51,18 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         }
     }
 
-    /// Creates a new `KeyVaultClient`.
+    /// Creates a new `KeyClient`.
     ///
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// let creds = DefaultCredential::default();
-    /// let client = KeyVaultClient::new(&creds, &"test-keyvault");
+    /// let client = KeyClient::new(&creds, &"test-keyvault");
     /// ```
     pub fn new(token_credential: &'a T, keyvault_name: &'a str) -> Self {
-        KeyVaultClient::with_endpoint_suffix(
+        KeyClient::with_endpoint_suffix(
             token_credential,
             keyvault_name,
             PUBLIC_ENDPOINT_SUFFIX.to_owned(),

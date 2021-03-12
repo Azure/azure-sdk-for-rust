@@ -2,7 +2,7 @@ mod client;
 pub mod key;
 pub mod secret;
 
-pub use client::KeyVaultClient;
+pub use client::KeyClient;
 pub use secret::RecoveryLevel;
 
 use thiserror::Error;

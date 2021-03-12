@@ -1,5 +1,5 @@
 use azure_identity::token_credentials::{ClientSecretCredential, TokenCredentialOptions};
-use azure_key_vault::KeyVaultClient;
+use azure_key_vault::KeyClient;
 use std::env;
 
 #[tokio::main]
@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client_secret,
         TokenCredentialOptions::default(),
     );
-    let mut client = KeyVaultClient::new(&creds, &keyvault_name);
+    let mut client = KeyClient::new(&creds, &keyvault_name);
 
     let secrets = client.list_secrets().await?;
     dbg!(&secrets);

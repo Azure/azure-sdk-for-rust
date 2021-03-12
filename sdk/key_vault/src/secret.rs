@@ -1,4 +1,4 @@
-use crate::KeyVaultClient;
+use crate::KeyClient;
 use crate::{client::API_VERSION, KeyVaultError};
 use anyhow::{Context, Result};
 use azure_core::TokenCredential;
@@ -106,20 +106,20 @@ pub struct KeyVaultSecret {
     time_updated: DateTime<Utc>,
 }
 
-impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
+impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// Gets a secret from the Key Vault.
     /// Note that the latest version is fetched. For a specific version, use `get_version_with_version`.
     ///
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
+    ///     let mut client = KeyClient::new(
     ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
@@ -142,13 +142,13 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
+    ///     let mut client = KeyClient::new(
     ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
@@ -186,13 +186,13 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// Lists all the secrets in the Key Vault.
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
+    ///     let mut client = KeyClient::new(
     ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
@@ -247,13 +247,13 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
+    ///     let mut client = KeyClient::new(
     ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
@@ -319,13 +319,13 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
+    ///     let mut client = KeyClient::new(
     ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
@@ -368,13 +368,13 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
+    ///     let mut client = KeyClient::new(
     ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
@@ -409,13 +409,13 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
+    /// use azure_key_vault::{KeyClient, RecoveryLevel};
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
+    ///     let mut client = KeyClient::new(
     ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
@@ -453,14 +453,14 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
+    /// use azure_key_vault::{KeyClient, RecoveryLevel};
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     /// use chrono::{Utc, Duration};
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
+    ///     let mut client = KeyClient::new(
     ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
@@ -517,13 +517,13 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
+    ///     let mut client = KeyClient::new(
     ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
@@ -557,13 +557,13 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
+    ///     let mut client = KeyClient::new(
     ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
@@ -606,13 +606,13 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
+    /// use azure_key_vault::{KeyClient, RecoveryLevel};
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
+    ///     let mut client = KeyClient::new(
     ///     &creds,
     ///     &"KEYVAULT_NAME",
     ///     );
@@ -668,7 +668,7 @@ mod tests {
 
     macro_rules! mock_client {
         ($creds:expr, $keyvault_name:expr) => {{
-            let mut client = KeyVaultClient::new($creds, $keyvault_name);
+            let mut client = KeyClient::new($creds, $keyvault_name);
             client.keyvault_endpoint = mockito::server_url();
             client
         }};
