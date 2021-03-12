@@ -15,15 +15,16 @@ use crate::{KeyClient, KeyVaultError};
 /// A KeyBundle consisting of a WebKey plus its attributes.
 #[derive(Debug, Deserialize)]
 pub struct KeyVaultKey {
-    /// The key management attributes.
-    attributes: KeyAttributes,
+    /// The key management properties.
+    #[serde(flatten)]
+    properties: KeyProperties,
     /// The Json web key.
     key: JsonWebKey,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Getters)]
+#[getset(get = "pub")]
 pub struct KeyProperties {
-    #[serde(flatten)]
     attributes: KeyAttributes,
     /// True if the key's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
     managed: Option<bool>,
@@ -31,9 +32,10 @@ pub struct KeyProperties {
     tags: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Getters)]
+#[getset(get = "pub")]
 #[serde(rename_all = "camelCase")]
-struct KeyAttributes {
+pub struct KeyAttributes {
     /// Creation time in UTC.
     #[serde(rename = "created", with = "ts_seconds_option", default)]
     created_on: Option<DateTime<Utc>>,
@@ -391,18 +393,23 @@ mod tests {
         let creds = MockKeyCredential;
         let mut client = mock_client!(&creds, &"test-keyvault");
 
-        let keybundle = client
+        let key = client
             .get_key("test-key", Some("78deebed173b48e48f55abf87ed4cf71"))
             .await
             .unwrap();
 
-        let JsonWebKey { key_id, n, .. } = keybundle.key;
+        let JsonWebKey { key_id, n, .. } = key.key;
+        let KeyProperties {
+            attributes,
+            managed,
+            tags,
+        } = key.properties;
         let KeyAttributes {
             created_on,
             enabled,
             updated_on,
             ..
-        } = keybundle.attributes;
+        } = attributes;
         let expected_n = base64::decode_config("2HJAE5fU3Cw2Rt9hEuq-F6XjINKGa-zskfISVqopqUy60GOs2eyhxbWbJBeUXNor_gf-tXtNeuqeBgitLeVa640UDvnEjYTKWjCniTxZRaU7ewY8BfTSk-7KxoDdLsPSpX_MX4rwlAx-_1UGk5t4sQgTbm9T6Fm2oqFd37dsz5-Gj27UP2GTAShfJPFD7MqU_zIgOI0pfqsbNL5xTQVM29K6rX4jSPtylZV3uWJtkoQIQnrIHhk1d0SC0KwlBV3V7R_LVYjiXLyIXsFzSNYgQ68ZjAwt8iL7I8Osa-ehQLM13DVvLASaf7Jnu3sC3CWl3Gyirgded6cfMmswJzY87w", BASE64_URL_SAFE).unwrap();
         assert_eq!(expected_n, n.unwrap());
         assert_eq!(
@@ -410,6 +417,8 @@ mod tests {
             key_id.unwrap()
         );
 
+        assert!(managed.is_none());
+        assert_eq!(tags.unwrap().get("purpose").unwrap(), "unit test");
         assert_eq!(true, enabled.unwrap());
         assert!(diff(time_created, created_on.unwrap()) < Duration::seconds(1));
         assert!(diff(time_updated, updated_on.unwrap()) < Duration::seconds(1));
