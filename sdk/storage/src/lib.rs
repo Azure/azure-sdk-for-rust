@@ -9,6 +9,8 @@ extern crate serde_derive;
 extern crate azure_core;
 #[macro_use]
 extern crate quick_error;
+#[macro_use]
+extern crate lazy_static;
 
 #[cfg(feature = "blob")]
 pub mod account;

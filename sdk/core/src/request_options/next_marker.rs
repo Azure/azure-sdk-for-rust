@@ -39,6 +39,28 @@ impl NextMarker {
             .filter(|h| !h.is_empty())
             .map(|h| NextMarker::new(h.to_owned())))
     }
+
+    //#[cfg(feature = "table")]
+    pub fn from_table_header_optional(
+        headers: &http::HeaderMap,
+    ) -> Result<Option<Self>, AzureError> {
+        let header_as_str = headers
+            .get("x-ms-continuation-NextTableName")
+            .map(|item| item.to_str())
+            .transpose()?;
+
+        Ok(header_as_str
+            .filter(|h| !h.is_empty())
+            .map(|h| NextMarker::new(h.to_owned())))
+    }
+
+    //    #[cfg(feature = "table")]
+    pub fn append_to_header_map_as_table(
+        &self,
+        request: http::request::Builder,
+    ) -> http::request::Builder {
+        request.header("x-ms-continuation-NextTableName", &self.0)
+    }
 }
 
 impl AppendToUrlQuery for NextMarker {
