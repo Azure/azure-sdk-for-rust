@@ -101,10 +101,7 @@ impl<'a> ListTablesBuilder<'a> {
                     Err(err) => return Some((Err(err), None)),
                 };
 
-                let next_marker = response
-                    .next_marker
-                    .clone()
-                    .map(|next_marker| States::NextMarker(next_marker));
+                let next_marker = response.next_marker.clone().map(States::NextMarker);
 
                 Some((Ok(response), next_marker))
             }

@@ -1,5 +1,6 @@
 use crate::table::prelude::*;
 use crate::table::responses::*;
+use crate::table::TransactionOperation;
 use azure_core::headers::{add_mandatory_header, add_optional_header};
 use azure_core::prelude::*;
 use http::method::Method;
@@ -37,10 +38,12 @@ impl<'a> InsertEntityBuilder<'a> {
     where
         E: Serialize + DeserializeOwned,
     {
-        let url = self
+        let mut url = self
             .table_client
             .url()
             .join(self.table_client.table_name())?;
+
+        self.timeout.append_to_url_query(&mut url);
         println!("url = {}", url);
 
         let request_body_serialized = serde_json::to_string(entity)?;
@@ -68,5 +71,29 @@ impl<'a> InsertEntityBuilder<'a> {
             .await?;
 
         Ok((&response).try_into()?)
+    }
+
+    pub fn to_transaction_operation<E>(
+        &self,
+        entity: &E,
+    ) -> Result<TransactionOperation, Box<dyn std::error::Error + Send + Sync>>
+    where
+        E: Serialize,
+    {
+        let url = self
+            .table_client
+            .url()
+            .join(self.table_client.table_name())?;
+
+        let request = http::Request::builder()
+            .method(Method::POST)
+            .uri(url.as_str());
+        let request = add_optional_header(&self.client_request_id, request);
+        let request = request.header("Accept", "application/json;odata=fullmetadata");
+        let request = request.header("Content-Type", "application/json");
+
+        let request = request.body(serde_json::to_string(entity)?)?;
+
+        Ok(TransactionOperation::new(request))
     }
 }

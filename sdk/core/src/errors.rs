@@ -176,7 +176,7 @@ quick_error! {
         CRC64Not8BytesLong(len : u64) {
             display("CRC64 length {} bytes instead of 8", len)
         }
-         ParseBoolError(err: ParseBoolError) {
+        ParseBoolError(err: ParseBoolError) {
             from()
             display("parse bool error: {}", err)
             cause(err)
@@ -191,22 +191,22 @@ quick_error! {
             display("json error: {}", err)
             cause(err)
         }
-        HyperError(err: hyper::Error){
+        HyperError(err: hyper::Error) {
             from()
             display("Hyper error: {}", err)
             cause(err)
         }
-        PermissionError(err: PermissionError){
+        PermissionError(err: PermissionError) {
             from()
             display("Permission error: {}", err)
             cause(err)
         }
-        IOError(err: IOError){
+        IOError(err: IOError) {
             from()
             display("IO error: {}", err)
             cause(err)
         }
-        XMLError(err: XMLError){
+        XMLError(err: XMLError) {
             from()
             display("XML error: {}", err)
             cause(err)
@@ -214,16 +214,16 @@ quick_error! {
         UnexpectedXMLError(err: String) {
             display("UnexpectedXMLError: {}", err)
         }
-        AzurePathParseError(err: AzurePathParseError){
+        AzurePathParseError(err: AzurePathParseError) {
             from()
             display("Azure Path parse error: {}", err)
             cause(err)
         }
-        UnexpectedHTTPResult(err: UnexpectedHTTPResult){
+        UnexpectedHTTPResult(err: UnexpectedHTTPResult) {
             from()
             display("UnexpectedHTTPResult error: {}", err)
         }
-        UnexpectedValue(err: UnexpectedValue){
+        UnexpectedValue(err: UnexpectedValue) {
             from()
             display("UnexpectedValue error: {:?}", err)
         }
@@ -276,7 +276,7 @@ quick_error! {
             display("Error preparing HTTP request: {}", err) // todo: revisit usages / message here
             cause(err)
         }
-        ParseUuidError(err: uuid::Error){
+        ParseUuidError(err: uuid::Error) {
             from()
             display("uuid error: {}", err)
             cause(err)
@@ -309,6 +309,15 @@ quick_error! {
         }
         FailureError(error: failure::Error) {
             display("failure::Error error {}", error)
+        }
+        InvalidStatusCode(err: http::status::InvalidStatusCode) {
+            from()
+            display("Invalid status code: {:?}", err)
+            cause(err)
+        }
+        TransactionResponseParseError(err: String) {
+            from()
+            display("Error parsing the transaction response: {:?}", err)
         }
     }
 }

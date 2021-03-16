@@ -1,5 +1,6 @@
 use crate::table::prelude::*;
 use crate::table::responses::*;
+use crate::table::TransactionOperation;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use http::{method::Method, StatusCode};
@@ -71,5 +72,29 @@ impl<'a> InsertOrReplaceOrMergeEntityBuilder<'a> {
             .await?;
 
         Ok((&response).try_into()?)
+    }
+
+    pub fn to_transaction_operation<E>(
+        &self,
+        entity: &E,
+    ) -> Result<TransactionOperation, Box<dyn std::error::Error + Send + Sync>>
+    where
+        E: Serialize,
+    {
+        let url = self.entity_client.url();
+
+        let request = http::Request::builder()
+            .method(match self.operation {
+                Operation::InsertOrMerge => &crate::table::MERGE,
+                Operation::InsertOrReplace => &Method::PUT,
+            })
+            .uri(url.as_str());
+        let request = add_optional_header(&self.client_request_id, request);
+        let request = request.header("Accept", "application/json;odata=fullmetadata");
+        let request = request.header("Content-Type", "application/json");
+
+        let request = request.body(serde_json::to_string(entity)?)?;
+
+        Ok(TransactionOperation::new(request))
     }
 }

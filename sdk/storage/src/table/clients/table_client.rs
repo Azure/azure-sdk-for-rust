@@ -62,7 +62,7 @@ impl TableClient {
         self.table_service_client.http_client()
     }
 
-    pub(crate) fn prepare_request<'a>(
+    pub(crate) fn prepare_request(
         &self,
         url: &str,
         method: &Method,
