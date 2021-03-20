@@ -38,29 +38,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let response = storage_client.list_containers().execute().await?;
     println!("key response = {:#?}", response);
 
-    // the following code should be moved to another file as
-    // it involves table storage
-    let table_service_client = storage_account_client.as_table_service_client();
-
-    let response = table_service_client.query_tables().execute().await?;
-    println!("key response = {:#?}", response);
-
-    let table_client = table_service_client.as_table_client("example");
-
-    let entity = SampleEntity {
-        something: "some data here".to_owned(),
-    };
-
-    let response = table_client
-        .insert_entity(&entity)
-        .with_partition_key("part100")
-        .with_row_key("row100")
-        .client_request_id("sss")
-        .timeout(std::time::Duration::from_secs(20))
-        .execute()
-        .await?;
-    println!("key response = {:#?}", response);
-
     // let's test a SAS token
     // the code is identical
     // once instantiated

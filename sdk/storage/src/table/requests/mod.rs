@@ -1,13 +1,14 @@
-#[derive(Debug, Clone)]
-pub struct PartitionKeyMissing {}
-#[derive(Debug, Clone)]
-pub struct RowKeyMissing {}
-#[derive(Debug, Clone)]
-pub struct PartitionKeySet {}
-#[derive(Debug, Clone)]
-pub struct RowKeySet {}
-
+mod create_table_builder;
+mod delete_table_builder;
 mod insert_entity_builder;
+pub(crate) mod insert_or_replace_or_merge_entity_builder;
+mod list_tables_builder;
+mod submit_transaction_builder;
+pub(crate) mod update_or_merge_entity_builder;
+pub use create_table_builder::CreateTableBuilder;
+pub use delete_table_builder::DeleteTableBuilder;
 pub use insert_entity_builder::InsertEntityBuilder;
-mod query_tables_builder;
-pub use query_tables_builder::QueryTablesBuilder;
+pub use insert_or_replace_or_merge_entity_builder::InsertOrReplaceOrMergeEntityBuilder;
+pub use list_tables_builder::ListTablesBuilder;
+pub use submit_transaction_builder::SubmitTransactionBuilder;
+pub use update_or_merge_entity_builder::UpdateOrMergeEntityBuilder;

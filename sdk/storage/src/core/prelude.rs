@@ -1,5 +1,5 @@
 pub use crate::clients::*;
-pub use crate::clients::{AsContainerClient, AsStorageClient, AsTableClient};
+pub use crate::clients::{AsContainerClient, AsStorageClient};
 pub use crate::core::blob_sas_builder::BlobSASBuilder;
 pub use crate::core::client::HttpHeaderAdder;
 pub use crate::core::container_sas_builder::ContainerSASBuilder;
