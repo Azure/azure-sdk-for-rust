@@ -1,5 +1,5 @@
-use crate::table::prelude::*;
-use azure_core::{errors::AzureError, headers::CommonStorageResponseHeaders, prelude::NextMarker};
+use crate::{table::prelude::*, ContinuationNextTableName};
+use azure_core::{errors::AzureError, headers::CommonStorageResponseHeaders};
 use bytes::Bytes;
 use http::Response;
 use std::convert::{TryFrom, TryInto};
@@ -9,7 +9,7 @@ pub struct ListTablesResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub metadata: String,
     pub tables: Vec<Table>,
-    pub next_marker: Option<NextMarker>,
+    pub continuation_next_table_name: Option<ContinuationNextTableName>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -34,7 +34,9 @@ impl TryFrom<&Response<Bytes>> for ListTablesResponse {
             common_storage_response_headers: response.headers().try_into()?,
             metadata: list_tables_response_internal.metadata,
             tables: list_tables_response_internal.value,
-            next_marker: NextMarker::from_table_header_optional(response.headers())?,
+            continuation_next_table_name: ContinuationNextTableName::from_header_optional(
+                response.headers(),
+            )?,
         })
     }
 }

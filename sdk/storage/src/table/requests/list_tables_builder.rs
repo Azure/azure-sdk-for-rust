@@ -1,5 +1,5 @@
-use crate::table::prelude::*;
 use crate::table::responses::*;
+use crate::{table::prelude::*, ContinuationNextTableName};
 use azure_core::prelude::*;
 use azure_core::{headers::add_optional_header, AppendToUrlQuery};
 use futures::stream::{unfold, Stream};
@@ -13,7 +13,7 @@ pub struct ListTablesBuilder<'a> {
     filter: Option<Filter<'a>>,
     select: Option<Select<'a>>,
     top: Option<Top>,
-    next_marker: Option<NextMarker>,
+    continuation_next_table_name: Option<ContinuationNextTableName>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 
@@ -24,7 +24,7 @@ impl<'a> ListTablesBuilder<'a> {
             filter: None,
             select: None,
             top: None,
-            next_marker: None,
+            continuation_next_table_name: None,
             client_request_id: None,
         }
     }
@@ -33,7 +33,7 @@ impl<'a> ListTablesBuilder<'a> {
         filter: Filter<'a> => Some(filter),
         select: Select<'a> => Some(select),
         top: Top => Some(top),
-        next_marker: NextMarker => Some(next_marker),
+        continuation_next_table_name: ContinuationNextTableName => Some(continuation_next_table_name),
         client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
@@ -45,10 +45,8 @@ impl<'a> ListTablesBuilder<'a> {
         self.filter.append_to_url_query(&mut url);
         self.select.append_to_url_query(&mut url);
         self.top.append_to_url_query(&mut url);
-        if let Some(next_marker) = &self.next_marker {
-            url.query_pairs_mut()
-                .append_pair("NextTableName", next_marker.as_str());
-        }
+        self.continuation_next_table_name
+            .append_to_url_query(&mut url);
 
         debug!("list tables url = {}", url);
 
@@ -81,7 +79,7 @@ impl<'a> ListTablesBuilder<'a> {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,
-            NextMarker(NextMarker),
+            ContinuationNextTableName(ContinuationNextTableName),
         }
 
         unfold(Some(States::Init), move |next_marker: Option<States>| {
@@ -90,8 +88,10 @@ impl<'a> ListTablesBuilder<'a> {
                 debug!("next_marker == {:?}", &next_marker);
                 let response = match next_marker {
                     Some(States::Init) => req.execute().await,
-                    Some(States::NextMarker(next_marker)) => {
-                        req.next_marker(next_marker).execute().await
+                    Some(States::ContinuationNextTableName(continuation_next_table_name)) => {
+                        req.continuation_next_table_name(continuation_next_table_name)
+                            .execute()
+                            .await
                     }
                     None => return None,
                 };
@@ -101,7 +101,10 @@ impl<'a> ListTablesBuilder<'a> {
                     Err(err) => return Some((Err(err), None)),
                 };
 
-                let next_marker = response.next_marker.clone().map(States::NextMarker);
+                let next_marker = response
+                    .continuation_next_table_name
+                    .clone()
+                    .map(States::ContinuationNextTableName);
 
                 Some((Ok(response), next_marker))
             }
