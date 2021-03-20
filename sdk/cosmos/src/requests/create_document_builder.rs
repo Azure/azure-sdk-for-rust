@@ -1,6 +1,5 @@
 use crate::cosmos_entity::{
-    add_as_partition_key_header, add_as_partition_key_header_serialized,
-    serialize_partition_key_to_string,
+    add_as_partition_key_header, add_as_partition_key_header_serialized, serialize_partition_key,
 };
 use crate::prelude::*;
 use crate::resources::ResourceType;
@@ -55,7 +54,7 @@ impl<'a, 'b> CreateDocumentBuilder<'a, 'b> {
 }
 
 impl<'a, 'b, 'c> CreateDocumentBuilder<'a, 'b> {
-    async fn execute_internal<DOC, FNPK>(
+    async fn perform_execute<DOC, FNPK>(
         &self,
         document: &'c DOC,
         fn_add_primary_key: FNPK,
@@ -122,20 +121,20 @@ impl<'a, 'b, 'c> CreateDocumentBuilder<'a, 'b> {
         document: &'c DOC,
         partition_key: &PK,
     ) -> Result<CreateDocumentResponse, CosmosError> {
-        self.execute_internal(document, |req| {
+        self.perform_execute(document, |req| {
             Ok(add_as_partition_key_header_serialized(
-                &serialize_partition_key_to_string(partition_key)?,
+                &serialize_partition_key(partition_key)?,
                 req,
             ))
         })
         .await
     }
 
-    pub async fn execute<PK: Serialize + 'c, T: Serialize + CosmosEntity<'c, PK>>(
+    pub async fn execute<T: Serialize + CosmosEntity<'c>>(
         &self,
         document: &'c T,
     ) -> Result<CreateDocumentResponse, CosmosError> {
-        self.execute_internal(document, |req| {
+        self.perform_execute(document, |req| {
             Ok(add_as_partition_key_header(document, req)?)
         })
         .await

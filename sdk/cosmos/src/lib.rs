@@ -28,8 +28,10 @@ struct MySampleStruct {
     a_timestamp: i64,
 }
 
-impl<'a> azure_cosmos::CosmosEntity<'a, u64> for MySampleStruct {
-    fn partition_key(&'a self) -> u64 {
+impl<'a> azure_cosmos::CosmosEntity<'a> for MySampleStruct {
+    type Entity = u64;
+
+    fn partition_key(&'a self) -> Self::Entity {
         self.a_number
     }
 }

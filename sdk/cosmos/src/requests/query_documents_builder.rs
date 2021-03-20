@@ -58,9 +58,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
 
     pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> Result<Self, serde_json::Error> {
         Ok(Self {
-            partition_key_serialized: Some(
-                crate::cosmos_entity::serialize_partition_key_to_string(pk)?,
-            ),
+            partition_key_serialized: Some(crate::cosmos_entity::serialize_partition_key(pk)?),
             ..self
         })
     }

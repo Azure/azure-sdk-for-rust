@@ -19,8 +19,10 @@ struct MySampleStruct<'a> {
 }
 
 // Here we mark "a_number" as partition key.
-impl<'a> azure_cosmos::CosmosEntity<'a, u64> for MySampleStruct<'a> {
-    fn partition_key(&'a self) -> u64 {
+impl<'a> azure_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
+    type Entity = u64;
+
+    fn partition_key(&'a self) -> Self::Entity {
         self.a_number
     }
 }

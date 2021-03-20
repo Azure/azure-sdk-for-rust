@@ -14,8 +14,10 @@ struct MyDocument {
     hello: u32,
 }
 
-impl<'a> azure_cosmos::CosmosEntity<'a, &'a str> for MyDocument {
-    fn partition_key(&'a self) -> &'a str {
+impl<'a> azure_cosmos::CosmosEntity<'a> for MyDocument {
+    type Entity = &'a str;
+
+    fn partition_key(&'a self) -> Self::Entity {
         self.id.as_ref()
     }
 }
