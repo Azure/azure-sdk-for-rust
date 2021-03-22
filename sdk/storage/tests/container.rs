@@ -1,6 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::prelude::*;
-use azure_storage::blob::container::PublicAccess;
+use azure_storage::blob_storage::container::PublicAccess;
+use azure_storage::blob_storage::prelude::*;
 use azure_storage::core::prelude::*;
 use std::sync::Arc;
 use std::time::Duration;

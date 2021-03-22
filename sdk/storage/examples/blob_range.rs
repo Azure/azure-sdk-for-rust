@@ -1,4 +1,5 @@
 use azure_core::prelude::*;
+use azure_storage::blob_storage::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;

@@ -66,9 +66,9 @@ macro_rules! create_enum {
             )*
         }
 
-        impl ::std::convert::Into<&'static str> for $name {
-            fn into(self) -> &'static str {
-                match self {
+        impl ::std::convert::From<$name> for &'static str {
+            fn from(e: $name) -> Self {
+                match e {
                     $(
                         $name::$variant => $value,
                     )*

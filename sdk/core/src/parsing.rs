@@ -30,7 +30,7 @@ impl FromStringOptional<bool> for bool {
 
 impl FromStringOptional<chrono::DateTime<chrono::Utc>> for chrono::DateTime<chrono::Utc> {
     fn from_str_optional(s: &str) -> Result<chrono::DateTime<chrono::Utc>, TraversingError> {
-        from_azure_time(s).map_err(|e| TraversingError::DateTimeParseError(e))
+        from_azure_time(s).map_err(TraversingError::DateTimeParseError)
     }
 }
 
@@ -82,8 +82,7 @@ pub mod rfc2822_time_format_optional {
         S: Serializer,
     {
         if let Some(date) = date {
-            let s = format!("{}", date.to_rfc2822());
-            serializer.serialize_str(&s)
+            serializer.serialize_str(&date.to_rfc2822())
         } else {
             serializer.serialize_none()
         }
@@ -150,9 +149,7 @@ pub fn traverse<'a>(
     // debug!("path.len() == {:?}", path.len());
 
     if path.is_empty() {
-        let mut vec = Vec::new();
-        vec.push(node);
-        return Ok(vec);
+        return Ok(vec![node]);
     }
 
     let mut curnode = node;
@@ -234,7 +231,7 @@ where
 {
     let node = traverse_single_must(node, path)?;
     let itxt = inner_text(node)?;
-    Ok(T::from_str_optional(itxt)?)
+    T::from_str_optional(itxt)
 }
 
 #[cfg(test)]

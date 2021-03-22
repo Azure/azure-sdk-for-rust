@@ -37,11 +37,11 @@ impl BA512Range {
     }
 }
 
-impl Into<Range> for BA512Range {
-    fn into(self) -> Range {
-        Range {
-            start: self.start(),
-            end: self.end(),
+impl From<BA512Range> for Range {
+    fn from(range: BA512Range) -> Self {
+        Self {
+            start: range.start(),
+            end: range.end(),
         }
     }
 }

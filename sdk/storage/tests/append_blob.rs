@@ -3,7 +3,8 @@
 extern crate log;
 
 use azure_core::prelude::*;
-use azure_storage::blob::container::PublicAccess;
+use azure_storage::blob_storage::container::PublicAccess;
+use azure_storage::blob_storage::prelude::*;
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
 use std::sync::Arc;

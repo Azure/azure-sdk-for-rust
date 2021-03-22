@@ -2,7 +2,7 @@
 extern crate log;
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
-use azure_storage::queue::prelude::*;
+use azure_storage::queue_storage::prelude::*;
 use std::error::Error;
 use std::sync::Arc;
 

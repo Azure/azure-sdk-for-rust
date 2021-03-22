@@ -35,7 +35,7 @@ impl<'a> IntoAzurePath for &'a str {
 fn split(b: &str) -> Result<(&str, &str), AzurePathParseError> {
     let slash_pos = b
         .find('/')
-        .ok_or_else(|| AzurePathParseError::PathSeparatorNotFoundError)?;
+        .ok_or(AzurePathParseError::PathSeparatorNotFoundError)?;
 
     if slash_pos == 0 {
         return Err(AzurePathParseError::MissingContainerError);

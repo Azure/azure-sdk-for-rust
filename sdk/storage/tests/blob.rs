@@ -3,7 +3,7 @@
 extern crate log;
 
 use azure_core::prelude::*;
-use azure_storage::blob::{
+use azure_storage::blob_storage::{
     blob::BlockListType,
     container::{Container, PublicAccess},
     prelude::*,

@@ -98,8 +98,8 @@ fn format<D: Display>(value: D) -> String {
 pub fn to_str_without_bom(bytes: &bytes::Bytes) -> Result<&str, std::str::Utf8Error> {
     let s = from_utf8(bytes)?;
 
-    Ok(if s.starts_with('\u{FEFF}') {
-        &s[3..]
+    Ok(if let Some(stripped) = s.strip_prefix('\u{FEFF}') {
+        stripped
     } else {
         s
     })

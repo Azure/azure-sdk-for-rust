@@ -1,9 +1,6 @@
 use azure_core::prelude::*;
-use azure_storage::table::prelude::*;
-use azure_storage::{
-    clients::{AsStorageClient, StorageAccountClient},
-    table::clients::AsTableClient,
-};
+use azure_storage::core::prelude::*;
+use azure_storage::table_storage::prelude::*;
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
