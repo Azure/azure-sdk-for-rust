@@ -9,10 +9,9 @@ use http::method::Method;
 use http::request::{Builder, Request};
 use ring::hmac;
 use std::sync::Arc;
-use url::Url;
+use url::{ParseOptions, Url};
 
 pub(crate) const HEADER_VERSION: &str = "x-ms-version";
-
 pub(crate) const AZURE_VERSION: &str = "2019-12-12";
 //pub(crate) const SAS_VERSION: &str = "2019-02-02";
 
@@ -31,6 +30,19 @@ pub enum ServiceType {
     Table,
 }
 
+struct AzureEnvironment {
+    blob_endpoint: String,
+}
+
+lazy_static! {
+    static ref AZURE: AzureEnvironment = AzureEnvironment {
+        blob_endpoint: String::from("https://blob.core.windows.net")
+    };
+    static ref AZURE_CHINA: AzureEnvironment = AzureEnvironment {
+        blob_endpoint: String::from("https://blob.core.chinacloudapi.cn")
+    };
+}
+
 #[derive(Debug, Clone)]
 pub struct StorageAccountClient {
     storage_credentials: StorageCredentials,
@@ -42,12 +54,15 @@ pub struct StorageAccountClient {
     filesystem_url: Url,
 }
 
-fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>, url::ParseError> {
+fn get_sas_token_params_with_env(
+    sas_token: &str,
+    environment: &AzureEnvironment,
+) -> Result<Vec<(String, String)>, url::ParseError> {
     // Any base url will do: we just need to parse the SAS token
     // to get its query pairs.
-    let base_url = Url::parse("https://blob.core.windows.net")?;
+    let base_url: Url = Url::parse(environment.blob_endpoint.as_str())?;
 
-    let url = Url::options().base_url(Some(&base_url));
+    let url: ParseOptions = Url::options().base_url(Some(&base_url));
 
     // this code handles the leading ?
     // we support both with or without
@@ -61,6 +76,10 @@ fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>, url::Pa
         .query_pairs()
         .map(|p| (String::from(p.0), String::from(p.1)))
         .collect())
+}
+
+fn get_sas_token_params(sas_token: &str) -> Result<Vec<(String, String)>, url::ParseError> {
+    get_sas_token_params_with_env(sas_token, &AZURE)
 }
 
 impl StorageAccountClient {
@@ -142,7 +161,7 @@ impl StorageAccountClient {
                 &account
             ))?,
             filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))?,
-            storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
+            storage_credentials: StorageCredentials::SASToken(get_sas_token_params(
                 sas_token.as_ref(),
             )?),
             http_client,
@@ -198,7 +217,7 @@ impl StorageAccountClient {
                 log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
 
                 Ok(Arc::new(Self {
-                    storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
+                    storage_credentials: StorageCredentials::SASToken(get_sas_token_params(
                         sas_token,
                     )?),
                     blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
@@ -218,7 +237,7 @@ impl StorageAccountClient {
                 file_endpoint,
                 ..
             } => Ok(Arc::new(Self {
-                storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(sas_token)?),
+                storage_credentials: StorageCredentials::SASToken(get_sas_token_params(sas_token)?),
                 blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                 table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
                 queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
