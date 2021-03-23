@@ -53,10 +53,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             Value::String(id) => id,
             _ => panic!("cannot find id field as string"),
         };
-        let partition_key: PartitionKeys = match &doc_as_obj[&partition_key_name] {
-            Value::String(id) => [id].into(),
+        let partition_key: String = match &doc_as_obj[&partition_key_name] {
+            Value::String(id) => id.to_owned(),
             Value::Number(num) => {
-                [num.as_i64().expect("only numbers up to i64 are supported")].into()
+                format!(
+                    "{}",
+                    num.as_i64().expect("only numbers up to i64 are supported")
+                )
             }
             _ => panic!("cannot find supplied partition key as string"),
         };
@@ -68,7 +71,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
         client
             .clone()
-            .into_document_client(id.clone(), partition_key)
+            .into_document_client(id.clone(), &partition_key)?
             .delete_document()
             .execute()
             .await?;

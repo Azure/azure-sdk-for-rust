@@ -28,6 +28,14 @@ struct MySampleStruct {
     a_timestamp: i64,
 }
 
+impl<'a> azure_cosmos::CosmosEntity<'a> for MySampleStruct {
+    type Entity = u64;
+
+    fn partition_key(&'a self) -> Self::Entity {
+        self.a_number
+    }
+}
+
 // This code will perform these tasks:
 // 1. Create 10 documents in the collection.
 #[tokio::main]
@@ -63,17 +71,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("Inserting 10 documents...");
     for i in 0..10 {
         // define the document.
-        let document_to_insert = Document::new(MySampleStruct {
+        let document_to_insert = MySampleStruct {
             id: format!("unique_id{}", i),
             a_string: "Something here".to_owned(),
             a_number: i * 100, // this is the partition key
             a_timestamp: chrono::Utc::now().timestamp(),
-        });
+        };
 
         // insert it
         collection_client
             .create_document()
-            .partition_keys([&document_to_insert.document.a_number])
             .is_upsert(true) // this option will overwrite a preexisting document (if any)
             .execute(&document_to_insert)
             .await?;
@@ -105,16 +112,16 @@ pub mod resources;
 pub mod responses;
 
 mod consistency_level;
+mod cosmos_entity;
 mod errors;
 mod headers;
 mod max_item_count;
-mod partition_keys;
 mod resource_quota;
 mod to_json_vector;
 
 pub use consistency_level::ConsistencyLevel;
+pub use cosmos_entity::CosmosEntity;
 pub use max_item_count::MaxItemCount;
-pub use partition_keys::PartitionKeys;
 pub use resource_quota::ResourceQuota;
 
 /// A general error having to do with Cosmos.

@@ -2,8 +2,9 @@ use super::{DatabaseClient, UserDefinedFunctionClient};
 use crate::clients::*;
 use crate::requests;
 use crate::resources::ResourceType;
-use crate::{PartitionKeys, ReadonlyString};
+use crate::ReadonlyString;
 use azure_core::HttpClient;
+use serde::Serialize;
 
 /// A client for Cosmos collection resources.
 #[derive(Debug, Clone)]
@@ -63,14 +64,6 @@ impl CollectionClient {
         requests::CreateDocumentBuilder::new(self)
     }
 
-    /// replace a document in a collection
-    pub fn replace_document<'a>(
-        &'a self,
-        document_id: &'a str,
-    ) -> requests::ReplaceDocumentBuilder<'a, '_> {
-        requests::ReplaceDocumentBuilder::new(self, document_id)
-    }
-
     /// query documents in a collection
     pub fn query_documents(&self) -> requests::QueryDocumentsBuilder<'_, '_> {
         requests::QueryDocumentsBuilder::new(self)
@@ -97,12 +90,12 @@ impl CollectionClient {
     }
 
     /// convert into a [`DocumentClient`]
-    pub fn into_document_client<S: Into<ReadonlyString>, P: Into<PartitionKeys>>(
+    pub fn into_document_client<S: Into<String>, PK: Serialize>(
         self,
         document_name: S,
-        partition_keys: P,
-    ) -> DocumentClient {
-        DocumentClient::new(self, document_name, partition_keys.into())
+        partition_key: &PK,
+    ) -> Result<DocumentClient, serde_json::Error> {
+        DocumentClient::new(self, document_name, partition_key)
     }
 
     /// convert into a [`TriggerClient`]

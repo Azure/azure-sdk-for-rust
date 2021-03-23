@@ -1,6 +1,3 @@
-use crate::PartitionKeys;
-use http::request::Builder;
-
 pub(crate) mod from_headers;
 
 pub(crate) const HEADER_VERSION: &str = "x-ms-version"; // Cow[str]
@@ -50,11 +47,3 @@ pub(crate) const HEADER_COSMOS_QUORUM_ACKED_LLSN: &str = "x-ms-cosmos-quorum-ack
 pub(crate) const HEADER_ROLE: &str = "x-ms-xp-role"; // [u64]
 pub(crate) const HEADER_MAX_MEDIA_STORAGE_USAGE_MB: &str = "x-ms-max-media-storage-usage-mb"; // [u64]
 pub(crate) const HEADER_MEDIA_STORAGE_USAGE_MB: &str = "x-ms-media-storage-usage-mb"; // [u64]
-
-pub(crate) fn add_partition_keys_header(
-    partition_keys: &PartitionKeys,
-    builder: Builder,
-) -> Builder {
-    let serialized = partition_keys.to_json();
-    builder.header(HEADER_DOCUMENTDB_PARTITIONKEY, serialized)
-}
