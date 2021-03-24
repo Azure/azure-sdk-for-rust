@@ -1,7 +1,5 @@
-use crate::{
-    clients::{StorageAccountClient, StorageClient},
-    table::requests::ListTablesBuilder,
-};
+use crate::core::clients::{StorageAccountClient, StorageClient};
+use crate::table::requests::ListTablesBuilder;
 use azure_core::errors::AzureError;
 use bytes::Bytes;
 use http::method::Method;
@@ -67,7 +65,7 @@ impl TableServiceClient {
                 url,
                 method,
                 http_header_adder,
-                crate::clients::ServiceType::Table,
+                crate::core::clients::ServiceType::Table,
                 request_body,
             )
     }

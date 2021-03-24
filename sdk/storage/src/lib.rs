@@ -10,7 +10,7 @@ extern crate azure_core;
 #[macro_use]
 extern crate quick_error;
 
-#[cfg(feature = "blob")]
+#[cfg(feature = "account")]
 pub mod account;
 #[cfg(feature = "blob")]
 pub mod blob;
@@ -22,10 +22,8 @@ pub mod queue;
 #[cfg(feature = "table")]
 pub mod table;
 
-pub mod clients;
-
 pub use crate::core::*;
-#[cfg(feature = "blob")]
+#[cfg(feature = "account")]
 pub use account::*;
 #[cfg(feature = "blob")]
 pub use blob::*;

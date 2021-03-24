@@ -1,4 +1,4 @@
-use crate::clients::StorageClient;
+use crate::core::prelude::*;
 use crate::data_lake::requests::*;
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
@@ -90,7 +90,7 @@ impl DataLakeClient {
         ListFileSystemsBuilder::new(self)
     }
 
-    pub(crate) fn prepare_request<'a>(
+    pub(crate) fn prepare_request(
         &self,
         url: &str,
         method: &Method,

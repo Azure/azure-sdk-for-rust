@@ -1,5 +1,6 @@
+use crate::core::clients::StorageAccountClient;
+use crate::table::prelude::*;
 use crate::table::requests::*;
-use crate::{clients::StorageAccountClient, table::prelude::*};
 use azure_core::errors::AzureError;
 use bytes::Bytes;
 use http::method::Method;

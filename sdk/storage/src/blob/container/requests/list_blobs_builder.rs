@@ -1,12 +1,11 @@
-use std::convert::TryInto;
-
 use crate::blob::blob::responses::ListBlobsResponse;
-use crate::clients::ContainerClient;
+use crate::blob::prelude::*;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use futures::stream::{unfold, Stream};
 use http::method::Method;
 use http::status::StatusCode;
+use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
 pub struct ListBlobsBuilder<'a> {
@@ -165,10 +164,7 @@ impl<'a> ListBlobsBuilder<'a> {
                     Err(err) => return Some((Err(err), None)),
                 };
 
-                let next_marker = response
-                    .next_marker
-                    .clone()
-                    .map(|next_marker| States::NextMarker(next_marker));
+                let next_marker = response.next_marker.clone().map(States::NextMarker);
 
                 Some((Ok(response), next_marker))
             }

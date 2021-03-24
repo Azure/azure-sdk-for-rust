@@ -1,7 +1,8 @@
 use crate::blob::blob::responses::CopyBlobFromUrlResponse;
-use crate::core::prelude::*;
-use azure_core::headers::{add_optional_header, add_optional_header_ref};
-use azure_core::headers::{COPY_SOURCE, REQUIRES_SYNC};
+use crate::blob::prelude::*;
+use azure_core::headers::{
+    add_optional_header, add_optional_header_ref, COPY_SOURCE, REQUIRES_SYNC,
+};
 use azure_core::prelude::*;
 use std::convert::TryInto;
 

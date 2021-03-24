@@ -1,5 +1,4 @@
-use crate::blob::prelude::PublicAccess;
-use crate::clients::ContainerClient;
+use crate::blob::prelude::*;
 use crate::container::public_access_from_header;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
@@ -61,7 +60,7 @@ impl<'a> SetACLBuilder<'a> {
                 request = add_optional_header_ref(&self.lease_id, request);
                 request
             },
-            xml.map(|x| Bytes::from(x)),
+            xml.map(Bytes::from),
         )?;
 
         let response = self

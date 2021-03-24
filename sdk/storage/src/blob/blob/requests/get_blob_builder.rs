@@ -1,11 +1,9 @@
-use std::convert::TryInto;
-
 use crate::blob::blob::responses::GetBlobResponse;
 use crate::blob::prelude::*;
-use crate::clients::BlobClient;
 use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 use futures::stream::Stream;
+use std::convert::TryInto;
 
 #[derive(Debug, Clone, Copy)]
 pub struct GetBlobBuilder<'a> {

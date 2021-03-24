@@ -1,5 +1,6 @@
 use crate::blob::blob::requests::*;
-use crate::clients::{BlobClient, ContainerClient, StorageAccountClient};
+use crate::blob::prelude::*;
+use crate::core::prelude::*;
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
 use azure_core::HttpClient;
@@ -64,7 +65,7 @@ impl BlobLeaseClient {
         RenewLeaseBuilder::new(self)
     }
 
-    pub(crate) fn prepare_request<'a>(
+    pub(crate) fn prepare_request(
         &self,
         url: &str,
         method: &Method,

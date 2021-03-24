@@ -1,4 +1,4 @@
-use crate::clients::ContainerClient;
+use crate::blob::prelude::*;
 use crate::container::responses::BreakLeaseResponse;
 use azure_core::headers::{add_optional_header, add_optional_header_ref, LEASE_ACTION};
 use azure_core::prelude::*;

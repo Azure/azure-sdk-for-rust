@@ -1,4 +1,4 @@
-use crate::clients::StorageAccountClient;
+use crate::core::clients::StorageAccountClient;
 use crate::table::clients::TableServiceClient;
 use crate::table::requests::*;
 use azure_core::errors::AzureError;

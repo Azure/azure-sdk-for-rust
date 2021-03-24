@@ -66,7 +66,7 @@ impl FileSystemClient {
         &self.url
     }
 
-    pub(crate) fn prepare_request<'a>(
+    pub(crate) fn prepare_request(
         &self,
         url: &str,
         method: &Method,

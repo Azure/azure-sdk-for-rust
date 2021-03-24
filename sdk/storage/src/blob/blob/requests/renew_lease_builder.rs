@@ -1,7 +1,6 @@
 use crate::blob::blob::responses::RenewBlobLeaseResponse;
-use crate::core::prelude::*;
-use azure_core::headers::LEASE_ACTION;
-use azure_core::headers::{add_mandatory_header, add_optional_header};
+use crate::blob::prelude::*;
+use azure_core::headers::{add_mandatory_header, add_optional_header, LEASE_ACTION};
 use azure_core::prelude::*;
 
 #[derive(Debug, Clone)]

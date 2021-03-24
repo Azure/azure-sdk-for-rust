@@ -1,6 +1,6 @@
 use crate::blob::prelude::PublicAccess;
-use crate::clients::{StorageAccountClient, StorageClient};
 use crate::container::requests::*;
+use crate::core::clients::{StorageAccountClient, StorageClient};
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
 use bytes::Bytes;
@@ -83,7 +83,7 @@ impl ContainerClient {
         BreakLeaseBuilder::new(self)
     }
 
-    pub(crate) fn prepare_request<'a>(
+    pub(crate) fn prepare_request(
         &self,
         url: &str,
         method: &Method,

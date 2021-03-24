@@ -1,4 +1,4 @@
-use crate::clients::StorageClient;
+use crate::core::clients::StorageClient;
 use crate::queue::requests::*;
 use std::fmt::Debug;
 use std::sync::Arc;

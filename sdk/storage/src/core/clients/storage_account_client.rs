@@ -290,7 +290,7 @@ impl StorageAccountClient {
         }
     }
 
-    pub(crate) fn prepare_request<'a>(
+    pub(crate) fn prepare_request(
         &self,
         url: &str,
         method: &Method,
@@ -366,47 +366,7 @@ impl StorageAccountClient {
 
         Ok((request, url))
     }
-
-    //fn perform_table_request(
-    //    &self,
-    //    segment: &str,
-    //    method: &Method,
-    //    http_header_adder: &dyn Fn(Builder) -> Builder,
-    //    request_str: Option<&[u8]>,
-    //) -> Result<PerformRequestResponse, AzureError> {
-    //    debug!("segment: {}, method: {:?}", segment, method,);
-
-    //    let uri =
-    //        self.add_sas_token_to_uri((self.get_uri_prefix(ServiceType::Table) + segment).as_str());
-
-    //    debug!("perform_table_request uri: {}", uri);
-
-    //    perform_request(
-    //        self,
-    //        &uri,
-    //        method,
-    //        http_header_adder,
-    //        request_str,
-    //        ServiceType::Table,
-    //    )
-    //}
 }
-//
-//impl ClientEndpoint for KeyClient {
-//    fn account(&self) -> &str {
-//        &self.account
-//    }
-//
-//    fn key(&self) -> &str {
-//        &self.key
-//    }
-//}
-//
-//impl HyperClientEndpoint for KeyClient {
-//    fn hyper_http_client(&self) -> &hyper::Client<HttpsConnector<hyper::http_client::HttpConnector>> {
-//        &self.hc
-//    }
-//}
 
 fn generate_authorization(
     h: &HeaderMap,

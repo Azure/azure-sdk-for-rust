@@ -11,6 +11,12 @@ pub struct Properties<'a, 'b>(HashMap<Cow<'a, str>, Cow<'b, str>>);
 
 const HEADER: &str = "x-ms-properties";
 
+impl<'a, 'b> Default for Properties<'a, 'b> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a, 'b> Properties<'a, 'b> {
     pub fn new() -> Self {
         Self(HashMap::new())
@@ -62,19 +68,19 @@ impl TryFrom<&HeaderMap> for Properties<'static, 'static> {
         //          7. Insert the key value pair in the returned struct.
         headers
             .get(HEADER)
-            .ok_or(AzureError::HeaderNotFound(HEADER.to_owned()))? // HEADER must exists or we return Err
+            .ok_or_else(|| AzureError::HeaderNotFound(HEADER.to_owned()))? // HEADER must exists or we return Err
             .to_str()?
             .split(',') // The list is a CSV so we split by comma
             .map(|key_value_pair| {
-                let mut key_and_value = key_value_pair.split('=').into_iter(); // Each entry is key and value separated by =
+                let mut key_and_value = key_value_pair.split('='); // Each entry is key and value separated by =
 
                 // we must have a key and a value (so two entries)
                 let key = key_and_value
                     .next()
-                    .ok_or(AzureError::GenericErrorWithText("missing key".to_owned()))?;
+                    .ok_or_else(|| AzureError::GenericErrorWithText("missing key".to_owned()))?;
                 let value = key_and_value
                     .next()
-                    .ok_or(AzureError::GenericErrorWithText("missing value".to_owned()))?;
+                    .ok_or_else(|| AzureError::GenericErrorWithText("missing value".to_owned()))?;
 
                 // we do not check if there are more entries. We just ignore them.
                 Ok((key, value))

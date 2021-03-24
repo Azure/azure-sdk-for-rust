@@ -15,5 +15,4 @@ pub use number_of_messages::NumberOfMessages;
 pub use pop_receipt::PopReceipt;
 pub use queue_service_properties::QueueServiceProperties;
 pub use queue_stored_access_policy::QueueStoredAccessPolicy;
-use std::fmt::Debug;
 pub use visibility_timeout::VisibilityTimeout;

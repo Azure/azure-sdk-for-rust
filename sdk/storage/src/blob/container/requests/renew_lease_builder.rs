@@ -1,4 +1,4 @@
-use crate::clients::ContainerLeaseClient;
+use crate::blob::prelude::*;
 use crate::container::responses::RenewLeaseResponse;
 use azure_core::headers::{add_mandatory_header, add_optional_header, LEASE_ACTION};
 use azure_core::prelude::*;

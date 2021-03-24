@@ -1,4 +1,4 @@
-use crate::account::account::responses::GetAccountInformationResponse;
+use crate::account::responses::GetAccountInformationResponse;
 use crate::core::prelude::*;
 
 #[derive(Debug, Clone)]

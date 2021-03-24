@@ -1,5 +1,6 @@
 use azure_core::prelude::*;
 use azure_storage::blob::blob::responses::GetBlobResponse;
+use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
 use std::sync::Arc;

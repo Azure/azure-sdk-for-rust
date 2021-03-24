@@ -1,6 +1,5 @@
 use crate::blob::blob::responses::CopyBlobResponse;
 use crate::blob::prelude::*;
-use crate::core::prelude::*;
 use crate::RehydratePriority;
 use azure_core::headers::COPY_SOURCE;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};

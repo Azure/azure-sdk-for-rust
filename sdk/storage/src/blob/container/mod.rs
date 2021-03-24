@@ -14,9 +14,7 @@ use azure_core::{
 };
 use chrono::{DateTime, Utc};
 use http::request::Builder;
-use http::HeaderMap;
-use hyper::header;
-use hyper::header::HeaderName;
+use http::{header, HeaderMap};
 use std::collections::HashMap;
 use std::str::FromStr;
 use xml::{Element, Xml};
@@ -104,8 +102,9 @@ impl Container {
         let e_tag = match headers.get(header::ETAG) {
             Some(e_tag) => e_tag.to_str()?.to_owned(),
             None => {
-                static ETAG: HeaderName = header::ETAG;
-                return Err(AzureError::MissingHeaderError(ETAG.as_str().to_owned()));
+                return Err(AzureError::MissingHeaderError(
+                    header::ETAG.as_str().to_owned(),
+                ));
             }
         };
 
@@ -253,7 +252,7 @@ pub(crate) fn incomplete_vector_from_container_response(
     }
 
     let next_marker = match cast_optional::<String>(&elem, &["NextMarker"])? {
-        Some(ref nm) if nm == "" => None,
+        Some(ref nm) if nm.is_empty() => None,
         Some(nm) => Some(nm.into()),
         None => None,
     };

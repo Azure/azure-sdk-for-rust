@@ -1,7 +1,9 @@
 mod access_tier;
+#[allow(clippy::module_inception)]
 pub mod blob;
 mod blob_content_md5;
 mod block_id;
+mod clients;
 mod condition_append_position;
 mod condition_max_size;
 pub mod container;
@@ -12,7 +14,6 @@ pub mod prelude;
 mod snapshot;
 mod version_id;
 
-use crate::core::{Client, No};
 pub use access_tier::AccessTier;
 use azure_core::{AddAsHeader, AppendToUrlQuery};
 pub use blob_content_md5::BlobContentMD5;
@@ -57,25 +58,5 @@ create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 impl AddAsHeader for RehydratePriority {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(headers::REHYDRATE_PRIORITY, &format!("{}", self))
-    }
-}
-
-pub trait Blob<C>
-where
-    C: Client,
-{
-    fn generate_signed_blob_url<'a>(
-        &'a self,
-    ) -> blob::requests::SignedUrlBuilder<'a, C, No, No, No>;
-}
-
-impl<C> Blob<C> for C
-where
-    C: Client,
-{
-    fn generate_signed_blob_url<'a>(
-        &'a self,
-    ) -> blob::requests::SignedUrlBuilder<'a, C, No, No, No> {
-        blob::requests::SignedUrlBuilder::new(self)
     }
 }

@@ -3,8 +3,7 @@ use azure_core::errors::AzureError;
 use azure_core::headers::REQUEST_ID;
 use azure_core::RequestId;
 use chrono::{DateTime, FixedOffset};
-use http::HeaderMap;
-use hyper::header;
+use http::{header, HeaderMap};
 use std::convert::TryFrom;
 use uuid::Uuid;
 

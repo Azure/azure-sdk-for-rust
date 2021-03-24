@@ -17,7 +17,7 @@ pub use self::block_list::BlockList;
 pub mod requests;
 pub mod responses;
 use crate::AccessTier;
-use crate::{core::Client, CopyId, CopyProgress};
+use crate::{CopyId, CopyProgress};
 use azure_core::headers::{
     BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CONTENT_MD5, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS,
     COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE,
@@ -31,8 +31,7 @@ use azure_core::{
     util::HeaderMapExt,
 };
 use chrono::{DateTime, Utc};
-use hyper::header;
-use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
+use http::header;
 use std::str::FromStr;
 use std::{collections::HashMap, convert::TryInto};
 
@@ -204,24 +203,24 @@ impl Blob {
 
         let content_encoding = h
             .get_as_string(header::CONTENT_ENCODING)
-            .unwrap_or("".to_owned());
+            .unwrap_or_else(String::new);
         trace!("content_encoding == {:?}", content_encoding);
 
         let content_language = h
             .get_as_string(header::CONTENT_LANGUAGE)
-            .unwrap_or("".to_owned());
+            .unwrap_or_else(String::new);
         trace!("content_language == {:?}", content_language);
 
-        let content_md5 = h.get_as_string(CONTENT_MD5).unwrap_or("".to_owned());
+        let content_md5 = h.get_as_string(CONTENT_MD5).unwrap_or_else(String::new);
         trace!("content_md5 == {:?}", content_md5);
 
         let cache_control = h
             .get_as_string(header::CACHE_CONTROL)
-            .unwrap_or("".to_owned());
+            .unwrap_or_else(String::new);
 
         let content_disposition = h
             .get_as_string(header::CONTENT_DISPOSITION)
-            .unwrap_or("".to_owned());
+            .unwrap_or_else(String::new);
 
         let lease_status = h
             .get_as_enum(LEASE_STATUS)?
@@ -250,7 +249,7 @@ impl Blob {
 
         let copy_progress = h
             .get_as_str(COPY_PROGRESS)
-            .and_then(|cp| Some(CopyProgress::from_str(cp).ok()?));
+            .and_then(|cp| Some(CopyProgress::from_str(cp).ok())?);
         trace!("copy_progress == {:?}", copy_progress);
 
         let copy_completion_time: Option<DateTime<Utc>> =
@@ -302,7 +301,7 @@ impl Blob {
                 creation_time,
                 last_modified,
                 last_access_time: None, // TODO
-                etag: etag,
+                etag,
                 content_length,
                 content_type,
                 content_encoding,
@@ -337,33 +336,6 @@ impl Blob {
                 extra: HashMap::new(),
             },
         })
-    }
-}
-
-#[inline]
-pub(crate) fn generate_blob_uri<C>(
-    t: &C,
-    container_name: &str,
-    blob_name: &str,
-    params: Option<&str>,
-) -> String
-where
-    C: Client,
-{
-    match params {
-        Some(ref params) => format!(
-            "{}/{}/{}?{}",
-            t.blob_uri(),
-            utf8_percent_encode(container_name, NON_ALPHANUMERIC),
-            utf8_percent_encode(blob_name, NON_ALPHANUMERIC),
-            params
-        ),
-        None => format!(
-            "{}/{}/{}",
-            t.blob_uri(),
-            utf8_percent_encode(container_name, NON_ALPHANUMERIC),
-            utf8_percent_encode(blob_name, NON_ALPHANUMERIC),
-        ),
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::clients::ContainerClient;
+use crate::blob::prelude::*;
 use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 use http::method::Method;

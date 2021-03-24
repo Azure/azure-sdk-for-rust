@@ -1,6 +1,6 @@
 use crate::blob::blob::requests::*;
 use crate::blob::prelude::*;
-use crate::clients::{ContainerClient, StorageAccountClient};
+use crate::core::prelude::*;
 use crate::shared_access_signature::SharedAccessSignature;
 use azure_core::errors::AzureError;
 use azure_core::prelude::*;
@@ -154,7 +154,7 @@ impl BlobClient {
         Ok(format!("{}?{}", url.as_str(), signature.token()))
     }
 
-    pub(crate) fn prepare_request<'a>(
+    pub(crate) fn prepare_request(
         &self,
         url: &str,
         method: &Method,

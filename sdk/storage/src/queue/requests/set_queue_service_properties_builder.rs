@@ -1,4 +1,4 @@
-use crate::clients::StorageClient;
+use crate::core::clients::StorageClient;
 use crate::queue::responses::*;
 use crate::QueueServiceProperties;
 use azure_core::headers::add_optional_header;

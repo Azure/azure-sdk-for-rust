@@ -81,7 +81,7 @@ impl std::convert::TryFrom<&Response<Bytes>> for ListQueuesResponse {
             prefix: response.prefix,
             marker: response.marker,
             max_results: response.max_results,
-            queues: response.queues.queues.unwrap_or(Vec::new()),
+            queues: response.queues.queues.unwrap_or_default(),
             next_marker: response.next_marker.map(|nm| nm.into()),
         })
     }

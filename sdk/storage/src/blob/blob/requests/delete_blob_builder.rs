@@ -1,6 +1,5 @@
 use crate::blob::blob::responses::DeleteBlobResponse;
 use crate::blob::prelude::*;
-use crate::core::prelude::*;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 

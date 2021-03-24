@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::prelude::*;
-use azure_storage::clients::*;
+use azure_storage::core::prelude::*;
 use azure_storage::data_lake::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;

@@ -48,9 +48,9 @@ impl<'a> ListFileSystemsBuilder<'a> {
 
         self.prefix.append_to_url_query(&mut url);
         self.max_results.append_to_url_query(&mut url);
-        self.next_marker
-            .as_ref()
-            .map(|nm| nm.append_to_url_query_as_continuation(&mut url));
+        if let Some(nm) = self.next_marker.as_ref() {
+            nm.append_to_url_query_as_continuation(&mut url)
+        }
         self.timeout.append_to_url_query(&mut url);
 
         debug!("list filesystems url = {}", url);
@@ -103,10 +103,7 @@ impl<'a> ListFileSystemsBuilder<'a> {
                     Err(err) => return Some((Err(err), None)),
                 };
 
-                let next_marker = response
-                    .next_marker
-                    .clone()
-                    .map(|next_marker| States::NextMarker(next_marker));
+                let next_marker = response.next_marker.clone().map(States::NextMarker);
 
                 Some((Ok(response), next_marker))
             }

@@ -1,4 +1,4 @@
-use crate::clients::{ServiceType, StorageAccountClient};
+use crate::core::clients::{ServiceType, StorageAccountClient};
 use azure_core::errors::AzureError;
 use bytes::Bytes;
 use http::method::Method;
@@ -27,45 +27,54 @@ impl StorageClient {
         })
     }
 
+    #[allow(dead_code)]
     pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
         self.storage_account_client.as_ref()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn http_client(&self) -> &dyn azure_core::HttpClient {
         self.storage_account_client.http_client()
     }
 
+    #[cfg(feature = "account")]
     pub fn get_account_information(
         &self,
-    ) -> crate::account::account::requests::GetAccountInformationBuilder {
-        crate::account::account::requests::GetAccountInformationBuilder::new(self)
+    ) -> crate::account::requests::GetAccountInformationBuilder {
+        crate::account::requests::GetAccountInformationBuilder::new(self)
     }
 
+    #[cfg(feature = "blob")]
     pub fn list_containers(&self) -> crate::container::requests::ListContainersBuilder {
         crate::container::requests::ListContainersBuilder::new(self)
     }
 
+    #[cfg(feature = "queue")]
     pub fn list_queues(&self) -> crate::queue::requests::ListQueuesBuilder {
         crate::queue::requests::ListQueuesBuilder::new(self)
     }
 
+    #[cfg(feature = "queue")]
     pub fn get_queue_service_properties(
         &self,
     ) -> crate::queue::requests::GetQueueServicePropertiesBuilder {
         crate::queue::requests::GetQueueServicePropertiesBuilder::new(self)
     }
 
+    #[cfg(feature = "queue")]
     pub fn set_queue_service_properties(
         &self,
     ) -> crate::queue::requests::SetQueueServicePropertiesBuilder {
         crate::queue::requests::SetQueueServicePropertiesBuilder::new(self)
     }
 
+    #[cfg(feature = "queue")]
     pub fn get_queue_service_stats(&self) -> crate::queue::requests::GetQueueServiceStatsBuilder {
         crate::queue::requests::GetQueueServiceStatsBuilder::new(self)
     }
 
-    pub(crate) fn prepare_request<'a>(
+    #[allow(dead_code)]
+    pub(crate) fn prepare_request(
         &self,
         url: &str,
         method: &Method,

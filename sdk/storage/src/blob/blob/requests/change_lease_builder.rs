@@ -1,5 +1,5 @@
 use crate::blob::blob::responses::ChangeBlobLeaseResponse;
-use crate::core::prelude::*;
+use crate::blob::prelude::*;
 use azure_core::headers::LEASE_ACTION;
 use azure_core::headers::{add_mandatory_header, add_optional_header};
 use azure_core::prelude::*;

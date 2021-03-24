@@ -22,9 +22,9 @@ pub struct Message {
     pub message_text: String,
 }
 
-impl Into<PopReceipt> for Message {
-    fn into(self) -> PopReceipt {
-        self.pop_receipt
+impl From<Message> for PopReceipt {
+    fn from(message: Message) -> Self {
+        message.pop_receipt
     }
 }
 

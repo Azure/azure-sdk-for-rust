@@ -123,13 +123,13 @@ impl TryFrom<StoredAccessPolicy> for QueueStoredAccessPolicy {
     }
 }
 
-impl Into<StoredAccessPolicy> for &QueueStoredAccessPolicy {
-    fn into(self) -> StoredAccessPolicy {
+impl From<&QueueStoredAccessPolicy> for StoredAccessPolicy {
+    fn from(queue_stored_access_policy: &QueueStoredAccessPolicy) -> Self {
         StoredAccessPolicy {
-            id: self.id.to_owned(),
-            start: self.start,
-            expiry: self.expiry,
-            permission: self.to_permission_string(),
+            id: queue_stored_access_policy.id.to_owned(),
+            start: queue_stored_access_policy.start,
+            expiry: queue_stored_access_policy.expiry,
+            permission: queue_stored_access_policy.to_permission_string(),
         }
     }
 }

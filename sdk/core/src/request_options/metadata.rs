@@ -7,13 +7,21 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub struct Metadata(HashMap<String, Bytes>);
 
+impl Default for Metadata {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl AsMut<HashMap<String, Bytes>> for Metadata {
+    fn as_mut(&mut self) -> &mut HashMap<String, Bytes> {
+        &mut self.0
+    }
+}
+
 impl Metadata {
     pub fn new() -> Self {
         Self(HashMap::new())
-    }
-
-    pub fn as_mut(&mut self) -> &mut HashMap<String, Bytes> {
-        &mut self.0
     }
 
     pub fn insert<K, V>(&mut self, k: K, v: V) -> Option<Bytes>
@@ -28,8 +36,12 @@ impl Metadata {
         self.0.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
     pub fn get(&self, k: &str) -> Option<Bytes> {
-        self.0.get(k).map(|b| b.clone())
+        self.0.get(k).cloned()
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::clients::ContainerClient;
+use crate::blob::prelude::*;
 use crate::container::PublicAccess;
 use azure_core::headers::{add_mandatory_header, add_optional_header};
 use azure_core::prelude::*;
