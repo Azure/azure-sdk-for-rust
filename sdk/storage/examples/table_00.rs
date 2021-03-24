@@ -1,6 +1,6 @@
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
-use azure_storage::table_storage::prelude::*;
+use azure_storage::table::prelude::*;
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;

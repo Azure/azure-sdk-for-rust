@@ -1,5 +1,5 @@
 use azure_core::HttpClient;
-use azure_storage::blob_storage::prelude::*;
+use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use serde::Serialize;
 use std::error::Error;

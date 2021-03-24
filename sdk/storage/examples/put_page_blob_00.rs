@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate log;
 use azure_core::prelude::*;
-use azure_storage::blob_storage::prelude::*;
+use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
 use std::error::Error;

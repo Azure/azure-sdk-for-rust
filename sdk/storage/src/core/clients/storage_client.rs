@@ -37,42 +37,40 @@ impl StorageClient {
         self.storage_account_client.http_client()
     }
 
-    #[cfg(feature = "storage_account")]
+    #[cfg(feature = "account")]
     pub fn get_account_information(
         &self,
-    ) -> crate::storage_account::account::requests::GetAccountInformationBuilder {
-        crate::storage_account::account::requests::GetAccountInformationBuilder::new(self)
+    ) -> crate::account::requests::GetAccountInformationBuilder {
+        crate::account::requests::GetAccountInformationBuilder::new(self)
     }
 
-    #[cfg(feature = "blob_storage")]
+    #[cfg(feature = "blob")]
     pub fn list_containers(&self) -> crate::container::requests::ListContainersBuilder {
         crate::container::requests::ListContainersBuilder::new(self)
     }
 
-    #[cfg(feature = "queue_storage")]
-    pub fn list_queues(&self) -> crate::queue_storage::requests::ListQueuesBuilder {
-        crate::queue_storage::requests::ListQueuesBuilder::new(self)
+    #[cfg(feature = "queue")]
+    pub fn list_queues(&self) -> crate::queue::requests::ListQueuesBuilder {
+        crate::queue::requests::ListQueuesBuilder::new(self)
     }
 
-    #[cfg(feature = "queue_storage")]
+    #[cfg(feature = "queue")]
     pub fn get_queue_service_properties(
         &self,
-    ) -> crate::queue_storage::requests::GetQueueServicePropertiesBuilder {
-        crate::queue_storage::requests::GetQueueServicePropertiesBuilder::new(self)
+    ) -> crate::queue::requests::GetQueueServicePropertiesBuilder {
+        crate::queue::requests::GetQueueServicePropertiesBuilder::new(self)
     }
 
-    #[cfg(feature = "queue_storage")]
+    #[cfg(feature = "queue")]
     pub fn set_queue_service_properties(
         &self,
-    ) -> crate::queue_storage::requests::SetQueueServicePropertiesBuilder {
-        crate::queue_storage::requests::SetQueueServicePropertiesBuilder::new(self)
+    ) -> crate::queue::requests::SetQueueServicePropertiesBuilder {
+        crate::queue::requests::SetQueueServicePropertiesBuilder::new(self)
     }
 
-    #[cfg(feature = "queue_storage")]
-    pub fn get_queue_service_stats(
-        &self,
-    ) -> crate::queue_storage::requests::GetQueueServiceStatsBuilder {
-        crate::queue_storage::requests::GetQueueServiceStatsBuilder::new(self)
+    #[cfg(feature = "queue")]
+    pub fn get_queue_service_stats(&self) -> crate::queue::requests::GetQueueServiceStatsBuilder {
+        crate::queue::requests::GetQueueServiceStatsBuilder::new(self)
     }
 
     #[allow(dead_code)]
