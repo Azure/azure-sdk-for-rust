@@ -203,26 +203,24 @@ impl Blob {
 
         let content_encoding = h
             .get_as_string(header::CONTENT_ENCODING)
-            .unwrap_or_else(|| "".to_owned());
+            .unwrap_or_else(String::new);
         trace!("content_encoding == {:?}", content_encoding);
 
         let content_language = h
             .get_as_string(header::CONTENT_LANGUAGE)
-            .unwrap_or_else(|| "".to_owned());
+            .unwrap_or_else(String::new);
         trace!("content_language == {:?}", content_language);
 
-        let content_md5 = h
-            .get_as_string(CONTENT_MD5)
-            .unwrap_or_else(|| "".to_owned());
+        let content_md5 = h.get_as_string(CONTENT_MD5).unwrap_or_else(String::new);
         trace!("content_md5 == {:?}", content_md5);
 
         let cache_control = h
             .get_as_string(header::CACHE_CONTROL)
-            .unwrap_or_else(|| "".to_owned());
+            .unwrap_or_else(String::new);
 
         let content_disposition = h
             .get_as_string(header::CONTENT_DISPOSITION)
-            .unwrap_or_else(|| "".to_owned());
+            .unwrap_or_else(String::new);
 
         let lease_status = h
             .get_as_enum(LEASE_STATUS)?
