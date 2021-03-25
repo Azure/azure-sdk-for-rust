@@ -1,3 +1,5 @@
+#![feature(const_mut_refs)]
+
 mod client;
 pub mod key;
 pub mod secret;
@@ -27,6 +29,21 @@ pub enum KeyVaultError {
     #[error("Failed to parse response from Key Vault: {0}")]
     SerdeParse(#[from] serde_json::Error),
 
+    #[error("Could not get vault domain")]
+    DomainParse,
+
     #[error(transparent)]
     Error(#[from] anyhow::Error),
+}
+
+#[cfg(test)]
+#[macro_export]
+macro_rules! mock_client {
+    ($keyvault_name:expr, $creds:expr, ) => {{
+        KeyClient {
+            vault_url: url::Url::parse(&mockito::server_url()).unwrap(),
+            token_credential: $creds,
+            token: None,
+        }
+    }};
 }

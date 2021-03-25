@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client_secret,
         TokenCredentialOptions::default(),
     );
-    let mut client = KeyClient::new(&creds, &keyvault_name);
+    let mut client = KeyClient::with_name(&keyvault_name, &creds)?;
     client.delete_secret(&secret_name).await?;
 
     Ok(())

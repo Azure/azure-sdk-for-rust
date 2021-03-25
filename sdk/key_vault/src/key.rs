@@ -7,9 +7,8 @@ use chrono::{DateTime, Utc};
 use getset::Getters;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Map, Value};
-use url::Url;
 
-use crate::client::API_VERSION;
+use crate::client::API_VERSION_PARAM;
 use crate::{KeyClient, KeyVaultError};
 
 /// A KeyBundle consisting of a WebKey plus its attributes.
@@ -262,12 +261,14 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         key_name: &str,
         key_version: Option<&str>,
     ) -> Result<KeyVaultKey, KeyVaultError> {
-        let mut uri = format!("{}/keys/{}", self.keyvault_endpoint, key_name);
-        if let Some(ver) = key_version {
-            uri.push('/');
-            uri.push_str(ver);
-        }
-        let uri = Url::parse_with_params(&uri, &[("api-version", API_VERSION)]).unwrap();
+        let mut uri = self.vault_url.clone();
+        let path = if let Some(ver) = key_version {
+            format!("keys/{}/{}", key_name, ver)
+        } else {
+            format!("keys/{}", key_name)
+        };
+        uri.set_path(&path);
+        uri.set_query(Some(API_VERSION_PARAM));
 
         let resp_body = self.get_authed(uri.to_string()).await?;
         let response = serde_json::from_str::<KeyVaultKey>(&resp_body)?;
@@ -285,14 +286,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         algorithm: SignatureAlgorithm,
     ) -> Result<SignResult, KeyVaultError> {
         // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/sign?api-version=7.1
-        let uri = Url::parse_with_params(
-            &format!(
-                "{}/keys/{}/{}/sign",
-                self.keyvault_endpoint, key_name, key_version
-            ),
-            &[("api-version", API_VERSION)],
-        )
-        .unwrap();
+
+        let mut uri = self.vault_url.clone();
+        uri.set_path(&format!("keys/{}/{}/sign", key_name, key_version));
+        uri.set_query(Some(API_VERSION_PARAM));
 
         let mut request_body = Map::new();
         request_body.insert("alg".to_owned(), Value::String(algorithm.to_string()));
@@ -322,6 +319,8 @@ mod tests {
     use oauth2::AccessToken;
     use serde_json::json;
 
+    use crate::client::API_VERSION;
+    use crate::mock_client;
     struct MockKeyCredential;
 
     #[async_trait::async_trait]
@@ -332,14 +331,6 @@ mod tests {
                 Utc::now() + Duration::days(14),
             ))
         }
-    }
-
-    macro_rules! mock_client {
-        ($creds:expr, $keyvault_name:expr) => {{
-            let mut client = KeyClient::new($creds, $keyvault_name);
-            client.keyvault_endpoint = mockito::server_url();
-            client
-        }};
     }
 
     fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
@@ -391,7 +382,7 @@ mod tests {
             .create();
 
         let creds = MockKeyCredential;
-        let mut client = mock_client!(&creds, &"test-keyvault");
+        let mut client = mock_client!(&"test-keyvault", &creds,);
 
         let key = client
             .get_key("test-key", Some("78deebed173b48e48f55abf87ed4cf71"))
@@ -440,7 +431,7 @@ mod tests {
             .create();
 
         let creds = MockKeyCredential;
-        let mut client = mock_client!(&creds, &"test-keyvault");
+        let mut client = mock_client!(&"test-keyvault", &creds,);
 
         let res = client
             .sign(

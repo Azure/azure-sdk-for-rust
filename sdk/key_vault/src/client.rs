@@ -1,9 +1,12 @@
 use crate::KeyVaultError;
 use anyhow::Result;
 use azure_core::{TokenCredential, TokenResponse};
+use const_format::formatc;
+use url::Url;
 
 pub(crate) const PUBLIC_ENDPOINT_SUFFIX: &str = "vault.azure.net";
 pub(crate) const API_VERSION: &str = "7.0";
+pub(crate) const API_VERSION_PARAM: &str = formatc!("api-version={}", API_VERSION);
 
 /// Client for Key Vault operations - getting a secret, listing secrets, etc.
 ///
@@ -13,44 +16,16 @@ pub(crate) const API_VERSION: &str = "7.0";
 /// use azure_key_vault::KeyClient;
 /// use azure_identity::token_credentials::DefaultCredential;
 /// let creds = DefaultCredential::default();
-/// let client = KeyClient::new(&creds, &"test-key-vault");
+/// let client = KeyClient::with_name(&"test-key-vault", &creds).unwrap();
 /// ```
 #[derive(Debug)]
 pub struct KeyClient<'a, T> {
+    pub(crate) vault_url: Url,
     pub(crate) token_credential: &'a T,
-    pub(crate) keyvault_name: &'a str,
-    pub(crate) endpoint_suffix: String,
-    pub(crate) keyvault_endpoint: String,
     pub(crate) token: Option<TokenResponse>,
 }
 
 impl<'a, T: TokenCredential> KeyClient<'a, T> {
-    /// Creates a new `KeyClient` with an endpoint suffix. Useful for non-public Azure clouds.
-    /// For the default public environment, use `KeyClient::new`.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use azure_key_vault::KeyClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
-    /// let creds = DefaultCredential::default();
-    /// let client = KeyClient::with_endpoint_suffix(&creds, &"test-keyvault", "vault.azure.net".to_owned());
-    /// ```
-    pub fn with_endpoint_suffix(
-        token_credential: &'a T,
-        keyvault_name: &'a str,
-        endpoint_suffix: String,
-    ) -> Self {
-        let endpoint = format!("https://{}.{}", keyvault_name, endpoint_suffix);
-        Self {
-            token_credential,
-            keyvault_name,
-            endpoint_suffix,
-            keyvault_endpoint: endpoint,
-            token: None,
-        }
-    }
-
     /// Creates a new `KeyClient`.
     ///
     /// # Example
@@ -59,14 +34,31 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// let creds = DefaultCredential::default();
-    /// let client = KeyClient::new(&creds, &"test-keyvault");
+    /// let client = KeyClient::new("test-key-vault.vault.azure.net", &creds).unwrap();
     /// ```
-    pub fn new(token_credential: &'a T, keyvault_name: &'a str) -> Self {
-        KeyClient::with_endpoint_suffix(
+    pub fn new(vault_url: &str, token_credential: &'a T) -> Result<Self> {
+        let vault_url = Url::parse(vault_url)?;
+        let client = KeyClient {
+            vault_url,
             token_credential,
-            keyvault_name,
-            PUBLIC_ENDPOINT_SUFFIX.to_owned(),
-        )
+            token: None,
+        };
+        Ok(client)
+    }
+
+    /// Creates a new `KeyClient` from provided vault name
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_key_vault::KeyClient;
+    /// use azure_identity::token_credentials::DefaultCredential;
+    /// let creds = DefaultCredential::default();
+    /// let client = KeyClient::with_name("test-key-vault", &creds).unwrap();
+    /// ```
+    pub fn with_name(vault_name: &str, token_credential: &'a T) -> Result<Self> {
+        let url = format!("https://{}.{}", vault_name, PUBLIC_ENDPOINT_SUFFIX);
+        Self::new(&url, token_credential)
     }
 
     pub(crate) async fn refresh_token(&mut self) -> Result<(), KeyVaultError> {
@@ -75,10 +67,12 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             return Ok(());
         }
 
-        let mut resource = format!("https://{}", &self.endpoint_suffix);
-        if !self.endpoint_suffix.ends_with('/') {
-            resource.push('/');
-        }
+        let mut resource = self
+            .vault_url
+            .host_str()
+            .ok_or(KeyVaultError::DomainParse)?
+            .to_string();
+        resource.push('/');
 
         let token = self
             .token_credential
