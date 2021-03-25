@@ -3,12 +3,8 @@ use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use std::sync::Arc;
 
-// This example shows how to stream data from a blob. We will create a simple blob first, the we
-// ask it back using streaming features of the future crate. In this simple example we just
-// concatenate the data received in order to make sure the retrieved blob is equals to the one
-// created in the first place.
-// We do not use leases here but you definitely want to do so otherwise the returned stream
-// is not guaranteed to be consistent.
+// This example shows how to stream data from a blob accessing the underlying stream. This is
+// useful if you want to receive a big data stream without buffering the received data.
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // First we retrieve the account name and master key from environment variables.
