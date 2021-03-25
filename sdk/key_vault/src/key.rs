@@ -59,7 +59,8 @@ pub struct KeyAttributes {
 #[getset(get = "pub")]
 pub struct JsonWebKey {
     /// Elliptic curve name. For valid values, see JsonWebKeyCurveName.
-    crv: Option<String>,
+    #[serde(rename = "crv")]
+    curve_name: Option<String>,
     /// RSA private exponent, or the D component of an EC private key.
     #[serde(
         serialize_with = "ser_base64_opt",
@@ -101,12 +102,13 @@ pub struct JsonWebKey {
         deserialize_with = "deser_base64_opt"
     )]
     #[serde(default)]
-    key_hsm: Option<Vec<u8>>,
+    #[serde(rename = "key_hsm")]
+    t: Option<Vec<u8>>,
     /// Supported key operations.
-    key_ops: Vec<KeyOperation>,
+    key_ops: Option<Vec<String>>,
     /// Key identifier.
     #[serde(rename = "kid")]
-    key_id: Option<String>,
+    id: Option<String>,
     /// JsonWebKey Key Type (kty), as defined in https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40.
     #[serde(rename = "kty")]
     key_type: String,
@@ -191,20 +193,6 @@ where
     Ok(res)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", untagged)]
-pub enum KeyOperation {
-    Encrypt,
-    Decrypt,
-    Sign,
-    Verify,
-    WrapKey,
-    UnwrapKey,
-    Import,
-    Export,
-    Custom(String),
-}
-
 #[derive(Debug, Deserialize, Getters)]
 #[getset(get = "pub")]
 pub struct SignResult {
@@ -239,7 +227,7 @@ pub enum SignatureAlgorithm {
 
 impl Default for SignatureAlgorithm {
     fn default() -> Self {
-        SignatureAlgorithm::Custom("Not Set".to_string())
+        SignatureAlgorithm::Custom("".to_string())
     }
 }
 
@@ -280,10 +268,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// This operation requires the keys/sign permission.
     pub async fn sign(
         &mut self,
+        algorithm: SignatureAlgorithm,
         key_name: &str,
         key_version: &str,
         digest: &str,
-        algorithm: SignatureAlgorithm,
     ) -> Result<SignResult, KeyVaultError> {
         // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/sign?api-version=7.1
 
@@ -389,7 +377,7 @@ mod tests {
             .await
             .unwrap();
 
-        let JsonWebKey { key_id, n, .. } = key.key;
+        let JsonWebKey { id, n, .. } = key.key;
         let KeyProperties {
             attributes,
             managed,
@@ -405,7 +393,7 @@ mod tests {
         assert_eq!(expected_n, n.unwrap());
         assert_eq!(
             "https://test-keyvault.vault.azure.net/keys/test-key/78deebed173b48e48f55abf87ed4cf71",
-            key_id.unwrap()
+            id.unwrap()
         );
 
         assert!(managed.is_none());
@@ -435,10 +423,10 @@ mod tests {
 
         let res = client
             .sign(
+                SignatureAlgorithm::RS512,
                 "test-key",
                 "78deebed173b48e48f55abf87ed4cf71",
                 "base64msg2sign",
-                SignatureAlgorithm::RS512,
             )
             .await
             .unwrap();
