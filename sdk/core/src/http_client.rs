@@ -1,8 +1,10 @@
 use crate::errors::{AzureError, UnexpectedHTTPResult};
+use crate::Streamable;
 use async_trait::async_trait;
 use bytes::Bytes;
 use http::{Request, Response, StatusCode};
 use hyper_rustls::HttpsConnector;
+use reqwest::Client;
 use serde::Serialize;
 
 #[async_trait]
@@ -11,6 +13,11 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         &self,
         request: Request<Bytes>,
     ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>>;
+
+    async fn execute_stream(
+        &self,
+        request: Request<Bytes>,
+    ) -> Result<Streamable, Box<dyn std::error::Error + Sync + Send>>;
 
     async fn execute_request_check_status(
         &self,
@@ -90,10 +97,29 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
 
         Ok(response)
     }
+
+    async fn execute_stream(
+        &self,
+        request: Request<Bytes>,
+    ) -> Result<Streamable, Box<dyn std::error::Error + Sync + Send>> {
+        let mut hyper_request = hyper::Request::builder()
+            .uri(request.uri())
+            .method(request.method());
+
+        for header in request.headers() {
+            hyper_request = hyper_request.header(header.0, header.1);
+        }
+
+        let hyper_request = hyper_request.body(hyper::Body::from(request.into_body()))?;
+
+        let hyper_response = self.request(hyper_request).await?;
+
+        Ok(Streamable::new_hyper(hyper_response))
+    }
 }
 
 #[async_trait]
-impl HttpClient for reqwest::Client {
+impl HttpClient for Client {
     async fn execute_request(
         &self,
         request: Request<Bytes>,
@@ -119,6 +145,23 @@ impl HttpClient for reqwest::Client {
         let response = response.body(reqwest_response.bytes().await?)?;
 
         Ok(response)
+    }
+
+    async fn execute_stream(
+        &self,
+        request: Request<Bytes>,
+    ) -> Result<Streamable, Box<dyn std::error::Error + Sync + Send>> {
+        let mut reqwest_request =
+            self.request(request.method().clone(), &request.uri().to_string());
+        for header in request.headers() {
+            reqwest_request = reqwest_request.header(header.0, header.1);
+        }
+
+        let reqwest_request = reqwest_request.body(request.into_body()).build()?;
+
+        let reqwest_response = self.execute(reqwest_request).await?;
+
+        Ok(Streamable::new_reqwest(reqwest_response))
     }
 }
 

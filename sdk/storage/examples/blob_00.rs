@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("{:#?}", response);
 
-    let mut stream = Box::pin(blob_client.get().stream(128));
+    let mut stream = Box::pin(blob_client.get().stream_client_chunk(128));
     while let Some(value) = stream.next().await {
         println!("received {:?} bytes", value?.data.len());
     }

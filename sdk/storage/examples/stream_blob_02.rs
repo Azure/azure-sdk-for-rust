@@ -1,8 +1,6 @@
 use azure_core::prelude::*;
-use azure_storage::blob::blob::responses::GetBlobResponse;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
-use futures::stream::StreamExt;
 use std::sync::Arc;
 
 // This example shows how to stream data from a blob. We will create a simple blob first, the we
@@ -13,8 +11,6 @@ use std::sync::Arc;
 // is not guaranteed to be consistent.
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let file_name = "azure_sdk_for_rust_stream_test.txt";
-
     // First we retrieve the account name and master key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
@@ -25,7 +21,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .nth(1)
         .expect("please specify container name as first command line parameter");
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let file_name = std::env::args()
+        .nth(2)
+        .expect("please specify container name as second command line parameter");
+
+    let https = hyper_rustls::HttpsConnector::with_native_roots();
+    let client: hyper::Client<_, hyper::Body> = hyper::Client::builder().build(https);
+    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(client));
+
+    // uncomment below to test reqwest
+    //let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
 
     let storage_account_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
@@ -34,20 +39,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .as_container_client(&container_name)
         .as_blob_client(file_name);
 
-    let mut stream = Box::pin(get_blob_stream(&blob));
+    let mut response = blob.get().stream().await?;
 
-    while let Some(res) = stream.next().await {
-        println!("{:?}", res.unwrap());
+    let mut total: u64 = 0;
+
+    while let Some(data) = response.data.chunk().await? {
+        total += data.len() as u64;
+        println!(
+            "got {} bytes! (total {} MB)",
+            data.len(),
+            (total / (1024 * 1024))
+        );
     }
 
     Ok(())
-}
-
-fn get_blob_stream<'a>(
-    blob: &'a BlobClient,
-) -> impl futures::Stream<
-    Item = Result<GetBlobResponse<bytes::Bytes>, Box<dyn std::error::Error + Send + Sync>>,
-> + 'a {
-    let stream = blob.get().stream_client_chunk(1024);
-    stream
 }

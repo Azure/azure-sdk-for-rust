@@ -21,6 +21,7 @@ pub mod parsing;
 pub mod prelude;
 mod request_options;
 mod stored_access_policy;
+mod streamable;
 pub mod util;
 
 use chrono::{DateTime, Utc};
@@ -33,6 +34,7 @@ use uuid::Uuid;
 pub use headers::AddAsHeader;
 pub use http_client::{to_json, HttpClient};
 pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
+pub use streamable::Streamable;
 
 pub type RequestId = Uuid;
 pub type SessionToken = String;

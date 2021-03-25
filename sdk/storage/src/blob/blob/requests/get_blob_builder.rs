@@ -1,7 +1,11 @@
 use crate::blob::blob::responses::GetBlobResponse;
 use crate::blob::prelude::*;
-use azure_core::headers::{add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
+use azure_core::{
+    headers::{add_optional_header, add_optional_header_ref},
+    Streamable,
+};
+use bytes::Bytes;
 use futures::stream::Stream;
 use std::convert::TryInto;
 
@@ -37,7 +41,7 @@ impl<'a> GetBlobBuilder<'a> {
 
     pub async fn execute(
         &self,
-    ) -> Result<GetBlobResponse, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<GetBlobResponse<Bytes>, Box<dyn std::error::Error + Send + Sync>> {
         let mut url = self
             .blob_client
             .storage_account_client()
@@ -80,10 +84,66 @@ impl<'a> GetBlobBuilder<'a> {
         Ok((self.blob_client.blob_name(), response).try_into()?)
     }
 
-    pub fn stream(
+    pub async fn stream(
+        &self,
+    ) -> Result<GetBlobResponse<Streamable>, Box<dyn std::error::Error + Send + Sync>> {
+        let mut url = self
+            .blob_client
+            .storage_account_client()
+            .blob_storage_url()
+            .to_owned();
+        url.path_segments_mut()
+            .map_err(|_| "Invalid blob URL")?
+            .push(self.blob_client.container_client().container_name())
+            .push(self.blob_client.blob_name());
+
+        self.blob_versioning.append_to_url_query(&mut url);
+        self.timeout.append_to_url_query(&mut url);
+
+        trace!("url == {:?}", url);
+
+        let (request, _url) = self.blob_client.prepare_request(
+            url.as_str(),
+            &http::Method::GET,
+            &|mut request| {
+                request = add_optional_header(&self.range, request);
+                request = add_optional_header(&self.client_request_id, request);
+                request = add_optional_header_ref(&self.lease_id, request);
+                request
+            },
+            None,
+        )?;
+
+        let response = self
+            .blob_client
+            .http_client()
+            .execute_stream(request)
+            .await?;
+
+        let expected_status_code = if self.range.is_some() {
+            http::StatusCode::PARTIAL_CONTENT
+        } else {
+            http::StatusCode::OK
+        };
+
+        if response.status() != expected_status_code {
+            return Err(
+                AzureError::from(azure_core::errors::UnexpectedHTTPResult::new(
+                    expected_status_code,
+                    response.status(),
+                    std::str::from_utf8(response.into_bytes().await?.as_ref())?,
+                ))
+                .into(),
+            );
+        }
+
+        Ok((self.blob_client.blob_name(), response).try_into()?)
+    }
+
+    pub fn stream_client_chunk(
         self,
         chunk_size: u64,
-    ) -> impl Stream<Item = Result<GetBlobResponse, Box<dyn std::error::Error + Send + Sync>>> + 'a
+    ) -> impl Stream<Item = Result<GetBlobResponse<Bytes>, Box<dyn std::error::Error + Send + Sync>>> + 'a
     {
         enum States {
             Init,

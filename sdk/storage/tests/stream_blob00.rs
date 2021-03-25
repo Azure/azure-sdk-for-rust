@@ -65,7 +65,7 @@ async fn code() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
         let chunk_size = 8;
 
-        let mut stream = Box::pin(blob.get().range(range).stream(chunk_size));
+        let mut stream = Box::pin(blob.get().range(range).stream_client_chunk(chunk_size));
 
         let result = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
 

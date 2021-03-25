@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // http overhead will be less but it also means you will have to wait for more
     // time before receiving anything. In this example we use a very small chunk size
     // just to make sure to loop at least twice.
-    let mut stream = Box::pin(blob.get().stream(128));
+    let mut stream = Box::pin(blob.get().stream_client_chunk(128));
 
     let result = Rc::new(RefCell::new(Vec::new()));
 

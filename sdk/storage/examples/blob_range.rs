@@ -68,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         assert_eq!(chunk2.data[i], 73);
     }
 
-    let mut stream = Box::pin(blob.get().stream(512));
+    let mut stream = Box::pin(blob.get().stream_client_chunk(512));
 
     println!("\nStreaming");
     let mut chunk: usize = 0;
