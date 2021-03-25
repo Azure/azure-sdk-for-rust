@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 use azure_core::TokenCredential;
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
-use const_format::formatc;
+use const_format::formatcp;
 use getset::Getters;
 use reqwest::Url;
 use serde::Deserialize;
@@ -16,7 +16,7 @@ use std::fmt;
 const DEFAULT_MAX_RESULTS: usize = 25;
 
 const API_VERSION_MAX_RESULTS_PARAM: &str =
-    formatc!("{}&maxresults={}", API_VERSION_PARAM, DEFAULT_MAX_RESULTS);
+    formatcp!("{}&maxresults={}", API_VERSION_PARAM, DEFAULT_MAX_RESULTS);
 
 /// Reflects the deletion recovery level currently in effect for keys in the current Key Vault.
 /// If it contains 'Purgeable' the key can be permanently deleted by a privileged user;

@@ -1,5 +1,3 @@
-#![feature(const_mut_refs)]
-
 mod client;
 pub mod key;
 pub mod secret;

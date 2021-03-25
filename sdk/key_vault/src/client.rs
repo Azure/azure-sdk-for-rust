@@ -1,12 +1,12 @@
 use crate::KeyVaultError;
 use anyhow::Result;
 use azure_core::{TokenCredential, TokenResponse};
-use const_format::formatc;
+use const_format::formatcp;
 use url::Url;
 
 pub(crate) const PUBLIC_ENDPOINT_SUFFIX: &str = "vault.azure.net";
 pub(crate) const API_VERSION: &str = "7.0";
-pub(crate) const API_VERSION_PARAM: &str = formatc!("api-version={}", API_VERSION);
+pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSION);
 
 /// Client for Key Vault operations - getting a secret, listing secrets, etc.
 ///
