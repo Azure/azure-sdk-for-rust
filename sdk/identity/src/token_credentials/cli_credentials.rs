@@ -111,3 +111,29 @@ impl TokenCredential for AzureCliCredential {
         Ok(TokenResponse::new(tr.access_token, tr.expires_on))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use chrono::TimeZone;
+    use serde_test::{assert_de_tokens, Token};
+
+    use super::*;
+
+    #[derive(Debug, Deserialize)]
+    struct AzureDateTime {
+        #[serde(with = "az_cli_date_format")]
+        date: DateTime<Utc>,
+    }
+    #[test]
+    fn can_parse_cli_datetime() {
+        let s = "2020-11-16T04:25:03Z";
+        let utc = Utc.ymd(2020, 11, 16).and_hms(4, 25, 03);
+        let dt = AzureDateTime { date: utc };
+        assert_de_tokens(&dt.date, &[Token::Str(s)]);
+
+        let s = "2020-11-16 04:25:03Z";
+        let utc = Utc.ymd(2020, 11, 16).and_hms(4, 25, 03);
+        let dt = AzureDateTime { date: utc };
+        assert_de_tokens(&dt.date, &[Token::Str(s)]);
+    }
+}

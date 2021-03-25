@@ -30,6 +30,7 @@ async-trait = "0.1"
 tokio = { version = "1.0", features = ["macros"] }
 azure_storage = { version = "0.1", path = "../storage" }
 env_logger = "0.8"
+serde_test = "1"
 
 [features]
 default = ["development"]
