@@ -1,9 +1,12 @@
-use crate::KeyVaultClient;
-use crate::{client::API_VERSION, KeyVaultError};
+use crate::client::API_VERSION_PARAM;
+use crate::KeyClient;
+use crate::KeyVaultError;
+
 use anyhow::{Context, Result};
 use azure_core::TokenCredential;
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
+use const_format::formatcp;
 use getset::Getters;
 use reqwest::Url;
 use serde::Deserialize;
@@ -11,6 +14,9 @@ use serde_json::{Map, Value};
 use std::fmt;
 
 const DEFAULT_MAX_RESULTS: usize = 25;
+
+const API_VERSION_MAX_RESULTS_PARAM: &str =
+    formatcp!("{}&maxresults={}", API_VERSION_PARAM, DEFAULT_MAX_RESULTS);
 
 /// Reflects the deletion recovery level currently in effect for keys in the current Key Vault.
 /// If it contains 'Purgeable' the key can be permanently deleted by a privileged user;
@@ -106,23 +112,23 @@ pub struct KeyVaultSecret {
     time_updated: DateTime<Utc>,
 }
 
-impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
+impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// Gets a secret from the Key Vault.
     /// Note that the latest version is fetched. For a specific version, use `get_version_with_version`.
     ///
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
-    ///     &creds,
+    ///     let mut client = KeyClient::with_name(
     ///     &"KEYVAULT_NAME",
-    ///     );
+    ///     &creds,
+    ///     ).unwrap();
     ///     let secret = client.get_secret(&"SECRET_NAME").await.unwrap();
     ///     dbg!(&secret);
     /// }
@@ -142,16 +148,16 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
-    ///     &creds,
-    ///     &"KEYVAULT_NAME",
-    ///     );
+    ///     let mut client = KeyClient::with_name(
+    ///         &"KEYVAULT_NAME",
+    ///         &creds,
+    ///     ).unwrap();
     ///     let secret = client.get_secret_with_version(&"SECRET_NAME", &"SECRET_VERSION").await.unwrap();
     ///     dbg!(&secret);
     /// }
@@ -163,14 +169,10 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         secret_name: &'a str,
         secret_version_name: &'a str,
     ) -> Result<KeyVaultSecret, KeyVaultError> {
-        let uri = Url::parse_with_params(
-            &format!(
-                "{}/secrets/{}/{}",
-                self.keyvault_endpoint, secret_name, secret_version_name
-            ),
-            &[("api-version", API_VERSION)],
-        )
-        .unwrap();
+        let mut uri = self.vault_url.clone();
+        uri.set_path(&format!("secrets/{}/{}", secret_name, secret_version_name));
+        uri.set_query(Some(API_VERSION_PARAM));
+
         let resp_body = self.get_authed(uri.to_string()).await?;
         let response = serde_json::from_str::<KeyVaultGetSecretResponse>(&resp_body)
             .with_context(|| format!("Failed to parse response from Key Vault: {}", resp_body))?;
@@ -186,16 +188,16 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// Lists all the secrets in the Key Vault.
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
-    ///     &creds,
+    ///     let mut client = KeyClient::with_name(
     ///     &"KEYVAULT_NAME",
-    ///     );
+    ///     &creds,
+    ///     ).unwrap();
     ///     let secrets = client.list_secrets().await.unwrap();
     ///     dbg!(&secrets);
     /// }
@@ -206,14 +208,10 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         &mut self,
     ) -> Result<Vec<KeyVaultSecretBaseIdentifier>, KeyVaultError> {
         let mut secrets = Vec::<KeyVaultSecretBaseIdentifier>::new();
-        let mut uri = Url::parse_with_params(
-            &format!("{}/secrets", self.keyvault_endpoint),
-            &[
-                ("api-version", API_VERSION),
-                ("maxresults", &DEFAULT_MAX_RESULTS.to_string()),
-            ],
-        )
-        .unwrap();
+
+        let mut uri = self.vault_url.clone();
+        uri.set_path("secrets");
+        uri.set_query(Some(API_VERSION_MAX_RESULTS_PARAM));
 
         loop {
             let resp_body = self.get_authed(uri.to_string()).await?;
@@ -225,7 +223,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
                     .into_iter()
                     .map(|s| KeyVaultSecretBaseIdentifier {
                         id: s.id.to_owned(),
-                        name: s.id.to_owned().split("/").last().unwrap().to_owned(),
+                        name: s.id.split('/').last().unwrap().to_owned(),
                         enabled: s.attributes.enabled,
                         time_created: s.attributes.created,
                         time_updated: s.attributes.updated,
@@ -247,16 +245,16 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
-    ///     &creds,
+    ///     let mut client = KeyClient::with_name(
     ///     &"KEYVAULT_NAME",
-    ///     );
+    ///     &creds,
+    ///     ).unwrap();
     ///     let secret_versions = client.get_secret_versions(&"SECRET_NAME").await.unwrap();
     ///     dbg!(&secret_versions);
     /// }
@@ -268,17 +266,10 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         secret_name: &'a str,
     ) -> Result<Vec<KeyVaultSecretBaseIdentifier>, KeyVaultError> {
         let mut secret_versions = Vec::<KeyVaultSecretBaseIdentifier>::new();
-        let mut uri = Url::parse_with_params(
-            &format!(
-                "{}/secrets/{}/versions",
-                self.keyvault_endpoint, secret_name
-            ),
-            &[
-                ("api-version", API_VERSION),
-                ("maxresults", &DEFAULT_MAX_RESULTS.to_string()),
-            ],
-        )
-        .unwrap();
+
+        let mut uri = self.vault_url.clone();
+        uri.set_path(&format!("secrets/{}/versions", secret_name));
+        uri.set_query(Some(API_VERSION_MAX_RESULTS_PARAM));
 
         loop {
             let resp_body = self.get_authed(uri.to_string()).await?;
@@ -290,7 +281,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
                     .into_iter()
                     .map(|s| KeyVaultSecretBaseIdentifier {
                         id: s.id.to_owned(),
-                        name: s.id.to_owned().split("/").last().unwrap().to_owned(),
+                        name: s.id.split('/').last().unwrap().to_owned(),
                         enabled: s.attributes.enabled,
                         time_created: s.attributes.created,
                         time_updated: s.attributes.updated,
@@ -319,16 +310,16 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
-    ///     &creds,
+    ///     let mut client = KeyClient::with_name(
     ///     &"KEYVAULT_NAME",
-    ///     );
+    ///     &creds,
+    ///     ).unwrap();
     ///     client.set_secret(&"SECRET_NAME", &"NEW_VALUE").await.unwrap();
     /// }
     ///
@@ -339,11 +330,9 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         secret_name: &'a str,
         new_secret_value: &'a str,
     ) -> Result<(), KeyVaultError> {
-        let uri = Url::parse_with_params(
-            &format!("{}/secrets/{}", self.keyvault_endpoint, secret_name),
-            &[("api-version", API_VERSION)],
-        )
-        .unwrap();
+        let mut uri = self.vault_url.clone();
+        uri.set_path(&format!("secrets/{}", secret_name));
+        uri.set_query(Some(API_VERSION_PARAM));
 
         let mut request_body = Map::new();
         request_body.insert(
@@ -368,16 +357,16 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
-    ///     &creds,
+    ///     let mut client = KeyClient::with_name(
     ///     &"KEYVAULT_NAME",
-    ///     );
+    ///     &creds,
+    ///     ).unwrap();
     ///     client.update_secret_enabled(&"SECRET_NAME", &"", true).await.unwrap();
     /// }
     ///
@@ -409,16 +398,16 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
+    /// use azure_key_vault::{KeyClient, RecoveryLevel};
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
-    ///     &creds,
+    ///     let mut client = KeyClient::with_name(
     ///     &"KEYVAULT_NAME",
-    ///     );
+    ///     &creds,
+    ///     ).unwrap();
     ///     client.update_secret_recovery_level(&"SECRET_NAME", &"", RecoveryLevel::Purgeable).await.unwrap();
     /// }
     ///
@@ -453,17 +442,17 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
+    /// use azure_key_vault::{KeyClient, RecoveryLevel};
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     /// use chrono::{Utc, Duration};
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
-    ///     &creds,
+    ///     let mut client = KeyClient::with_name(
     ///     &"KEYVAULT_NAME",
-    ///     );
+    ///     &creds,
+    ///     ).unwrap();
     ///     client.update_secret_expiration_time(&"SECRET_NAME", &"", Utc::now() + Duration::days(14)).await.unwrap();
     /// }
     ///
@@ -493,14 +482,9 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         secret_version: &'a str,
         attributes: Map<String, Value>,
     ) -> Result<(), KeyVaultError> {
-        let uri = Url::parse_with_params(
-            &format!(
-                "{}/secrets/{}/{}",
-                self.keyvault_endpoint, secret_name, secret_version
-            ),
-            &[("api-version", API_VERSION)],
-        )
-        .unwrap();
+        let mut uri = self.vault_url.clone();
+        uri.set_path(&format!("secrets/{}/{}", secret_name, secret_version));
+        uri.set_query(Some(API_VERSION_PARAM));
 
         let mut request_body = Map::new();
         request_body.insert("attributes".to_owned(), Value::Object(attributes));
@@ -517,27 +501,25 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
-    ///     &creds,
+    ///     let mut client = KeyClient::with_name(
     ///     &"KEYVAULT_NAME",
-    ///     );
+    ///     &creds,
+    ///     ).unwrap();
     ///     client.restore_secret(&"KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
     pub async fn restore_secret(&mut self, backup_blob: &'a str) -> Result<(), KeyVaultError> {
-        let uri = Url::parse_with_params(
-            &format!("{}/secrets/restore", self.keyvault_endpoint),
-            &[("api-version", API_VERSION)],
-        )
-        .unwrap();
+        let mut uri = self.vault_url.clone();
+        uri.set_path("secrets/restore");
+        uri.set_query(Some(API_VERSION_PARAM));
 
         let mut request_body = Map::new();
         request_body.insert("value".to_owned(), Value::String(backup_blob.to_owned()));
@@ -557,16 +539,16 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
-    ///     &creds,
+    ///     let mut client = KeyClient::with_name(
     ///     &"KEYVAULT_NAME",
-    ///     );
+    ///     &creds,
+    ///     ).unwrap();
     ///     client.backup_secret(&"SECRET_NAME").await.unwrap();
     /// }
     ///
@@ -576,11 +558,9 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         &mut self,
         secret_name: &'a str,
     ) -> Result<KeyVaultSecretBackupBlob, KeyVaultError> {
-        let uri = Url::parse_with_params(
-            &format!("{}/secrets/{}/backup", self.keyvault_endpoint, secret_name),
-            &[("api-version", API_VERSION)],
-        )
-        .unwrap();
+        let mut uri = self.vault_url.clone();
+        uri.set_path(&format!("secrets/{}/backup", secret_name));
+        uri.set_query(Some(API_VERSION_PARAM));
 
         let response = self.post_authed(uri.to_string(), None).await?;
         let backup_blob = serde_json::from_str::<KeyVaultSecretBackupResponseRaw>(&response)
@@ -606,27 +586,25 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::{KeyVaultClient, RecoveryLevel};
+    /// use azure_key_vault::{KeyClient, RecoveryLevel};
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyVaultClient::new(
-    ///     &creds,
+    ///     let mut client = KeyClient::with_name(
     ///     &"KEYVAULT_NAME",
-    ///     );
+    ///     &creds,
+    ///     ).unwrap();
     ///     client.delete_secret(&"SECRET_NAME").await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
     pub async fn delete_secret(&mut self, secret_name: &'a str) -> Result<(), KeyVaultError> {
-        let uri = Url::parse_with_params(
-            &format!("{}/secrets/{}", self.keyvault_endpoint, secret_name),
-            &[("api-version", API_VERSION)],
-        )
-        .unwrap();
+        let mut uri = self.vault_url.clone();
+        uri.set_path(&format!("secrets/{}", secret_name));
+        uri.set_query(Some(API_VERSION_PARAM));
 
         self.delete_authed(uri.to_string()).await?;
 
@@ -639,25 +617,13 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
 mod tests {
     use super::*;
 
-    use async_trait;
-    use azure_core::errors::AzureError;
-    use azure_core::{TokenCredential, TokenResponse};
     use chrono::{Duration, Utc};
     use mockito::{mock, Matcher};
-    use oauth2::AccessToken;
     use serde_json::json;
 
-    struct MockSecretCredential;
-
-    #[async_trait::async_trait]
-    impl TokenCredential for MockSecretCredential {
-        async fn get_token(&self, _resource: &str) -> Result<TokenResponse, AzureError> {
-            Ok(TokenResponse::new(
-                AccessToken::new("TOKEN".to_owned()),
-                Utc::now() + Duration::days(14),
-            ))
-        }
-    }
+    use crate::client::API_VERSION;
+    use crate::mock_client;
+    use crate::tests::MockCredential;
 
     fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
         if first > second {
@@ -665,14 +631,6 @@ mod tests {
         } else {
             second - first
         }
-    }
-
-    macro_rules! mock_client {
-        ($creds:expr, $keyvault_name:expr) => {{
-            let mut client = KeyVaultClient::new($creds, $keyvault_name);
-            client.keyvault_endpoint = mockito::server_url();
-            client
-        }};
     }
 
     #[tokio::test]
@@ -698,8 +656,9 @@ mod tests {
             .with_status(200)
             .create();
 
-        let creds = MockSecretCredential;
-        let mut client = mock_client!(&creds, &"test-keyvault");
+        let creds = MockCredential;
+        dbg!(mockito::server_url());
+        let mut client = mock_client!(&"test-keyvault", &creds,);
 
         let secret: KeyVaultSecret = client.get_secret(&"test-secret").await.unwrap();
 
@@ -736,7 +695,7 @@ mod tests {
                             "updated": time_updated_1.timestamp(),
                         }
                     }],
-                    "nextLink": format!("{}/secrets/text-secret/versions?api-version={}&maxresults=1&$skiptoken=SKIP_TOKEN_MOCK", mockito::server_url().to_string(), API_VERSION)
+                    "nextLink": format!("{}/secrets/text-secret/versions?api-version={}&maxresults=1&$skiptoken=SKIP_TOKEN_MOCK", mockito::server_url(), API_VERSION)
                 })
                 .to_string(),
             )
@@ -767,8 +726,8 @@ mod tests {
             .with_status(200)
             .create();
 
-        let creds = MockSecretCredential;
-        let mut client = mock_client!(&creds, &"test-keyvault");
+        let creds = MockCredential;
+        let mut client = mock_client!(&"test-keyvault", &creds,);
 
         let secret_versions = client.get_secret_versions(&"test-secret").await.unwrap();
 

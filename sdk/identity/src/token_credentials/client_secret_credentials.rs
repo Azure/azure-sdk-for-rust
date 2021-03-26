@@ -142,7 +142,7 @@ impl TokenCredential for ClientSecretCredential {
                     AccessToken::new(r.access_token().secret().to_owned()),
                     Utc::now()
                         + chrono::Duration::from_std(
-                            r.expires_in().unwrap_or(Duration::from_secs(0)),
+                            r.expires_in().unwrap_or_else(|| Duration::from_secs(0)),
                         )
                         .unwrap(),
                 )

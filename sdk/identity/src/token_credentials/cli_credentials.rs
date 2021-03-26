@@ -12,7 +12,7 @@ mod az_cli_date_format {
     use chrono::{DateTime, TimeZone, Utc};
     use serde::{self, Deserialize, Deserializer};
 
-    const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S.%6f";
+    const FORMAT: &str = "%Y-%m-%d %H:%M:%S.%6f";
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
     where
@@ -109,5 +109,31 @@ impl TokenCredential for AzureCliCredential {
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError> {
         let tr = Self::get_access_token(Some(resource))?;
         Ok(TokenResponse::new(tr.access_token, tr.expires_on))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::TimeZone;
+    use serde_test::{assert_de_tokens, Token};
+
+    use super::*;
+
+    #[derive(Debug, Deserialize)]
+    struct AzureDateTime {
+        #[serde(with = "az_cli_date_format")]
+        date: DateTime<Utc>,
+    }
+    #[test]
+    fn can_parse_cli_datetime() {
+        let s = "2020-11-16T04:25:03Z";
+        let utc = Utc.ymd(2020, 11, 16).and_hms(4, 25, 03);
+        let dt = AzureDateTime { date: utc };
+        assert_de_tokens(&dt.date, &[Token::Str(s)]);
+
+        let s = "2020-11-16 04:25:03Z";
+        let utc = Utc.ymd(2020, 11, 16).and_hms(4, 25, 03);
+        let dt = AzureDateTime { date: utc };
+        assert_de_tokens(&dt.date, &[Token::Str(s)]);
     }
 }

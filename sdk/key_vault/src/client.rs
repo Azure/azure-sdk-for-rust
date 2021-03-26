@@ -1,73 +1,67 @@
 use crate::KeyVaultError;
-use anyhow::Context;
 use anyhow::Result;
 use azure_core::{TokenCredential, TokenResponse};
+use const_format::formatcp;
+use url::Url;
 
 pub(crate) const PUBLIC_ENDPOINT_SUFFIX: &str = "vault.azure.net";
 pub(crate) const API_VERSION: &str = "7.0";
+pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSION);
 
 /// Client for Key Vault operations - getting a secret, listing secrets, etc.
 ///
 /// # Example
 ///
 /// ```no_run
-/// use azure_key_vault::KeyVaultClient;
+/// use azure_key_vault::KeyClient;
 /// use azure_identity::token_credentials::DefaultCredential;
 /// let creds = DefaultCredential::default();
-/// let client = KeyVaultClient::new(&creds, &"test-key-vault");
+/// let client = KeyClient::with_name(&"test-key-vault", &creds).unwrap();
 /// ```
 #[derive(Debug)]
-pub struct KeyVaultClient<'a, T> {
+pub struct KeyClient<'a, T> {
+    pub(crate) vault_url: Url,
+    pub(crate) endpoint: String,
     pub(crate) token_credential: &'a T,
-    pub(crate) keyvault_name: &'a str,
-    pub(crate) endpoint_suffix: String,
-    pub(crate) keyvault_endpoint: String,
     pub(crate) token: Option<TokenResponse>,
 }
 
-impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
-    /// Creates a new `KeyVaultClient` with an endpoint suffix. Useful for non-public Azure clouds.
-    /// For the default public environment, use `KeyVaultClient::new`.
+impl<'a, T: TokenCredential> KeyClient<'a, T> {
+    /// Creates a new `KeyClient`.
     ///
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// let creds = DefaultCredential::default();
-    /// let client = KeyVaultClient::with_endpoint_suffix(&creds, &"test-keyvault", "vault.azure.net".to_owned());
+    /// let client = KeyClient::new("test-key-vault.vault.azure.net", &creds).unwrap();
     /// ```
-    pub fn with_endpoint_suffix(
-        token_credential: &'a T,
-        keyvault_name: &'a str,
-        endpoint_suffix: String,
-    ) -> Self {
-        let endpoint = format!("https://{}.{}", keyvault_name, endpoint_suffix);
-        Self {
+    pub fn new(vault_url: &str, token_credential: &'a T) -> Result<Self> {
+        let vault_url = Url::parse(vault_url)?;
+        let endpoint = endpoint_suffix(&vault_url)?;
+        let client = KeyClient {
+            vault_url,
+            endpoint,
             token_credential,
-            keyvault_name,
-            endpoint_suffix,
-            keyvault_endpoint: endpoint,
             token: None,
-        }
+        };
+        Ok(client)
     }
 
-    /// Creates a new `KeyVaultClient`.
+    /// Creates a new `KeyClient` from provided vault name
     ///
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyVaultClient;
+    /// use azure_key_vault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// let creds = DefaultCredential::default();
-    /// let client = KeyVaultClient::new(&creds, &"test-keyvault");
+    /// let client = KeyClient::with_name("test-key-vault", &creds).unwrap();
     /// ```
-    pub fn new(token_credential: &'a T, keyvault_name: &'a str) -> Self {
-        KeyVaultClient::with_endpoint_suffix(
-            token_credential,
-            keyvault_name,
-            PUBLIC_ENDPOINT_SUFFIX.to_owned(),
-        )
+    pub fn with_name(vault_name: &str, token_credential: &'a T) -> Result<Self> {
+        let url = format!("https://{}.{}", vault_name, PUBLIC_ENDPOINT_SUFFIX);
+        Self::new(&url, token_credential)
     }
 
     pub(crate) async fn refresh_token(&mut self) -> Result<(), KeyVaultError> {
@@ -76,17 +70,11 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
             return Ok(());
         }
 
-        let mut resource = format!("https://{}", &self.endpoint_suffix);
-        if !self.endpoint_suffix.ends_with("/") {
-            resource.push_str("/");
-        }
-
         let token = self
             .token_credential
-            .get_token(&resource)
+            .get_token(&self.endpoint)
             .await
-            .with_context(|| "Failed to authenticate to Azure Active Directory")
-            .map_err(|e| KeyVaultError::AuthorizationError(e))?;
+            .map_err(|_| KeyVaultError::Authorization)?;
         self.token = Some(token);
         Ok(())
     }
@@ -119,7 +107,7 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
             .send()
             .await
             .unwrap();
-        let body = resp.text().await.unwrap();
+        let body = resp.text().await?;
         Ok(body)
     }
 
@@ -140,10 +128,18 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
             req = req.header("Content-Length", 0);
         }
 
-        let resp = req.send().await.unwrap();
+        let resp = req.send().await?;
 
-        let body = resp.text().await.unwrap();
-        Ok(body)
+        let body = resp.text().await?;
+
+        let body_serialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
+
+        if let Some(err) = body_serialized.get("error") {
+            let msg = err.get("message").ok_or(KeyVaultError::UnparsableError)?;
+            Err(KeyVaultError::General(msg.to_string()))
+        } else {
+            Ok(body)
+        }
     }
 
     pub(crate) async fn patch_authed(
@@ -165,15 +161,13 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
         let body = resp.text().await.unwrap();
 
         let body_serialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
-        if let Some(err) = body_serialized.get("error") {
-            return Err(KeyVaultError::GeneralError(
-                err.get("message")
-                    .expect("Received an error accessing the Key Vault, which could not be parsed as expected.")
-                    .to_string(),
-            ));
-        }
 
-        Ok(body)
+        if let Some(err) = body_serialized.get("error") {
+            let msg = err.get("message").ok_or(KeyVaultError::UnparsableError)?;
+            Err(KeyVaultError::General(msg.to_string()))
+        } else {
+            Ok(body)
+        }
     }
 
     pub(crate) async fn delete_authed(&mut self, uri: String) -> Result<String, KeyVaultError> {
@@ -188,5 +182,39 @@ impl<'a, T: TokenCredential> KeyVaultClient<'a, T> {
             .unwrap();
         let body = resp.text().await.unwrap();
         Ok(body)
+    }
+}
+
+/// Helper to get vault endpoint suffix with trailing slash
+/// ex. `vault.azure.net/` where the full client url is `myvault.vault.azure.net`
+fn endpoint_suffix(url: &Url) -> Result<String, KeyVaultError> {
+    let mut endpoint = url
+        .host_str()
+        .ok_or(KeyVaultError::DomainParse)?
+        .splitn(2, '.') // FIXME: replace with split_once() when it is in stable
+        .last()
+        .ok_or(KeyVaultError::DomainParse)?
+        .to_string();
+    endpoint.push('/');
+    Ok(endpoint)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn can_get_endpoint_suffix() {
+        let suffix =
+            endpoint_suffix(&Url::parse("https://myvault.vault.azure.net").unwrap()).unwrap();
+        assert_eq!(suffix, "vault.azure.net/");
+
+        let suffix =
+            endpoint_suffix(&Url::parse("https://myvault.mycustom.vault.server.net").unwrap())
+                .unwrap();
+        assert_eq!(suffix, "mycustom.vault.server.net/");
+
+        let suffix = endpoint_suffix(&Url::parse("https://myvault.internal").unwrap()).unwrap();
+        assert_eq!(suffix, "internal/");
     }
 }
