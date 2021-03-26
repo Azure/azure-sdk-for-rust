@@ -21,6 +21,7 @@ pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSI
 #[derive(Debug)]
 pub struct KeyClient<'a, T> {
     pub(crate) vault_url: Url,
+    pub(crate) endpoint: String,
     pub(crate) token_credential: &'a T,
     pub(crate) token: Option<TokenResponse>,
 }
@@ -38,8 +39,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// ```
     pub fn new(vault_url: &str, token_credential: &'a T) -> Result<Self> {
         let vault_url = Url::parse(vault_url)?;
+        let endpoint = endpoint_suffix(&vault_url)?;
         let client = KeyClient {
             vault_url,
+            endpoint,
             token_credential,
             token: None,
         };
@@ -67,16 +70,9 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             return Ok(());
         }
 
-        let mut resource = self
-            .vault_url
-            .host_str()
-            .ok_or(KeyVaultError::DomainParse)?
-            .to_string();
-        resource.push('/');
-
         let token = self
             .token_credential
-            .get_token(&resource)
+            .get_token(&self.endpoint)
             .await
             .map_err(|_| KeyVaultError::Authorization)?;
         self.token = Some(token);
@@ -186,5 +182,39 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             .unwrap();
         let body = resp.text().await.unwrap();
         Ok(body)
+    }
+}
+
+/// Helper to get vault endpoint suffix with trailing slash
+/// ex. `vault.azure.net/` where the full client url is `myvault.vault.azure.net`
+fn endpoint_suffix(url: &Url) -> Result<String, KeyVaultError> {
+    let mut endpoint = url
+        .host_str()
+        .ok_or(KeyVaultError::DomainParse)?
+        .splitn(2, '.') // FIXME: replace with split_once() when it is in stable
+        .last()
+        .ok_or(KeyVaultError::DomainParse)?
+        .to_string();
+    endpoint.push('/');
+    Ok(endpoint)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn can_get_endpoint_suffix() {
+        let suffix =
+            endpoint_suffix(&Url::parse("https://myvault.vault.azure.net").unwrap()).unwrap();
+        assert_eq!(suffix, "vault.azure.net/");
+
+        let suffix =
+            endpoint_suffix(&Url::parse("https://myvault.mycustom.vault.server.net").unwrap())
+                .unwrap();
+        assert_eq!(suffix, "mycustom.vault.server.net/");
+
+        let suffix = endpoint_suffix(&Url::parse("https://myvault.internal").unwrap()).unwrap();
+        assert_eq!(suffix, "internal/");
     }
 }

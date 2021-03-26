@@ -617,27 +617,13 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
 mod tests {
     use super::*;
 
-    use azure_core::errors::AzureError;
-    use azure_core::{TokenCredential, TokenResponse};
     use chrono::{Duration, Utc};
     use mockito::{mock, Matcher};
-    use oauth2::AccessToken;
     use serde_json::json;
 
     use crate::client::API_VERSION;
     use crate::mock_client;
-
-    struct MockSecretCredential;
-
-    #[async_trait::async_trait]
-    impl TokenCredential for MockSecretCredential {
-        async fn get_token(&self, _resource: &str) -> Result<TokenResponse, AzureError> {
-            Ok(TokenResponse::new(
-                AccessToken::new("TOKEN".to_owned()),
-                Utc::now() + Duration::days(14),
-            ))
-        }
-    }
+    use crate::tests::MockCredential;
 
     fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
         if first > second {
@@ -670,7 +656,7 @@ mod tests {
             .with_status(200)
             .create();
 
-        let creds = MockSecretCredential;
+        let creds = MockCredential;
         dbg!(mockito::server_url());
         let mut client = mock_client!(&"test-keyvault", &creds,);
 
@@ -740,7 +726,7 @@ mod tests {
             .with_status(200)
             .create();
 
-        let creds = MockSecretCredential;
+        let creds = MockCredential;
         let mut client = mock_client!(&"test-keyvault", &creds,);
 
         let secret_versions = client.get_secret_versions(&"test-secret").await.unwrap();

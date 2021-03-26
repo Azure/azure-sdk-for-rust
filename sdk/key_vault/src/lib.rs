@@ -35,13 +35,33 @@ pub enum KeyVaultError {
 }
 
 #[cfg(test)]
-#[macro_export]
-macro_rules! mock_client {
-    ($keyvault_name:expr, $creds:expr, ) => {{
-        KeyClient {
-            vault_url: url::Url::parse(&mockito::server_url()).unwrap(),
-            token_credential: $creds,
-            token: None,
+mod tests {
+    use azure_core::errors::AzureError;
+    use azure_core::{TokenCredential, TokenResponse};
+    use chrono::{Duration, Utc};
+    use oauth2::AccessToken;
+
+    #[macro_export]
+    macro_rules! mock_client {
+        ($keyvault_name:expr, $creds:expr, ) => {{
+            KeyClient {
+                vault_url: url::Url::parse(&mockito::server_url()).unwrap(),
+                endpoint: "".to_string(),
+                token_credential: $creds,
+                token: None,
+            }
+        }};
+    }
+
+    pub(crate) struct MockCredential;
+
+    #[async_trait::async_trait]
+    impl TokenCredential for MockCredential {
+        async fn get_token(&self, _resource: &str) -> Result<TokenResponse, AzureError> {
+            Ok(TokenResponse::new(
+                AccessToken::new("TOKEN".to_owned()),
+                Utc::now() + Duration::days(14),
+            ))
         }
-    }};
+    }
 }
