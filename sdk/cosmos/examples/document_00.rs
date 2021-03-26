@@ -51,7 +51,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Next we will create a Cosmos client. You need an authorization_token but you can later
     // change it if needed.
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-    let client = CosmosClient::new(http_client, account, authorization_token);
+    let client = CosmosClient::new(
+        http_client.clone(),
+        account.clone(),
+        authorization_token.clone(),
+    );
 
     // list_databases will give us the databases available in our account. If there is
     // an error (for example, the given key is not valid) you will receive a
@@ -65,10 +69,20 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_iter()
         .find(|db| db.id == DATABASE);
 
+    let database_client = CosmosClient::with_pipeline(
+        account,
+        authorization_token,
+        CosmosOptions::with_client(http_client),
+    );
     // If the requested database is not found we create it.
     let database = match db {
         Some(db) => db,
-        None => client.create_database().execute(DATABASE).await?.database,
+        None => {
+            database_client
+                .create_database(azure_core::Context, DATABASE)
+                .await?
+                .database
+        }
     };
     println!("database == {:?}", database);
 

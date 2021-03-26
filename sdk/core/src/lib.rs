@@ -18,6 +18,7 @@ mod http_client;
 pub mod incompletevector;
 pub mod lease;
 pub mod parsing;
+mod policy;
 pub mod prelude;
 mod request_options;
 mod stored_access_policy;
@@ -32,6 +33,7 @@ use uuid::Uuid;
 
 pub use headers::AddAsHeader;
 pub use http_client::{to_json, HttpClient};
+pub use policy::*;
 pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
 
 pub type RequestId = Uuid;

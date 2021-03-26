@@ -39,6 +39,22 @@ impl<'a> CreateDatabaseBuilder<'a> {
     ) -> Result<CreateDatabaseResponse, CosmosError> {
         trace!("CreateDatabaseBuilder::execute called");
 
+        let request = self.request(database_name.as_ref())?;
+
+        debug!("create database request prepared == {:?}", request);
+
+        Ok(self
+            .cosmos_client
+            .http_client()
+            .execute_request_check_status(request, StatusCode::CREATED)
+            .await?
+            .try_into()?)
+    }
+
+    pub(crate) fn request(
+        &self,
+        database_name: &str,
+    ) -> Result<http::Request<bytes::Bytes>, CosmosError> {
         #[derive(Serialize, Debug)]
         struct CreateDatabaseRequest<'a> {
             pub id: &'a str,
@@ -56,15 +72,6 @@ impl<'a> CreateDatabaseBuilder<'a> {
         let request = azure_core::headers::add_optional_header(&self.activity_id, request);
         let request = azure_core::headers::add_optional_header(&self.consistency_level, request);
 
-        let request = request.body(req)?; // todo: set content-length here and elsewhere without builders
-
-        debug!("create database request prepared == {:?}", request);
-
-        Ok(self
-            .cosmos_client
-            .http_client()
-            .execute_request_check_status(request, StatusCode::CREATED)
-            .await?
-            .try_into()?)
+        Ok(request.body(req)?) // todo: set content-length here and elsewhere without builders
     }
 }

@@ -31,7 +31,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
     let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
-    let client = CosmosClient::new(http_client, account, authorization_token);
+    let client = CosmosClient::new(
+        http_client.clone(),
+        account.clone(),
+        authorization_token.clone(),
+    );
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
@@ -40,7 +44,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let list_databases_response = client.list_databases().execute().await?;
     println!("list_databases_response = {:#?}", list_databases_response);
 
-    let db = client.create_database().execute(&database_name).await?;
+    let cosmos_client = CosmosClient::with_pipeline(
+        account,
+        authorization_token,
+        CosmosOptions::with_client(http_client),
+    );
+    let db = cosmos_client
+        .create_database(azure_core::Context, &database_name)
+        .await?;
     println!("created database = {:#?}", db);
 
     // create collection!
