@@ -2690,6 +2690,25 @@ pub struct GatewayHostnameConfigurationContractProperties {
     pub http2_enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GatewayCertificateAuthorityCollection {
+    #[serde(skip_serializing)]
+    pub value: Vec<GatewayCertificateAuthorityContract>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GatewayCertificateAuthorityContract {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GatewayCertificateAuthorityContractProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GatewayCertificateAuthorityContractProperties {
+    #[serde(rename = "isTrusted", skip_serializing_if = "Option::is_none")]
+    pub is_trusted: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssociationContract {
     #[serde(flatten)]
     pub resource: Resource,
@@ -3245,4 +3264,122 @@ pub struct NetworkStatusContract {
     pub dns_servers: Vec<String>,
     #[serde(rename = "connectivityStatus")]
     pub connectivity_status: Vec<ConnectivityStatusContract>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiManagementSkuCapacity {
+    #[serde(skip_serializing)]
+    pub minimum: Option<i32>,
+    #[serde(skip_serializing)]
+    pub maximum: Option<i32>,
+    #[serde(skip_serializing)]
+    pub default: Option<i32>,
+    #[serde(rename = "scaleType", skip_serializing)]
+    pub scale_type: Option<api_management_sku_capacity::ScaleType>,
+}
+pub mod api_management_sku_capacity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ScaleType {
+        Automatic,
+        Manual,
+        None,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiManagementSkuCosts {
+    #[serde(rename = "meterID", skip_serializing)]
+    pub meter_id: Option<String>,
+    #[serde(skip_serializing)]
+    pub quantity: Option<i64>,
+    #[serde(rename = "extendedUnit", skip_serializing)]
+    pub extended_unit: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiManagementSkuCapabilities {
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(skip_serializing)]
+    pub value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiManagementSkuZoneDetails {
+    #[serde(skip_serializing)]
+    pub name: Vec<String>,
+    #[serde(skip_serializing)]
+    pub capabilities: Vec<ApiManagementSkuCapabilities>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiManagementSkuRestrictions {
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<api_management_sku_restrictions::Type>,
+    #[serde(skip_serializing)]
+    pub values: Vec<String>,
+    #[serde(rename = "restrictionInfo", skip_serializing_if = "Option::is_none")]
+    pub restriction_info: Option<ApiManagementSkuRestrictionInfo>,
+    #[serde(rename = "reasonCode", skip_serializing)]
+    pub reason_code: Option<api_management_sku_restrictions::ReasonCode>,
+}
+pub mod api_management_sku_restrictions {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Location,
+        Zone,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ReasonCode {
+        QuotaId,
+        NotAvailableForSubscription,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiManagementSku {
+    #[serde(rename = "resourceType", skip_serializing)]
+    pub resource_type: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(skip_serializing)]
+    pub tier: Option<String>,
+    #[serde(skip_serializing)]
+    pub size: Option<String>,
+    #[serde(skip_serializing)]
+    pub family: Option<String>,
+    #[serde(skip_serializing)]
+    pub kind: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<ApiManagementSkuCapacity>,
+    #[serde(skip_serializing)]
+    pub locations: Vec<String>,
+    #[serde(rename = "locationInfo", skip_serializing)]
+    pub location_info: Vec<ApiManagementSkuLocationInfo>,
+    #[serde(rename = "apiVersions", skip_serializing)]
+    pub api_versions: Vec<String>,
+    #[serde(skip_serializing)]
+    pub costs: Vec<ApiManagementSkuCosts>,
+    #[serde(skip_serializing)]
+    pub capabilities: Vec<ApiManagementSkuCapabilities>,
+    #[serde(skip_serializing)]
+    pub restrictions: Vec<ApiManagementSkuRestrictions>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiManagementSkuLocationInfo {
+    #[serde(skip_serializing)]
+    pub location: Option<String>,
+    #[serde(skip_serializing)]
+    pub zones: Vec<String>,
+    #[serde(rename = "zoneDetails", skip_serializing)]
+    pub zone_details: Vec<ApiManagementSkuZoneDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiManagementSkuRestrictionInfo {
+    #[serde(skip_serializing)]
+    pub locations: Vec<String>,
+    #[serde(skip_serializing)]
+    pub zones: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiManagementSkusResult {
+    pub value: Vec<ApiManagementSku>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
 }

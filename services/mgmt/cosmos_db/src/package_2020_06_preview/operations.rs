@@ -3901,7 +3901,7 @@ pub mod sql_resources {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
+                let rsp_value: CloudError =
                     serde_json::from_slice(rsp_body).context(get_sql_role_definition::DeserializeError { body: rsp_body.clone() })?;
                 get_sql_role_definition::DefaultResponse {
                     status_code,
@@ -3919,7 +3919,7 @@ pub mod sql_resources {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -3990,7 +3990,7 @@ pub mod sql_resources {
             http::StatusCode::ACCEPTED => Ok(create_update_sql_role_definition::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
                     .context(create_update_sql_role_definition::DeserializeError { body: rsp_body.clone() })?;
                 create_update_sql_role_definition::DefaultResponse {
                     status_code,
@@ -4013,7 +4013,7 @@ pub mod sql_resources {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -4076,7 +4076,7 @@ pub mod sql_resources {
             http::StatusCode::NO_CONTENT => Ok(delete_sql_role_definition::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
+                let rsp_value: CloudError =
                     serde_json::from_slice(rsp_body).context(delete_sql_role_definition::DeserializeError { body: rsp_body.clone() })?;
                 delete_sql_role_definition::DefaultResponse {
                     status_code,
@@ -4100,7 +4100,7 @@ pub mod sql_resources {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -4164,7 +4164,7 @@ pub mod sql_resources {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
+                let rsp_value: CloudError =
                     serde_json::from_slice(rsp_body).context(list_sql_role_definitions::DeserializeError { body: rsp_body.clone() })?;
                 list_sql_role_definitions::DefaultResponse {
                     status_code,
@@ -4182,7 +4182,7 @@ pub mod sql_resources {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -4248,7 +4248,7 @@ pub mod sql_resources {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
+                let rsp_value: CloudError =
                     serde_json::from_slice(rsp_body).context(get_sql_role_assignment::DeserializeError { body: rsp_body.clone() })?;
                 get_sql_role_assignment::DefaultResponse {
                     status_code,
@@ -4266,7 +4266,7 @@ pub mod sql_resources {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -4337,7 +4337,7 @@ pub mod sql_resources {
             http::StatusCode::ACCEPTED => Ok(create_update_sql_role_assignment::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
                     .context(create_update_sql_role_assignment::DeserializeError { body: rsp_body.clone() })?;
                 create_update_sql_role_assignment::DefaultResponse {
                     status_code,
@@ -4360,7 +4360,7 @@ pub mod sql_resources {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -4423,7 +4423,7 @@ pub mod sql_resources {
             http::StatusCode::NO_CONTENT => Ok(delete_sql_role_assignment::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
+                let rsp_value: CloudError =
                     serde_json::from_slice(rsp_body).context(delete_sql_role_assignment::DeserializeError { body: rsp_body.clone() })?;
                 delete_sql_role_assignment::DefaultResponse {
                     status_code,
@@ -4447,7 +4447,7 @@ pub mod sql_resources {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -4511,7 +4511,7 @@ pub mod sql_resources {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
+                let rsp_value: CloudError =
                     serde_json::from_slice(rsp_body).context(list_sql_role_assignments::DeserializeError { body: rsp_body.clone() })?;
                 list_sql_role_assignments::DefaultResponse {
                     status_code,
@@ -4529,7 +4529,7 @@ pub mod sql_resources {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -7450,7 +7450,7 @@ pub mod restorable_database_accounts {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
+                let rsp_value: CloudError =
                     serde_json::from_slice(rsp_body).context(list_by_location::DeserializeError { body: rsp_body.clone() })?;
                 list_by_location::DefaultResponse {
                     status_code,
@@ -7468,7 +7468,7 @@ pub mod restorable_database_accounts {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -7525,8 +7525,7 @@ pub mod restorable_database_accounts {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -7543,7 +7542,7 @@ pub mod restorable_database_accounts {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -7607,7 +7606,7 @@ pub mod restorable_database_accounts {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
+                let rsp_value: CloudError =
                     serde_json::from_slice(rsp_body).context(get_by_location::DeserializeError { body: rsp_body.clone() })?;
                 get_by_location::DefaultResponse {
                     status_code,
@@ -7625,7 +7624,7 @@ pub mod restorable_database_accounts {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -8264,8 +8263,7 @@ pub mod restorable_sql_databases {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -8282,7 +8280,7 @@ pub mod restorable_sql_databases {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -8352,8 +8350,7 @@ pub mod restorable_sql_containers {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -8370,7 +8367,7 @@ pub mod restorable_sql_containers {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -8443,8 +8440,7 @@ pub mod restorable_sql_resources {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -8461,7 +8457,7 @@ pub mod restorable_sql_resources {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -8526,8 +8522,7 @@ pub mod restorable_mongodb_databases {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -8544,7 +8539,7 @@ pub mod restorable_mongodb_databases {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -8614,8 +8609,7 @@ pub mod restorable_mongodb_collections {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -8632,7 +8626,7 @@ pub mod restorable_mongodb_collections {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,
@@ -8705,8 +8699,7 @@ pub mod restorable_mongodb_resources {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).context(list::DeserializeError { body: rsp_body.clone() })?;
                 list::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -8723,7 +8716,7 @@ pub mod restorable_mongodb_resources {
         pub enum Error {
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DefaultErrorResponse,
+                value: models::CloudError,
             },
             ParseUrlError {
                 source: url::ParseError,

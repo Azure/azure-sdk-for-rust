@@ -97,6 +97,24 @@ pub mod private_link_service_connection_state {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudError {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<CloudErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudErrorBody {
+    #[serde(skip_serializing)]
+    pub code: Option<String>,
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+    #[serde(skip_serializing)]
+    pub target: Option<String>,
+    #[serde(skip_serializing)]
+    pub details: Vec<CloudErrorBody>,
+    #[serde(rename = "additionalInfo", skip_serializing)]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NewErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<new_error_response::Error>,
