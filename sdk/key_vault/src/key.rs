@@ -12,7 +12,8 @@ use crate::client::API_VERSION_PARAM;
 use crate::{KeyClient, KeyVaultError};
 
 /// A KeyBundle consisting of a WebKey plus its attributes.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Getters)]
+#[getset(get = "pub")]
 pub struct KeyVaultKey {
     /// The key management properties.
     #[serde(flatten)]
@@ -364,12 +365,12 @@ mod tests {
             .await
             .unwrap();
 
-        let JsonWebKey { id, n, .. } = key.key;
+        let JsonWebKey { id, n, .. } = key.key();
         let KeyProperties {
             attributes,
             managed,
             tags,
-        } = key.properties;
+        } = key.properties();
         let KeyAttributes {
             created_on,
             enabled,
@@ -377,14 +378,17 @@ mod tests {
             ..
         } = attributes;
         let expected_n = base64::decode_config("2HJAE5fU3Cw2Rt9hEuq-F6XjINKGa-zskfISVqopqUy60GOs2eyhxbWbJBeUXNor_gf-tXtNeuqeBgitLeVa640UDvnEjYTKWjCniTxZRaU7ewY8BfTSk-7KxoDdLsPSpX_MX4rwlAx-_1UGk5t4sQgTbm9T6Fm2oqFd37dsz5-Gj27UP2GTAShfJPFD7MqU_zIgOI0pfqsbNL5xTQVM29K6rX4jSPtylZV3uWJtkoQIQnrIHhk1d0SC0KwlBV3V7R_LVYjiXLyIXsFzSNYgQ68ZjAwt8iL7I8Osa-ehQLM13DVvLASaf7Jnu3sC3CWl3Gyirgded6cfMmswJzY87w", BASE64_URL_SAFE).unwrap();
-        assert_eq!(expected_n, n.unwrap());
+        assert_eq!(expected_n, n.to_owned().unwrap());
         assert_eq!(
             "https://test-keyvault.vault.azure.net/keys/test-key/78deebed173b48e48f55abf87ed4cf71",
-            id.unwrap()
+            id.to_owned().unwrap()
         );
 
         assert!(managed.is_none());
-        assert_eq!(tags.unwrap().get("purpose").unwrap(), "unit test");
+        assert_eq!(
+            tags.to_owned().unwrap().get("purpose").unwrap(),
+            "unit test"
+        );
         assert_eq!(true, enabled.unwrap());
         assert!(diff(time_created, created_on.unwrap()) < Duration::seconds(1));
         assert!(diff(time_updated, updated_on.unwrap()) < Duration::seconds(1));
@@ -418,16 +422,16 @@ mod tests {
             .await
             .unwrap();
 
-        let kid = res.key_id;
-        let sig = res.signature;
-        let alg = res.algorithm;
+        let kid = res.key_id();
+        let sig = res.signature();
+        let alg = res.algorithm();
 
         assert_eq!(
             kid,
             "https://myvault.vault.azure.net/keys/testkey/9885aa558e8d448789683188f8c194b0"
         );
         let expected_sig = base64::decode_config("aKFG8NXcfTzqyR44rW42484K_zZI_T7zZuebvWuNgAoEI1gXYmxrshp42CunSmmu4oqo4-IrCikPkNIBkHXnAW2cv03Ad0UpwXhVfepK8zzDBaJPMKVGS-ZRz8CshEyGDKaLlb3J3zEkXpM3RrSEr0mdV6hndHD_mznLB5RmFui5DsKAhez4vUqajgtkgcPfCekMqeSwp6r9ItVL-gEoAohx8XMDsPedqu-7BuZcBcdayaPuBRL4wWoTDULA11P-UN_sJ5qMj3BbiRYhIlBWGR04wIGfZ3pkJjHJUpOvgH2QajdYPzUBauOCewMYbq9XkLRSzI_A7HkkDVycugSeAA", BASE64_URL_SAFE).unwrap();
-        assert_eq!(expected_sig, sig);
+        assert_eq!(expected_sig, sig.to_owned());
         assert!(matches!(alg, SignatureAlgorithm::RS512));
     }
 }
