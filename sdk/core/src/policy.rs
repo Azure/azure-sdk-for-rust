@@ -105,7 +105,17 @@ impl Policy for TransportPolicy {
 }
 
 #[derive(Clone)]
-pub struct Context;
+pub struct Context {
+    // Temporary hack to make sure that Context is not initializeable
+    // Soon Context will have proper data fields
+    _priv: (),
+}
+
+impl Context {
+    pub fn new() -> Self {
+        Self { _priv: () }
+    }
+}
 
 #[async_trait::async_trait]
 pub trait Policy: Send + Sync + std::fmt::Debug {

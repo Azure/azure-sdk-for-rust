@@ -147,13 +147,15 @@ impl CosmosClient {
         &self,
         ctx: Context,
         database_name: S,
-        // options: CreateDatabaseOptions,
-    ) -> Result<crate::responses::CreateDatabaseResponse, Error> {
-        // TODO: remove this build in favor of creating request from supplied options
-        let builder = requests::CreateDatabaseBuilder::new(self);
-        let request = builder.request(database_name.as_ref())?.into();
-        let response = self.pipeline().unwrap().send(ctx, request).await?;
-        response.into_inner().try_into()
+        options: crate::operations::create_database::Options,
+    ) -> Result<crate::operations::create_database::Response, Error> {
+        let mut request = self.prepare_request2("dbs", http::Method::POST, ResourceType::Databases);
+        options.decorate_request(&mut request, database_name.as_ref())?;
+        self.pipeline()
+            .unwrap()
+            .send(ctx, request)
+            .await?
+            .try_into()
     }
 
     fn pipeline(&self) -> Option<&Pipeline> {
@@ -192,6 +194,17 @@ impl CosmosClient {
             )
         };
         self.prepare_request_with_signature(uri_path, http_method, &time, &auth)
+    }
+
+    // Eventually this method will replace `prepare_request` fully
+    pub(crate) fn prepare_request2(
+        &self,
+        uri_path: &str,
+        http_method: http::Method,
+        resource_type: ResourceType,
+    ) -> Request {
+        let builder = self.prepare_request(uri_path, http_method, resource_type);
+        builder.body(bytes::Bytes::new()).unwrap().into()
     }
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {

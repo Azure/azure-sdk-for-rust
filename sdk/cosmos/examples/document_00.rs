@@ -79,7 +79,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Some(db) => db,
         None => {
             database_client
-                .create_database(azure_core::Context, DATABASE)
+                .create_database(
+                    azure_core::Context::new(),
+                    DATABASE,
+                    azure_cosmos::operations::create_database::Options::new(),
+                )
                 .await?
                 .database
         }

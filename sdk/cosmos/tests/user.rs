@@ -1,5 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
 
+use azure_cosmos::prelude::*;
+
 mod setup;
 
 #[tokio::test]
@@ -12,8 +14,11 @@ async fn users() {
 
     // create a temp database
     let _create_database_response = client
-        .create_database()
-        .execute(DATABASE_NAME)
+        .create_database(
+            azure_core::Context::new(),
+            DATABASE_NAME,
+            create_database::Options::new(),
+        )
         .await
         .unwrap();
 

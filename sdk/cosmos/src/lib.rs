@@ -106,6 +106,7 @@ extern crate failure;
 extern crate azure_core;
 
 pub mod clients;
+pub mod operations;
 pub mod prelude;
 pub mod requests;
 pub mod resources;

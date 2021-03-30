@@ -50,7 +50,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::with_client(http_client),
     );
     let db = cosmos_client
-        .create_database(azure_core::Context, &database_name)
+        .create_database(
+            azure_core::Context::new(),
+            &database_name,
+            azure_cosmos::operations::create_database::Options::new(),
+        )
         .await?;
     println!("created database = {:#?}", db);
 

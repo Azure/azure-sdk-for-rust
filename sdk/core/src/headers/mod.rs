@@ -9,6 +9,9 @@ pub const MS_DATE: &str = "x-ms-date";
 
 pub trait AddAsHeader {
     fn add_as_header(&self, builder: Builder) -> Builder;
+    fn add_as_header2(&self, _request: &mut crate::Request) {
+        unimplemented!()
+    }
 }
 
 #[must_use]
@@ -25,6 +28,12 @@ pub fn add_optional_header<T: AddAsHeader>(item: &Option<T>, mut builder: Builde
         builder = item.add_as_header(builder);
     }
     builder
+}
+
+pub fn add_optional_header2<T: AddAsHeader>(item: &Option<T>, request: &mut crate::Request) {
+    if let Some(item) = item {
+        item.add_as_header2(request);
+    }
 }
 
 #[must_use]

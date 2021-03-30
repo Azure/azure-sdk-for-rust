@@ -9,6 +9,15 @@ impl Request {
     pub fn take_inner(&mut self) -> http::Request<bytes::Bytes> {
         std::mem::replace(&mut self.inner, http::Request::new(bytes::Bytes::new()))
     }
+
+    pub fn body<T: serde::Serialize>(
+        &mut self,
+        body: T,
+    ) -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
+        let b = self.inner.body_mut();
+        *b = crate::to_json(&body)?;
+        Ok(())
+    }
 }
 
 impl From<http::Request<bytes::Bytes>> for Request {

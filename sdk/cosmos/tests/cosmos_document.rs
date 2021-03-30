@@ -31,8 +31,11 @@ async fn create_and_delete_document() {
     let client = setup::initialize().unwrap();
 
     client
-        .create_database()
-        .execute(DATABASE_NAME)
+        .create_database(
+            azure_core::Context::new(),
+            DATABASE_NAME,
+            create_database::Options::new(),
+        )
         .await
         .unwrap();
 
@@ -118,8 +121,11 @@ async fn query_documents() {
     let client = setup::initialize().unwrap();
 
     client
-        .create_database()
-        .execute(DATABASE_NAME)
+        .create_database(
+            azure_core::Context::new(),
+            DATABASE_NAME,
+            create_database::Options::new(),
+        )
         .await
         .unwrap();
     let database_client = client.into_database_client(DATABASE_NAME);
@@ -190,8 +196,11 @@ async fn replace_document() {
     let client = setup::initialize().unwrap();
 
     client
-        .create_database()
-        .execute(DATABASE_NAME)
+        .create_database(
+            azure_core::Context::new(),
+            DATABASE_NAME,
+            create_database::Options::new(),
+        )
         .await
         .unwrap();
     let database_client = client.into_database_client(DATABASE_NAME);
