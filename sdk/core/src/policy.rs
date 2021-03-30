@@ -1,5 +1,6 @@
+use crate::{Request, Response};
+
 use async_trait::async_trait;
-use bytes::Bytes;
 
 use std::error::Error;
 use std::future::Future;
@@ -35,22 +36,23 @@ impl Policy for RetryPolicy {
     async fn send(
         &self,
         ctx: Context,
-        request: http::Request<Bytes>,
+        request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<http::Response<Bytes>> {
+    ) -> PolicyResult<Response> {
         let retries = self.options.num_retries;
-        // TODO loop
-        if retries == 0 {
-            // TODO: return last error
-            return Err(":-(".into());
+        let mut last_result = next[0].send(ctx.clone(), request, &next[1..]).await;
+        loop {
+            if last_result.is_ok() || retries == 0 {
+                return last_result;
+            }
+
+            last_result = next[0].send(ctx.clone(), request, &next[1..]).await;
         }
-        next[0].send(ctx.clone(), request, &next[1..]).await
     }
 }
 
 type BoxedFuture<T> = Box<dyn Future<Output = PolicyResult<T>> + Send>;
-type Transport =
-    dyn Fn(Context, http::Request<Bytes>) -> Pin<BoxedFuture<http::Response<Bytes>>> + Send;
+type Transport = dyn Fn(Context, &mut Request) -> Pin<BoxedFuture<Response>> + Send;
 
 pub struct TransportOptions {
     send: Box<Mutex<Transport>>,
@@ -59,9 +61,7 @@ pub struct TransportOptions {
 impl TransportOptions {
     pub fn new<F>(send: F) -> Self
     where
-        F: Fn(Context, http::Request<Bytes>) -> Pin<BoxedFuture<http::Response<Bytes>>>
-            + Send
-            + 'static,
+        F: Fn(Context, &mut Request) -> Pin<BoxedFuture<Response>> + Send + 'static,
     {
         Self {
             send: Box::new(Mutex::new(send)),
@@ -90,17 +90,17 @@ impl Policy for TransportPolicy {
     async fn send(
         &self,
         ctx: Context,
-        request: http::Request<bytes::Bytes>,
+        request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<http::Response<bytes::Bytes>> {
+    ) -> PolicyResult<Response> {
         if !next.is_empty() {
             panic!("Transport policy was not last policy")
         }
-        let future = {
+        let response = {
             let transport = self.options.send.lock().unwrap();
             (transport)(ctx, request)
         };
-        Ok(future.await?)
+        Ok(response.await?)
     }
 }
 
@@ -112,9 +112,9 @@ pub trait Policy: Send + Sync + std::fmt::Debug {
     async fn send(
         &self,
         ctx: Context,
-        request: http::Request<Bytes>,
+        request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<http::Response<Bytes>>;
+    ) -> PolicyResult<Response>;
 }
 
 #[derive(Debug, Clone)]
@@ -124,69 +124,14 @@ pub struct Pipeline {
 
 impl Pipeline {
     // TODO: how can we ensure that the transport policy is the last policy?
+    // Make this more idiot proof
     pub fn new(policies: Vec<Arc<dyn Policy>>) -> Self {
         Self { policies }
     }
 
-    pub async fn send(
-        &self,
-        ctx: Context,
-        request: http::Request<Bytes>,
-    ) -> PolicyResult<http::Response<Bytes>> {
+    pub async fn send(&self, ctx: Context, mut request: Request) -> PolicyResult<Response> {
         self.policies[0]
-            .send(ctx, request, &self.policies[1..])
+            .send(ctx, &mut request, &self.policies[1..])
             .await
     }
 }
-
-struct CosmosClient {
-    pipeline: Pipeline,
-    url: url::Url,
-}
-
-// struct Credentials;
-// struct CosmosOptions {
-//     retry: RetryOptions,
-//     // For example: TransportOptions {
-//     //     send: Box::new(|ctx: Context, request: http::Request<bytes::Bytes>| todo!()),
-//     // },
-//     transport: TransportOptions,
-// }
-
-// impl CosmosClient {
-//     fn new(url: url::Url, credential: Credentials, options: CosmosOptions) -> Self {
-//         let mut policies = Vec::new();
-//         let retry_policy = RetryPolicy {
-//             options: options.retry,
-//         };
-//         policies.push(Arc::new(retry_policy) as Arc<dyn Policy>);
-//         let transport_policy = TransportPolicy {
-//             options: options.transport,
-//         };
-//         policies.push(Arc::new(transport_policy) as Arc<dyn Policy>);
-//         let pipeline = Pipeline { policies };
-
-//         Self { pipeline, url }
-//     }
-
-//     pub fn create_collection(
-//         &self,
-//         ctx: Context, /* Argument */
-//     ) -> PolicyResult<CreateCollectionResult> {
-//         // Create the http request option
-//         // Url, headers, query params, payload body, etc.
-//         let request = todo!();
-//         let response = self.pipeline.send(ctx, request);
-//         todo!("Deserialize headers and body into CreateCollectionResult")
-//     }
-// }
-
-// fn main() {
-//     let credentials = todo!();
-//     let url = todo!();
-//     let client = CosmosClient::new(url, credentials, CosmosOptions::default());
-//     let ctx = todo!();
-//     client.create_collection(ctx)
-// }
-
-// struct CreateCollectionResult;

@@ -47,7 +47,8 @@ impl CosmosOptions {
             retry: RetryOptions::new(3),
             transport: TransportOptions::new(move |_ctx, req| {
                 let client = client.clone();
-                Box::pin(async move { client.execute_request(req).await })
+                let req = req.take_inner();
+                Box::pin(async move { Ok(client.execute_request(req).await?.into()) })
             }),
         }
     }
@@ -146,12 +147,13 @@ impl CosmosClient {
         &self,
         ctx: Context,
         database_name: S,
+        // options: CreateDatabaseOptions,
     ) -> Result<crate::responses::CreateDatabaseResponse, Error> {
         // TODO: remove this build in favor of creating request from supplied options
         let builder = requests::CreateDatabaseBuilder::new(self);
-        let request = builder.request(database_name.as_ref())?;
+        let request = builder.request(database_name.as_ref())?.into();
         let response = self.pipeline().unwrap().send(ctx, request).await?;
-        response.try_into()
+        response.into_inner().try_into()
     }
 
     fn pipeline(&self) -> Option<&Pipeline> {
