@@ -4,7 +4,6 @@ use azure_core::{TokenCredential, TokenResponse};
 use const_format::formatcp;
 use url::Url;
 
-pub(crate) const PUBLIC_ENDPOINT_SUFFIX: &str = "vault.azure.net";
 pub(crate) const API_VERSION: &str = "7.0";
 pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSION);
 
@@ -16,7 +15,7 @@ pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSI
 /// use azure_key_vault::KeyClient;
 /// use azure_identity::token_credentials::DefaultCredential;
 /// let creds = DefaultCredential::default();
-/// let client = KeyClient::with_name(&"test-key-vault", &creds).unwrap();
+/// let client = KeyClient::new(&"https://test-key-vault.vault.azure.net", &creds).unwrap();
 /// ```
 #[derive(Debug)]
 pub struct KeyClient<'a, T> {
@@ -47,21 +46,6 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             token: None,
         };
         Ok(client)
-    }
-
-    /// Creates a new `KeyClient` from provided vault name
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use azure_key_vault::KeyClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
-    /// let creds = DefaultCredential::default();
-    /// let client = KeyClient::with_name("test-key-vault", &creds).unwrap();
-    /// ```
-    pub fn with_name(vault_name: &str, token_credential: &'a T) -> Result<Self> {
-        let url = format!("https://{}.{}", vault_name, PUBLIC_ENDPOINT_SUFFIX);
-        Self::new(&url, token_credential)
     }
 
     pub(crate) async fn refresh_token(&mut self) -> Result<(), KeyVaultError> {

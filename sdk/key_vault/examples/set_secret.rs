@@ -8,8 +8,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client_secret =
         env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable.");
     let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
-    let keyvault_name =
-        env::var("KEYVAULT_NAME").expect("Missing KEYVAULT_NAME environment variable.");
+    let keyvault_url =
+        env::var("KEYVAULT_URL").expect("Missing KEYVAULT_URL environment variable.");
     let secret_name = env::var("SECRET_NAME").expect("Missing SECRET_NAME environment variable.");
     let secret_value =
         env::var("SECRET_VALUE").expect("Missing SECRET_VALUE environment variable.");
@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client_secret,
         TokenCredentialOptions::default(),
     );
-    let mut client = KeyClient::with_name(&keyvault_name, &creds)?;
+    let mut client = KeyClient::new(&keyvault_url, &creds)?;
 
     client.set_secret(&secret_name, &secret_value).await?;
 
