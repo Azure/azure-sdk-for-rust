@@ -3,10 +3,8 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use crate::models::*;
-use snafu::{ResultExt, Snafu};
 pub mod container_services {
     use crate::models::*;
-    use snafu::{ResultExt, Snafu};
     pub async fn list_orchestrators(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -20,14 +18,14 @@ pub mod container_services {
             subscription_id,
             location
         );
-        let mut url = url::Url::parse(url_str).context(list_orchestrators::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_orchestrators::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .context(list_orchestrators::GetTokenError)?;
+                .map_err(|source| list_orchestrators::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -36,40 +34,49 @@ pub mod container_services {
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).context(list_orchestrators::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_orchestrators::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .context(list_orchestrators::ExecuteRequestError)?;
+            .map_err(|source| list_orchestrators::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: OrchestratorVersionProfileListResult =
-                    serde_json::from_slice(rsp_body).context(list_orchestrators::DeserializeError { body: rsp_body.clone() })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| list_orchestrators::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                list_orchestrators::UnexpectedResponse {
+                Err(list_orchestrators::Error::UnexpectedResponse {
                     status_code,
                     body: rsp_body.clone(),
-                }
-                .fail()
+                })
             }
         }
     }
     pub mod list_orchestrators {
         use crate::{models, models::*};
-        use snafu::Snafu;
-        #[derive(Debug, Snafu)]
-        #[snafu(visibility(pub(crate)))]
+        #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
             ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
             SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
             GetTokenError { source: azure_core::errors::AzureError },
         }
     }
