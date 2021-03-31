@@ -125,8 +125,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::with_name(
-    ///     &"KEYVAULT_NAME",
+    ///     let mut client = KeyClient::new(
+    ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
     ///     let secret = client.get_secret(&"SECRET_NAME").await.unwrap();
@@ -154,9 +154,9 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::with_name(
-    ///         &"KEYVAULT_NAME",
-    ///         &creds,
+    /// let mut client = KeyClient::new(
+    ///     &"KEYVAULT_URL",
+    ///     &creds,
     ///     ).unwrap();
     ///     let secret = client.get_secret_with_version(&"SECRET_NAME", &"SECRET_VERSION").await.unwrap();
     ///     dbg!(&secret);
@@ -194,8 +194,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::with_name(
-    ///     &"KEYVAULT_NAME",
+    ///     let mut client = KeyClient::new(
+    ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
     ///     let secrets = client.list_secrets().await.unwrap();
@@ -251,8 +251,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::with_name(
-    ///     &"KEYVAULT_NAME",
+    ///     let mut client = KeyClient::new(
+    ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
     ///     let secret_versions = client.get_secret_versions(&"SECRET_NAME").await.unwrap();
@@ -316,8 +316,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::with_name(
-    ///     &"KEYVAULT_NAME",
+    ///     let mut client = KeyClient::new(
+    ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
     ///     client.set_secret(&"SECRET_NAME", &"NEW_VALUE").await.unwrap();
@@ -363,8 +363,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::with_name(
-    ///     &"KEYVAULT_NAME",
+    ///     let mut client = KeyClient::new(
+    ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
     ///     client.update_secret_enabled(&"SECRET_NAME", &"", true).await.unwrap();
@@ -404,8 +404,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::with_name(
-    ///     &"KEYVAULT_NAME",
+    ///     let mut client = KeyClient::new(
+    ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
     ///     client.update_secret_recovery_level(&"SECRET_NAME", &"", RecoveryLevel::Purgeable).await.unwrap();
@@ -449,8 +449,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::with_name(
-    ///     &"KEYVAULT_NAME",
+    ///     let mut client = KeyClient::new(
+    ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
     ///     client.update_secret_expiration_time(&"SECRET_NAME", &"", Utc::now() + Duration::days(14)).await.unwrap();
@@ -507,8 +507,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::with_name(
-    ///     &"KEYVAULT_NAME",
+    ///     let mut client = KeyClient::new(
+    ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
     ///     client.restore_secret(&"KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").await.unwrap();
@@ -545,8 +545,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::with_name(
-    ///     &"KEYVAULT_NAME",
+    ///     let mut client = KeyClient::new(
+    ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
     ///     client.backup_secret(&"SECRET_NAME").await.unwrap();
@@ -592,8 +592,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::with_name(
-    ///     &"KEYVAULT_NAME",
+    ///     let mut client = KeyClient::new(
+    ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
     ///     client.delete_secret(&"SECRET_NAME").await.unwrap();
