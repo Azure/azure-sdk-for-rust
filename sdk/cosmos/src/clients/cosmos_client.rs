@@ -11,6 +11,7 @@ use ring::hmac;
 use url::form_urlencoded;
 
 use std::borrow::Cow;
+use std::convert::TryInto;
 use std::fmt::Debug;
 use std::sync::Arc;
 
@@ -18,12 +19,39 @@ const AZURE_VERSION: &str = "2018-12-31";
 const VERSION: &str = "1.0";
 const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
+pub type Error = Box<dyn std::error::Error + Send + Sync>;
+use azure_core::*;
+
+#[derive(Debug, Clone)]
+enum TransportStack {
+    Client(Arc<Box<dyn HttpClient>>),
+    Pipeline(Pipeline),
+}
 /// A plain Cosmos client.
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
-    http_client: Arc<Box<dyn HttpClient>>,
+    transport: TransportStack,
     auth_token: AuthorizationToken,
     cloud_location: CloudLocation,
+}
+/// TODO
+pub struct CosmosOptions {
+    retry: RetryOptions,
+    transport: TransportOptions,
+}
+
+impl CosmosOptions {
+    /// TODO
+    pub fn with_client(client: Arc<Box<dyn HttpClient>>) -> Self {
+        Self {
+            retry: RetryOptions::new(3),
+            transport: TransportOptions::new(move |_ctx, req| {
+                let client = client.clone();
+                let req = req.take_inner();
+                Box::pin(async move { Ok(client.execute_request(req).await?.into()) })
+            }),
+        }
+    }
 }
 
 impl CosmosClient {
@@ -35,7 +63,7 @@ impl CosmosClient {
     ) -> Self {
         let cloud_location = CloudLocation::Public(account);
         Self {
-            http_client,
+            transport: TransportStack::Client(http_client),
             auth_token,
             cloud_location,
         }
@@ -49,7 +77,7 @@ impl CosmosClient {
     ) -> Self {
         let cloud_location = CloudLocation::China(account);
         Self {
-            http_client,
+            transport: TransportStack::Client(http_client),
             auth_token,
             cloud_location,
         }
@@ -64,7 +92,7 @@ impl CosmosClient {
     ) -> Self {
         let cloud_location = CloudLocation::Custom { account, uri };
         Self {
-            http_client,
+            transport: TransportStack::Client(http_client),
             auth_token,
             cloud_location,
         }
@@ -83,9 +111,29 @@ impl CosmosClient {
             uri,
         };
         Self {
-            http_client,
+            transport: TransportStack::Client(http_client),
             auth_token,
             cloud_location,
+        }
+    }
+
+    /// TODO
+    pub fn with_pipeline(
+        account: String, // TODO: this will eventually be a URL
+        auth_token: AuthorizationToken,
+        options: CosmosOptions,
+    ) -> Self {
+        use azure_core::*;
+        let mut policies = Vec::new();
+        let retry_policy = RetryPolicy::new(options.retry);
+        policies.push(Arc::new(retry_policy) as Arc<dyn Policy>);
+        let transport_policy = TransportPolicy::new(options.transport);
+        policies.push(Arc::new(transport_policy) as Arc<dyn Policy>);
+        let pipeline = Pipeline::new(policies);
+        Self {
+            transport: TransportStack::Pipeline(pipeline),
+            auth_token,
+            cloud_location: CloudLocation::Public(account),
         }
     }
 
@@ -95,8 +143,26 @@ impl CosmosClient {
     }
 
     /// Create a database
-    pub fn create_database(&self) -> requests::CreateDatabaseBuilder<'_> {
-        requests::CreateDatabaseBuilder::new(self)
+    pub async fn create_database<S: AsRef<str>>(
+        &self,
+        ctx: Context,
+        database_name: S,
+        options: crate::operations::create_database::Options,
+    ) -> Result<crate::operations::create_database::Response, Error> {
+        let mut request = self.prepare_request2("dbs", http::Method::POST, ResourceType::Databases);
+        options.decorate_request(&mut request, database_name.as_ref())?;
+        self.pipeline()
+            .unwrap()
+            .send(ctx, request)
+            .await?
+            .try_into()
+    }
+
+    fn pipeline(&self) -> Option<&Pipeline> {
+        match &self.transport {
+            TransportStack::Pipeline(p) => Some(p),
+            TransportStack::Client(_) => None,
+        }
     }
 
     /// List all databases
@@ -130,8 +196,22 @@ impl CosmosClient {
         self.prepare_request_with_signature(uri_path, http_method, &time, &auth)
     }
 
+    // Eventually this method will replace `prepare_request` fully
+    pub(crate) fn prepare_request2(
+        &self,
+        uri_path: &str,
+        http_method: http::Method,
+        resource_type: ResourceType,
+    ) -> Request {
+        let builder = self.prepare_request(uri_path, http_method, resource_type);
+        builder.body(bytes::Bytes::new()).unwrap().into()
+    }
+
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.http_client.as_ref().as_ref()
+        match &self.transport {
+            TransportStack::Client(c) => c.as_ref().as_ref(),
+            TransportStack::Pipeline(_) => panic!("No client set"),
+        }
     }
 
     fn prepare_request_with_signature(

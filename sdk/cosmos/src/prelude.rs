@@ -25,3 +25,5 @@ pub use crate::resources::document::*;
 pub use crate::resources::*;
 
 pub use permission::AuthorizationToken;
+
+pub use crate::operations::*;

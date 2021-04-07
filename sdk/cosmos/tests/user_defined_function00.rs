@@ -28,8 +28,11 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
 
     // create a temp database
     let _create_database_response = client
-        .create_database()
-        .execute(DATABASE_NAME)
+        .create_database(
+            azure_core::Context::new(),
+            DATABASE_NAME,
+            create_database::Options::new(),
+        )
         .await
         .unwrap();
 

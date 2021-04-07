@@ -3,7 +3,6 @@
 #![allow(missing_docs)]
 
 mod create_collection_response;
-mod create_database_response;
 mod create_document_response;
 mod create_permission_response;
 mod create_reference_attachment_response;
@@ -44,7 +43,6 @@ mod replace_reference_attachment_response;
 mod replace_stored_procedure_response;
 
 pub use create_collection_response::CreateCollectionResponse;
-pub use create_database_response::CreateDatabaseResponse;
 pub use create_document_response::CreateDocumentResponse;
 pub use create_permission_response::CreatePermissionResponse;
 pub use create_reference_attachment_response::CreateReferenceAttachmentResponse;

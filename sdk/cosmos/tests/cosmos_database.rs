@@ -2,6 +2,8 @@
 
 mod setup;
 
+use azure_cosmos::prelude::*;
+
 #[tokio::test]
 async fn create_and_delete_database() {
     const DATABASE_NAME: &str = "cosmos-test-db-create-and-delete-database";
@@ -14,8 +16,11 @@ async fn create_and_delete_database() {
 
     // create a new database and check if the number of DBs increased
     let database = client
-        .create_database()
-        .execute(DATABASE_NAME)
+        .create_database(
+            azure_core::Context::new(),
+            DATABASE_NAME,
+            create_database::Options::new(),
+        )
         .await
         .unwrap();
     let databases = client.list_databases().execute().await.unwrap();

@@ -12,15 +12,15 @@ extern crate serde_derive;
 mod macros;
 
 pub mod errors;
-mod etag;
 pub mod headers;
+mod http;
 mod http_client;
 pub mod incompletevector;
-pub mod lease;
+mod models;
 pub mod parsing;
+mod policy;
 pub mod prelude;
 mod request_options;
-mod stored_access_policy;
 pub mod util;
 
 use chrono::{DateTime, Utc};
@@ -30,9 +30,11 @@ use oauth2::AccessToken;
 use std::fmt::Debug;
 use uuid::Uuid;
 
+pub use self::http::{Request, Response};
 pub use headers::AddAsHeader;
 pub use http_client::{to_json, HttpClient};
-pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
+pub use models::*;
+pub use policy::*;
 
 pub type RequestId = Uuid;
 pub type SessionToken = String;
