@@ -103,3 +103,20 @@ impl RetryPolicyInstance for ExponentialBackoffRetryPolicyInstance {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NoRetryPolicy {}
+
+#[async_trait::async_trait]
+impl RetryPolicy for NoRetryPolicy {
+    async fn create_instance(&self) -> Box<dyn RetryPolicyInstance> {
+        Box::new(NoRetryPolicy {})
+    }
+}
+
+#[async_trait::async_trait]
+impl RetryPolicyInstance for NoRetryPolicy {
+    async fn retry(&mut self) -> bool {
+        false
+    }
+}
