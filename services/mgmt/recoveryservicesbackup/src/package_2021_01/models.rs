@@ -3760,6 +3760,29 @@ pub struct CrrAccessTokenResource {
     pub properties: Option<CrrAccessToken>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BmsaadPropertiesQueryObject {
+    #[serde(rename = "backupManagementType", skip_serializing_if = "Option::is_none")]
+    pub backup_management_type: Option<bmsaad_properties_query_object::BackupManagementType>,
+}
+pub mod bmsaad_properties_query_object {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupManagementType {
+        Invalid,
+        #[serde(rename = "AzureIaasVM")]
+        AzureIaasVm,
+        #[serde(rename = "MAB")]
+        Mab,
+        #[serde(rename = "DPM")]
+        Dpm,
+        AzureBackupServer,
+        AzureSql,
+        AzureStorage,
+        AzureWorkload,
+        DefaultBackup,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationStatusRecoveryPointExtendedInfo {
     #[serde(flatten)]
     pub operation_status_extended_info: OperationStatusExtendedInfo,

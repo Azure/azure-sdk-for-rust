@@ -60,6 +60,8 @@ pub struct SaasResourceCreation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Tags>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<SaasCreationProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

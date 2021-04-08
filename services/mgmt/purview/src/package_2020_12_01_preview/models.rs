@@ -55,6 +55,8 @@ pub struct AccountProperties {
     pub provisioning_state: Option<account_properties::ProvisioningState>,
     #[serde(rename = "publicNetworkAccess", skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<account_properties::PublicNetworkAccess>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<serde_json::Value>,
 }
 pub mod account_properties {
     use super::*;
@@ -121,6 +123,38 @@ pub struct ManagedResources {
     pub resource_group: Option<String>,
     #[serde(rename = "storageAccount", skip_serializing)]
     pub storage_account: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
@@ -208,36 +242,6 @@ pub mod default_account_payload {
         Tenant,
         Subscription,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeletedAccountList {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub count: Option<i64>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    pub value: Vec<DeletedAccount>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeletedAccount {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing)]
-    pub properties: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeletedAccountProperties {
-    #[serde(rename = "accountId", skip_serializing)]
-    pub account_id: Option<String>,
-    #[serde(rename = "deletedBy", skip_serializing)]
-    pub deleted_by: Option<String>,
-    #[serde(rename = "deletionDate", skip_serializing)]
-    pub deletion_date: Option<String>,
-    #[serde(skip_serializing)]
-    pub location: Option<String>,
-    #[serde(rename = "scheduledPurgeDate", skip_serializing)]
-    pub scheduled_purge_date: Option<String>,
-    #[serde(skip_serializing)]
-    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationList {
@@ -346,10 +350,14 @@ pub struct PrivateLinkResourceList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkResourceProperties {

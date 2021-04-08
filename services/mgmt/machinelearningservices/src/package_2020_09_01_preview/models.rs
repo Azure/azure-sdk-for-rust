@@ -324,8 +324,6 @@ pub struct UsageName {
 pub struct Usage {
     #[serde(skip_serializing)]
     pub id: Option<String>,
-    #[serde(rename = "amlWorkspaceLocation", skip_serializing)]
-    pub aml_workspace_location: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
     #[serde(skip_serializing)]
@@ -439,6 +437,8 @@ pub struct QuotaBaseProperties {
     pub limit: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unit: Option<quota_base_properties::Unit>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
 }
 pub mod quota_base_properties {
     use super::*;
@@ -451,8 +451,6 @@ pub mod quota_base_properties {
 pub struct QuotaUpdateParameters {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<QuotaBaseProperties>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateWorkspaceQuotasResult {
@@ -504,8 +502,8 @@ pub struct ResourceName {
 pub struct ResourceQuota {
     #[serde(skip_serializing)]
     pub id: Option<String>,
-    #[serde(rename = "amlWorkspaceLocation", skip_serializing)]
-    pub aml_workspace_location: Option<String>,
+    #[serde(skip_serializing)]
+    pub location: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

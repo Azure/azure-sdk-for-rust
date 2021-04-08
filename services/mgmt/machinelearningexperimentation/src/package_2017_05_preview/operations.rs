@@ -1316,7 +1316,7 @@ pub mod projects {
     ) -> std::result::Result<ProjectListResult, list_by_workspace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces{}/projects",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,

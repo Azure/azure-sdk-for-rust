@@ -89,6 +89,7 @@ pub mod custom_rollouts {
         subscription_id: &str,
         provider_namespace: &str,
         rollout_name: &str,
+        properties: &CustomRollout,
     ) -> std::result::Result<CustomRollout, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -109,7 +110,7 @@ pub mod custom_rollouts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(properties).map_err(|source| create_or_update::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -331,6 +332,7 @@ pub mod default_rollouts {
         subscription_id: &str,
         provider_namespace: &str,
         rollout_name: &str,
+        properties: &DefaultRollout,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -351,7 +353,7 @@ pub mod default_rollouts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(properties).map_err(|source| create_or_update::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -736,6 +738,7 @@ pub async fn checkin_manifest(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     provider_namespace: &str,
+    checkin_manifest_params: &CheckinManifestParams,
 ) -> std::result::Result<CheckinManifestInfo, checkin_manifest::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -755,8 +758,7 @@ pub async fn checkin_manifest(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+    let req_body = azure_core::to_json(checkin_manifest_params).map_err(|source| checkin_manifest::Error::SerializeError { source })?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
@@ -899,6 +901,7 @@ pub mod notification_registrations {
         subscription_id: &str,
         provider_namespace: &str,
         notification_registration_name: &str,
+        properties: &NotificationRegistration,
     ) -> std::result::Result<NotificationRegistration, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -919,7 +922,7 @@ pub mod notification_registrations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(properties).map_err(|source| create_or_update::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -1288,6 +1291,7 @@ pub mod operations {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         provider_namespace: &str,
+        operations_put_content: &OperationsPutContent,
     ) -> std::result::Result<OperationsContent, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1307,7 +1311,7 @@ pub mod operations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(operations_put_content).map_err(|source| create_or_update::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -1523,6 +1527,7 @@ pub mod provider_registrations {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         provider_namespace: &str,
+        properties: &ProviderRegistration,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1542,7 +1547,7 @@ pub mod provider_registrations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(properties).map_err(|source| create_or_update::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -1756,85 +1761,6 @@ pub mod provider_registrations {
             GetTokenError { source: azure_core::errors::AzureError },
         }
     }
-    pub async fn list_by_resource_group(
-        operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-        resource_group_name: &str,
-    ) -> std::result::Result<ProviderRegistrationArrayResponseWithContinuation, list_by_resource_group::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ProviderHub/providerRegistrations",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(|source| list_by_resource_group::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| list_by_resource_group::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list_by_resource_group::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| list_by_resource_group::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: ProviderRegistrationArrayResponseWithContinuation =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Err(list_by_resource_group::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod list_by_resource_group {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
     pub async fn generate_operations(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1998,93 +1924,12 @@ pub mod resource_type_registrations {
             GetTokenError { source: azure_core::errors::AzureError },
         }
     }
-    pub async fn list_by_provider_registration(
-        operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-        provider_namespace: &str,
-    ) -> std::result::Result<ResourceTypeRegistrationArrayResponseWithContinuation, list_by_provider_registration::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations",
-            operation_config.base_path(),
-            subscription_id,
-            provider_namespace
-        );
-        let mut url = url::Url::parse(url_str).map_err(|source| list_by_provider_registration::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| list_by_provider_registration::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list_by_provider_registration::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| list_by_provider_registration::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: ResourceTypeRegistrationArrayResponseWithContinuation =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_provider_registration::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_provider_registration::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Err(list_by_provider_registration::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod list_by_provider_registration {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-}
-pub mod resource_type_registration {
-    use crate::models::*;
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         provider_namespace: &str,
         resource_type: &str,
+        properties: &ResourceTypeRegistration,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2105,7 +1950,7 @@ pub mod resource_type_registration {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(properties).map_err(|source| create_or_update::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -2253,6 +2098,85 @@ pub mod resource_type_registration {
             GetTokenError { source: azure_core::errors::AzureError },
         }
     }
+    pub async fn list_by_provider_registration(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        provider_namespace: &str,
+    ) -> std::result::Result<ResourceTypeRegistrationArrayResponseWithContinuation, list_by_provider_registration::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations",
+            operation_config.base_path(),
+            subscription_id,
+            provider_namespace
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_provider_registration::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list_by_provider_registration::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_provider_registration::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list_by_provider_registration::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ResourceTypeRegistrationArrayResponseWithContinuation =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_provider_registration::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_provider_registration::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_by_provider_registration::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list_by_provider_registration {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
 }
 pub mod skus {
     use crate::models::*;
@@ -2343,6 +2267,7 @@ pub mod skus {
         provider_namespace: &str,
         resource_type: &str,
         sku: &str,
+        properties: &ResourceTypeSku,
     ) -> std::result::Result<SkuResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2364,7 +2289,7 @@ pub mod skus {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(properties).map_err(|source| create_or_update::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -2584,6 +2509,7 @@ pub mod skus {
         resource_type: &str,
         nested_resource_type_first: &str,
         sku: &str,
+        properties: &ResourceTypeSku,
     ) -> std::result::Result<SkuResource, create_or_update_nested_resource_type_first::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , operation_config . base_path () , subscription_id , provider_namespace , resource_type , nested_resource_type_first , sku) ;
@@ -2599,7 +2525,8 @@ pub mod skus {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(properties)
+            .map_err(|source| create_or_update_nested_resource_type_first::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -2818,6 +2745,7 @@ pub mod skus {
         nested_resource_type_first: &str,
         nested_resource_type_second: &str,
         sku: &str,
+        properties: &ResourceTypeSku,
     ) -> std::result::Result<SkuResource, create_or_update_nested_resource_type_second::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , operation_config . base_path () , subscription_id , provider_namespace , resource_type , nested_resource_type_first , nested_resource_type_second , sku) ;
@@ -2833,7 +2761,8 @@ pub mod skus {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(properties)
+            .map_err(|source| create_or_update_nested_resource_type_second::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -3055,6 +2984,7 @@ pub mod skus {
         nested_resource_type_second: &str,
         nested_resource_type_third: &str,
         sku: &str,
+        properties: &ResourceTypeSku,
     ) -> std::result::Result<SkuResource, create_or_update_nested_resource_type_third::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , operation_config . base_path () , subscription_id , provider_namespace , resource_type , nested_resource_type_first , nested_resource_type_second , nested_resource_type_third , sku) ;
@@ -3070,7 +3000,8 @@ pub mod skus {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(properties)
+            .map_err(|source| create_or_update_nested_resource_type_third::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)

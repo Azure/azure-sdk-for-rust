@@ -51,7 +51,7 @@ pub mod data_exports {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataExportErrorResponse =
+                let rsp_value: ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_workspace::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
@@ -70,7 +70,7 @@ pub mod data_exports {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DataExportErrorResponse,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
@@ -133,11 +133,10 @@ pub mod data_exports {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataExportErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Err(get::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -152,7 +151,7 @@ pub mod data_exports {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DataExportErrorResponse,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
@@ -226,7 +225,7 @@ pub mod data_exports {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataExportErrorResponse =
+                let rsp_value: ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
@@ -250,7 +249,7 @@ pub mod data_exports {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DataExportErrorResponse,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
@@ -307,11 +306,10 @@ pub mod data_exports {
             http::StatusCode::NOT_FOUND => Err(delete::Error::NotFound404 {}),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataExportErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -328,7 +326,7 @@ pub mod data_exports {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::DataExportErrorResponse,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
@@ -1977,9 +1975,13 @@ pub mod workspaces {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -1988,8 +1990,11 @@ pub mod workspaces {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -2048,9 +2053,14 @@ pub mod workspaces {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list_by_resource_group::Error::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
@@ -2059,8 +2069,11 @@ pub mod workspaces {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -2120,9 +2133,13 @@ pub mod workspaces {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -2131,8 +2148,11 @@ pub mod workspaces {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -2204,9 +2224,14 @@ pub mod workspaces {
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(create_or_update::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
@@ -2221,8 +2246,11 @@ pub mod workspaces {
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -2283,9 +2311,13 @@ pub mod workspaces {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(update::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(update::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -2294,8 +2326,11 @@ pub mod workspaces {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -2354,9 +2389,13 @@ pub mod workspaces {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(delete::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -2371,8 +2410,11 @@ pub mod workspaces {
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -2431,9 +2473,13 @@ pub mod deleted_workspaces {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -2442,8 +2488,11 @@ pub mod deleted_workspaces {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -2502,9 +2551,14 @@ pub mod deleted_workspaces {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list_by_resource_group::Error::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
@@ -2513,8 +2567,11 @@ pub mod deleted_workspaces {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -2576,7 +2633,7 @@ pub mod clusters {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterErrorResponse =
+                let rsp_value: ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
@@ -2595,7 +2652,7 @@ pub mod clusters {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ClusterErrorResponse,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
@@ -2652,7 +2709,7 @@ pub mod clusters {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -2670,7 +2727,7 @@ pub mod clusters {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ClusterErrorResponse,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
@@ -2731,7 +2788,7 @@ pub mod clusters {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -2749,7 +2806,7 @@ pub mod clusters {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ClusterErrorResponse,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
@@ -2820,7 +2877,7 @@ pub mod clusters {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterErrorResponse =
+                let rsp_value: ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
@@ -2845,7 +2902,7 @@ pub mod clusters {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ClusterErrorResponse,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
@@ -2907,11 +2964,10 @@ pub mod clusters {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Err(update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -2926,7 +2982,7 @@ pub mod clusters {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ClusterErrorResponse,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
@@ -2981,11 +3037,10 @@ pub mod clusters {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -3005,7 +3060,7 @@ pub mod clusters {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ClusterErrorResponse,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
@@ -4051,7 +4106,7 @@ pub mod tables {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract =
+                let rsp_value: ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_workspace::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
@@ -4070,7 +4125,7 @@ pub mod tables {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorContract,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
@@ -4133,7 +4188,7 @@ pub mod tables {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -4151,7 +4206,7 @@ pub mod tables {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorContract,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
@@ -4215,7 +4270,7 @@ pub mod tables {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -4233,7 +4288,7 @@ pub mod tables {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorContract,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },

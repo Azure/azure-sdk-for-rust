@@ -2276,6 +2276,350 @@ pub mod hyper_v_collectors {
         }
     }
 }
+pub mod server_collectors {
+    use crate::models::*;
+    pub async fn list_by_project(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+    ) -> std::result::Result<ServerCollectorList, list_by_project::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentProjects/{}/servercollectors",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_project::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list_by_project::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_project::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list_by_project::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ServerCollectorList =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_project::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_project::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_by_project::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list_by_project {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+        server_collector_name: &str,
+    ) -> std::result::Result<ServerCollector, get::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentProjects/{}/servercollectors/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name,
+            server_collector_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| get::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ServerCollector = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn create(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+        server_collector_name: &str,
+        collector_body: Option<&ServerCollector>,
+    ) -> std::result::Result<create::Response, create::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentProjects/{}/servercollectors/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name,
+            server_collector_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| create::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| create::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = if let Some(collector_body) = collector_body {
+            azure_core::to_json(collector_body).map_err(|source| create::Error::SerializeError { source })?
+        } else {
+            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+        };
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| create::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| create::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ServerCollector = serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: ServerCollector = serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(create::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ServerCollector),
+            Created201(ServerCollector),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+        server_collector_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentProjects/{}/servercollectors/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name,
+            server_collector_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| delete::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| delete::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(delete::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+}
 pub mod v_mware_collectors {
     use crate::models::*;
     pub async fn list_by_project(
@@ -2598,6 +2942,862 @@ pub mod v_mware_collectors {
             Ok200,
             NoContent204,
         }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+}
+pub mod import_collectors {
+    use crate::models::*;
+    pub async fn list_by_project(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+    ) -> std::result::Result<ImportCollectorList, list_by_project::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentProjects/{}/importcollectors",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_project::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list_by_project::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_project::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list_by_project::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ImportCollectorList =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_project::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_project::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_by_project::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list_by_project {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+        import_collector_name: &str,
+    ) -> std::result::Result<ImportCollector, get::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentProjects/{}/importcollectors/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name,
+            import_collector_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| get::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ImportCollector = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn create(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+        import_collector_name: &str,
+        collector_body: Option<&ImportCollector>,
+    ) -> std::result::Result<create::Response, create::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentProjects/{}/importcollectors/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name,
+            import_collector_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| create::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| create::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = if let Some(collector_body) = collector_body {
+            azure_core::to_json(collector_body).map_err(|source| create::Error::SerializeError { source })?
+        } else {
+            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+        };
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| create::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| create::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: ImportCollector = serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Ok(create::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: ImportCollector = serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Ok(create::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(create::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod create {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ImportCollector),
+            Created201(ImportCollector),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+        import_collector_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentProjects/{}/importcollectors/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name,
+            import_collector_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| delete::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| delete::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(delete::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+}
+pub mod private_endpoint_connection {
+    use crate::models::*;
+    pub async fn list_by_project(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+    ) -> std::result::Result<PrivateEndpointConnectionCollection, list_by_project::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentprojects/{}/privateEndpointConnections",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_project::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list_by_project::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_project::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list_by_project::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PrivateEndpointConnectionCollection =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_project::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_project::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_by_project::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list_by_project {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+        private_endpoint_connection_name: &str,
+    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentprojects/{}/privateEndpointConnections/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name,
+            private_endpoint_connection_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| get::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PrivateEndpointConnection =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn update(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+        private_endpoint_connection_name: &str,
+        private_endpoint_connection_body: Option<&PrivateEndpointConnection>,
+    ) -> std::result::Result<update::Response, update::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentprojects/{}/privateEndpointConnections/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name,
+            private_endpoint_connection_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| update::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| update::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = if let Some(private_endpoint_connection_body) = private_endpoint_connection_body {
+            azure_core::to_json(private_endpoint_connection_body).map_err(|source| update::Error::SerializeError { source })?
+        } else {
+            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+        };
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| update::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| update::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PrivateEndpointConnection =
+                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: PrivateEndpointConnection =
+                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(update::Response::Accepted202(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(update::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(PrivateEndpointConnection),
+            Accepted202(PrivateEndpointConnection),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+        private_endpoint_connection_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentprojects/{}/privateEndpointConnections/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name,
+            private_endpoint_connection_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| delete::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| delete::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(delete::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+}
+pub mod private_link_resource {
+    use crate::models::*;
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+        private_link_resource_name: &str,
+    ) -> std::result::Result<PrivateLinkResource, get::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentprojects/{}/privateLinkResources/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name,
+            private_link_resource_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| get::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PrivateLinkResource = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn list_by_project(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        project_name: &str,
+    ) -> std::result::Result<PrivateLinkResourceCollection, list_by_project::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/assessmentprojects/{}/privateLinkResources",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            project_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_project::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list_by_project::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_project::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list_by_project::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PrivateLinkResourceCollection =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_project::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: CloudError =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_project::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_by_project::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list_by_project {
+        use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -457,6 +457,9 @@ pub mod factory_identity {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
+        UserAssigned,
+        #[serde(rename = "SystemAssigned,UserAssigned")]
+        SystemAssignedUserAssigned,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1059,6 +1062,74 @@ pub struct ManagedVirtualNetworkResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     pub properties: ManagedVirtualNetwork,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionListResponse {
+    pub value: Vec<PrivateEndpointConnectionResource>,
+    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionResource {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RemotePrivateEndpointConnection>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RemotePrivateEndpointConnection {
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "privateEndpoint", skip_serializing_if = "Option::is_none")]
+    pub private_endpoint: Option<ArmIdWrapper>,
+    #[serde(rename = "privateLinkServiceConnectionState", skip_serializing_if = "Option::is_none")]
+    pub private_link_service_connection_state: Option<PrivateLinkConnectionState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ArmIdWrapper {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkConnectionState {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "actionsRequired", skip_serializing_if = "Option::is_none")]
+    pub actions_required: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkConnectionApprovalRequestResource {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PrivateLinkConnectionApprovalRequest>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkConnectionApprovalRequest {
+    #[serde(rename = "privateLinkServiceConnectionState", skip_serializing_if = "Option::is_none")]
+    pub private_link_service_connection_state: Option<PrivateLinkConnectionState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkResourcesWrapper {
+    pub value: Vec<PrivateLinkResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkResource {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PrivateLinkResourceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkResourceProperties {
+    #[serde(rename = "groupId", skip_serializing)]
+    pub group_id: Option<String>,
+    #[serde(rename = "requiredMembers", skip_serializing)]
+    pub required_members: Vec<String>,
+    #[serde(rename = "requiredZoneNames", skip_serializing)]
+    pub required_zone_names: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntime {
@@ -1730,6 +1801,8 @@ pub struct Pipeline {
     pub run_dimensions: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub folder: Option<pipeline::Folder>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub policy: Option<PipelinePolicy>,
 }
 pub mod pipeline {
     use super::*;
@@ -1738,6 +1811,16 @@ pub mod pipeline {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub name: Option<String>,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PipelinePolicy {
+    #[serde(rename = "elapsedTimeMetric", skip_serializing_if = "Option::is_none")]
+    pub elapsed_time_metric: Option<PipelineElapsedTimeMetricPolicy>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PipelineElapsedTimeMetricPolicy {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duration: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Activity {
@@ -1954,6 +2037,56 @@ pub struct SftpWriteSettings {
     pub operation_timeout: Option<serde_json::Value>,
     #[serde(rename = "useTempFileRename", skip_serializing_if = "Option::is_none")]
     pub use_temp_file_rename: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonS3CompatibleReadSettings {
+    #[serde(flatten)]
+    pub store_read_settings: StoreReadSettings,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub recursive: Option<serde_json::Value>,
+    #[serde(rename = "wildcardFolderPath", skip_serializing_if = "Option::is_none")]
+    pub wildcard_folder_path: Option<serde_json::Value>,
+    #[serde(rename = "wildcardFileName", skip_serializing_if = "Option::is_none")]
+    pub wildcard_file_name: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<serde_json::Value>,
+    #[serde(rename = "fileListPath", skip_serializing_if = "Option::is_none")]
+    pub file_list_path: Option<serde_json::Value>,
+    #[serde(rename = "enablePartitionDiscovery", skip_serializing_if = "Option::is_none")]
+    pub enable_partition_discovery: Option<bool>,
+    #[serde(rename = "partitionRootPath", skip_serializing_if = "Option::is_none")]
+    pub partition_root_path: Option<serde_json::Value>,
+    #[serde(rename = "deleteFilesAfterCompletion", skip_serializing_if = "Option::is_none")]
+    pub delete_files_after_completion: Option<serde_json::Value>,
+    #[serde(rename = "modifiedDatetimeStart", skip_serializing_if = "Option::is_none")]
+    pub modified_datetime_start: Option<serde_json::Value>,
+    #[serde(rename = "modifiedDatetimeEnd", skip_serializing_if = "Option::is_none")]
+    pub modified_datetime_end: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OracleCloudStorageReadSettings {
+    #[serde(flatten)]
+    pub store_read_settings: StoreReadSettings,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub recursive: Option<serde_json::Value>,
+    #[serde(rename = "wildcardFolderPath", skip_serializing_if = "Option::is_none")]
+    pub wildcard_folder_path: Option<serde_json::Value>,
+    #[serde(rename = "wildcardFileName", skip_serializing_if = "Option::is_none")]
+    pub wildcard_file_name: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<serde_json::Value>,
+    #[serde(rename = "fileListPath", skip_serializing_if = "Option::is_none")]
+    pub file_list_path: Option<serde_json::Value>,
+    #[serde(rename = "enablePartitionDiscovery", skip_serializing_if = "Option::is_none")]
+    pub enable_partition_discovery: Option<bool>,
+    #[serde(rename = "partitionRootPath", skip_serializing_if = "Option::is_none")]
+    pub partition_root_path: Option<serde_json::Value>,
+    #[serde(rename = "deleteFilesAfterCompletion", skip_serializing_if = "Option::is_none")]
+    pub delete_files_after_completion: Option<serde_json::Value>,
+    #[serde(rename = "modifiedDatetimeStart", skip_serializing_if = "Option::is_none")]
+    pub modified_datetime_start: Option<serde_json::Value>,
+    #[serde(rename = "modifiedDatetimeEnd", skip_serializing_if = "Option::is_none")]
+    pub modified_datetime_end: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GoogleCloudStorageReadSettings {
@@ -4319,11 +4452,13 @@ pub struct WebActivityAuthentication {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pfx: Option<SecretBase>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub username: Option<String>,
+    pub username: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub password: Option<SecretBase>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
+    pub resource: Option<serde_json::Value>,
+    #[serde(rename = "userTenant", skip_serializing_if = "Option::is_none")]
+    pub user_tenant: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebActivityTypeProperties {
@@ -4460,12 +4595,18 @@ pub struct AzureMlExecutePipelineActivity {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMlExecutePipelineActivityTypeProperties {
-    #[serde(rename = "mlPipelineId")]
-    pub ml_pipeline_id: serde_json::Value,
+    #[serde(rename = "mlPipelineId", skip_serializing_if = "Option::is_none")]
+    pub ml_pipeline_id: Option<serde_json::Value>,
+    #[serde(rename = "mlPipelineEndpointId", skip_serializing_if = "Option::is_none")]
+    pub ml_pipeline_endpoint_id: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<serde_json::Value>,
     #[serde(rename = "experimentName", skip_serializing_if = "Option::is_none")]
     pub experiment_name: Option<serde_json::Value>,
     #[serde(rename = "mlPipelineParameters", skip_serializing_if = "Option::is_none")]
     pub ml_pipeline_parameters: Option<serde_json::Value>,
+    #[serde(rename = "dataPathAssignments", skip_serializing_if = "Option::is_none")]
+    pub data_path_assignments: Option<serde_json::Value>,
     #[serde(rename = "mlParentRunId", skip_serializing_if = "Option::is_none")]
     pub ml_parent_run_id: Option<serde_json::Value>,
     #[serde(rename = "continueOnStepFailure", skip_serializing_if = "Option::is_none")]
@@ -4473,6 +4614,8 @@ pub struct AzureMlExecutePipelineActivityTypeProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMlPipelineParameters {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureDataPathAssignments {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataLakeAnalyticsUsqlActivity {
     #[serde(flatten)]
@@ -5122,6 +5265,24 @@ pub struct FileServerLocation {
 pub struct AzureFileStorageLocation {
     #[serde(flatten)]
     pub dataset_location: DatasetLocation,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonS3CompatibleLocation {
+    #[serde(flatten)]
+    pub dataset_location: DatasetLocation,
+    #[serde(rename = "bucketName", skip_serializing_if = "Option::is_none")]
+    pub bucket_name: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OracleCloudStorageLocation {
+    #[serde(flatten)]
+    pub dataset_location: DatasetLocation,
+    #[serde(rename = "bucketName", skip_serializing_if = "Option::is_none")]
+    pub bucket_name: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GoogleCloudStorageLocation {
@@ -6614,6 +6775,8 @@ pub struct AzureBlobStorageLinkedServiceTypeProperties {
     pub tenant: Option<serde_json::Value>,
     #[serde(rename = "azureCloudType", skip_serializing_if = "Option::is_none")]
     pub azure_cloud_type: Option<serde_json::Value>,
+    #[serde(rename = "accountKind", skip_serializing_if = "Option::is_none")]
+    pub account_kind: Option<String>,
     #[serde(rename = "encryptedCredential", skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<String>,
 }
@@ -6658,6 +6821,8 @@ pub struct SqlServerLinkedServiceTypeProperties {
     pub password: Option<SecretBase>,
     #[serde(rename = "encryptedCredential", skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
+    #[serde(rename = "alwaysEncryptedSettings", skip_serializing_if = "Option::is_none")]
+    pub always_encrypted_settings: Option<SqlAlwaysEncryptedProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSqlDatabaseLinkedService {
@@ -6682,6 +6847,8 @@ pub struct AzureSqlDatabaseLinkedServiceTypeProperties {
     pub azure_cloud_type: Option<serde_json::Value>,
     #[serde(rename = "encryptedCredential", skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
+    #[serde(rename = "alwaysEncryptedSettings", skip_serializing_if = "Option::is_none")]
+    pub always_encrypted_settings: Option<SqlAlwaysEncryptedProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSqlMiLinkedService {
@@ -6706,6 +6873,25 @@ pub struct AzureSqlMiLinkedServiceTypeProperties {
     pub azure_cloud_type: Option<serde_json::Value>,
     #[serde(rename = "encryptedCredential", skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
+    #[serde(rename = "alwaysEncryptedSettings", skip_serializing_if = "Option::is_none")]
+    pub always_encrypted_settings: Option<SqlAlwaysEncryptedProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlAlwaysEncryptedProperties {
+    #[serde(rename = "alwaysEncryptedAkvAuthType")]
+    pub always_encrypted_akv_auth_type: sql_always_encrypted_properties::AlwaysEncryptedAkvAuthType,
+    #[serde(rename = "servicePrincipalId", skip_serializing_if = "Option::is_none")]
+    pub service_principal_id: Option<serde_json::Value>,
+    #[serde(rename = "servicePrincipalKey", skip_serializing_if = "Option::is_none")]
+    pub service_principal_key: Option<SecretBase>,
+}
+pub mod sql_always_encrypted_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AlwaysEncryptedAkvAuthType {
+        ServicePrincipal,
+        ManagedIdentity,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBatchLinkedService {
@@ -6758,8 +6944,33 @@ pub struct CosmosDbLinkedServiceTypeProperties {
     pub database: Option<serde_json::Value>,
     #[serde(rename = "accountKey", skip_serializing_if = "Option::is_none")]
     pub account_key: Option<SecretBase>,
+    #[serde(rename = "servicePrincipalId", skip_serializing_if = "Option::is_none")]
+    pub service_principal_id: Option<serde_json::Value>,
+    #[serde(rename = "servicePrincipalCredentialType", skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential_type: Option<cosmos_db_linked_service_type_properties::ServicePrincipalCredentialType>,
+    #[serde(rename = "servicePrincipalCredential", skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential: Option<SecretBase>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tenant: Option<serde_json::Value>,
+    #[serde(rename = "azureCloudType", skip_serializing_if = "Option::is_none")]
+    pub azure_cloud_type: Option<serde_json::Value>,
+    #[serde(rename = "connectionMode", skip_serializing_if = "Option::is_none")]
+    pub connection_mode: Option<cosmos_db_linked_service_type_properties::ConnectionMode>,
     #[serde(rename = "encryptedCredential", skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
+}
+pub mod cosmos_db_linked_service_type_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ServicePrincipalCredentialType {
+        ServicePrincipalKey,
+        ServicePrincipalCert,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ConnectionMode {
+        Gateway,
+        Direct,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DynamicsLinkedService {
@@ -6994,6 +7205,44 @@ pub struct AzureFileStorageLinkedServiceTypeProperties {
     pub file_share: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub snapshot: Option<serde_json::Value>,
+    #[serde(rename = "encryptedCredential", skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonS3CompatibleLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[serde(rename = "typeProperties")]
+    pub type_properties: AmazonS3CompatibleLinkedServiceTypeProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonS3CompatibleLinkedServiceTypeProperties {
+    #[serde(rename = "accessKeyId", skip_serializing_if = "Option::is_none")]
+    pub access_key_id: Option<serde_json::Value>,
+    #[serde(rename = "secretAccessKey", skip_serializing_if = "Option::is_none")]
+    pub secret_access_key: Option<SecretBase>,
+    #[serde(rename = "serviceUrl", skip_serializing_if = "Option::is_none")]
+    pub service_url: Option<serde_json::Value>,
+    #[serde(rename = "forcePathStyle", skip_serializing_if = "Option::is_none")]
+    pub force_path_style: Option<serde_json::Value>,
+    #[serde(rename = "encryptedCredential", skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OracleCloudStorageLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[serde(rename = "typeProperties")]
+    pub type_properties: OracleCloudStorageLinkedServiceTypeProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OracleCloudStorageLinkedServiceTypeProperties {
+    #[serde(rename = "accessKeyId", skip_serializing_if = "Option::is_none")]
+    pub access_key_id: Option<serde_json::Value>,
+    #[serde(rename = "secretAccessKey", skip_serializing_if = "Option::is_none")]
+    pub secret_access_key: Option<SecretBase>,
+    #[serde(rename = "serviceUrl", skip_serializing_if = "Option::is_none")]
+    pub service_url: Option<serde_json::Value>,
     #[serde(rename = "encryptedCredential", skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
 }
@@ -7323,6 +7572,8 @@ pub struct ODataLinkedServiceTypeProperties {
     pub user_name: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub password: Option<SecretBase>,
+    #[serde(rename = "authHeaders", skip_serializing_if = "Option::is_none")]
+    pub auth_headers: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tenant: Option<serde_json::Value>,
     #[serde(rename = "servicePrincipalId", skip_serializing_if = "Option::is_none")]
@@ -7697,6 +7948,8 @@ pub struct RestServiceLinkedServiceTypeProperties {
     pub user_name: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub password: Option<SecretBase>,
+    #[serde(rename = "authHeaders", skip_serializing_if = "Option::is_none")]
+    pub auth_headers: Option<serde_json::Value>,
     #[serde(rename = "servicePrincipalId", skip_serializing_if = "Option::is_none")]
     pub service_principal_id: Option<serde_json::Value>,
     #[serde(rename = "servicePrincipalKey", skip_serializing_if = "Option::is_none")]
@@ -7800,6 +8053,8 @@ pub struct HttpLinkedServiceTypeProperties {
     pub user_name: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub password: Option<SecretBase>,
+    #[serde(rename = "authHeaders", skip_serializing_if = "Option::is_none")]
+    pub auth_headers: Option<serde_json::Value>,
     #[serde(rename = "embeddedCertData", skip_serializing_if = "Option::is_none")]
     pub embedded_cert_data: Option<serde_json::Value>,
     #[serde(rename = "certThumbprint", skip_serializing_if = "Option::is_none")]
@@ -7890,6 +8145,7 @@ pub mod sftp_server_linked_service_type_properties {
     pub enum AuthenticationType {
         Basic,
         SshPublicKey,
+        MultiFactor,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -9124,12 +9380,13 @@ pub struct AzureDataExplorerLinkedService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureDataExplorerLinkedServiceTypeProperties {
     pub endpoint: serde_json::Value,
-    #[serde(rename = "servicePrincipalId")]
-    pub service_principal_id: serde_json::Value,
-    #[serde(rename = "servicePrincipalKey")]
-    pub service_principal_key: SecretBase,
+    #[serde(rename = "servicePrincipalId", skip_serializing_if = "Option::is_none")]
+    pub service_principal_id: Option<serde_json::Value>,
+    #[serde(rename = "servicePrincipalKey", skip_serializing_if = "Option::is_none")]
+    pub service_principal_key: Option<SecretBase>,
     pub database: serde_json::Value,
-    pub tenant: serde_json::Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tenant: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionLinkedService {

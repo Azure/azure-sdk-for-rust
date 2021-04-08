@@ -91,8 +91,8 @@ pub struct ContactDetails {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CopyLogDetails {
-    #[serde(rename = "copyLogDetailsType", skip_serializing)]
-    pub copy_log_details_type: Option<copy_log_details::CopyLogDetailsType>,
+    #[serde(rename = "copyLogDetailsType")]
+    pub copy_log_details_type: copy_log_details::CopyLogDetailsType,
 }
 pub mod copy_log_details {
     use super::*;
@@ -419,8 +419,8 @@ pub struct JobResourceUpdateParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobSecrets {
-    #[serde(rename = "jobSecretsType", skip_serializing)]
-    pub job_secrets_type: Option<job_secrets::JobSecretsType>,
+    #[serde(rename = "jobSecretsType")]
+    pub job_secrets_type: job_secrets::JobSecretsType,
 }
 pub mod job_secrets {
     use super::*;

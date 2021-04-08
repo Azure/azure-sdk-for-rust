@@ -184,6 +184,8 @@ pub struct Vault {
     pub location: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
     pub properties: VaultProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -378,6 +380,28 @@ pub struct PrivateLinkResourceProperties {
     pub required_members: Vec<String>,
     #[serde(rename = "requiredZoneNames", skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<IdentityType>,
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<IdentityType>,
+    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum IdentityType {
+    User,
+    Application,
+    ManagedIdentity,
+    Key,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {

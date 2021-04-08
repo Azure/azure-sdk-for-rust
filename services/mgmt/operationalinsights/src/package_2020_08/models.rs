@@ -52,11 +52,6 @@ pub struct DestinationMetaData {
     pub event_hub_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataExportErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorResponse>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DataSourceKind {
     WindowsEvent,
     WindowsPerformanceCounter,
@@ -315,6 +310,8 @@ pub mod workspace_sku {
         PerGb2018,
         Standalone,
         CapacityReservation,
+        #[serde(rename = "LACluster")]
+        LaCluster,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -350,12 +347,20 @@ pub struct WorkspaceProperties {
     pub retention_in_days: Option<i32>,
     #[serde(rename = "workspaceCapping", skip_serializing_if = "Option::is_none")]
     pub workspace_capping: Option<WorkspaceCapping>,
+    #[serde(rename = "createdDate", skip_serializing)]
+    pub created_date: Option<String>,
+    #[serde(rename = "modifiedDate", skip_serializing)]
+    pub modified_date: Option<String>,
     #[serde(rename = "publicNetworkAccessForIngestion", skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_ingestion: Option<PublicNetworkAccessType>,
     #[serde(rename = "publicNetworkAccessForQuery", skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_query: Option<PublicNetworkAccessType>,
+    #[serde(rename = "forceCmkForQuery", skip_serializing_if = "Option::is_none")]
+    pub force_cmk_for_query: Option<bool>,
     #[serde(rename = "privateLinkScopedResources", skip_serializing)]
     pub private_link_scoped_resources: Vec<PrivateLinkScopedResource>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub features: Option<WorkspaceFeatures>,
 }
 pub mod workspace_properties {
     use super::*;
@@ -370,6 +375,8 @@ pub mod workspace_properties {
         Updating,
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceFeatures {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkScopedResource {
     #[serde(rename = "resourceId", skip_serializing_if = "Option::is_none")]
@@ -428,11 +435,6 @@ pub mod cluster_properties {
         ProvisioningAccount,
         Updating,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClusterErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterPatchProperties {
@@ -762,9 +764,29 @@ pub struct TablesListResult {
     pub value: Vec<Table>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorContract {
+pub struct ErrorResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorResponse>,
+    pub error: Option<ErrorDetail>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(skip_serializing)]
+    pub code: Option<String>,
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+    #[serde(skip_serializing)]
+    pub target: Option<String>,
+    #[serde(skip_serializing)]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", skip_serializing)]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing)]
+    pub info: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {
@@ -779,26 +801,6 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(skip_serializing)]
-    pub code: Option<String>,
-    #[serde(skip_serializing)]
-    pub message: Option<String>,
-    #[serde(skip_serializing)]
-    pub target: Option<String>,
-    #[serde(skip_serializing)]
-    pub details: Vec<ErrorResponse>,
-    #[serde(rename = "additionalInfo", skip_serializing)]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", skip_serializing)]
-    pub type_: Option<String>,
-    #[serde(skip_serializing)]
-    pub info: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {

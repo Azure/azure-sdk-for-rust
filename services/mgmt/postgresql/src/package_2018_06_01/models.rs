@@ -828,6 +828,64 @@ pub struct WaitStatisticsResultList {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AdvisorProperties {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Advisor {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AdvisorProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AdvisorsResultList {
+    #[serde(skip_serializing)]
+    pub value: Vec<Advisor>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecommendationActionProperties {
+    #[serde(rename = "advisorName", skip_serializing_if = "Option::is_none")]
+    pub advisor_name: Option<String>,
+    #[serde(rename = "sessionId", skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    #[serde(rename = "actionId", skip_serializing_if = "Option::is_none")]
+    pub action_id: Option<i32>,
+    #[serde(rename = "createdTime", skip_serializing_if = "Option::is_none")]
+    pub created_time: Option<String>,
+    #[serde(rename = "expirationTime", skip_serializing_if = "Option::is_none")]
+    pub expiration_time: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(rename = "recommendationType", skip_serializing_if = "Option::is_none")]
+    pub recommendation_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecommendationAction {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RecommendationActionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecommendationActionsResultList {
+    #[serde(skip_serializing)]
+    pub value: Vec<RecommendationAction>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecommendedActionSessionsOperationStatus {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "startTime", skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,

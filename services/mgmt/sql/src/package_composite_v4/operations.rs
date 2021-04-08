@@ -11694,920 +11694,6 @@ pub mod job_versions {
         }
     }
 }
-pub mod long_term_retention_backups {
-    use crate::models::*;
-    pub async fn get_by_resource_group(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        location_name: &str,
-        long_term_retention_server_name: &str,
-        long_term_retention_database_name: &str,
-        backup_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackup, get_by_resource_group::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}" , operation_config . base_path () , subscription_id , resource_group_name , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
-        let mut url = url::Url::parse(url_str).map_err(|source| get_by_resource_group::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| get_by_resource_group::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| get_by_resource_group::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| get_by_resource_group::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackup =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_by_resource_group::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => Err(get_by_resource_group::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod get_by_resource_group {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn delete_by_resource_group(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        location_name: &str,
-        long_term_retention_server_name: &str,
-        long_term_retention_database_name: &str,
-        backup_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete_by_resource_group::Response, delete_by_resource_group::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}" , operation_config . base_path () , subscription_id , resource_group_name , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
-        let mut url = url::Url::parse(url_str).map_err(|source| delete_by_resource_group::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| delete_by_resource_group::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| delete_by_resource_group::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| delete_by_resource_group::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete_by_resource_group::Response::Ok200),
-            http::StatusCode::ACCEPTED => Ok(delete_by_resource_group::Response::Accepted202),
-            status_code => Err(delete_by_resource_group::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod delete_by_resource_group {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn list_by_resource_group_database(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        location_name: &str,
-        long_term_retention_server_name: &str,
-        long_term_retention_database_name: &str,
-        only_latest_per_database: Option<bool>,
-        database_state: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_resource_group_database::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups" , operation_config . base_path () , subscription_id , resource_group_name , location_name , long_term_retention_server_name , long_term_retention_database_name) ;
-        let mut url = url::Url::parse(url_str).map_err(|source| list_by_resource_group_database::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| list_by_resource_group_database::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(only_latest_per_database) = only_latest_per_database {
-            url.query_pairs_mut()
-                .append_pair("onlyLatestPerDatabase", only_latest_per_database.to_string().as_str());
-        }
-        if let Some(database_state) = database_state {
-            url.query_pairs_mut().append_pair("databaseState", database_state);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list_by_resource_group_database::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| list_by_resource_group_database::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group_database::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => Err(list_by_resource_group_database::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod list_by_resource_group_database {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn list_by_resource_group_location(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        location_name: &str,
-        only_latest_per_database: Option<bool>,
-        database_state: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_resource_group_location::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionBackups",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            location_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(|source| list_by_resource_group_location::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| list_by_resource_group_location::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(only_latest_per_database) = only_latest_per_database {
-            url.query_pairs_mut()
-                .append_pair("onlyLatestPerDatabase", only_latest_per_database.to_string().as_str());
-        }
-        if let Some(database_state) = database_state {
-            url.query_pairs_mut().append_pair("databaseState", database_state);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list_by_resource_group_location::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| list_by_resource_group_location::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group_location::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => Err(list_by_resource_group_location::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod list_by_resource_group_location {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn list_by_resource_group_server(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        location_name: &str,
-        long_term_retention_server_name: &str,
-        only_latest_per_database: Option<bool>,
-        database_state: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_resource_group_server::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionBackups" , operation_config . base_path () , subscription_id , resource_group_name , location_name , long_term_retention_server_name) ;
-        let mut url = url::Url::parse(url_str).map_err(|source| list_by_resource_group_server::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| list_by_resource_group_server::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(only_latest_per_database) = only_latest_per_database {
-            url.query_pairs_mut()
-                .append_pair("onlyLatestPerDatabase", only_latest_per_database.to_string().as_str());
-        }
-        if let Some(database_state) = database_state {
-            url.query_pairs_mut().append_pair("databaseState", database_state);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list_by_resource_group_server::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| list_by_resource_group_server::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group_server::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => Err(list_by_resource_group_server::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod list_by_resource_group_server {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        location_name: &str,
-        long_term_retention_server_name: &str,
-        long_term_retention_database_name: &str,
-        backup_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackup, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}" , operation_config . base_path () , subscription_id , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
-        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| get::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| get::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| get::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackup =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => Err(get::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod get {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        location_name: &str,
-        long_term_retention_server_name: &str,
-        long_term_retention_database_name: &str,
-        backup_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}" , operation_config . base_path () , subscription_id , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
-        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| delete::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| delete::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            status_code => Err(delete::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod delete {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn list_by_database(
-        operation_config: &crate::OperationConfig,
-        location_name: &str,
-        long_term_retention_server_name: &str,
-        long_term_retention_database_name: &str,
-        only_latest_per_database: Option<bool>,
-        database_state: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_database::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups" , operation_config . base_path () , subscription_id , location_name , long_term_retention_server_name , long_term_retention_database_name) ;
-        let mut url = url::Url::parse(url_str).map_err(|source| list_by_database::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| list_by_database::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(only_latest_per_database) = only_latest_per_database {
-            url.query_pairs_mut()
-                .append_pair("onlyLatestPerDatabase", only_latest_per_database.to_string().as_str());
-        }
-        if let Some(database_state) = database_state {
-            url.query_pairs_mut().append_pair("databaseState", database_state);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list_by_database::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| list_by_database::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_database::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => Err(list_by_database::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod list_by_database {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn list_by_location(
-        operation_config: &crate::OperationConfig,
-        location_name: &str,
-        only_latest_per_database: Option<bool>,
-        database_state: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_location::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionBackups",
-            operation_config.base_path(),
-            subscription_id,
-            location_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(|source| list_by_location::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| list_by_location::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(only_latest_per_database) = only_latest_per_database {
-            url.query_pairs_mut()
-                .append_pair("onlyLatestPerDatabase", only_latest_per_database.to_string().as_str());
-        }
-        if let Some(database_state) = database_state {
-            url.query_pairs_mut().append_pair("databaseState", database_state);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list_by_location::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| list_by_location::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_location::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => Err(list_by_location::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod list_by_location {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn list_by_server(
-        operation_config: &crate::OperationConfig,
-        location_name: &str,
-        long_term_retention_server_name: &str,
-        only_latest_per_database: Option<bool>,
-        database_state: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_server::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionBackups",
-            operation_config.base_path(),
-            subscription_id,
-            location_name,
-            long_term_retention_server_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(|source| list_by_server::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| list_by_server::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(only_latest_per_database) = only_latest_per_database {
-            url.query_pairs_mut()
-                .append_pair("onlyLatestPerDatabase", only_latest_per_database.to_string().as_str());
-        }
-        if let Some(database_state) = database_state {
-            url.query_pairs_mut().append_pair("databaseState", database_state);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list_by_server::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| list_by_server::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => Err(list_by_server::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod list_by_server {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-}
-pub mod backup_long_term_retention_policies {
-    use crate::models::*;
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        server_name: &str,
-        database_name: &str,
-        policy_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<BackupLongTermRetentionPolicy, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/backupLongTermRetentionPolicies/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            server_name,
-            database_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| get::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| get::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| get::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: BackupLongTermRetentionPolicy =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => Err(get::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod get {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        server_name: &str,
-        database_name: &str,
-        policy_name: &str,
-        parameters: &BackupLongTermRetentionPolicy,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/backupLongTermRetentionPolicies/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            server_name,
-            database_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(|source| create_or_update::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| create_or_update::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(parameters).map_err(|source| create_or_update::Error::SerializeError { source })?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| create_or_update::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| create_or_update::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: BackupLongTermRetentionPolicy =
-                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
-            status_code => Err(create_or_update::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod create_or_update {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(BackupLongTermRetentionPolicy),
-            Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn list_by_database(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        server_name: &str,
-        database_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<BackupLongTermRetentionPolicy, list_by_database::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/backupLongTermRetentionPolicies",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            server_name,
-            database_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(|source| list_by_database::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| list_by_database::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list_by_database::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| list_by_database::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: BackupLongTermRetentionPolicy =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_database::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => Err(list_by_database::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod list_by_database {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-}
 pub mod managed_backup_short_term_retention_policies {
     use crate::models::*;
     pub async fn get(
@@ -19958,290 +19044,6 @@ pub mod usages {
         }
     }
 }
-pub mod private_endpoint_connections {
-    use crate::models::*;
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        server_name: &str,
-        private_endpoint_connection_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/privateEndpointConnections/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            server_name,
-            private_endpoint_connection_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| get::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| get::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| get::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => Err(get::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod get {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        server_name: &str,
-        private_endpoint_connection_name: &str,
-        parameters: &PrivateEndpointConnection,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/privateEndpointConnections/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            server_name,
-            private_endpoint_connection_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(|source| create_or_update::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| create_or_update::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(parameters).map_err(|source| create_or_update::Error::SerializeError { source })?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| create_or_update::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| create_or_update::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
-                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
-            status_code => Err(create_or_update::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod create_or_update {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(PrivateEndpointConnection),
-            Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        server_name: &str,
-        private_endpoint_connection_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/privateEndpointConnections/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            server_name,
-            private_endpoint_connection_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| delete::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| delete::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => Err(delete::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod delete {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-            NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-    pub async fn list_by_server(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        server_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_server::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/privateEndpointConnections",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            server_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(|source| list_by_server::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| list_by_server::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list_by_server::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| list_by_server::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(rsp_value)
-            }
-            status_code => Err(list_by_server::Error::DefaultResponse { status_code }),
-        }
-    }
-    pub mod list_by_server {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse { status_code: http::StatusCode },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-}
 pub mod private_link_resources {
     use crate::models::*;
     pub async fn list_by_server(
@@ -26731,6 +25533,1486 @@ pub mod server_dev_ops_audit_settings {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: ServerDevOpsAuditSettingsListResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => Err(list_by_server::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod list_by_server {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+}
+pub mod long_term_retention_backups {
+    use crate::models::*;
+    pub async fn copy(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        long_term_retention_server_name: &str,
+        long_term_retention_database_name: &str,
+        backup_name: &str,
+        parameters: &CopyLongTermRetentionBackupParameters,
+        subscription_id: &str,
+    ) -> std::result::Result<copy::Response, copy::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}/copy" , operation_config . base_path () , subscription_id , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
+        let mut url = url::Url::parse(url_str).map_err(|source| copy::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| copy::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).map_err(|source| copy::Error::SerializeError { source })?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| copy::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| copy::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionBackupOperationResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| copy::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(copy::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => Ok(copy::Response::Accepted202),
+            status_code => Err(copy::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod copy {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(LongTermRetentionBackupOperationResult),
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn update(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        long_term_retention_server_name: &str,
+        long_term_retention_database_name: &str,
+        backup_name: &str,
+        parameters: &UpdateLongTermRetentionBackupParameters,
+        subscription_id: &str,
+    ) -> std::result::Result<update::Response, update::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}/update" , operation_config . base_path () , subscription_id , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
+        let mut url = url::Url::parse(url_str).map_err(|source| update::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| update::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).map_err(|source| update::Error::SerializeError { source })?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| update::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| update::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionBackupOperationResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
+            status_code => Err(update::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(LongTermRetentionBackupOperationResult),
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        long_term_retention_server_name: &str,
+        long_term_retention_database_name: &str,
+        backup_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<LongTermRetentionBackup, get::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}" , operation_config . base_path () , subscription_id , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| get::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionBackup =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => Err(get::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        long_term_retention_server_name: &str,
+        long_term_retention_database_name: &str,
+        backup_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}" , operation_config . base_path () , subscription_id , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
+        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| delete::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| delete::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            status_code => Err(delete::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn list_by_database(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        long_term_retention_server_name: &str,
+        long_term_retention_database_name: &str,
+        only_latest_per_database: Option<bool>,
+        database_state: Option<&str>,
+        subscription_id: &str,
+    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_database::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups" , operation_config . base_path () , subscription_id , location_name , long_term_retention_server_name , long_term_retention_database_name) ;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_database::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list_by_database::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(only_latest_per_database) = only_latest_per_database {
+            url.query_pairs_mut()
+                .append_pair("onlyLatestPerDatabase", only_latest_per_database.to_string().as_str());
+        }
+        if let Some(database_state) = database_state {
+            url.query_pairs_mut().append_pair("databaseState", database_state);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_database::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list_by_database::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionBackupListResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_database::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => Err(list_by_database::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod list_by_database {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn list_by_location(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        only_latest_per_database: Option<bool>,
+        database_state: Option<&str>,
+        subscription_id: &str,
+    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_location::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionBackups",
+            operation_config.base_path(),
+            subscription_id,
+            location_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_location::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list_by_location::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(only_latest_per_database) = only_latest_per_database {
+            url.query_pairs_mut()
+                .append_pair("onlyLatestPerDatabase", only_latest_per_database.to_string().as_str());
+        }
+        if let Some(database_state) = database_state {
+            url.query_pairs_mut().append_pair("databaseState", database_state);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_location::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list_by_location::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionBackupListResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_location::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => Err(list_by_location::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod list_by_location {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn list_by_server(
+        operation_config: &crate::OperationConfig,
+        location_name: &str,
+        long_term_retention_server_name: &str,
+        only_latest_per_database: Option<bool>,
+        database_state: Option<&str>,
+        subscription_id: &str,
+    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_server::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionBackups",
+            operation_config.base_path(),
+            subscription_id,
+            location_name,
+            long_term_retention_server_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_server::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list_by_server::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(only_latest_per_database) = only_latest_per_database {
+            url.query_pairs_mut()
+                .append_pair("onlyLatestPerDatabase", only_latest_per_database.to_string().as_str());
+        }
+        if let Some(database_state) = database_state {
+            url.query_pairs_mut().append_pair("databaseState", database_state);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_server::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list_by_server::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionBackupListResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => Err(list_by_server::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod list_by_server {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn copy_by_resource_group(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        location_name: &str,
+        long_term_retention_server_name: &str,
+        long_term_retention_database_name: &str,
+        backup_name: &str,
+        parameters: &CopyLongTermRetentionBackupParameters,
+        subscription_id: &str,
+    ) -> std::result::Result<copy_by_resource_group::Response, copy_by_resource_group::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}/copy" , operation_config . base_path () , subscription_id , resource_group_name , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
+        let mut url = url::Url::parse(url_str).map_err(|source| copy_by_resource_group::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| copy_by_resource_group::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).map_err(|source| copy_by_resource_group::Error::SerializeError { source })?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| copy_by_resource_group::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| copy_by_resource_group::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionBackupOperationResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| copy_by_resource_group::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(copy_by_resource_group::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => Ok(copy_by_resource_group::Response::Accepted202),
+            status_code => Err(copy_by_resource_group::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod copy_by_resource_group {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(LongTermRetentionBackupOperationResult),
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn update_by_resource_group(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        location_name: &str,
+        long_term_retention_server_name: &str,
+        long_term_retention_database_name: &str,
+        backup_name: &str,
+        parameters: &UpdateLongTermRetentionBackupParameters,
+        subscription_id: &str,
+    ) -> std::result::Result<update_by_resource_group::Response, update_by_resource_group::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}/update" , operation_config . base_path () , subscription_id , resource_group_name , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
+        let mut url = url::Url::parse(url_str).map_err(|source| update_by_resource_group::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| update_by_resource_group::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).map_err(|source| update_by_resource_group::Error::SerializeError { source })?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| update_by_resource_group::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| update_by_resource_group::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionBackupOperationResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| update_by_resource_group::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(update_by_resource_group::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => Ok(update_by_resource_group::Response::Accepted202),
+            status_code => Err(update_by_resource_group::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod update_by_resource_group {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(LongTermRetentionBackupOperationResult),
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn get_by_resource_group(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        location_name: &str,
+        long_term_retention_server_name: &str,
+        long_term_retention_database_name: &str,
+        backup_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<LongTermRetentionBackup, get_by_resource_group::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}" , operation_config . base_path () , subscription_id , resource_group_name , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
+        let mut url = url::Url::parse(url_str).map_err(|source| get_by_resource_group::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| get_by_resource_group::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get_by_resource_group::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get_by_resource_group::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionBackup =
+                    serde_json::from_slice(rsp_body).map_err(|source| get_by_resource_group::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => Err(get_by_resource_group::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod get_by_resource_group {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn delete_by_resource_group(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        location_name: &str,
+        long_term_retention_server_name: &str,
+        long_term_retention_database_name: &str,
+        backup_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<delete_by_resource_group::Response, delete_by_resource_group::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}" , operation_config . base_path () , subscription_id , resource_group_name , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
+        let mut url = url::Url::parse(url_str).map_err(|source| delete_by_resource_group::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| delete_by_resource_group::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| delete_by_resource_group::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| delete_by_resource_group::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => Ok(delete_by_resource_group::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete_by_resource_group::Response::Accepted202),
+            status_code => Err(delete_by_resource_group::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod delete_by_resource_group {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn list_by_resource_group_database(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        location_name: &str,
+        long_term_retention_server_name: &str,
+        long_term_retention_database_name: &str,
+        only_latest_per_database: Option<bool>,
+        database_state: Option<&str>,
+        subscription_id: &str,
+    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_resource_group_database::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups" , operation_config . base_path () , subscription_id , resource_group_name , location_name , long_term_retention_server_name , long_term_retention_database_name) ;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_resource_group_database::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list_by_resource_group_database::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(only_latest_per_database) = only_latest_per_database {
+            url.query_pairs_mut()
+                .append_pair("onlyLatestPerDatabase", only_latest_per_database.to_string().as_str());
+        }
+        if let Some(database_state) = database_state {
+            url.query_pairs_mut().append_pair("databaseState", database_state);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_resource_group_database::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list_by_resource_group_database::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionBackupListResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group_database::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => Err(list_by_resource_group_database::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod list_by_resource_group_database {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn list_by_resource_group_location(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        location_name: &str,
+        only_latest_per_database: Option<bool>,
+        database_state: Option<&str>,
+        subscription_id: &str,
+    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_resource_group_location::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionBackups",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            location_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_resource_group_location::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list_by_resource_group_location::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(only_latest_per_database) = only_latest_per_database {
+            url.query_pairs_mut()
+                .append_pair("onlyLatestPerDatabase", only_latest_per_database.to_string().as_str());
+        }
+        if let Some(database_state) = database_state {
+            url.query_pairs_mut().append_pair("databaseState", database_state);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_resource_group_location::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list_by_resource_group_location::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionBackupListResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group_location::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => Err(list_by_resource_group_location::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod list_by_resource_group_location {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn list_by_resource_group_server(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        location_name: &str,
+        long_term_retention_server_name: &str,
+        only_latest_per_database: Option<bool>,
+        database_state: Option<&str>,
+        subscription_id: &str,
+    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_resource_group_server::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionBackups" , operation_config . base_path () , subscription_id , resource_group_name , location_name , long_term_retention_server_name) ;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_resource_group_server::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list_by_resource_group_server::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(only_latest_per_database) = only_latest_per_database {
+            url.query_pairs_mut()
+                .append_pair("onlyLatestPerDatabase", only_latest_per_database.to_string().as_str());
+        }
+        if let Some(database_state) = database_state {
+            url.query_pairs_mut().append_pair("databaseState", database_state);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_resource_group_server::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list_by_resource_group_server::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionBackupListResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group_server::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => Err(list_by_resource_group_server::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod list_by_resource_group_server {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+}
+pub mod long_term_retention_policies {
+    use crate::models::*;
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        server_name: &str,
+        database_name: &str,
+        policy_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<LongTermRetentionPolicy, get::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/backupLongTermRetentionPolicies/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name,
+            database_name,
+            policy_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| get::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionPolicy =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => Err(get::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn create_or_update(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        server_name: &str,
+        database_name: &str,
+        policy_name: &str,
+        parameters: &LongTermRetentionPolicy,
+        subscription_id: &str,
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/backupLongTermRetentionPolicies/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name,
+            database_name,
+            policy_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| create_or_update::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| create_or_update::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).map_err(|source| create_or_update::Error::SerializeError { source })?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| create_or_update::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| create_or_update::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionPolicy =
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
+            status_code => Err(create_or_update::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(LongTermRetentionPolicy),
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn list_by_database(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        server_name: &str,
+        database_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<LongTermRetentionPolicyListResult, list_by_database::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/backupLongTermRetentionPolicies",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name,
+            database_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_database::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list_by_database::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_database::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list_by_database::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LongTermRetentionPolicyListResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_by_database::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => Err(list_by_database::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod list_by_database {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+}
+pub mod private_endpoint_connections {
+    use crate::models::*;
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        server_name: &str,
+        private_endpoint_connection_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/privateEndpointConnections/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name,
+            private_endpoint_connection_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| get::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| get::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| get::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PrivateEndpointConnection =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(rsp_value)
+            }
+            status_code => Err(get::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn create_or_update(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        server_name: &str,
+        private_endpoint_connection_name: &str,
+        parameters: &PrivateEndpointConnection,
+        subscription_id: &str,
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/privateEndpointConnections/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name,
+            private_endpoint_connection_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| create_or_update::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| create_or_update::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(parameters).map_err(|source| create_or_update::Error::SerializeError { source })?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| create_or_update::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| create_or_update::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PrivateEndpointConnection =
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
+            status_code => Err(create_or_update::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(PrivateEndpointConnection),
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        server_name: &str,
+        private_endpoint_connection_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/privateEndpointConnections/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name,
+            private_endpoint_connection_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| delete::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| delete::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => Err(delete::Error::DefaultResponse { status_code }),
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse { status_code: http::StatusCode },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn list_by_server(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        server_name: &str,
+        subscription_id: &str,
+    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_server::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/privateEndpointConnections",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            server_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| list_by_server::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list_by_server::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list_by_server::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list_by_server::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: PrivateEndpointConnectionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),

@@ -1501,10 +1501,11 @@ pub mod reservation_recommendation_details {
             http::StatusCode::NO_CONTENT => Ok(get::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                let rsp_value: HighCasedErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
                 Err(get::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1524,7 +1525,7 @@ pub mod reservation_recommendation_details {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::HighCasedErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
@@ -2206,18 +2207,12 @@ pub mod events {
     use crate::models::*;
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        billing_account_id: &str,
-        billing_profile_id: &str,
         start_date: &str,
         end_date: &str,
+        scope: &str,
     ) -> std::result::Result<Events, list::Error> {
         let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Consumption/events",
-            operation_config.base_path(),
-            billing_account_id,
-            billing_profile_id
-        );
+        let url_str = &format!("{}/{}/providers/Microsoft.Consumption/events", operation_config.base_path(), scope);
         let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
@@ -2288,18 +2283,9 @@ pub mod events {
 }
 pub mod lots {
     use crate::models::*;
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        billing_account_id: &str,
-        billing_profile_id: &str,
-    ) -> std::result::Result<Lots, list::Error> {
+    pub async fn list(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<Lots, list::Error> {
         let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Consumption/lots",
-            operation_config.base_path(),
-            billing_account_id,
-            billing_profile_id
-        );
+        let url_str = &format!("{}/{}/providers/Microsoft.Consumption/lots", operation_config.base_path(), scope);
         let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
@@ -2368,17 +2354,12 @@ pub mod lots {
 }
 pub mod credits {
     use crate::models::*;
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        billing_account_id: &str,
-        billing_profile_id: &str,
-    ) -> std::result::Result<CreditSummary, get::Error> {
+    pub async fn get(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<CreditSummary, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Consumption/credits/balanceSummary",
+            "{}/{}/providers/Microsoft.Consumption/credits/balanceSummary",
             operation_config.base_path(),
-            billing_account_id,
-            billing_profile_id
+            scope
         );
         let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();

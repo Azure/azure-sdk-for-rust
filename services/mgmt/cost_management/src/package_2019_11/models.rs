@@ -103,6 +103,10 @@ pub struct ReportConfigFilter {
     pub dimensions: Option<ReportConfigComparisonExpression>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<ReportConfigComparisonExpression>,
+    #[serde(rename = "tagKey", skip_serializing_if = "Option::is_none")]
+    pub tag_key: Option<ReportConfigComparisonExpression>,
+    #[serde(rename = "tagValue", skip_serializing_if = "Option::is_none")]
+    pub tag_value: Option<ReportConfigComparisonExpression>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReportConfigColumnType {
@@ -124,6 +128,20 @@ pub mod report_config_comparison_expression {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SettingsListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<Setting>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Setting {
+    #[serde(flatten)]
+    pub proxy_setting_resource: ProxySettingResource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SettingsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ViewListResult {
     #[serde(skip_serializing)]
     pub value: Vec<View>,
@@ -136,6 +154,11 @@ pub struct View {
     pub proxy_resource: ProxyResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<ViewProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SettingsProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ViewProperties {
@@ -243,6 +266,17 @@ pub struct Resource {
     pub type_: Option<String>,
     #[serde(skip_serializing)]
     pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxySettingResource {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(skip_serializing)]
+    pub kind: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {

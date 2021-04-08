@@ -89,6 +89,8 @@ pub struct RoleAssignmentProperties {
     pub condition: Option<String>,
     #[serde(rename = "conditionVersion", skip_serializing_if = "Option::is_none")]
     pub condition_version: Option<String>,
+    #[serde(rename = "delegatedManagedIdentityResourceId", skip_serializing_if = "Option::is_none")]
+    pub delegated_managed_identity_resource_id: Option<String>,
 }
 pub mod role_assignment_properties {
     use super::*;

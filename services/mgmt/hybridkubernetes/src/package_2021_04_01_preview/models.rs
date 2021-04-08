@@ -89,6 +89,10 @@ pub struct ConnectedClusterProperties {
     pub last_connectivity_time: Option<String>,
     #[serde(rename = "connectivityStatus", skip_serializing)]
     pub connectivity_status: Option<connected_cluster_properties::ConnectivityStatus>,
+    #[serde(rename = "privateLinkState", skip_serializing_if = "Option::is_none")]
+    pub private_link_state: Option<connected_cluster_properties::PrivateLinkState>,
+    #[serde(rename = "privateLinkScopeResourceId", skip_serializing_if = "Option::is_none")]
+    pub private_link_scope_resource_id: Option<String>,
 }
 pub mod connected_cluster_properties {
     use super::*;
@@ -98,6 +102,11 @@ pub mod connected_cluster_properties {
         Connected,
         Offline,
         Expired,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PrivateLinkState {
+        Enabled,
+        Disabled,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -132,7 +141,20 @@ pub struct ConnectedClusterPatch {
     pub properties: Option<ConnectedClusterPatchProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConnectedClusterPatchProperties {}
+pub struct ConnectedClusterPatchProperties {
+    #[serde(rename = "privateLinkState", skip_serializing_if = "Option::is_none")]
+    pub private_link_state: Option<connected_cluster_patch_properties::PrivateLinkState>,
+    #[serde(rename = "privateLinkScopeResourceId", skip_serializing_if = "Option::is_none")]
+    pub private_link_scope_resource_id: Option<String>,
+}
+pub mod connected_cluster_patch_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PrivateLinkState {
+        Enabled,
+        Disabled,
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridConnectionConfig {
     #[serde(rename = "expirationTime", skip_serializing)]

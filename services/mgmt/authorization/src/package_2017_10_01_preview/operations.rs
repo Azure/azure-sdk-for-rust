@@ -47,9 +47,13 @@ pub mod classic_administrators {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -58,8 +62,11 @@ pub mod classic_administrators {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -121,9 +128,14 @@ pub mod permissions {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list_for_resource_group::Error::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_for_resource_group::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_for_resource_group::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
@@ -132,8 +144,11 @@ pub mod permissions {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -200,9 +215,14 @@ pub mod permissions {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list_for_resource::Error::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_for_resource::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_for_resource::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
@@ -211,8 +231,11 @@ pub mod permissions {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -273,9 +296,13 @@ pub mod role_definitions {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -284,8 +311,11 @@ pub mod role_definitions {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -345,9 +375,14 @@ pub mod role_definitions {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(create_or_update::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
@@ -356,8 +391,11 @@ pub mod role_definitions {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -376,7 +414,7 @@ pub mod role_definitions {
         operation_config: &crate::OperationConfig,
         scope: &str,
         role_definition_id: &str,
-    ) -> std::result::Result<RoleDefinition, delete::Error> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Authorization/roleDefinitions/{}",
@@ -411,23 +449,36 @@ pub mod role_definitions {
                     source,
                     body: rsp_body.clone(),
                 })?;
-                Ok(rsp_value)
+                Ok(delete::Response::Ok200(rsp_value))
             }
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(delete::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
     }
     pub mod delete {
         use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(RoleDefinition),
+            NoContent204,
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -488,9 +539,13 @@ pub mod role_definitions {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -499,8 +554,11 @@ pub mod role_definitions {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -552,9 +610,13 @@ pub mod role_definitions {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(get_by_id::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get_by_id::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(get_by_id::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -563,8 +625,11 @@ pub mod role_definitions {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -628,9 +693,13 @@ pub mod provider_operations_metadata {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -639,8 +708,11 @@ pub mod provider_operations_metadata {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -699,9 +771,13 @@ pub mod provider_operations_metadata {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -710,8 +786,11 @@ pub mod provider_operations_metadata {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -757,9 +836,14 @@ pub mod global_administrator {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                Err(elevate_access::Error::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| elevate_access::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(elevate_access::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
@@ -768,8 +852,11 @@ pub mod global_administrator {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -843,9 +930,14 @@ pub mod role_assignments {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list_for_resource::Error::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_for_resource::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_for_resource::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
@@ -854,8 +946,11 @@ pub mod role_assignments {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -918,9 +1013,14 @@ pub mod role_assignments {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list_for_resource_group::Error::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_for_resource_group::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_for_resource_group::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
@@ -929,8 +1029,11 @@ pub mod role_assignments {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -988,9 +1091,13 @@ pub mod role_assignments {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(get::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -999,8 +1106,11 @@ pub mod role_assignments {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -1059,9 +1169,13 @@ pub mod role_assignments {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(create::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(create::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -1070,8 +1184,11 @@ pub mod role_assignments {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -1090,7 +1207,7 @@ pub mod role_assignments {
         operation_config: &crate::OperationConfig,
         scope: &str,
         role_assignment_name: &str,
-    ) -> std::result::Result<RoleAssignment, delete::Error> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Authorization/roleAssignments/{}",
@@ -1125,23 +1242,36 @@ pub mod role_assignments {
                     source,
                     body: rsp_body.clone(),
                 })?;
-                Ok(rsp_value)
+                Ok(delete::Response::Ok200(rsp_value))
             }
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(delete::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
     }
     pub mod delete {
         use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(RoleAssignment),
+            NoContent204,
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -1193,9 +1323,13 @@ pub mod role_assignments {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(get_by_id::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get_by_id::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(get_by_id::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -1204,8 +1338,11 @@ pub mod role_assignments {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -1259,9 +1396,14 @@ pub mod role_assignments {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(create_by_id::Error::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| create_by_id::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(create_by_id::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
@@ -1270,8 +1412,11 @@ pub mod role_assignments {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -1289,7 +1434,7 @@ pub mod role_assignments {
     pub async fn delete_by_id(
         operation_config: &crate::OperationConfig,
         role_assignment_id: &str,
-    ) -> std::result::Result<RoleAssignment, delete_by_id::Error> {
+    ) -> std::result::Result<delete_by_id::Response, delete_by_id::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}", operation_config.base_path(), role_assignment_id);
         let mut url = url::Url::parse(url_str).map_err(|source| delete_by_id::Error::ParseUrlError { source })?;
@@ -1320,23 +1465,37 @@ pub mod role_assignments {
                         source,
                         body: rsp_body.clone(),
                     })?;
-                Ok(rsp_value)
+                Ok(delete_by_id::Response::Ok200(rsp_value))
             }
+            http::StatusCode::NO_CONTENT => Ok(delete_by_id::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                Err(delete_by_id::Error::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| delete_by_id::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(delete_by_id::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
     }
     pub mod delete_by_id {
         use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(RoleAssignment),
+            NoContent204,
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -1397,9 +1556,13 @@ pub mod role_assignments {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -1408,8 +1571,11 @@ pub mod role_assignments {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -1470,9 +1636,14 @@ pub mod role_assignments {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list_for_scope::Error::UnexpectedResponse {
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_for_scope::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list_for_scope::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
@@ -1481,8 +1652,11 @@ pub mod role_assignments {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]

@@ -29,9 +29,17 @@ mod package_2020_11_10_preview;
 pub use package_2020_11_10_preview::{models, operations, API_VERSION};
 #[cfg(feature = "package-2021-01-14-preview")]
 mod package_2021_01_14_preview;
-use azure_core::setters;
 #[cfg(feature = "package-2021-01-14-preview")]
 pub use package_2021_01_14_preview::{models, operations, API_VERSION};
+#[cfg(feature = "package-2021-02-01-preview")]
+mod package_2021_02_01_preview;
+#[cfg(feature = "package-2021-02-01-preview")]
+pub use package_2021_02_01_preview::{models, operations, API_VERSION};
+#[cfg(feature = "package-2021-03-09-preview")]
+mod package_2021_03_09_preview;
+use azure_core::setters;
+#[cfg(feature = "package-2021-03-09-preview")]
+pub use package_2021_03_09_preview::{models, operations, API_VERSION};
 pub fn config(
     http_client: std::sync::Arc<std::boxed::Box<dyn azure_core::HttpClient>>,
     token_credential: Box<dyn azure_core::TokenCredential>,

@@ -1469,26 +1469,6 @@ pub struct ErrorContract {
     pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricNamespaceName {
-    #[serde(rename = "metricNamespaceName", skip_serializing_if = "Option::is_none")]
-    pub metric_namespace_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricNamespace {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MetricNamespaceName>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricNamespaceCollection {
-    pub value: Vec<MetricNamespace>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricBaselinesResponse {
     pub timespan: String,
     pub interval: String,

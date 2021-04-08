@@ -62,6 +62,10 @@ pub struct CognitiveServicesAccountProperties {
     pub internal_id: Option<String>,
     #[serde(skip_serializing)]
     pub capabilities: Vec<SkuCapability>,
+    #[serde(rename = "isMigrated", skip_serializing)]
+    pub is_migrated: Option<bool>,
+    #[serde(rename = "skuChangeInfo", skip_serializing_if = "Option::is_none")]
+    pub sku_change_info: Option<CognitiveServicesAccountSkuChangeInfo>,
     #[serde(rename = "customSubDomainName", skip_serializing_if = "Option::is_none")]
     pub custom_sub_domain_name: Option<String>,
     #[serde(rename = "networkAcls", skip_serializing_if = "Option::is_none")]
@@ -101,6 +105,10 @@ pub mod cognitive_services_account_properties {
 pub struct CognitiveServicesAccountApiProperties {
     #[serde(rename = "qnaRuntimeEndpoint", skip_serializing_if = "Option::is_none")]
     pub qna_runtime_endpoint: Option<String>,
+    #[serde(rename = "qnaAzureSearchEndpointKey", skip_serializing_if = "Option::is_none")]
+    pub qna_azure_search_endpoint_key: Option<String>,
+    #[serde(rename = "qnaAzureSearchEndpointId", skip_serializing_if = "Option::is_none")]
+    pub qna_azure_search_endpoint_id: Option<String>,
     #[serde(rename = "statisticsEnabled", skip_serializing_if = "Option::is_none")]
     pub statistics_enabled: Option<bool>,
     #[serde(rename = "eventHubConnectionString", skip_serializing_if = "Option::is_none")]
@@ -122,6 +130,15 @@ pub struct CognitiveServicesAccountKeys {
     pub key1: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub key2: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CognitiveServicesAccountSkuChangeInfo {
+    #[serde(rename = "countOfDowngrades", skip_serializing)]
+    pub count_of_downgrades: Option<f64>,
+    #[serde(rename = "countOfUpgradesAfterDowngrades", skip_serializing)]
+    pub count_of_upgrades_after_downgrades: Option<f64>,
+    #[serde(rename = "lastChangeDate", skip_serializing)]
+    pub last_change_date: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateKeyParameters {
@@ -438,6 +455,10 @@ pub struct PrivateEndpointConnection {
     pub resource: Resource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
+    #[serde(skip_serializing)]
+    pub etag: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
@@ -459,8 +480,8 @@ pub struct PrivateLinkServiceConnectionState {
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "actionRequired", skip_serializing_if = "Option::is_none")]
-    pub action_required: Option<String>,
+    #[serde(rename = "actionsRequired", skip_serializing_if = "Option::is_none")]
+    pub actions_required: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointServiceConnectionStatus {

@@ -510,8 +510,6 @@ pub struct RegistryProperties {
     pub status: Option<Status>,
     #[serde(rename = "adminUserEnabled", skip_serializing_if = "Option::is_none")]
     pub admin_user_enabled: Option<bool>,
-    #[serde(rename = "storageAccount", skip_serializing_if = "Option::is_none")]
-    pub storage_account: Option<StorageAccountProperties>,
     #[serde(rename = "networkRuleSet", skip_serializing_if = "Option::is_none")]
     pub network_rule_set: Option<NetworkRuleSet>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -559,10 +557,6 @@ pub struct Status {
     pub message: Option<String>,
     #[serde(skip_serializing)]
     pub timestamp: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageAccountProperties {
-    pub id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkRuleSet {

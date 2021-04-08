@@ -63,6 +63,8 @@ pub struct VaultProperties {
     pub access_policies: Vec<AccessPolicyEntry>,
     #[serde(rename = "vaultUri", skip_serializing_if = "Option::is_none")]
     pub vault_uri: Option<String>,
+    #[serde(rename = "hsmPoolResourceId", skip_serializing)]
+    pub hsm_pool_resource_id: Option<String>,
     #[serde(rename = "enabledForDeployment", skip_serializing_if = "Option::is_none")]
     pub enabled_for_deployment: Option<bool>,
     #[serde(rename = "enabledForDiskEncryption", skip_serializing_if = "Option::is_none")]
@@ -312,6 +314,8 @@ pub struct VirtualNetworkRule {
 pub struct PrivateEndpointConnectionItem {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }

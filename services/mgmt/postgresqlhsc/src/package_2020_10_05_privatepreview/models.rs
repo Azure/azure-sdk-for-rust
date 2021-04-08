@@ -215,6 +215,10 @@ pub struct ServerGroupProperties {
     pub standby_availability_zone: Option<String>,
     #[serde(rename = "delegatedSubnetArguments", skip_serializing_if = "Option::is_none")]
     pub delegated_subnet_arguments: Option<server_group_properties::DelegatedSubnetArguments>,
+    #[serde(rename = "readReplicas", skip_serializing)]
+    pub read_replicas: Vec<String>,
+    #[serde(rename = "sourceServerGroup", skip_serializing)]
+    pub source_server_group: Option<String>,
     #[serde(rename = "sourceSubscriptionId", skip_serializing_if = "Option::is_none")]
     pub source_subscription_id: Option<String>,
     #[serde(rename = "sourceResourceGroupName", skip_serializing_if = "Option::is_none")]
@@ -232,6 +236,7 @@ pub mod server_group_properties {
     pub enum CreateMode {
         Default,
         PointInTimeRestore,
+        ReadReplica,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceProviderType {

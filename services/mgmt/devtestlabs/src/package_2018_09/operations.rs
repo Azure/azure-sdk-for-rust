@@ -40,9 +40,13 @@ pub mod provider_operations {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list::Error::UnexpectedResponse {
-                    status_code,
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
                     body: rsp_body.clone(),
+                })?;
+                Err(list::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
                 })
             }
         }
@@ -51,8 +55,11 @@ pub mod provider_operations {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::CloudError,
+            },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
@@ -1088,7 +1095,7 @@ pub mod operations {
         subscription_id: &str,
         location_name: &str,
         name: &str,
-    ) -> std::result::Result<OperationResult, get::Error> {
+    ) -> std::result::Result<get::Response, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DevTestLab/locations/{}/operations/{}",
@@ -1124,7 +1131,15 @@ pub mod operations {
                     source,
                     body: rsp_body.clone(),
                 })?;
-                Ok(rsp_value)
+                Ok(get::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => {
+                let rsp_body = rsp.body();
+                let rsp_value: OperationResult = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Ok(get::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -1141,6 +1156,11 @@ pub mod operations {
     }
     pub mod get {
         use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(OperationResult),
+            Accepted202(OperationResult),
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

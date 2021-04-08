@@ -82,46 +82,46 @@ pub mod marketplace_agreements {
             GetTokenError { source: azure_core::errors::AzureError },
         }
     }
-    pub async fn create(
+    pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         body: Option<&DatadogAgreementResource>,
-    ) -> std::result::Result<DatadogAgreementResource, create::Error> {
+    ) -> std::result::Result<DatadogAgreementResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Datadog/agreements/default",
             operation_config.base_path(),
             subscription_id
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| create::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(|source| create_or_update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PUT);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| create::Error::GetTokenError { source })?;
+                .map_err(|source| create_or_update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(body) = body {
-            azure_core::to_json(body).map_err(|source| create::Error::SerializeError { source })?
+            azure_core::to_json(body).map_err(|source| create_or_update::Error::SerializeError { source })?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
         };
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| create::Error::BuildRequestError { source })?;
+            .map_err(|source| create_or_update::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| create::Error::ExecuteRequestError { source })?;
+            .map_err(|source| create_or_update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: DatadogAgreementResource =
-                    serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
@@ -130,18 +130,18 @@ pub mod marketplace_agreements {
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ResourceProviderDefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
+                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
-                Err(create::Error::DefaultResponse {
+                Err(create_or_update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod create {
+    pub mod create_or_update {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -165,14 +165,14 @@ pub mod marketplace_agreements {
         }
     }
 }
-pub mod api_keys {
+pub mod monitors {
     use crate::models::*;
-    pub async fn list(
+    pub async fn list_api_keys(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<DatadogApiKeyListResponse, list::Error> {
+    ) -> std::result::Result<DatadogApiKeyListResponse, list_api_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/listApiKeys",
@@ -181,14 +181,14 @@ pub mod api_keys {
             resource_group_name,
             monitor_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_api_keys::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| list::Error::GetTokenError { source })?;
+                .map_err(|source| list_api_keys::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -197,16 +197,16 @@ pub mod api_keys {
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| list::Error::BuildRequestError { source })?;
+            .map_err(|source| list_api_keys::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| list::Error::ExecuteRequestError { source })?;
+            .map_err(|source| list_api_keys::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: DatadogApiKeyListResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_api_keys::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
@@ -215,18 +215,18 @@ pub mod api_keys {
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ResourceProviderDefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_api_keys::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
-                Err(list::Error::DefaultResponse {
+                Err(list_api_keys::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod list {
+    pub mod list_api_keys {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -409,15 +409,12 @@ pub mod api_keys {
             GetTokenError { source: azure_core::errors::AzureError },
         }
     }
-}
-pub mod hosts {
-    use crate::models::*;
-    pub async fn list(
+    pub async fn list_hosts(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<DatadogHostListResponse, list::Error> {
+    ) -> std::result::Result<DatadogHostListResponse, list_hosts::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/listHosts",
@@ -426,14 +423,14 @@ pub mod hosts {
             resource_group_name,
             monitor_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_hosts::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| list::Error::GetTokenError { source })?;
+                .map_err(|source| list_hosts::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -442,16 +439,16 @@ pub mod hosts {
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| list::Error::BuildRequestError { source })?;
+            .map_err(|source| list_hosts::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| list::Error::ExecuteRequestError { source })?;
+            .map_err(|source| list_hosts::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: DatadogHostListResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_hosts::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
@@ -460,18 +457,18 @@ pub mod hosts {
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ResourceProviderDefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_hosts::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
-                Err(list::Error::DefaultResponse {
+                Err(list_hosts::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod list {
+    pub mod list_hosts {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -494,15 +491,12 @@ pub mod hosts {
             GetTokenError { source: azure_core::errors::AzureError },
         }
     }
-}
-pub mod linked_resources {
-    use crate::models::*;
-    pub async fn list(
+    pub async fn list_linked_resources(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<LinkedResourceListResponse, list::Error> {
+    ) -> std::result::Result<LinkedResourceListResponse, list_linked_resources::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/listLinkedResources",
@@ -511,14 +505,14 @@ pub mod linked_resources {
             resource_group_name,
             monitor_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_linked_resources::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| list::Error::GetTokenError { source })?;
+                .map_err(|source| list_linked_resources::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -527,16 +521,16 @@ pub mod linked_resources {
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| list::Error::BuildRequestError { source })?;
+            .map_err(|source| list_linked_resources::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| list::Error::ExecuteRequestError { source })?;
+            .map_err(|source| list_linked_resources::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: LinkedResourceListResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_linked_resources::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
@@ -545,18 +539,18 @@ pub mod linked_resources {
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ResourceProviderDefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_linked_resources::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
-                Err(list::Error::DefaultResponse {
+                Err(list_linked_resources::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod list {
+    pub mod list_linked_resources {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -579,15 +573,12 @@ pub mod linked_resources {
             GetTokenError { source: azure_core::errors::AzureError },
         }
     }
-}
-pub mod monitored_resources {
-    use crate::models::*;
-    pub async fn list(
+    pub async fn list_monitored_resources(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<MonitoredResourceListResponse, list::Error> {
+    ) -> std::result::Result<MonitoredResourceListResponse, list_monitored_resources::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/listMonitoredResources",
@@ -596,14 +587,14 @@ pub mod monitored_resources {
             resource_group_name,
             monitor_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(|source| list_monitored_resources::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| list::Error::GetTokenError { source })?;
+                .map_err(|source| list_monitored_resources::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -612,16 +603,16 @@ pub mod monitored_resources {
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| list::Error::BuildRequestError { source })?;
+            .map_err(|source| list_monitored_resources::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| list::Error::ExecuteRequestError { source })?;
+            .map_err(|source| list_monitored_resources::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: MonitoredResourceListResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_monitored_resources::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
@@ -630,18 +621,18 @@ pub mod monitored_resources {
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ResourceProviderDefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    serde_json::from_slice(rsp_body).map_err(|source| list_monitored_resources::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
-                Err(list::Error::DefaultResponse {
+                Err(list_monitored_resources::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod list {
+    pub mod list_monitored_resources {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -664,81 +655,6 @@ pub mod monitored_resources {
             GetTokenError { source: azure_core::errors::AzureError },
         }
     }
-}
-pub mod operations {
-    use crate::models::*;
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/providers/Microsoft.Datadog/operations", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(|source| list::Error::GetTokenError { source })?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| list::Error::ExecuteRequestError { source })?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: OperationListResult = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ResourceProviderDefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod list {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ResourceProviderDefaultErrorResponse,
-            },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
-        }
-    }
-}
-pub mod monitors {
-    use crate::models::*;
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1243,15 +1159,12 @@ pub mod monitors {
             GetTokenError { source: azure_core::errors::AzureError },
         }
     }
-}
-pub mod refresh_set_password {
-    use crate::models::*;
-    pub async fn get(
+    pub async fn refresh_set_password_link(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<DatadogSetPasswordLink, get::Error> {
+    ) -> std::result::Result<DatadogSetPasswordLink, refresh_set_password_link::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/refreshSetPasswordLink",
@@ -1260,14 +1173,14 @@ pub mod refresh_set_password {
             resource_group_name,
             monitor_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(|source| refresh_set_password_link::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| get::Error::GetTokenError { source })?;
+                .map_err(|source| refresh_set_password_link::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -1276,16 +1189,16 @@ pub mod refresh_set_password {
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| get::Error::BuildRequestError { source })?;
+            .map_err(|source| refresh_set_password_link::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| get::Error::ExecuteRequestError { source })?;
+            .map_err(|source| refresh_set_password_link::Error::ExecuteRequestError { source })?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: DatadogSetPasswordLink =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    serde_json::from_slice(rsp_body).map_err(|source| refresh_set_password_link::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
@@ -1294,18 +1207,90 @@ pub mod refresh_set_password {
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ResourceProviderDefaultErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                    serde_json::from_slice(rsp_body).map_err(|source| refresh_set_password_link::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
-                Err(get::Error::DefaultResponse {
+                Err(refresh_set_password_link::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod get {
+    pub mod refresh_set_password_link {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ResourceProviderDefaultErrorResponse,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+}
+pub mod operations {
+    use crate::models::*;
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!("{}/providers/Microsoft.Datadog/operations", operation_config.base_path(),);
+        let mut url = url::Url::parse(url_str).map_err(|source| list::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| list::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| list::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| list::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: OperationListResult = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ResourceProviderDefaultErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                        source,
+                        body: rsp_body.clone(),
+                    })?;
+                Err(list::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {

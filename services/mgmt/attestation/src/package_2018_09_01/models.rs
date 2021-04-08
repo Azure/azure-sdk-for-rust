@@ -29,7 +29,8 @@ pub struct OperationsDisplayDefinition {
 pub struct AttestationProvider {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    pub properties: StatusResult,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<StatusResult>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatusResult {

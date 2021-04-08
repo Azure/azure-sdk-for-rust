@@ -36,6 +36,12 @@ pub struct ExtendedErrorInfo {
     pub additional_info: Vec<TypedErrorInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CheckinManifestParams {
+    pub environment: String,
+    #[serde(rename = "baselineArmManifestLocation")]
+    pub baseline_arm_manifest_location: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RolloutStatusBase {
     #[serde(rename = "completedRegions", skip_serializing_if = "Vec::is_empty")]
     pub completed_regions: Vec<String>,
@@ -46,8 +52,7 @@ pub struct RolloutStatusBase {
 pub struct CustomRolloutProperties {
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<custom_rollout_properties::ProvisioningState>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub specification: Option<serde_json::Value>,
+    pub specification: serde_json::Value,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<serde_json::Value>,
 }
@@ -74,8 +79,7 @@ pub mod custom_rollout_properties {
 pub struct CustomRollout {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CustomRolloutProperties>,
+    pub properties: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InnerError {
@@ -200,7 +204,7 @@ pub struct DefaultRollout {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DefaultRolloutProperties>,
+    pub properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefaultRolloutArrayResponseWithContinuation {
@@ -747,6 +751,10 @@ pub struct OperationsContent {
     pub resource: Resource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationsDefinition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationsPutContent {
+    pub contents: Vec<OperationsDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsDefinitionArrayResponseWithContinuation {

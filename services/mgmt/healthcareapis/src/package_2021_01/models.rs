@@ -16,12 +16,12 @@ pub struct ServicesProperties {
     pub cors_configuration: Option<ServiceCorsConfigurationInfo>,
     #[serde(rename = "exportConfiguration", skip_serializing_if = "Option::is_none")]
     pub export_configuration: Option<ServiceExportConfigurationInfo>,
-    #[serde(rename = "acrConfiguration", skip_serializing_if = "Option::is_none")]
-    pub acr_configuration: Option<ServiceAcrConfigurationInfo>,
     #[serde(rename = "privateEndpointConnections", skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[serde(rename = "publicNetworkAccess", skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<services_properties::PublicNetworkAccess>,
+    #[serde(rename = "acrConfiguration", skip_serializing_if = "Option::is_none")]
+    pub acr_configuration: Option<ServiceAcrConfigurationInfo>,
 }
 pub mod services_properties {
     use super::*;

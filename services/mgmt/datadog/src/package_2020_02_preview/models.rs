@@ -195,8 +195,10 @@ pub enum MonitoringStatus {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MarketplaceSubscriptionStatus {
+    Provisioning,
     Active,
     Suspended,
+    Unsubscribed,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatadogOrganizationProperties {
@@ -208,6 +210,12 @@ pub struct DatadogOrganizationProperties {
     pub linking_auth_code: Option<String>,
     #[serde(rename = "linkingClientId", skip_serializing_if = "Option::is_none")]
     pub linking_client_id: Option<String>,
+    #[serde(rename = "redirectUri", skip_serializing_if = "Option::is_none")]
+    pub redirect_uri: Option<String>,
+    #[serde(rename = "apiKey", skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
+    #[serde(rename = "applicationKey", skip_serializing_if = "Option::is_none")]
+    pub application_key: Option<String>,
     #[serde(rename = "enterpriseAppId", skip_serializing_if = "Option::is_none")]
     pub enterprise_app_id: Option<String>,
 }
@@ -227,9 +235,9 @@ pub enum LiftrResourceCategories {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorProperties {
-    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "monitoringStatus", skip_serializing)]
+    #[serde(rename = "monitoringStatus", skip_serializing_if = "Option::is_none")]
     pub monitoring_status: Option<MonitoringStatus>,
     #[serde(rename = "marketplaceSubscriptionStatus", skip_serializing)]
     pub marketplace_subscription_status: Option<MarketplaceSubscriptionStatus>,
@@ -283,7 +291,7 @@ pub struct DatadogMonitorResourceListResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorUpdateProperties {
-    #[serde(rename = "monitoringStatus", skip_serializing)]
+    #[serde(rename = "monitoringStatus", skip_serializing_if = "Option::is_none")]
     pub monitoring_status: Option<MonitoringStatus>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -330,6 +338,8 @@ pub struct MetricRules {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitoringTagRulesProperties {
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "logRules", skip_serializing_if = "Option::is_none")]
     pub log_rules: Option<LogRules>,
     #[serde(rename = "metricRules", skip_serializing_if = "Option::is_none")]
@@ -362,6 +372,8 @@ pub enum SingleSignOnStates {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatadogSingleSignOnProperties {
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "singleSignOnState", skip_serializing_if = "Option::is_none")]
     pub single_sign_on_state: Option<SingleSignOnStates>,
     #[serde(rename = "enterpriseAppId", skip_serializing_if = "Option::is_none")]

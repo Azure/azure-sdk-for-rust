@@ -673,6 +673,8 @@ pub struct JobResource {
     pub id: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
+    #[serde(rename = "systemData", skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobResourceList {
@@ -1162,6 +1164,21 @@ pub mod subscription_is_allowed_to_create_job_validation_response_properties {
         Invalid,
         Skipped,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", skip_serializing)]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", skip_serializing)]
+    pub created_by_type: Option<String>,
+    #[serde(rename = "createdAt", skip_serializing)]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", skip_serializing)]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", skip_serializing)]
+    pub last_modified_by_type: Option<String>,
+    #[serde(rename = "lastModifiedAt", skip_serializing)]
+    pub last_modified_at: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransferAllDetails {

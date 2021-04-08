@@ -1321,6 +1321,8 @@ pub struct NetworkInterfaceIpConfiguration {
     pub name: Option<String>,
     #[serde(skip_serializing)]
     pub etag: Option<String>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkInterfaceDnsSettings {
@@ -1365,6 +1367,18 @@ pub struct NetworkInterfacePropertiesFormat {
     pub resource_guid: Option<String>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<ProvisioningState>,
+    #[serde(rename = "nicType", skip_serializing_if = "Option::is_none")]
+    pub nic_type: Option<network_interface_properties_format::NicType>,
+    #[serde(rename = "privateLinkService", skip_serializing_if = "Option::is_none")]
+    pub private_link_service: Option<PrivateLinkService>,
+}
+pub mod network_interface_properties_format {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum NicType {
+        Standard,
+        Elastic,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkInterface {
@@ -2058,9 +2072,22 @@ pub struct SubnetPropertiesFormat {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "privateEndpointNetworkPolicies", skip_serializing_if = "Option::is_none")]
-    pub private_endpoint_network_policies: Option<String>,
+    pub private_endpoint_network_policies: Option<subnet_properties_format::PrivateEndpointNetworkPolicies>,
     #[serde(rename = "privateLinkServiceNetworkPolicies", skip_serializing_if = "Option::is_none")]
-    pub private_link_service_network_policies: Option<String>,
+    pub private_link_service_network_policies: Option<subnet_properties_format::PrivateLinkServiceNetworkPolicies>,
+}
+pub mod subnet_properties_format {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PrivateEndpointNetworkPolicies {
+        Enabled,
+        Disabled,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PrivateLinkServiceNetworkPolicies {
+        Enabled,
+        Disabled,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceEndpointPropertiesFormat {
@@ -2091,6 +2118,8 @@ pub struct VirtualNetworkPeeringPropertiesFormat {
     pub peering_state: Option<virtual_network_peering_properties_format::PeeringState>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<ProvisioningState>,
+    #[serde(rename = "resourceGuid", skip_serializing)]
+    pub resource_guid: Option<String>,
 }
 pub mod virtual_network_peering_properties_format {
     use super::*;
@@ -2111,6 +2140,8 @@ pub struct Subnet {
     pub name: Option<String>,
     #[serde(skip_serializing)]
     pub etag: Option<String>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkPeering {
@@ -2122,6 +2153,8 @@ pub struct VirtualNetworkPeering {
     pub name: Option<String>,
     #[serde(skip_serializing)]
     pub etag: Option<String>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubnetListResult {
@@ -2217,6 +2250,8 @@ pub struct IpAddressAvailabilityResult {
     pub available: Option<bool>,
     #[serde(rename = "availableIPAddresses", skip_serializing_if = "Vec::is_empty")]
     pub available_ip_addresses: Vec<String>,
+    #[serde(rename = "isPlatformReserved", skip_serializing_if = "Option::is_none")]
+    pub is_platform_reserved: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkListUsageResult {
@@ -3718,6 +3753,8 @@ pub struct AvailablePrivateEndpointType {
     pub type_: Option<String>,
     #[serde(rename = "resourceName", skip_serializing_if = "Option::is_none")]
     pub resource_name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateDnsZoneGroup {
@@ -4058,6 +4095,23 @@ pub struct PublicIpAddressPropertiesFormat {
     pub resource_guid: Option<String>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<ProvisioningState>,
+    #[serde(rename = "natGateway", skip_serializing_if = "Option::is_none")]
+    pub nat_gateway: Option<NatGateway>,
+    #[serde(rename = "migrationPhase", skip_serializing_if = "Option::is_none")]
+    pub migration_phase: Option<public_ip_address_properties_format::MigrationPhase>,
+    #[serde(rename = "linkedPublicIPAddress", skip_serializing_if = "Option::is_none")]
+    pub linked_public_ip_address: Option<PublicIpAddress>,
+}
+pub mod public_ip_address_properties_format {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum MigrationPhase {
+        None,
+        Prepare,
+        Commit,
+        Abort,
+        Committed,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PublicIpAddress {
@@ -4113,6 +4167,53 @@ pub struct IpTag {
     pub ip_tag_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NatGatewaySku {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<nat_gateway_sku::Name>,
+}
+pub mod nat_gateway_sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        Standard,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NatGatewayPropertiesFormat {
+    #[serde(rename = "idleTimeoutInMinutes", skip_serializing_if = "Option::is_none")]
+    pub idle_timeout_in_minutes: Option<i32>,
+    #[serde(rename = "publicIpAddresses", skip_serializing_if = "Vec::is_empty")]
+    pub public_ip_addresses: Vec<SubResource>,
+    #[serde(rename = "publicIpPrefixes", skip_serializing_if = "Vec::is_empty")]
+    pub public_ip_prefixes: Vec<SubResource>,
+    #[serde(skip_serializing)]
+    pub subnets: Vec<SubResource>,
+    #[serde(rename = "resourceGuid", skip_serializing)]
+    pub resource_guid: Option<String>,
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<ProvisioningState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NatGateway {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sku: Option<NatGatewaySku>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<NatGatewayPropertiesFormat>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
+    #[serde(skip_serializing)]
+    pub etag: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NatGatewayListResult {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<NatGateway>,
+    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailableDelegationsResult {
@@ -7702,53 +7803,6 @@ pub struct IpGroupPropertiesFormat {
     pub firewall_policies: Vec<SubResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NatGatewaySku {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<nat_gateway_sku::Name>,
-}
-pub mod nat_gateway_sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        Standard,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NatGatewayPropertiesFormat {
-    #[serde(rename = "idleTimeoutInMinutes", skip_serializing_if = "Option::is_none")]
-    pub idle_timeout_in_minutes: Option<i32>,
-    #[serde(rename = "publicIpAddresses", skip_serializing_if = "Vec::is_empty")]
-    pub public_ip_addresses: Vec<SubResource>,
-    #[serde(rename = "publicIpPrefixes", skip_serializing_if = "Vec::is_empty")]
-    pub public_ip_prefixes: Vec<SubResource>,
-    #[serde(skip_serializing)]
-    pub subnets: Vec<SubResource>,
-    #[serde(rename = "resourceGuid", skip_serializing)]
-    pub resource_guid: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<ProvisioningState>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NatGateway {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sku: Option<NatGatewaySku>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<NatGatewayPropertiesFormat>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub zones: Vec<String>,
-    #[serde(skip_serializing)]
-    pub etag: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NatGatewayListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<NatGateway>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkVirtualAppliance {
     #[serde(flatten)]
     pub resource: Resource,
@@ -8067,6 +8121,8 @@ pub struct PublicIpPrefixPropertiesFormat {
     pub resource_guid: Option<String>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<ProvisioningState>,
+    #[serde(rename = "natGateway", skip_serializing_if = "Option::is_none")]
+    pub nat_gateway: Option<NatGateway>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PublicIpPrefix {
@@ -8296,6 +8352,8 @@ pub struct ServiceTagInformationPropertiesFormat {
     pub system_service: Option<String>,
     #[serde(rename = "addressPrefixes", skip_serializing)]
     pub address_prefixes: Vec<String>,
+    #[serde(skip_serializing)]
+    pub state: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageName {

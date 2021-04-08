@@ -150,6 +150,20 @@ pub struct RecommendationProperties {
     pub extended_properties: Option<serde_json::Value>,
     #[serde(rename = "resourceMetadata", skip_serializing_if = "Option::is_none")]
     pub resource_metadata: Option<ResourceMetadata>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    #[serde(rename = "learnMoreLink", skip_serializing_if = "Option::is_none")]
+    pub learn_more_link: Option<String>,
+    #[serde(rename = "potentialBenefits", skip_serializing_if = "Option::is_none")]
+    pub potential_benefits: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub actions: Vec<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub remediation: Option<serde_json::Value>,
+    #[serde(rename = "exposedMetadataProperties", skip_serializing_if = "Option::is_none")]
+    pub exposed_metadata_properties: Option<serde_json::Value>,
 }
 pub mod recommendation_properties {
     use super::*;
@@ -196,6 +210,12 @@ pub struct ResourceMetadata {
     pub resource_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub action: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub singular: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub plural: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationEntityListResult {

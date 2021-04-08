@@ -33,7 +33,8 @@ pub struct AttestationProvider {
     pub tracked_resource: TrackedResource,
     #[serde(rename = "systemData", skip_serializing)]
     pub system_data: Option<SystemData>,
-    pub properties: StatusResult,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<StatusResult>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatusResult {
@@ -92,11 +93,6 @@ pub struct AttestationServiceCreationSpecificParams {
     pub policy_signing_certificates: Option<JsonWebKeySet>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpointConnectionProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionListResult {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
@@ -107,6 +103,15 @@ pub struct PrivateEndpointConnection {
     pub resource: Resource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionProperties {
+    #[serde(rename = "privateEndpoint", skip_serializing_if = "Option::is_none")]
+    pub private_endpoint: Option<PrivateEndpoint>,
+    #[serde(rename = "privateLinkServiceConnectionState")]
+    pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpoint {

@@ -397,7 +397,7 @@ pub struct BudgetProperties {
     #[serde(rename = "timePeriod")]
     pub time_period: BudgetTimePeriod,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub filters: Option<Filters>,
+    pub filter: Option<Filter>,
     #[serde(rename = "currentSpend", skip_serializing_if = "Option::is_none")]
     pub current_spend: Option<CurrentSpend>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -428,7 +428,7 @@ pub struct BudgetTimePeriod {
     pub end_date: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Filters {
+pub struct Filter {
     #[serde(rename = "resourceGroups", skip_serializing_if = "Vec::is_empty")]
     pub resource_groups: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -456,6 +456,8 @@ pub struct Notification {
     pub contact_roles: Vec<String>,
     #[serde(rename = "contactGroups", skip_serializing_if = "Vec::is_empty")]
     pub contact_groups: Vec<String>,
+    #[serde(rename = "thresholdType", skip_serializing_if = "Option::is_none")]
+    pub threshold_type: Option<notification::ThresholdType>,
 }
 pub mod notification {
     use super::*;
@@ -464,6 +466,10 @@ pub mod notification {
         EqualTo,
         GreaterThan,
         GreaterThanOrEqualTo,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ThresholdType {
+        Actual,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

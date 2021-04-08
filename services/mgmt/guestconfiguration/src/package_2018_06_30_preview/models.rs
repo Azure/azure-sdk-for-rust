@@ -48,17 +48,17 @@ pub struct ConfigurationParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationSetting {
-    #[serde(rename = "configurationMode", skip_serializing)]
+    #[serde(rename = "configurationMode", skip_serializing_if = "Option::is_none")]
     pub configuration_mode: Option<configuration_setting::ConfigurationMode>,
     #[serde(rename = "allowModuleOverwrite", skip_serializing_if = "Option::is_none")]
-    pub allow_module_overwrite: Option<configuration_setting::AllowModuleOverwrite>,
-    #[serde(rename = "actionAfterReboot", skip_serializing)]
+    pub allow_module_overwrite: Option<bool>,
+    #[serde(rename = "actionAfterReboot", skip_serializing_if = "Option::is_none")]
     pub action_after_reboot: Option<configuration_setting::ActionAfterReboot>,
-    #[serde(rename = "refreshFrequencyMins", skip_serializing)]
+    #[serde(rename = "refreshFrequencyMins", skip_serializing_if = "Option::is_none")]
     pub refresh_frequency_mins: Option<f64>,
-    #[serde(rename = "rebootIfNeeded", skip_serializing)]
-    pub reboot_if_needed: Option<configuration_setting::RebootIfNeeded>,
-    #[serde(rename = "configurationModeFrequencyMins", skip_serializing)]
+    #[serde(rename = "rebootIfNeeded", skip_serializing_if = "Option::is_none")]
+    pub reboot_if_needed: Option<bool>,
+    #[serde(rename = "configurationModeFrequencyMins", skip_serializing_if = "Option::is_none")]
     pub configuration_mode_frequency_mins: Option<f64>,
 }
 pub mod configuration_setting {
@@ -70,19 +70,9 @@ pub mod configuration_setting {
         ApplyAndAutoCorrect,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AllowModuleOverwrite {
-        True,
-        False,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ActionAfterReboot {
         ContinueConfiguration,
         StopConfiguration,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum RebootIfNeeded {
-        True,
-        False,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

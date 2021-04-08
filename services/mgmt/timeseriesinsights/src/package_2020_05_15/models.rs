@@ -135,8 +135,18 @@ pub struct Gen2EnvironmentCreateOrUpdateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentUpdateParameters {
+    #[serde(skip_serializing)]
+    pub kind: Option<environment_update_parameters::Kind>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+pub mod environment_update_parameters {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        Gen1,
+        Gen2,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Gen1EnvironmentUpdateParameters {
@@ -229,15 +239,11 @@ pub struct Gen1EnvironmentResourceProperties {
     pub gen1_environment_creation_properties: Gen1EnvironmentCreationProperties,
     #[serde(flatten)]
     pub environment_resource_properties: EnvironmentResourceProperties,
-    #[serde(flatten)]
-    pub resource_properties: ResourceProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Gen2EnvironmentResourceProperties {
     #[serde(flatten)]
     pub environment_resource_properties: EnvironmentResourceProperties,
-    #[serde(flatten)]
-    pub resource_properties: ResourceProperties,
     #[serde(rename = "timeSeriesIdProperties")]
     pub time_series_id_properties: Vec<TimeSeriesIdProperty>,
     #[serde(rename = "storageConfiguration")]
@@ -373,8 +379,20 @@ pub struct IoTHubEventSourceCreateOrUpdateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSourceUpdateParameters {
+    #[serde(skip_serializing)]
+    pub kind: Option<event_source_update_parameters::Kind>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+pub mod event_source_update_parameters {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        #[serde(rename = "Microsoft.EventHub")]
+        MicrosoftEventHub,
+        #[serde(rename = "Microsoft.IoTHub")]
+        MicrosoftIoTHub,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSourceUpdateParameters {

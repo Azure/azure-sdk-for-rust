@@ -1192,6 +1192,10 @@ pub enum StorageAccountType {
     StandardSsdLrs,
     #[serde(rename = "UltraSSD_LRS")]
     UltraSsdLrs,
+    #[serde(rename = "Premium_ZRS")]
+    PremiumZrs,
+    #[serde(rename = "StandardSSD_ZRS")]
+    StandardSsdZrs,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DiffDiskOption {
@@ -1272,12 +1276,12 @@ pub struct DataDisk {
     pub managed_disk: Option<ManagedDiskParameters>,
     #[serde(rename = "toBeDetached", skip_serializing_if = "Option::is_none")]
     pub to_be_detached: Option<bool>,
-    #[serde(rename = "detachOption", skip_serializing_if = "Option::is_none")]
-    pub detach_option: Option<DetachOption>,
     #[serde(rename = "diskIOPSReadWrite", skip_serializing)]
     pub disk_iops_read_write: Option<i64>,
     #[serde(rename = "diskMBpsReadWrite", skip_serializing)]
     pub disk_m_bps_read_write: Option<i64>,
+    #[serde(rename = "detachOption", skip_serializing_if = "Option::is_none")]
+    pub detach_option: Option<DetachOption>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageProfile {
@@ -1639,8 +1643,6 @@ pub struct VirtualMachineProperties {
     pub virtual_machine_scale_set: Option<SubResource>,
     #[serde(rename = "proximityPlacementGroup", skip_serializing_if = "Option::is_none")]
     pub proximity_placement_group: Option<SubResource>,
-    #[serde(rename = "platformFaultDomain", skip_serializing_if = "Option::is_none")]
-    pub platform_fault_domain: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub priority: Option<Priority>,
     #[serde(rename = "evictionPolicy", skip_serializing_if = "Option::is_none")]
@@ -1661,6 +1663,8 @@ pub struct VirtualMachineProperties {
     pub vm_id: Option<String>,
     #[serde(rename = "extensionsTimeBudget", skip_serializing_if = "Option::is_none")]
     pub extensions_time_budget: Option<String>,
+    #[serde(rename = "platformFaultDomain", skip_serializing_if = "Option::is_none")]
+    pub platform_fault_domain: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachine {
@@ -3318,6 +3322,10 @@ pub mod disk_sku {
         StandardSsdLrs,
         #[serde(rename = "UltraSSD_LRS")]
         UltraSsdLrs,
+        #[serde(rename = "Premium_ZRS")]
+        PremiumZrs,
+        #[serde(rename = "StandardSSD_ZRS")]
+        StandardSsdZrs,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3385,6 +3393,12 @@ pub struct DiskProperties {
     pub tier: Option<String>,
     #[serde(rename = "burstingEnabled", skip_serializing_if = "Option::is_none")]
     pub bursting_enabled: Option<bool>,
+    #[serde(rename = "propertyUpdatesInProgress", skip_serializing_if = "Option::is_none")]
+    pub property_updates_in_progress: Option<PropertyUpdatesInProgress>,
+    #[serde(rename = "supportsHibernation", skip_serializing_if = "Option::is_none")]
+    pub supports_hibernation: Option<bool>,
+    #[serde(rename = "securityProfile", skip_serializing_if = "Option::is_none")]
+    pub security_profile: Option<DiskSecurityProfile>,
 }
 pub mod disk_properties {
     use super::*;
@@ -3431,6 +3445,8 @@ pub struct SnapshotProperties {
     pub network_access_policy: Option<NetworkAccessPolicy>,
     #[serde(rename = "diskAccessId", skip_serializing_if = "Option::is_none")]
     pub disk_access_id: Option<String>,
+    #[serde(rename = "supportsHibernation", skip_serializing_if = "Option::is_none")]
+    pub supports_hibernation: Option<bool>,
 }
 pub mod snapshot_properties {
     use super::*;
@@ -3460,6 +3476,10 @@ pub struct EncryptionSetProperties {
     pub previous_keys: Vec<KeyForDiskEncryptionSet>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
+    #[serde(rename = "rotationToLatestKeyVersionEnabled", skip_serializing_if = "Option::is_none")]
+    pub rotation_to_latest_key_version_enabled: Option<bool>,
+    #[serde(rename = "lastKeyRotationTimestamp", skip_serializing)]
+    pub last_key_rotation_timestamp: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionSettingsCollection {
@@ -3556,6 +3576,10 @@ pub struct DiskUpdateProperties {
     pub bursting_enabled: Option<bool>,
     #[serde(rename = "purchasePlan", skip_serializing_if = "Option::is_none")]
     pub purchase_plan: Option<PurchasePlan>,
+    #[serde(rename = "propertyUpdatesInProgress", skip_serializing_if = "Option::is_none")]
+    pub property_updates_in_progress: Option<PropertyUpdatesInProgress>,
+    #[serde(rename = "supportsHibernation", skip_serializing_if = "Option::is_none")]
+    pub supports_hibernation: Option<bool>,
 }
 pub mod disk_update_properties {
     use super::*;
@@ -3579,6 +3603,8 @@ pub struct SnapshotUpdateProperties {
     pub network_access_policy: Option<NetworkAccessPolicy>,
     #[serde(rename = "diskAccessId", skip_serializing_if = "Option::is_none")]
     pub disk_access_id: Option<String>,
+    #[serde(rename = "supportsHibernation", skip_serializing_if = "Option::is_none")]
+    pub supports_hibernation: Option<bool>,
 }
 pub mod snapshot_update_properties {
     use super::*;
@@ -3594,6 +3620,8 @@ pub struct DiskEncryptionSetUpdateProperties {
     pub encryption_type: Option<DiskEncryptionSetType>,
     #[serde(rename = "activeKey", skip_serializing_if = "Option::is_none")]
     pub active_key: Option<KeyForDiskEncryptionSet>,
+    #[serde(rename = "rotationToLatestKeyVersionEnabled", skip_serializing_if = "Option::is_none")]
+    pub rotation_to_latest_key_version_enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DiskState {
@@ -3644,6 +3672,20 @@ pub struct ImageDiskReference {
     pub id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PropertyUpdatesInProgress {
+    #[serde(rename = "targetTier", skip_serializing_if = "Option::is_none")]
+    pub target_tier: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DiskSecurityType {
+    TrustedLaunch,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskSecurityProfile {
+    #[serde(rename = "securityType", skip_serializing_if = "Option::is_none")]
+    pub security_type: Option<DiskSecurityType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GrantAccessData {
@@ -3725,6 +3767,8 @@ pub struct DiskEncryptionSetUpdate {
     pub properties: Option<DiskEncryptionSetUpdateProperties>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity: Option<EncryptionSetIdentity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskEncryptionSetList {
@@ -3863,6 +3907,8 @@ pub struct DiskRestorePointProperties {
     pub source_unique_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
+    #[serde(rename = "supportsHibernation", skip_serializing_if = "Option::is_none")]
+    pub supports_hibernation: Option<bool>,
 }
 pub mod disk_restore_point_properties {
     use super::*;

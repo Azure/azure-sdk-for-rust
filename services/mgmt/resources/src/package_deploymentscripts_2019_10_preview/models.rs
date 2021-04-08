@@ -143,7 +143,7 @@ pub struct ScriptStatus {
 pub struct ManagedServiceIdentity {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<managed_service_identity::Type>,
-    #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
     #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
