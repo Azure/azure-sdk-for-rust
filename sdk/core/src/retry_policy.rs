@@ -36,32 +36,7 @@ impl RetryPolicy for LinearRetryPolicy {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ExponentialBackoffRetryPolicy {
-    max_retries: u32,
-    seconds_backoff: u32,
-}
-
-impl Default for ExponentialBackoffRetryPolicy {
-    fn default() -> Self {
-        Self {
-            max_retries: 3,
-            seconds_backoff: 2,
-        }
-    }
-}
-
-#[async_trait::async_trait]
-impl RetryPolicy for ExponentialBackoffRetryPolicy {
-    async fn create_instance(&self) -> Box<dyn RetryPolicyInstance> {
-        Box::new(ExponentialBackoffRetryPolicyInstance {
-            linear_retry_policy: self.clone(),
-            current_retries: 0,
-        })
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LinearRetryPolicyInstance {
+struct LinearRetryPolicyInstance {
     linear_retry_policy: LinearRetryPolicy,
     current_retries: u32,
 }
@@ -83,18 +58,44 @@ impl RetryPolicyInstance for LinearRetryPolicyInstance {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ExponentialBackoffRetryPolicyInstance {
-    linear_retry_policy: ExponentialBackoffRetryPolicy,
+pub struct ExponentialBackoffRetryPolicy {
+    max_retries: u32,
+    seconds_backoff: u32,
+}
+
+impl Default for ExponentialBackoffRetryPolicy {
+    fn default() -> Self {
+        Self {
+            max_retries: 3,
+            seconds_backoff: 2,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ExponentialBackoffRetryPolicyInstance {
+    exponential_backoff_retry_policy: ExponentialBackoffRetryPolicy,
     current_retries: u32,
+}
+
+#[async_trait::async_trait]
+impl RetryPolicy for ExponentialBackoffRetryPolicy {
+    async fn create_instance(&self) -> Box<dyn RetryPolicyInstance> {
+        Box::new(ExponentialBackoffRetryPolicyInstance {
+            exponential_backoff_retry_policy: self.clone(),
+            current_retries: 0,
+        })
+    }
 }
 
 #[async_trait::async_trait]
 impl RetryPolicyInstance for ExponentialBackoffRetryPolicyInstance {
     async fn retry(&mut self) -> bool {
         self.current_retries += 1;
-        if self.current_retries <= self.linear_retry_policy.max_retries {
+        if self.current_retries <= self.exponential_backoff_retry_policy.max_retries {
             sleep(Duration::from_secs(
-                (self.linear_retry_policy.seconds_backoff * self.current_retries) as u64,
+                (self.exponential_backoff_retry_policy.seconds_backoff * self.current_retries)
+                    as u64,
             ))
             .await;
             true
