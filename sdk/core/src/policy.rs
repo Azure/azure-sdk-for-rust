@@ -1,7 +1,6 @@
-use crate::{Request, Response};
-
-use async_trait::async_trait;
-
+use crate::retry_policy::RetryPolicy;
+use crate::Request;
+use crate::Response;
 use std::error::Error;
 use std::future::Future;
 use std::pin::Pin;
@@ -9,50 +8,8 @@ use std::sync::{Arc, Mutex};
 
 pub type PolicyResult<T> = Result<T, Box<dyn Error + Send + Sync>>;
 
-#[derive(Copy, Clone, Debug)]
-pub struct RetryOptions {
-    num_retries: usize,
-}
-
-impl RetryOptions {
-    pub fn new(num_retries: usize) -> Self {
-        Self { num_retries }
-    }
-}
-
-#[derive(Copy, Clone, Debug)]
-pub struct RetryPolicy {
-    options: RetryOptions,
-}
-
-impl RetryPolicy {
-    pub fn new(options: RetryOptions) -> Self {
-        Self { options }
-    }
-}
-
-#[async_trait]
-impl Policy for RetryPolicy {
-    async fn send(
-        &self,
-        ctx: Context,
-        request: &mut Request,
-        next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
-        let retries = self.options.num_retries;
-        let mut last_result = next[0].send(ctx.clone(), request, &next[1..]).await;
-        loop {
-            if last_result.is_ok() || retries == 0 {
-                return last_result;
-            }
-
-            last_result = next[0].send(ctx.clone(), request, &next[1..]).await;
-        }
-    }
-}
-
 type BoxedFuture<T> = Box<dyn Future<Output = PolicyResult<T>> + Send>;
-type Transport = dyn Fn(Context, &mut Request) -> Pin<BoxedFuture<Response>> + Send;
+type Transport = dyn Fn(Context, Request) -> Pin<BoxedFuture<Response>> + Send;
 
 pub struct TransportOptions {
     send: Box<Mutex<Transport>>,
@@ -61,7 +18,7 @@ pub struct TransportOptions {
 impl TransportOptions {
     pub fn new<F>(send: F) -> Self
     where
-        F: Fn(Context, &mut Request) -> Pin<BoxedFuture<Response>> + Send + 'static,
+        F: Fn(Context, Request) -> Pin<BoxedFuture<Response>> + Send + 'static,
     {
         Self {
             send: Box::new(Mutex::new(send)),
@@ -74,6 +31,7 @@ impl std::fmt::Debug for TransportOptions {
         f.write_str("TransportOptions")
     }
 }
+
 #[derive(Debug)]
 pub struct TransportPolicy {
     options: TransportOptions,
@@ -86,16 +44,8 @@ impl TransportPolicy {
 }
 
 #[async_trait::async_trait]
-impl Policy for TransportPolicy {
-    async fn send(
-        &self,
-        ctx: Context,
-        request: &mut Request,
-        next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
-        if !next.is_empty() {
-            panic!("Transport policy was not last policy")
-        }
+impl Policy<Response> for TransportPolicy {
+    async fn send(&self, ctx: Context, request: Request) -> PolicyResult<Response> {
         let response = {
             let transport = self.options.send.lock().unwrap();
             (transport)(ctx, request)
@@ -118,30 +68,68 @@ impl Context {
 }
 
 #[async_trait::async_trait]
-pub trait Policy: Send + Sync + std::fmt::Debug {
-    async fn send(
-        &self,
-        ctx: Context,
-        request: &mut Request,
-        next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response>;
+pub trait Policy<R>: Send + Sync + std::fmt::Debug
+where
+    R: Send + Sync,
+{
+    async fn send(&self, ctx: Context, request: Request) -> PolicyResult<R>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Pipeline {
-    policies: Vec<Arc<dyn Policy>>,
+    policies: Vec<Arc<dyn Policy<Request>>>,
+    retry: Arc<dyn RetryPolicy>,
+    transport: Arc<dyn Policy<Response>>,
 }
 
 impl Pipeline {
-    // TODO: how can we ensure that the transport policy is the last policy?
-    // Make this more idiot proof
-    pub fn new(policies: Vec<Arc<dyn Policy>>) -> Self {
-        Self { policies }
+    pub fn new(
+        policies: Vec<Arc<dyn Policy<Request>>>,
+        retry: Arc<dyn RetryPolicy>,
+        transport: Arc<dyn Policy<Response>>,
+    ) -> Self {
+        Self {
+            policies,
+            retry,
+            transport,
+        }
     }
 
-    pub async fn send(&self, ctx: Context, mut request: Request) -> PolicyResult<Response> {
-        self.policies[0]
-            .send(ctx, &mut request, &self.policies[1..])
-            .await
+    pub async fn send(&self, ctx: Context, request: Request) -> PolicyResult<Response> {
+        // with create instance we make sure every pipeline execution has a new retry policy
+        // instance (with for example the counters reset to zero) based off the template policy
+        // specified in the pipeline.
+        let mut retry_policy = self.retry.create_instance().await;
+
+        loop {
+            // each retry must start with a fresh copy of the request. This ensures idempotency
+            // of the pipeline. This is necessary because as the pipeline progresses, the request
+            // can be changed by each policy.
+            let mut request = request.clone();
+
+            for policy in &self.policies {
+                let request_result = policy.send(ctx.clone(), request.clone()).await;
+                if request_result.is_err() {
+                    if retry_policy.retry().await {
+                        continue;
+                    } else {
+                        return Err(request_result.err().unwrap());
+                    }
+                } else {
+                    request = request_result.unwrap();
+                }
+            }
+
+            let response = self.transport.send(ctx.clone(), request.clone()).await;
+            if response.is_err() {
+                if retry_policy.retry().await {
+                    continue;
+                } else {
+                    return Err(response.err().unwrap());
+                }
+            }
+
+            return Ok(response.unwrap());
+        }
     }
 }

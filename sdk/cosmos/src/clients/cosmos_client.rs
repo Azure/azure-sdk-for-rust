@@ -4,6 +4,7 @@ use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 
+use azure_core::retry_policy::*;
 use azure_core::HttpClient;
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};
@@ -22,11 +23,18 @@ const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 use azure_core::*;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 enum TransportStack {
     Client(Arc<Box<dyn HttpClient>>),
     Pipeline(Pipeline),
 }
+
+impl std::fmt::Debug for TransportStack {
+    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        todo!()
+    }
+}
+
 /// A plain Cosmos client.
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
@@ -36,7 +44,7 @@ pub struct CosmosClient {
 }
 /// TODO
 pub struct CosmosOptions {
-    retry: RetryOptions,
+    retry: Arc<dyn RetryPolicy>,
     transport: TransportOptions,
 }
 
@@ -44,10 +52,10 @@ impl CosmosOptions {
     /// TODO
     pub fn with_client(client: Arc<Box<dyn HttpClient>>) -> Self {
         Self {
-            retry: RetryOptions::new(3),
+            retry: Arc::new(LinearRetryPolicy::default()),
             transport: TransportOptions::new(move |_ctx, req| {
                 let client = client.clone();
-                let req = req.take_inner();
+                let req = req.into();
                 Box::pin(async move { Ok(client.execute_request(req).await?.into()) })
             }),
         }
@@ -124,12 +132,13 @@ impl CosmosClient {
         options: CosmosOptions,
     ) -> Self {
         use azure_core::*;
+
+        #[allow(unused_mut)]
         let mut policies = Vec::new();
-        let retry_policy = RetryPolicy::new(options.retry);
-        policies.push(Arc::new(retry_policy) as Arc<dyn Policy>);
+
         let transport_policy = TransportPolicy::new(options.transport);
-        policies.push(Arc::new(transport_policy) as Arc<dyn Policy>);
-        let pipeline = Pipeline::new(policies);
+
+        let pipeline = Pipeline::new(policies, options.retry, Arc::new(transport_policy));
         Self {
             transport: TransportStack::Pipeline(pipeline),
             auth_token,

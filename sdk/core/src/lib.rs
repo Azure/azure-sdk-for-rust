@@ -20,7 +20,9 @@ mod models;
 pub mod parsing;
 mod policy;
 pub mod prelude;
+mod request;
 mod request_options;
+pub mod retry_policy;
 pub mod util;
 
 use chrono::{DateTime, Utc};
@@ -30,11 +32,12 @@ use oauth2::AccessToken;
 use std::fmt::Debug;
 use uuid::Uuid;
 
-pub use self::http::{Request, Response};
+pub use self::http::Response;
 pub use headers::AddAsHeader;
 pub use http_client::{to_json, HttpClient};
 pub use models::*;
 pub use policy::*;
+pub use request::*;
 
 pub type RequestId = Uuid;
 pub type SessionToken = String;

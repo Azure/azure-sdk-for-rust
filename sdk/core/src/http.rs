@@ -1,31 +1,3 @@
-pub struct Request {
-    inner: http::Request<bytes::Bytes>,
-}
-
-impl Request {
-    /// Get the inner http::Request object, replacing it
-    /// with an empty one.
-    /// Note: this method will soon be replaced
-    pub fn take_inner(&mut self) -> http::Request<bytes::Bytes> {
-        std::mem::replace(&mut self.inner, http::Request::new(bytes::Bytes::new()))
-    }
-
-    pub fn body<T: serde::Serialize>(
-        &mut self,
-        body: T,
-    ) -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
-        let b = self.inner.body_mut();
-        *b = crate::to_json(&body)?;
-        Ok(())
-    }
-}
-
-impl From<http::Request<bytes::Bytes>> for Request {
-    fn from(inner: http::Request<bytes::Bytes>) -> Self {
-        Self { inner }
-    }
-}
-
 pub struct Response {
     inner: http::Response<bytes::Bytes>,
 }
