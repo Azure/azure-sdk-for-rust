@@ -11,4 +11,3 @@ sample/
 *.swp
 *.swo
 *.vim
-services/mgmt/* linguist-generated=true
