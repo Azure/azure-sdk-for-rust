@@ -101,7 +101,7 @@ fn write_file<P: AsRef<Path>>(file: P, tokens: &TokenStream) -> Result<()> {
     Ok(())
 }
 
-const SPEC_FOLDER: &str = "../azure-rest-api-specs/specification";
+const SPEC_FOLDER: &str = "../../../azure-rest-api-specs/specification";
 
 // gets a sorted list of folders in ../azure-rest-api-specs/specification
 fn get_spec_folders(spec_folder: &str) -> Result<Vec<String>, Error> {

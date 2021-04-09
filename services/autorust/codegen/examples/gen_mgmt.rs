@@ -9,7 +9,7 @@ use heck::SnakeCase;
 
 use std::{collections::HashSet, fs, path::PathBuf};
 
-const OUTPUT_FOLDER: &str = "../azure-sdk-for-rust/services/mgmt";
+const OUTPUT_FOLDER: &str = "../mgmt";
 
 const ONLY_SERVICES: &[&str] = &[
     // "vmware",
@@ -21,6 +21,7 @@ const SKIP_SERVICES: &[&str] = &[
     "deploymentmanager",          // TODO #80 path parameters
     "deviceprovisioningservices", // TODO #82 certificate_name used as parameter more than once
     "dnc",                        // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
+    "m365securityandcompliance",  // can't find privateLinkServicesForO365ManagementActivityAPI.json
     "mixedreality",               // TODO #83 AccountKeyRegenerateRequest not generated
     "netapp",                     // Ident "10minutely"
     "powerplatform",              // https://github.com/Azure/azure-rest-api-specs/pull/11580 incorrect ref & duplicate Operations_List
@@ -54,7 +55,7 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("recoveryservicesbackup", "package-2020-10"), // duplicate fn get_operation_status
     ("recoveryservicessiterecovery", "package-2016-08"), // duplicate package-2016-08 https://github.com/Azure/azure-rest-api-specs/pull/11287
     ("resources", "package-policy-2020-03"),
-    ("resources", "package-policy-2020-09"), // SchemaNotFound { ref_key: RefKey { file_path: "../azure-rest-api-specs/specification/resources/resource-manager/Microsoft.Authorization/stable/2020-09-01/dataPolicyManifests.json", name: "CloudError"
+    ("resources", "package-policy-2020-09"), // SchemaNotFound { ref_key: RefKey { file_path: "../../../azure-rest-api-specs/specification/resources/resource-manager/Microsoft.Authorization/stable/2020-09-01/dataPolicyManifests.json", name: "CloudError"
     ("security", "package-2020-01-preview-only"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/pull/13828
     ("synapse", "package-2019-06-01-preview"), // TODO #80 path parameters
     ("synapse", "package-2020-12-01"),
@@ -65,26 +66,26 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
 // https://github.com/ctaggart/autorust/issues/73
 const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     // cost-management
-    ("../azure-rest-api-specs/specification/cost-management/resource-manager/Microsoft.CostManagement/stable/2020-06-01/costmanagement.json", "ReportConfigFilter", "not"),
-    ("../azure-rest-api-specs/specification/cost-management/resource-manager/Microsoft.CostManagement/stable/2020-06-01/costmanagement.json", "QueryFilter", "not"),
+    ("../../../azure-rest-api-specs/specification/cost-management/resource-manager/Microsoft.CostManagement/stable/2020-06-01/costmanagement.json", "ReportConfigFilter", "not"),
+    ("../../../azure-rest-api-specs/specification/cost-management/resource-manager/Microsoft.CostManagement/stable/2020-06-01/costmanagement.json", "QueryFilter", "not"),
     // databox
-    ("../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2020-11-01/databox.json", "transferFilterDetails", "include"),
-    ("../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2020-11-01/databox.json", "transferAllDetails", "include"),
-    ("../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-03-01/databox.json", "transferFilterDetails", "include"),
-    ("../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-03-01/databox.json", "transferAllDetails", "include"),
+    ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2020-11-01/databox.json", "transferFilterDetails", "include"),
+    ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2020-11-01/databox.json", "transferAllDetails", "include"),
+    ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-03-01/databox.json", "transferFilterDetails", "include"),
+    ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-03-01/databox.json", "transferAllDetails", "include"),
     // dataprotection
-    ("../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-01-01/dataprotection.json", "InnerError", "embeddedInnerError"),
+    ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-01-01/dataprotection.json", "InnerError", "embeddedInnerError"),
     // hardwaresecuritymodels
-    ("../azure-rest-api-specs/specification/hardwaresecuritymodules/resource-manager/Microsoft.HardwareSecurityModules/preview/2018-10-31-preview/dedicatedhsm.json", "Error", "innererror"),
+    ("../../../azure-rest-api-specs/specification/hardwaresecuritymodules/resource-manager/Microsoft.HardwareSecurityModules/preview/2018-10-31-preview/dedicatedhsm.json", "Error", "innererror"),
     // logic
-    ("../azure-rest-api-specs/specification/logic/resource-manager/Microsoft.Logic/stable/2019-05-01/logic.json", "SwaggerSchema", "items"),
+    ("../../../azure-rest-api-specs/specification/logic/resource-manager/Microsoft.Logic/stable/2019-05-01/logic.json", "SwaggerSchema", "items"),
     // migrateprojects
-    ("../azure-rest-api-specs/specification/migrateprojects/resource-manager/Microsoft.Migrate/preview/2018-09-01-preview/migrate.json", "IEdmNavigationProperty", "partner"),
-    ("../azure-rest-api-specs/specification/migrateprojects/resource-manager/Microsoft.Migrate/preview/2018-09-01-preview/migrate.json", "IEdmStructuredType", "baseType"),
+    ("../../../azure-rest-api-specs/specification/migrateprojects/resource-manager/Microsoft.Migrate/preview/2018-09-01-preview/migrate.json", "IEdmNavigationProperty", "partner"),
+    ("../../../azure-rest-api-specs/specification/migrateprojects/resource-manager/Microsoft.Migrate/preview/2018-09-01-preview/migrate.json", "IEdmStructuredType", "baseType"),
     // network
-    ("../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-07-01/publicIpAddress.json", "PublicIPAddressPropertiesFormat", "ipConfiguration"),
-    ("../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-08-01/publicIpAddress.json", "PublicIPAddressPropertiesFormat", "ipConfiguration"),
-    ("../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-11-01/publicIpAddress.json", "PublicIPAddressPropertiesFormat", "ipConfiguration"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-07-01/publicIpAddress.json", "PublicIPAddressPropertiesFormat", "ipConfiguration"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-08-01/publicIpAddress.json", "PublicIPAddressPropertiesFormat", "ipConfiguration"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-11-01/publicIpAddress.json", "PublicIPAddressPropertiesFormat", "ipConfiguration"),
 ];
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

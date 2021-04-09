@@ -30,12 +30,12 @@ mod tests {
 
     #[test]
     fn test_path_join() -> Result<()> {
-        let a = "../azure-rest-api-specs/specification/vmware/resource-manager/Microsoft.AVS/stable/2020-03-20/vmware.json";
+        let a = "../../../azure-rest-api-specs/specification/vmware/resource-manager/Microsoft.AVS/stable/2020-03-20/vmware.json";
         let b = "../../../../../common-types/resource-management/v1/types.json";
         let c = join(a, b)?;
         assert_eq!(
             c,
-            PathBuf::from("../azure-rest-api-specs/specification/common-types/resource-management/v1/types.json")
+            PathBuf::from("../../../azure-rest-api-specs/specification/common-types/resource-management/v1/types.json")
         );
         Ok(())
     }
