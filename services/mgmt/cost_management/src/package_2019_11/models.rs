@@ -157,9 +157,22 @@ pub struct View {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SettingsProperties {
+    pub scope: String,
+    #[serde(rename = "startOn", skip_serializing_if = "Option::is_none")]
+    pub start_on: Option<settings_properties::StartOn>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub scope: Option<String>,
+    pub cache: Option<Cache>,
 }
+pub mod settings_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StartOn {
+        LastUsed,
+        ScopePicker,
+        SpecificScope,
+    }
+}
+pub type Cache = Vec<serde_json::Value>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ViewProperties {
     #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]

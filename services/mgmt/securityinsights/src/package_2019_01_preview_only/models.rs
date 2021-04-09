@@ -104,10 +104,10 @@ pub struct MstiDataConnector {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MstiDataConnectorDataTypes {
-    #[serde(rename = "bingSafetyPhishingURL", skip_serializing_if = "Option::is_none")]
-    pub bing_safety_phishing_url: Option<msti_data_connector_data_types::BingSafetyPhishingUrl>,
-    #[serde(rename = "microsoftEmergingThreatFeed", skip_serializing_if = "Option::is_none")]
-    pub microsoft_emerging_threat_feed: Option<msti_data_connector_data_types::MicrosoftEmergingThreatFeed>,
+    #[serde(rename = "bingSafetyPhishingURL")]
+    pub bing_safety_phishing_url: msti_data_connector_data_types::BingSafetyPhishingUrl,
+    #[serde(rename = "microsoftEmergingThreatFeed")]
+    pub microsoft_emerging_threat_feed: msti_data_connector_data_types::MicrosoftEmergingThreatFeed,
 }
 pub mod msti_data_connector_data_types {
     use super::*;
@@ -115,23 +115,23 @@ pub mod msti_data_connector_data_types {
     pub struct BingSafetyPhishingUrl {
         #[serde(flatten)]
         pub data_connector_data_type_common: DataConnectorDataTypeCommon,
-        #[serde(rename = "lookbackPeriod", skip_serializing_if = "Option::is_none")]
-        pub lookback_period: Option<String>,
+        #[serde(rename = "lookbackPeriod")]
+        pub lookback_period: String,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct MicrosoftEmergingThreatFeed {
         #[serde(flatten)]
         pub data_connector_data_type_common: DataConnectorDataTypeCommon,
-        #[serde(rename = "lookbackPeriod", skip_serializing_if = "Option::is_none")]
-        pub lookback_period: Option<String>,
+        #[serde(rename = "lookbackPeriod")]
+        pub lookback_period: String,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MstiDataConnectorProperties {
     #[serde(flatten)]
     pub data_connector_tenant_id: DataConnectorTenantId,
-    #[serde(rename = "dataTypes", skip_serializing_if = "Option::is_none")]
-    pub data_types: Option<MstiDataConnectorDataTypes>,
+    #[serde(rename = "dataTypes")]
+    pub data_types: MstiDataConnectorDataTypes,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MstiCheckRequirements {
@@ -154,15 +154,14 @@ pub struct MtpDataConnector {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MtpDataConnectorDataTypes {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub incidents: Option<serde_json::Value>,
+    pub incidents: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MtpDataConnectorProperties {
     #[serde(flatten)]
     pub data_connector_tenant_id: DataConnectorTenantId,
-    #[serde(rename = "dataTypes", skip_serializing_if = "Option::is_none")]
-    pub data_types: Option<MtpDataConnectorDataTypes>,
+    #[serde(rename = "dataTypes")]
+    pub data_types: MtpDataConnectorDataTypes,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MtpCheckRequirements {
@@ -388,8 +387,7 @@ pub enum AlertSeverity {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertsDataTypeOfDataConnector {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub alerts: Option<serde_json::Value>,
+    pub alerts: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AttackTactic {
@@ -638,15 +636,14 @@ pub struct AwsCloudTrailDataConnector {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsCloudTrailDataConnectorDataTypes {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub logs: Option<serde_json::Value>,
+    pub logs: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsCloudTrailDataConnectorProperties {
     #[serde(rename = "awsRoleArn", skip_serializing_if = "Option::is_none")]
     pub aws_role_arn: Option<String>,
-    #[serde(rename = "dataTypes", skip_serializing_if = "Option::is_none")]
-    pub data_types: Option<AwsCloudTrailDataConnectorDataTypes>,
+    #[serde(rename = "dataTypes")]
+    pub data_types: AwsCloudTrailDataConnectorDataTypes,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsCloudTrailCheckRequirements {
@@ -1007,8 +1004,7 @@ pub enum DataConnectorLicenseState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnectorDataTypeCommon {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<data_connector_data_type_common::State>,
+    pub state: data_connector_data_type_common::State,
 }
 pub mod data_connector_data_type_common {
     use super::*;
@@ -1057,8 +1053,8 @@ pub struct DataConnectorRequirementsState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnectorTenantId {
-    #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
+    #[serde(rename = "tenantId")]
+    pub tenant_id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnectorWithAlertsProperties {
@@ -1094,15 +1090,15 @@ pub struct Dynamics365DataConnector {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dynamics365DataConnectorDataTypes {
-    #[serde(rename = "dynamics365CdsActivities", skip_serializing_if = "Option::is_none")]
-    pub dynamics365_cds_activities: Option<serde_json::Value>,
+    #[serde(rename = "dynamics365CdsActivities")]
+    pub dynamics365_cds_activities: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dynamics365DataConnectorProperties {
     #[serde(flatten)]
     pub data_connector_tenant_id: DataConnectorTenantId,
-    #[serde(rename = "dataTypes", skip_serializing_if = "Option::is_none")]
-    pub data_types: Option<Dynamics365DataConnectorDataTypes>,
+    #[serde(rename = "dataTypes")]
+    pub data_types: Dynamics365DataConnectorDataTypes,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dynamics365CheckRequirements {
@@ -2074,8 +2070,8 @@ pub struct McasDataConnectorDataTypes {
 pub struct McasDataConnectorProperties {
     #[serde(flatten)]
     pub data_connector_tenant_id: DataConnectorTenantId,
-    #[serde(rename = "dataTypes", skip_serializing_if = "Option::is_none")]
-    pub data_types: Option<McasDataConnectorDataTypes>,
+    #[serde(rename = "dataTypes")]
+    pub data_types: McasDataConnectorDataTypes,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct McasCheckRequirements {
@@ -2249,19 +2245,17 @@ pub struct OfficeDataConnector {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeDataConnectorDataTypes {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub exchange: Option<serde_json::Value>,
-    #[serde(rename = "sharePoint", skip_serializing_if = "Option::is_none")]
-    pub share_point: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub teams: Option<serde_json::Value>,
+    pub exchange: serde_json::Value,
+    #[serde(rename = "sharePoint")]
+    pub share_point: serde_json::Value,
+    pub teams: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeDataConnectorProperties {
     #[serde(flatten)]
     pub data_connector_tenant_id: DataConnectorTenantId,
-    #[serde(rename = "dataTypes", skip_serializing_if = "Option::is_none")]
-    pub data_types: Option<OfficeDataConnectorDataTypes>,
+    #[serde(rename = "dataTypes")]
+    pub data_types: OfficeDataConnectorDataTypes,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -2708,17 +2702,16 @@ pub struct TiDataConnector {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TiDataConnectorDataTypes {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub indicators: Option<serde_json::Value>,
+    pub indicators: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TiDataConnectorProperties {
-    #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
+    #[serde(rename = "tenantId")]
+    pub tenant_id: String,
     #[serde(rename = "tipLookbackPeriod", skip_serializing_if = "Option::is_none")]
     pub tip_lookback_period: Option<String>,
-    #[serde(rename = "dataTypes", skip_serializing_if = "Option::is_none")]
-    pub data_types: Option<TiDataConnectorDataTypes>,
+    #[serde(rename = "dataTypes")]
+    pub data_types: TiDataConnectorDataTypes,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TiCheckRequirements {
@@ -2741,8 +2734,8 @@ pub struct TiTaxiiDataConnector {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TiTaxiiDataConnectorDataTypes {
-    #[serde(rename = "taxiiClient", skip_serializing_if = "Option::is_none")]
-    pub taxii_client: Option<serde_json::Value>,
+    #[serde(rename = "taxiiClient")]
+    pub taxii_client: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TiTaxiiDataConnectorProperties {
@@ -2762,10 +2755,10 @@ pub struct TiTaxiiDataConnectorProperties {
     pub password: Option<String>,
     #[serde(rename = "taxiiLookbackPeriod", skip_serializing_if = "Option::is_none")]
     pub taxii_lookback_period: Option<String>,
-    #[serde(rename = "pollingFrequency", skip_serializing_if = "Option::is_none")]
-    pub polling_frequency: Option<ti_taxii_data_connector_properties::PollingFrequency>,
-    #[serde(rename = "dataTypes", skip_serializing_if = "Option::is_none")]
-    pub data_types: Option<TiTaxiiDataConnectorDataTypes>,
+    #[serde(rename = "pollingFrequency")]
+    pub polling_frequency: ti_taxii_data_connector_properties::PollingFrequency,
+    #[serde(rename = "dataTypes")]
+    pub data_types: TiTaxiiDataConnectorDataTypes,
 }
 pub mod ti_taxii_data_connector_properties {
     use super::*;

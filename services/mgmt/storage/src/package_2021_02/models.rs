@@ -183,6 +183,13 @@ pub struct KeyPolicy {
     pub key_expiration_period_in_days: i32,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyCreationTime {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key1: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key2: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionService {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
@@ -617,8 +624,8 @@ pub struct StorageAccountProperties {
     pub sas_policy: Option<SasPolicy>,
     #[serde(rename = "keyPolicy", skip_serializing_if = "Option::is_none")]
     pub key_policy: Option<KeyPolicy>,
-    #[serde(rename = "keyCreationTime", skip_serializing)]
-    pub key_creation_time: Option<serde_json::Value>,
+    #[serde(rename = "keyCreationTime", skip_serializing_if = "Option::is_none")]
+    pub key_creation_time: Option<KeyCreationTime>,
     #[serde(rename = "secondaryEndpoints", skip_serializing_if = "Option::is_none")]
     pub secondary_endpoints: Option<Endpoints>,
     #[serde(skip_serializing_if = "Option::is_none")]
