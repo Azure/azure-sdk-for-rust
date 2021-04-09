@@ -1,4 +1,5 @@
 pub mod clients;
+mod continuation_next_partition_and_row_key;
 mod continuation_next_table_name;
 mod entity_metadata;
 mod entity_with_metadata;
@@ -13,6 +14,7 @@ mod select;
 mod top;
 mod transaction;
 mod transaction_operation;
+pub use continuation_next_partition_and_row_key::ContinuationNextPartitionAndRowKey;
 pub use continuation_next_table_name::ContinuationNextTableName;
 pub use entity_metadata::EntityMetadata;
 pub use entity_with_metadata::EntityWithMetadata;

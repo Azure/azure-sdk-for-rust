@@ -1,4 +1,4 @@
-use crate::{ContinuationNextTableName};
+use crate::{ContinuationNextPartitionAndRowKey};
 use azure_core::{errors::AzureError, headers::CommonStorageResponseHeaders};
 use bytes::Bytes;
 use http::Response;
@@ -13,7 +13,7 @@ where
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub metadata: String,
     pub entities: Vec<E>,
-    pub continuation_next_table_name: Option<ContinuationNextTableName>,
+    pub continuation_next_partition_and_row_key: Option<ContinuationNextPartitionAndRowKey>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -39,7 +39,7 @@ impl<E: DeserializeOwned> TryFrom<&Response<Bytes>> for QueryEntityResponse<E> {
             common_storage_response_headers: response.headers().try_into()?,
             metadata: query_entity_response_internal.metadata,
             entities: query_entity_response_internal.value,
-            continuation_next_table_name: ContinuationNextTableName::from_header_optional(
+            continuation_next_partition_and_row_key: ContinuationNextPartitionAndRowKey::from_header_optional(
                 response.headers(),
             )?,
         })

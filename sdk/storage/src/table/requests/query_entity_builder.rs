@@ -1,5 +1,5 @@
 use crate::table::responses::*;
-use crate::{table::prelude::*, ContinuationNextTableName};
+use crate::{table::prelude::*, ContinuationNextPartitionAndRowKey};
 use azure_core::prelude::*;
 use azure_core::{headers::add_optional_header, AppendToUrlQuery};
 use futures::stream::{unfold, Stream};
@@ -14,7 +14,7 @@ pub struct QueryEntityBuilder<'a> {
     filter: Option<Filter<'a>>,
     select: Option<Select<'a>>,
     top: Option<Top>,
-    continuation_next_table_name: Option<ContinuationNextTableName>,
+    continuation_next_partition_and_row_key: Option<ContinuationNextPartitionAndRowKey>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 
@@ -25,7 +25,7 @@ impl<'a> QueryEntityBuilder<'a> {
             filter: None,
             select: None,
             top: None,
-            continuation_next_table_name: None,
+            continuation_next_partition_and_row_key: None,
             client_request_id: None,
         }
     }
@@ -34,7 +34,7 @@ impl<'a> QueryEntityBuilder<'a> {
         filter: Filter<'a> => Some(filter),
         select: Select<'a> => Some(select),
         top: Top => Some(top),
-        continuation_next_table_name: ContinuationNextTableName => Some(continuation_next_table_name),
+        continuation_next_partition_and_row_key: ContinuationNextPartitionAndRowKey => Some(continuation_next_partition_and_row_key),
         client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
@@ -49,7 +49,7 @@ impl<'a> QueryEntityBuilder<'a> {
         self.filter.append_to_url_query(&mut url);
         self.select.append_to_url_query(&mut url);
         self.top.append_to_url_query(&mut url);
-        self.continuation_next_table_name
+        self.continuation_next_partition_and_row_key
             .append_to_url_query(&mut url);
 
         debug!("list entities url = {}", url);
@@ -85,7 +85,7 @@ impl<'a> QueryEntityBuilder<'a> {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,
-            ContinuationNextTableName(ContinuationNextTableName),
+            ContinuationNextPartitionAndRowKey(ContinuationNextPartitionAndRowKey),
         }
 
         unfold(Some(States::Init), move |next_marker: Option<States>| {
@@ -94,8 +94,8 @@ impl<'a> QueryEntityBuilder<'a> {
                 debug!("next_marker == {:?}", &next_marker);
                 let response = match next_marker {
                     Some(States::Init) => req.execute().await,
-                    Some(States::ContinuationNextTableName(continuation_next_table_name)) => {
-                        req.continuation_next_table_name(continuation_next_table_name)
+                    Some(States::ContinuationNextPartitionAndRowKey(continuation_next_partition_and_row_key)) => {
+                        req.continuation_next_partition_and_row_key(continuation_next_partition_and_row_key)
                             .execute()
                             .await
                     }
@@ -108,9 +108,9 @@ impl<'a> QueryEntityBuilder<'a> {
                 };
 
                 let next_marker = response
-                    .continuation_next_table_name
+                    .continuation_next_partition_and_row_key
                     .clone()
-                    .map(States::ContinuationNextTableName);
+                    .map(States::ContinuationNextPartitionAndRowKey);
 
                 Some((Ok(response), next_marker))
             }
