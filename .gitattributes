@@ -4,4 +4,4 @@ Cargo.lock merge=binary
 
 # Use unix line endings everywhere, even on Windows
 * text=auto eol=lf
-services/mgmt/* linguist-generated=true
+services/mgmt/**/*.rs linguist-generated=true
