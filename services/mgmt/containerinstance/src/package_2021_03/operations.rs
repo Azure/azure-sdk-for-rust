@@ -684,7 +684,7 @@ pub mod container_groups {
             .await
             .map_err(|source| start::Error::ExecuteRequestError { source })?;
         match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
+            http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError {

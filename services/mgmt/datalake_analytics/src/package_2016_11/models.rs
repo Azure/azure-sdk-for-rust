@@ -46,6 +46,8 @@ pub struct DataLakeAnalyticsAccountProperties {
     pub default_data_lake_store_account: Option<String>,
     #[serde(rename = "dataLakeStoreAccounts", skip_serializing)]
     pub data_lake_store_accounts: Vec<DataLakeStoreAccountInformation>,
+    #[serde(rename = "publicDataLakeStoreAccounts", skip_serializing_if = "Vec::is_empty")]
+    pub public_data_lake_store_accounts: Vec<DataLakeStoreAccountInformation>,
     #[serde(rename = "storageAccounts", skip_serializing)]
     pub storage_accounts: Vec<StorageAccountInformation>,
     #[serde(rename = "computePolicies", skip_serializing)]
@@ -56,11 +58,11 @@ pub struct DataLakeAnalyticsAccountProperties {
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
     #[serde(rename = "firewallRules", skip_serializing)]
     pub firewall_rules: Vec<FirewallRule>,
-    #[serde(rename = "firewallState", skip_serializing)]
+    #[serde(rename = "firewallState", skip_serializing_if = "Option::is_none")]
     pub firewall_state: Option<data_lake_analytics_account_properties::FirewallState>,
-    #[serde(rename = "firewallAllowAzureIps", skip_serializing)]
+    #[serde(rename = "firewallAllowAzureIps", skip_serializing_if = "Option::is_none")]
     pub firewall_allow_azure_ips: Option<data_lake_analytics_account_properties::FirewallAllowAzureIps>,
-    #[serde(rename = "newTier", skip_serializing)]
+    #[serde(rename = "newTier", skip_serializing_if = "Option::is_none")]
     pub new_tier: Option<data_lake_analytics_account_properties::NewTier>,
     #[serde(rename = "currentTier", skip_serializing)]
     pub current_tier: Option<data_lake_analytics_account_properties::CurrentTier>,
@@ -72,7 +74,7 @@ pub struct DataLakeAnalyticsAccountProperties {
     pub max_degree_of_parallelism: Option<i32>,
     #[serde(rename = "systemMaxDegreeOfParallelism", skip_serializing)]
     pub system_max_degree_of_parallelism: Option<i32>,
-    #[serde(rename = "maxDegreeOfParallelismPerJob", skip_serializing)]
+    #[serde(rename = "maxDegreeOfParallelismPerJob", skip_serializing_if = "Option::is_none")]
     pub max_degree_of_parallelism_per_job: Option<i32>,
     #[serde(rename = "minPriorityPerJob", skip_serializing)]
     pub min_priority_per_job: Option<i32>,
@@ -422,6 +424,8 @@ pub struct OperationMetaMetricAvailabilitiesSpecification {
 pub struct OperationMetaMetricSpecification {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[serde(rename = "displayDescription", skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
     #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

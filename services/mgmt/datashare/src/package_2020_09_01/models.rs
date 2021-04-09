@@ -640,18 +640,12 @@ pub struct DataShareErrorInfo {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefaultDto {
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
+    #[serde(flatten)]
+    pub proxy_dto: ProxyDto,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(skip_serializing)]
-    pub name: Option<String>,
-    #[serde(rename = "systemData", skip_serializing)]
-    pub system_data: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(rename = "type", skip_serializing)]
-    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DimensionProperties {
@@ -674,7 +668,6 @@ pub mod identity {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
-        UserAssigned,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -999,8 +992,8 @@ pub struct ProxyDto {
     pub id: Option<String>,
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(rename = "systemData", skip_serializing)]
-    pub system_data: Option<serde_json::Value>,
+    #[serde(rename = "systemData", skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
 }

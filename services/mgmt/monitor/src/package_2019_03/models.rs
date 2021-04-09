@@ -554,9 +554,25 @@ pub struct DiagnosticSettingsCategoryResourceCollection {
     pub value: Vec<DiagnosticSettingsCategoryResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureResource {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing)]
+    pub kind: Option<String>,
+    #[serde(skip_serializing)]
+    pub identity: Option<String>,
+    pub location: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroupResource {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub azure_resource: AzureResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroup>,
 }

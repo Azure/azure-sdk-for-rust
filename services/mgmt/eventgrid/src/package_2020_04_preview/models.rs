@@ -475,6 +475,8 @@ pub struct EventChannel {
     pub resource: Resource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventChannelProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventChannelsListResult {
@@ -727,6 +729,8 @@ pub struct EventSubscription {
     pub resource: Resource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventSubscriptionProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSubscriptionUpdateParameters {
@@ -825,6 +829,8 @@ pub struct PartnerNamespace {
     pub tracked_resource: TrackedResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<PartnerNamespaceProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartnerNamespaceUpdateParameters {
@@ -903,6 +909,8 @@ pub struct PartnerRegistration {
     pub tracked_resource: TrackedResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<PartnerRegistrationProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartnerRegistrationUpdateParameters {
@@ -995,6 +1003,8 @@ pub struct PartnerTopic {
     pub tracked_resource: TrackedResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<PartnerTopicProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartnerTopicsListResult {
@@ -1109,6 +1119,8 @@ pub struct SystemTopic {
     pub tracked_resource: TrackedResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<SystemTopicProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemTopicUpdateParameters {
@@ -1280,4 +1292,36 @@ pub struct TopicTypeInfo {
     pub resource: Resource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<TopicTypeProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }

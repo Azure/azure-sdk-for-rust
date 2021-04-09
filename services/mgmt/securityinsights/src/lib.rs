@@ -3,6 +3,10 @@
 mod package_composite_v1;
 #[cfg(feature = "package-composite-v1")]
 pub use package_composite_v1::{models, operations, API_VERSION};
+#[cfg(feature = "package-2021-03-preview-only")]
+mod package_2021_03_preview_only;
+#[cfg(feature = "package-2021-03-preview-only")]
+pub use package_2021_03_preview_only::{models, operations, API_VERSION};
 #[cfg(feature = "package-2019-01-preview-only")]
 mod package_2019_01_preview_only;
 use azure_core::setters;

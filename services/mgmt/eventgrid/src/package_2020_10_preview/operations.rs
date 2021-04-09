@@ -246,6 +246,7 @@ pub mod domains {
             .await
             .map_err(|source| delete::Error::ExecuteRequestError { source })?;
         match rsp.status() {
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
             http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => Err(delete::Error::DefaultResponse { status_code }),
@@ -255,6 +256,7 @@ pub mod domains {
         use crate::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
+            Ok200,
             Accepted202,
             NoContent204,
         }
@@ -280,7 +282,7 @@ pub mod domains {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<DomainsListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -352,7 +354,7 @@ pub mod domains {
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<DomainsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -733,6 +735,7 @@ pub mod domain_topics {
             .await
             .map_err(|source| delete::Error::ExecuteRequestError { source })?;
         match rsp.status() {
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
             http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => Err(delete::Error::DefaultResponse { status_code }),
@@ -742,6 +745,7 @@ pub mod domain_topics {
         use crate::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
+            Ok200,
             Accepted202,
             NoContent204,
         }
@@ -769,7 +773,7 @@ pub mod domain_topics {
         resource_group_name: &str,
         domain_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<DomainTopicsListResult, list_by_domain::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1054,7 +1058,7 @@ pub mod event_channels {
         resource_group_name: &str,
         partner_namespace_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<EventChannelsListResult, list_by_partner_namespace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1457,7 +1461,7 @@ pub mod event_subscriptions {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<EventSubscriptionsListResult, list_global_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1529,7 +1533,7 @@ pub mod event_subscriptions {
         subscription_id: &str,
         topic_type_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<EventSubscriptionsListResult, list_global_by_subscription_for_topic_type::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1604,7 +1608,7 @@ pub mod event_subscriptions {
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<EventSubscriptionsListResult, list_global_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1678,7 +1682,7 @@ pub mod event_subscriptions {
         resource_group_name: &str,
         topic_type_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<EventSubscriptionsListResult, list_global_by_resource_group_for_topic_type::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1754,7 +1758,7 @@ pub mod event_subscriptions {
         subscription_id: &str,
         location: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<EventSubscriptionsListResult, list_regional_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1828,7 +1832,7 @@ pub mod event_subscriptions {
         resource_group_name: &str,
         location: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<EventSubscriptionsListResult, list_regional_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1903,7 +1907,7 @@ pub mod event_subscriptions {
         location: &str,
         topic_type_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<EventSubscriptionsListResult, list_regional_by_subscription_for_topic_type::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1981,7 +1985,7 @@ pub mod event_subscriptions {
         location: &str,
         topic_type_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<EventSubscriptionsListResult, list_regional_by_resource_group_for_topic_type::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2061,7 +2065,7 @@ pub mod event_subscriptions {
         resource_type_name: &str,
         resource_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<EventSubscriptionsListResult, list_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2139,7 +2143,7 @@ pub mod event_subscriptions {
         domain_name: &str,
         topic_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<EventSubscriptionsListResult, list_by_domain_topic::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/topics/{}/providers/Microsoft.EventGrid/eventSubscriptions" , operation_config . base_path () , subscription_id , resource_group_name , domain_name , topic_name) ;
@@ -2624,7 +2628,7 @@ pub mod system_topic_event_subscriptions {
         resource_group_name: &str,
         system_topic_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<EventSubscriptionsListResult, list_by_system_topic::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3112,7 +3116,7 @@ pub mod partner_topic_event_subscriptions {
         resource_group_name: &str,
         partner_topic_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<EventSubscriptionsListResult, list_by_partner_topic::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3584,7 +3588,7 @@ pub mod partner_namespaces {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<PartnerNamespacesListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3656,7 +3660,7 @@ pub mod partner_namespaces {
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<PartnerNamespacesListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4158,7 +4162,7 @@ pub mod partner_registrations {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<PartnerRegistrationsListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4230,7 +4234,7 @@ pub mod partner_registrations {
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<PartnerRegistrationsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4570,7 +4574,7 @@ pub mod partner_topics {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<PartnerTopicsListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4642,7 +4646,7 @@ pub mod partner_topics {
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<PartnerTopicsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5080,7 +5084,7 @@ pub mod private_endpoint_connections {
         parent_type: &str,
         parent_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5230,7 +5234,7 @@ pub mod private_link_resources {
         parent_type: &str,
         parent_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<PrivateLinkResourcesListResult, list_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5602,7 +5606,7 @@ pub mod system_topics {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<SystemTopicsListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5674,7 +5678,7 @@ pub mod system_topics {
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<SystemTopicsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -6020,7 +6024,7 @@ pub mod topics {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<TopicsListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -6092,7 +6096,7 @@ pub mod topics {
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
-        top: Option<i64>,
+        top: Option<i32>,
     ) -> std::result::Result<TopicsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(

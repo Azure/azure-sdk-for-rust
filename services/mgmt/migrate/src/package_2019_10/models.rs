@@ -43,6 +43,12 @@ pub struct ProjectProperties {
     pub number_of_assessments: Option<i32>,
     #[serde(rename = "lastAssessmentTimestamp", skip_serializing)]
     pub last_assessment_timestamp: Option<String>,
+    #[serde(rename = "publicNetworkAccess", skip_serializing_if = "Option::is_none")]
+    pub public_network_access: Option<String>,
+    #[serde(rename = "privateEndpointConnections", skip_serializing)]
+    pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[serde(rename = "customerStorageAccountArmId", skip_serializing_if = "Option::is_none")]
+    pub customer_storage_account_arm_id: Option<String>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<project_properties::ProvisioningState>,
 }
@@ -89,6 +95,8 @@ pub struct GroupProperties {
     pub created_timestamp: Option<String>,
     #[serde(rename = "updatedTimestamp", skip_serializing)]
     pub updated_timestamp: Option<String>,
+    #[serde(rename = "groupType", skip_serializing_if = "Option::is_none")]
+    pub group_type: Option<String>,
 }
 pub mod group_properties {
     use super::*;
@@ -1250,6 +1258,15 @@ pub struct CollectorAgentProperties {
     pub spn_details: Option<CollectorBodyAgentSpnProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImportCollectorProperties {
+    #[serde(rename = "discoverySiteId", skip_serializing_if = "Option::is_none")]
+    pub discovery_site_id: Option<String>,
+    #[serde(rename = "createdTimestamp", skip_serializing)]
+    pub created_timestamp: Option<String>,
+    #[serde(rename = "updatedTimestamp", skip_serializing)]
+    pub updated_timestamp: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareCollector {
     #[serde(rename = "eTag", skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
@@ -1263,6 +1280,32 @@ pub struct VMwareCollector {
     pub properties: Option<CollectorProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerCollector {
+    #[serde(rename = "eTag", skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CollectorProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImportCollector {
+    #[serde(rename = "eTag", skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ImportCollectorProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVCollectorList {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HyperVCollector>,
@@ -1271,6 +1314,16 @@ pub struct HyperVCollectorList {
 pub struct VMwareCollectorList {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VMwareCollector>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerCollectorList {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ServerCollector>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImportCollectorList {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ImportCollector>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VmFamily {
@@ -1311,4 +1364,93 @@ pub struct AssessmentOptionsResultList {
 pub struct OperationResultList {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionCollection {
+    #[serde(skip_serializing)]
+    pub value: Vec<PrivateEndpointConnection>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnection {
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(rename = "eTag", skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    pub properties: PrivateEndpointConnectionProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionProperties {
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
+    #[serde(rename = "privateEndpoint", skip_serializing_if = "Option::is_none")]
+    pub private_endpoint: Option<ResourceId>,
+    #[serde(rename = "privateLinkServiceConnectionState", skip_serializing_if = "Option::is_none")]
+    pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
+}
+pub mod private_endpoint_connection_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Accepted,
+        InProgress,
+        Succeeded,
+        Failed,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceId {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkServiceConnectionState {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<private_link_service_connection_state::Status>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "actionsRequired", skip_serializing_if = "Option::is_none")]
+    pub actions_required: Option<String>,
+}
+pub mod private_link_service_connection_state {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Approved,
+        Pending,
+        Rejected,
+        Disconnected,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkResource {
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PrivateLinkResourceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkResourceProperties {
+    #[serde(rename = "requiredMembers", skip_serializing)]
+    pub required_members: Vec<String>,
+    #[serde(rename = "requiredZoneNames", skip_serializing)]
+    pub required_zone_names: Vec<String>,
+    #[serde(rename = "groupId", skip_serializing)]
+    pub group_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkResourceCollection {
+    #[serde(skip_serializing)]
+    pub value: Vec<PrivateLinkResource>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
 }

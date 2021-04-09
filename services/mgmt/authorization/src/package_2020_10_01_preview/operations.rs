@@ -1348,12 +1348,12 @@ pub mod role_management_policies {
             GetTokenError { source: azure_core::errors::AzureError },
         }
     }
-    pub async fn create(
+    pub async fn update(
         operation_config: &crate::OperationConfig,
         scope: &str,
         role_management_policy_name: &str,
         parameters: &RoleManagementPolicy,
-    ) -> std::result::Result<RoleManagementPolicy, create::Error> {
+    ) -> std::result::Result<RoleManagementPolicy, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Authorization/roleManagementPolicies/{}",
@@ -1361,31 +1361,31 @@ pub mod role_management_policies {
             scope,
             role_management_policy_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| create::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(|source| update::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
+        req_builder = req_builder.method(http::Method::PATCH);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| create::Error::GetTokenError { source })?;
+                .map_err(|source| update::Error::GetTokenError { source })?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(parameters).map_err(|source| create::Error::SerializeError { source })?;
+        let req_body = azure_core::to_json(parameters).map_err(|source| update::Error::SerializeError { source })?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| create::Error::BuildRequestError { source })?;
+            .map_err(|source| update::Error::BuildRequestError { source })?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| create::Error::ExecuteRequestError { source })?;
+            .map_err(|source| update::Error::ExecuteRequestError { source })?;
         match rsp.status() {
-            http::StatusCode::CREATED => {
+            http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: RoleManagementPolicy =
-                    serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
+                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
@@ -1393,18 +1393,18 @@ pub mod role_management_policies {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
+                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
-                Err(create::Error::DefaultResponse {
+                Err(update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod create {
+    pub mod update {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {

@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainProperties {
-    #[serde(rename = "privateEndpointConnections", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "privateEndpointConnections", skip_serializing)]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<domain_properties::ProvisioningState>,
@@ -182,6 +182,8 @@ pub struct Domain {
     pub tracked_resource: TrackedResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<DomainProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainUpdateParameters {
@@ -226,7 +228,7 @@ pub struct DomainRegenerateKeyRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainTopicProperties {
-    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<domain_topic_properties::ProvisioningState>,
 }
 pub mod domain_topic_properties {
@@ -245,8 +247,10 @@ pub mod domain_topic_properties {
 pub struct DomainTopic {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub properties: Option<DomainTopicProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainTopicsListResult {
@@ -575,6 +579,8 @@ pub struct EventSubscription {
     pub resource: Resource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventSubscriptionProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSubscriptionUpdateParameters {
@@ -680,7 +686,7 @@ pub struct PrivateLinkResourcesListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TopicProperties {
-    #[serde(rename = "privateEndpointConnections", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "privateEndpointConnections", skip_serializing)]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<topic_properties::ProvisioningState>,
@@ -727,6 +733,8 @@ pub struct Topic {
     pub tracked_resource: TrackedResource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<TopicProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TopicUpdateParameters {
@@ -837,4 +845,36 @@ pub struct TopicTypeInfo {
     pub resource: Resource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<TopicTypeProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }

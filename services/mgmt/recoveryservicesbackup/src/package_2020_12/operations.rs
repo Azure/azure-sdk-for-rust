@@ -4281,6 +4281,7 @@ pub mod aad_properties {
         operation_config: &crate::OperationConfig,
         azure_region: &str,
         subscription_id: &str,
+        filter: Option<&str>,
     ) -> std::result::Result<AadPropertiesResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4300,6 +4301,9 @@ pub mod aad_properties {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
+        }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder

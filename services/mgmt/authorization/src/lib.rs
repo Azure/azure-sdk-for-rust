@@ -3,6 +3,10 @@
 mod package_2020_10_01_preview;
 #[cfg(feature = "package-2020-10-01-preview")]
 pub use package_2020_10_01_preview::{models, operations, API_VERSION};
+#[cfg(feature = "package-2020-08-01-preview")]
+mod package_2020_08_01_preview;
+#[cfg(feature = "package-2020-08-01-preview")]
+pub use package_2020_08_01_preview::{models, operations, API_VERSION};
 #[cfg(feature = "package-2020-04-01-preview")]
 mod package_2020_04_01_preview;
 #[cfg(feature = "package-2020-04-01-preview")]
@@ -11,6 +15,10 @@ pub use package_2020_04_01_preview::{models, operations, API_VERSION};
 mod package_2020_04_01_preview_only;
 #[cfg(feature = "package-2020-04-01-preview-only")]
 pub use package_2020_04_01_preview_only::{models, operations, API_VERSION};
+#[cfg(feature = "package-2020-03-01-preview")]
+mod package_2020_03_01_preview;
+#[cfg(feature = "package-2020-03-01-preview")]
+pub use package_2020_03_01_preview::{models, operations, API_VERSION};
 #[cfg(feature = "package-2018-09-01-preview")]
 mod package_2018_09_01_preview;
 #[cfg(feature = "package-2018-09-01-preview")]
@@ -57,9 +65,13 @@ mod profile_hybrid_2020_09_01;
 pub use profile_hybrid_2020_09_01::{models, operations, API_VERSION};
 #[cfg(feature = "profile-hybrid-2019-03-01")]
 mod profile_hybrid_2019_03_01;
-use azure_core::setters;
 #[cfg(feature = "profile-hybrid-2019-03-01")]
 pub use profile_hybrid_2019_03_01::{models, operations, API_VERSION};
+#[cfg(feature = "package-2021-01-01-preview-only")]
+mod package_2021_01_01_preview_only;
+use azure_core::setters;
+#[cfg(feature = "package-2021-01-01-preview-only")]
+pub use package_2021_01_01_preview_only::{models, operations, API_VERSION};
 pub fn config(
     http_client: std::sync::Arc<std::boxed::Box<dyn azure_core::HttpClient>>,
     token_credential: Box<dyn azure_core::TokenCredential>,

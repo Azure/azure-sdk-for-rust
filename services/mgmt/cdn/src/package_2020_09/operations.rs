@@ -6644,7 +6644,6 @@ pub mod rule_sets {
         resource_group_name: &str,
         profile_name: &str,
         rule_set_name: &str,
-        rule_set: &RuleSet,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -6667,7 +6666,7 @@ pub mod rule_sets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(rule_set).map_err(|source| create::Error::SerializeError { source })?;
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
@@ -8372,9 +8371,27 @@ pub mod log_analytics {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        for value in metrics {
+            url.query_pairs_mut().append_pair("metrics", value.to_string().as_str());
+        }
         url.query_pairs_mut().append_pair("dateTimeBegin", date_time_begin);
         url.query_pairs_mut().append_pair("dateTimeEnd", date_time_end);
         url.query_pairs_mut().append_pair("granularity", granularity);
+        for value in group_by {
+            url.query_pairs_mut().append_pair("groupBy", value.to_string().as_str());
+        }
+        for value in continents {
+            url.query_pairs_mut().append_pair("continents", value.to_string().as_str());
+        }
+        for value in country_or_regions {
+            url.query_pairs_mut().append_pair("countryOrRegions", value.to_string().as_str());
+        }
+        for value in custom_domains {
+            url.query_pairs_mut().append_pair("customDomains", value.to_string().as_str());
+        }
+        for value in protocols {
+            url.query_pairs_mut().append_pair("protocols", value.to_string().as_str());
+        }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -8462,9 +8479,18 @@ pub mod log_analytics {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        for value in rankings {
+            url.query_pairs_mut().append_pair("rankings", value.to_string().as_str());
+        }
+        for value in metrics {
+            url.query_pairs_mut().append_pair("metrics", value.to_string().as_str());
+        }
         url.query_pairs_mut().append_pair("maxRanking", max_ranking.to_string().as_str());
         url.query_pairs_mut().append_pair("dateTimeBegin", date_time_begin);
         url.query_pairs_mut().append_pair("dateTimeEnd", date_time_end);
+        for value in custom_domains {
+            url.query_pairs_mut().append_pair("customDomains", value.to_string().as_str());
+        }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -8715,9 +8741,21 @@ pub mod log_analytics {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        for value in metrics {
+            url.query_pairs_mut().append_pair("metrics", value.to_string().as_str());
+        }
         url.query_pairs_mut().append_pair("dateTimeBegin", date_time_begin);
         url.query_pairs_mut().append_pair("dateTimeEnd", date_time_end);
         url.query_pairs_mut().append_pair("granularity", granularity);
+        for value in actions {
+            url.query_pairs_mut().append_pair("actions", value.to_string().as_str());
+        }
+        for value in group_by {
+            url.query_pairs_mut().append_pair("groupBy", value.to_string().as_str());
+        }
+        for value in rule_types {
+            url.query_pairs_mut().append_pair("ruleTypes", value.to_string().as_str());
+        }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -8806,9 +8844,21 @@ pub mod log_analytics {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        for value in metrics {
+            url.query_pairs_mut().append_pair("metrics", value.to_string().as_str());
+        }
         url.query_pairs_mut().append_pair("dateTimeBegin", date_time_begin);
         url.query_pairs_mut().append_pair("dateTimeEnd", date_time_end);
         url.query_pairs_mut().append_pair("maxRanking", max_ranking.to_string().as_str());
+        for value in rankings {
+            url.query_pairs_mut().append_pair("rankings", value.to_string().as_str());
+        }
+        for value in actions {
+            url.query_pairs_mut().append_pair("actions", value.to_string().as_str());
+        }
+        for value in rule_types {
+            url.query_pairs_mut().append_pair("ruleTypes", value.to_string().as_str());
+        }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder

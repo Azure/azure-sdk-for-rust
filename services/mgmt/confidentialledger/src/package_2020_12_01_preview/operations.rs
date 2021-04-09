@@ -200,7 +200,7 @@ pub mod ledger {
                 })?;
                 Ok(create::Response::Ok200(rsp_value))
             }
-            http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
+            http::StatusCode::CREATED => Ok(create::Response::Created201),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
@@ -219,7 +219,7 @@ pub mod ledger {
         #[derive(Debug)]
         pub enum Response {
             Ok200(ConfidentialLedger),
-            Accepted202,
+            Created201,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -286,7 +286,7 @@ pub mod ledger {
                 })?;
                 Ok(update::Response::Ok200(rsp_value))
             }
-            http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
+            http::StatusCode::CREATED => Ok(update::Response::Created201),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
@@ -305,7 +305,7 @@ pub mod ledger {
         #[derive(Debug)]
         pub enum Response {
             Ok200(ConfidentialLedger),
-            Accepted202,
+            Created201,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {

@@ -24,6 +24,8 @@ pub struct ClientGroupInfo {
 pub struct KafkaRestProperties {
     #[serde(rename = "clientGroupInfo", skip_serializing_if = "Option::is_none")]
     pub client_group_info: Option<ClientGroupInfo>,
+    #[serde(rename = "configurationOverride", skip_serializing_if = "Option::is_none")]
+    pub configuration_override: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityProfile {
@@ -114,7 +116,7 @@ pub struct DataDisksGroups {
     #[serde(rename = "storageAccountType", skip_serializing)]
     pub storage_account_type: Option<String>,
     #[serde(rename = "diskSizeGB", skip_serializing)]
-    pub disk_size_gb: Option<i64>,
+    pub disk_size_gb: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SshPublicKey {
@@ -148,6 +150,8 @@ pub struct Role {
     pub min_instance_count: Option<i32>,
     #[serde(rename = "targetInstanceCount", skip_serializing_if = "Option::is_none")]
     pub target_instance_count: Option<i32>,
+    #[serde(rename = "VMGroupName", skip_serializing_if = "Option::is_none")]
+    pub vm_group_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub autoscale: Option<Autoscale>,
     #[serde(rename = "hardwareProfile", skip_serializing_if = "Option::is_none")]
@@ -160,6 +164,8 @@ pub struct Role {
     pub data_disks_groups: Vec<DataDisksGroups>,
     #[serde(rename = "scriptActions", skip_serializing_if = "Vec::is_empty")]
     pub script_actions: Vec<ScriptAction>,
+    #[serde(rename = "encryptDataDisks", skip_serializing_if = "Option::is_none")]
+    pub encrypt_data_disks: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComputeProfile {
@@ -182,11 +188,22 @@ pub struct StorageAccount {
     pub resource_id: Option<String>,
     #[serde(rename = "msiResourceId", skip_serializing_if = "Option::is_none")]
     pub msi_resource_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub saskey: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fileshare: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageProfile {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub storageaccounts: Vec<StorageAccount>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExcludedServicesConfig {
+    #[serde(rename = "excludedServicesConfigId", skip_serializing_if = "Option::is_none")]
+    pub excluded_services_config_id: Option<String>,
+    #[serde(rename = "excludedServicesList", skip_serializing_if = "Option::is_none")]
+    pub excluded_services_list: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkProperties {
@@ -207,6 +224,13 @@ pub mod network_properties {
         Disabled,
         Enabled,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ComputeIsolationProperties {
+    #[serde(rename = "enableComputeIsolation", skip_serializing_if = "Option::is_none")]
+    pub enable_compute_isolation: Option<bool>,
+    #[serde(rename = "hostSku", skip_serializing_if = "Option::is_none")]
+    pub host_sku: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterCreateProperties {
@@ -234,6 +258,8 @@ pub struct ClusterCreateProperties {
     pub min_supported_tls_version: Option<String>,
     #[serde(rename = "networkProperties", skip_serializing_if = "Option::is_none")]
     pub network_properties: Option<NetworkProperties>,
+    #[serde(rename = "computeIsolationProperties", skip_serializing_if = "Option::is_none")]
+    pub compute_isolation_properties: Option<ComputeIsolationProperties>,
 }
 pub mod cluster_create_properties {
     use super::*;
@@ -286,11 +312,15 @@ pub struct ConnectivityEndpoint {
     pub location: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
+    #[serde(rename = "privateIPAddress", skip_serializing_if = "Option::is_none")]
+    pub private_ip_address: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterGetProperties {
     #[serde(rename = "clusterVersion", skip_serializing_if = "Option::is_none")]
     pub cluster_version: Option<String>,
+    #[serde(rename = "clusterHdpVersion", skip_serializing_if = "Option::is_none")]
+    pub cluster_hdp_version: Option<String>,
     #[serde(rename = "osType", skip_serializing_if = "Option::is_none")]
     pub os_type: Option<cluster_get_properties::OsType>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -321,10 +351,16 @@ pub struct ClusterGetProperties {
     pub disk_encryption_properties: Option<DiskEncryptionProperties>,
     #[serde(rename = "encryptionInTransitProperties", skip_serializing_if = "Option::is_none")]
     pub encryption_in_transit_properties: Option<EncryptionInTransitProperties>,
+    #[serde(rename = "storageProfile", skip_serializing_if = "Option::is_none")]
+    pub storage_profile: Option<StorageProfile>,
     #[serde(rename = "minSupportedTlsVersion", skip_serializing_if = "Option::is_none")]
     pub min_supported_tls_version: Option<String>,
+    #[serde(rename = "excludedServicesConfig", skip_serializing_if = "Option::is_none")]
+    pub excluded_services_config: Option<ExcludedServicesConfig>,
     #[serde(rename = "networkProperties", skip_serializing_if = "Option::is_none")]
     pub network_properties: Option<NetworkProperties>,
+    #[serde(rename = "computeIsolationProperties", skip_serializing_if = "Option::is_none")]
+    pub compute_isolation_properties: Option<ComputeIsolationProperties>,
 }
 pub mod cluster_get_properties {
     use super::*;
@@ -497,13 +533,13 @@ pub struct GatewaySettings {
     pub rest_auth_credential_password: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationResource {
+pub struct AsyncOperationResult {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<operation_resource::Status>,
+    pub status: Option<async_operation_result::Status>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<Errors>,
 }
-pub mod operation_resource {
+pub mod async_operation_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -511,6 +547,15 @@ pub mod operation_resource {
         Succeeded,
         Failed,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UpdateClusterIdentityCertificateParameters {
+    #[serde(rename = "applicationId", skip_serializing_if = "Option::is_none")]
+    pub application_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub certificate: Option<String>,
+    #[serde(rename = "certificatePassword", skip_serializing_if = "Option::is_none")]
+    pub certificate_password: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -541,6 +586,8 @@ pub struct Operation {
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OperationProperties>,
 }
 pub mod operation {
     use super::*;
@@ -552,7 +599,67 @@ pub mod operation {
         pub resource: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationProperties {
+    #[serde(rename = "serviceSpecification", skip_serializing_if = "Option::is_none")]
+    pub service_specification: Option<ServiceSpecification>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceSpecification {
+    #[serde(rename = "metricSpecifications", skip_serializing_if = "Vec::is_empty")]
+    pub metric_specifications: Vec<MetricSpecifications>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricSpecifications {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "displayDescription", skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+    #[serde(rename = "aggregationType", skip_serializing_if = "Option::is_none")]
+    pub aggregation_type: Option<String>,
+    #[serde(rename = "supportedAggregationTypes", skip_serializing_if = "Vec::is_empty")]
+    pub supported_aggregation_types: Vec<String>,
+    #[serde(rename = "supportedTimeGrainTypes", skip_serializing_if = "Vec::is_empty")]
+    pub supported_time_grain_types: Vec<String>,
+    #[serde(rename = "enableRegionalMdmAccount", skip_serializing_if = "Option::is_none")]
+    pub enable_regional_mdm_account: Option<bool>,
+    #[serde(rename = "sourceMdmAccount", skip_serializing_if = "Option::is_none")]
+    pub source_mdm_account: Option<String>,
+    #[serde(rename = "sourceMdmNamespace", skip_serializing_if = "Option::is_none")]
+    pub source_mdm_namespace: Option<String>,
+    #[serde(rename = "metricFilterPattern", skip_serializing_if = "Option::is_none")]
+    pub metric_filter_pattern: Option<String>,
+    #[serde(rename = "fillGapWithZero", skip_serializing_if = "Option::is_none")]
+    pub fill_gap_with_zero: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[serde(rename = "resourceIdDimensionNameOverride", skip_serializing_if = "Option::is_none")]
+    pub resource_id_dimension_name_override: Option<String>,
+    #[serde(rename = "isInternal", skip_serializing_if = "Option::is_none")]
+    pub is_internal: Option<bool>,
+    #[serde(rename = "delegateMetricNameOverride", skip_serializing_if = "Option::is_none")]
+    pub delegate_metric_name_override: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub dimensions: Vec<Dimension>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Dimension {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "internalName", skip_serializing_if = "Option::is_none")]
+    pub internal_name: Option<String>,
+    #[serde(rename = "toBeExportedForShoebox", skip_serializing_if = "Option::is_none")]
+    pub to_be_exported_for_shoebox: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
@@ -605,12 +712,14 @@ pub struct ScriptActionsList {
 pub struct ApplicationGetHttpsEndpoint {
     #[serde(rename = "accessModes", skip_serializing_if = "Vec::is_empty")]
     pub access_modes: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub location: Option<String>,
     #[serde(rename = "destinationPort", skip_serializing_if = "Option::is_none")]
     pub destination_port: Option<i32>,
-    #[serde(rename = "publicPort", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "publicPort", skip_serializing)]
     pub public_port: Option<i32>,
+    #[serde(rename = "privateIPAddress", skip_serializing_if = "Option::is_none")]
+    pub private_ip_address: Option<String>,
     #[serde(rename = "subDomainSuffix", skip_serializing_if = "Option::is_none")]
     pub sub_domain_suffix: Option<String>,
     #[serde(rename = "disableGatewayAuth", skip_serializing_if = "Option::is_none")]
@@ -624,6 +733,8 @@ pub struct ApplicationGetEndpoint {
     pub destination_port: Option<i32>,
     #[serde(rename = "publicPort", skip_serializing_if = "Option::is_none")]
     pub public_port: Option<i32>,
+    #[serde(rename = "privateIPAddress", skip_serializing_if = "Option::is_none")]
+    pub private_ip_address: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationProperties {
@@ -675,7 +786,7 @@ pub struct VersionSpec {
     #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[serde(rename = "isDefault", skip_serializing_if = "Option::is_none")]
-    pub is_default: Option<String>,
+    pub is_default: Option<bool>,
     #[serde(rename = "componentVersions", skip_serializing_if = "Option::is_none")]
     pub component_versions: Option<serde_json::Value>,
 }
@@ -706,8 +817,14 @@ pub struct VmSizeCompatibilityFilter {
     pub node_types: Vec<String>,
     #[serde(rename = "ClusterVersions", skip_serializing_if = "Vec::is_empty")]
     pub cluster_versions: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub vmsizes: Vec<String>,
+    #[serde(rename = "OsType", skip_serializing_if = "Vec::is_empty")]
+    pub os_type: Vec<String>,
+    #[serde(rename = "VMSizes", skip_serializing_if = "Vec::is_empty")]
+    pub vm_sizes: Vec<String>,
+    #[serde(rename = "ESPApplied", skip_serializing_if = "Option::is_none")]
+    pub esp_applied: Option<String>,
+    #[serde(rename = "ComputeIsolationSupported", skip_serializing_if = "Option::is_none")]
+    pub compute_isolation_supported: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegionalQuotaCapability {
@@ -733,10 +850,10 @@ pub struct CapabilitiesResult {
     pub versions: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub regions: Option<serde_json::Value>,
-    #[serde(rename = "vmSizes", skip_serializing_if = "Option::is_none")]
-    pub vm_sizes: Option<serde_json::Value>,
-    #[serde(rename = "vmSize_filters", skip_serializing_if = "Vec::is_empty")]
-    pub vm_size_filters: Vec<VmSizeCompatibilityFilter>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub vmsizes: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub vmsize_filters: Vec<VmSizeCompatibilityFilter>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub features: Vec<String>,
     #[serde(skip_serializing)]
@@ -757,7 +874,7 @@ pub struct Usage {
     pub current_value: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub name: Option<LocalizedName>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -769,10 +886,37 @@ pub struct UsagesListResult {
 pub struct BillingResponseListResult {
     #[serde(rename = "vmSizes", skip_serializing_if = "Vec::is_empty")]
     pub vm_sizes: Vec<String>,
+    #[serde(rename = "vmSizesWithEncryptionAtHost", skip_serializing_if = "Vec::is_empty")]
+    pub vm_sizes_with_encryption_at_host: Vec<String>,
     #[serde(rename = "vmSizeFilters", skip_serializing_if = "Vec::is_empty")]
     pub vm_size_filters: Vec<VmSizeCompatibilityFilterV2>,
+    #[serde(rename = "vmSizeProperties", skip_serializing)]
+    pub vm_size_properties: Vec<VmSizeProperty>,
     #[serde(rename = "billingResources", skip_serializing_if = "Vec::is_empty")]
     pub billing_resources: Vec<BillingResources>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmSizeProperty {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cores: Option<i32>,
+    #[serde(rename = "dataDiskStorageTier", skip_serializing_if = "Option::is_none")]
+    pub data_disk_storage_tier: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    #[serde(rename = "maxDataDiskCount", skip_serializing_if = "Option::is_none")]
+    pub max_data_disk_count: Option<i64>,
+    #[serde(rename = "memoryInMb", skip_serializing_if = "Option::is_none")]
+    pub memory_in_mb: Option<i64>,
+    #[serde(rename = "supportedByVirtualMachines", skip_serializing_if = "Option::is_none")]
+    pub supported_by_virtual_machines: Option<bool>,
+    #[serde(rename = "supportedByWebWorkerRoles", skip_serializing_if = "Option::is_none")]
+    pub supported_by_web_worker_roles: Option<bool>,
+    #[serde(rename = "virtualMachineResourceDiskSizeInMb", skip_serializing_if = "Option::is_none")]
+    pub virtual_machine_resource_disk_size_in_mb: Option<i64>,
+    #[serde(rename = "webWorkerResourceDiskSizeInMb", skip_serializing_if = "Option::is_none")]
+    pub web_worker_resource_disk_size_in_mb: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VmSizeCompatibilityFilterV2 {
@@ -797,6 +941,8 @@ pub mod vm_size_compatibility_filter_v2 {
     pub enum FilterMode {
         Exclude,
         Include,
+        Recommend,
+        Default,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -835,6 +981,74 @@ pub mod disk_billing_meters {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NameAvailabilityCheckRequestParameters {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NameAvailabilityCheckResult {
+    #[serde(rename = "nameAvailable", skip_serializing_if = "Option::is_none")]
+    pub name_available: Option<bool>,
+    #[serde(skip_serializing)]
+    pub reason: Option<String>,
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClusterCreateRequestValidationParameters {
+    #[serde(flatten)]
+    pub cluster_create_parameters_extended: ClusterCreateParametersExtended,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "fetchAaddsResource", skip_serializing_if = "Option::is_none")]
+    pub fetch_aadds_resource: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClusterCreateValidationResult {
+    #[serde(rename = "validationErrors", skip_serializing_if = "Vec::is_empty")]
+    pub validation_errors: Vec<ValidationErrorInfo>,
+    #[serde(rename = "validationWarnings", skip_serializing_if = "Vec::is_empty")]
+    pub validation_warnings: Vec<ValidationErrorInfo>,
+    #[serde(rename = "estimatedCreationDuration", skip_serializing_if = "Option::is_none")]
+    pub estimated_creation_duration: Option<String>,
+    #[serde(rename = "aaddsResourcesDetails", skip_serializing_if = "Vec::is_empty")]
+    pub aadds_resources_details: Vec<AaddsResourceDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ValidationErrorInfo {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(rename = "errorResource", skip_serializing_if = "Option::is_none")]
+    pub error_resource: Option<String>,
+    #[serde(rename = "messageArguments", skip_serializing_if = "Vec::is_empty")]
+    pub message_arguments: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AaddsResourceDetails {
+    #[serde(rename = "domainName", skip_serializing_if = "Option::is_none")]
+    pub domain_name: Option<String>,
+    #[serde(rename = "initialSyncComplete", skip_serializing_if = "Option::is_none")]
+    pub initial_sync_complete: Option<bool>,
+    #[serde(rename = "ldapsEnabled", skip_serializing_if = "Option::is_none")]
+    pub ldaps_enabled: Option<bool>,
+    #[serde(rename = "ldapsPublicCertificateInBase64", skip_serializing_if = "Option::is_none")]
+    pub ldaps_public_certificate_in_base64: Option<String>,
+    #[serde(rename = "resourceId", skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[serde(rename = "subnetId", skip_serializing_if = "Option::is_none")]
+    pub subnet_id: Option<String>,
+    #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterConfiguration {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterConfigurations {
@@ -862,3 +1076,14 @@ pub struct ClusterMonitoringRequest {
     #[serde(rename = "primaryKey", skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HostInfo {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fqdn: Option<String>,
+    #[serde(rename = "effectiveDiskEncryptionKeyUrl", skip_serializing_if = "Option::is_none")]
+    pub effective_disk_encryption_key_url: Option<String>,
+}
+pub type HostInfoListResult = Vec<HostInfo>;
+pub type RestartHostsParameters = Vec<String>;

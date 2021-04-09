@@ -194,24 +194,6 @@ pub struct SqlServerListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PageOfDataControllerResource {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DataControllerResource>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataControllerResource {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    pub properties: DataControllerProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataControllerUpdate {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
     #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -249,112 +231,6 @@ pub struct ResourceSku {
     pub size: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataControllerProperties {
-    #[serde(rename = "onPremiseProperty")]
-    pub on_premise_property: OnPremiseProperty,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OnPremiseProperty {
-    pub id: String,
-    #[serde(rename = "publicSigningKey")]
-    pub public_signing_key: String,
-    #[serde(rename = "signingCertificateThumbprint", skip_serializing_if = "Option::is_none")]
-    pub signing_certificate_thumbprint: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PostgresInstanceProperties {
-    #[serde(rename = "hybridDataManagerId", skip_serializing_if = "Option::is_none")]
-    pub hybrid_data_manager_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PostgresInstance {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PostgresInstanceProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PostgresInstanceUpdate {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(rename = "hybridDataManagerId", skip_serializing_if = "Option::is_none")]
-    pub hybrid_data_manager_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PostgresInstanceListResult {
-    #[serde(skip_serializing)]
-    pub value: Vec<PostgresInstance>,
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlManagedInstanceProperties {
-    #[serde(rename = "dataControllerId", skip_serializing_if = "Option::is_none")]
-    pub data_controller_id: Option<String>,
-    #[serde(rename = "instanceEndpoint", skip_serializing_if = "Option::is_none")]
-    pub instance_endpoint: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub admin: Option<String>,
-    #[serde(rename = "startTime", skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(rename = "endTime", skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
-    #[serde(rename = "vCore", skip_serializing_if = "Option::is_none")]
-    pub v_core: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlManagedInstance {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SqlManagedInstanceProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlManagedInstanceUpdate {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlManagedInstanceListResult {
-    #[serde(skip_serializing)]
-    pub value: Vec<SqlManagedInstance>,
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlServerInstanceProperties {
-    pub version: String,
-    pub edition: String,
-    #[serde(rename = "containerResourceId")]
-    pub container_resource_id: String,
-    #[serde(rename = "createTime", skip_serializing)]
-    pub create_time: Option<String>,
-    #[serde(rename = "updateTime", skip_serializing)]
-    pub update_time: Option<String>,
-    #[serde(rename = "vCore")]
-    pub v_core: String,
-    pub status: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlServerInstance {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SqlServerInstanceProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlServerInstanceUpdate {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlServerInstanceListResult {
-    #[serde(skip_serializing)]
-    pub value: Vec<SqlServerInstance>,
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {

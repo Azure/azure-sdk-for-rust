@@ -121,6 +121,8 @@ pub mod resource_sku {
 pub struct DedicatedCapacityMutableProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub administration: Option<DedicatedCapacityAdministrators>,
+    #[serde(skip_serializing)]
+    pub mode: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DedicatedCapacityAdministrators {

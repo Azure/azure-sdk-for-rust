@@ -635,16 +635,12 @@ pub struct DataShareErrorInfo {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefaultDto {
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
+    #[serde(flatten)]
+    pub proxy_dto: ProxyDto,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(skip_serializing)]
-    pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(rename = "type", skip_serializing)]
-    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DimensionProperties {
@@ -866,6 +862,8 @@ pub struct OperationMetaMetricSpecification {
     pub display_name: Option<String>,
     #[serde(rename = "enableRegionalMdmAccount", skip_serializing_if = "Option::is_none")]
     pub enable_regional_mdm_account: Option<String>,
+    #[serde(rename = "fillGapWithZero", skip_serializing_if = "Option::is_none")]
+    pub fill_gap_with_zero: Option<bool>,
     #[serde(rename = "internalMetricName", skip_serializing_if = "Option::is_none")]
     pub internal_metric_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

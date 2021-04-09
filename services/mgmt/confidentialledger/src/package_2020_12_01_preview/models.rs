@@ -67,9 +67,26 @@ pub enum ProvisioningState {
     Updating,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConfidentialLedgerCertUser {
+pub enum LedgerRoleName {
+    Reader,
+    Contributor,
+    Administrator,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CertBasedSecurityPrincipal {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cert: Option<String>,
+    #[serde(rename = "ledgerRoleName", skip_serializing_if = "Option::is_none")]
+    pub ledger_role_name: Option<LedgerRoleName>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AadBasedSecurityPrincipal {
+    #[serde(rename = "principalId", skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "ledgerRoleName", skip_serializing_if = "Option::is_none")]
+    pub ledger_role_name: Option<LedgerRoleName>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LedgerProperties {
@@ -87,8 +104,10 @@ pub struct LedgerProperties {
     pub ledger_type: Option<ConfidentialLedgerType>,
     #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "certUsers", skip_serializing_if = "Vec::is_empty")]
-    pub cert_users: Vec<ConfidentialLedgerCertUser>,
+    #[serde(rename = "aadBasedSecurityPrincipals", skip_serializing_if = "Vec::is_empty")]
+    pub aad_based_security_principals: Vec<AadBasedSecurityPrincipal>,
+    #[serde(rename = "certBasedSecurityPrincipals", skip_serializing_if = "Vec::is_empty")]
+    pub cert_based_security_principals: Vec<CertBasedSecurityPrincipal>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfidentialLedger {

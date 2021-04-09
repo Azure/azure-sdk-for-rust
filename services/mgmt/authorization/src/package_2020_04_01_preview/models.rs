@@ -194,6 +194,17 @@ pub struct Principal {
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleAssignmentMetricsResult {
+    #[serde(rename = "subscriptionId", skip_serializing)]
+    pub subscription_id: Option<String>,
+    #[serde(rename = "roleAssignmentsLimit", skip_serializing)]
+    pub role_assignments_limit: Option<i64>,
+    #[serde(rename = "roleAssignmentsCurrentCount", skip_serializing)]
+    pub role_assignments_current_count: Option<i64>,
+    #[serde(rename = "roleAssignmentsRemainingCount", skip_serializing)]
+    pub role_assignments_remaining_count: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentFilter {
     #[serde(rename = "principalId", skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -280,6 +291,8 @@ pub struct RoleAssignmentProperties {
     pub condition: Option<String>,
     #[serde(rename = "conditionVersion", skip_serializing_if = "Option::is_none")]
     pub condition_version: Option<String>,
+    #[serde(rename = "delegatedManagedIdentityResourceId", skip_serializing_if = "Option::is_none")]
+    pub delegated_managed_identity_resource_id: Option<String>,
 }
 pub mod role_assignment_properties {
     use super::*;

@@ -516,7 +516,7 @@ pub mod consumer_invitations {
         skip_token: Option<&str>,
     ) -> std::result::Result<ConsumerInvitationList, list_invitations::Error> {
         let http_client = operation_config.http_client();
-        let url_str = &format!("{}/providers/Microsoft.DataShare/ListInvitations", operation_config.base_path(),);
+        let url_str = &format!("{}/providers/Microsoft.DataShare/listInvitations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(|source| list_invitations::Error::ParseUrlError { source })?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
@@ -671,7 +671,7 @@ pub mod consumer_invitations {
     ) -> std::result::Result<ConsumerInvitation, reject_invitation::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/providers/Microsoft.DataShare/locations/{}/RejectInvitation",
+            "{}/providers/Microsoft.DataShare/locations/{}/rejectInvitation",
             operation_config.base_path(),
             location
         );
@@ -3172,7 +3172,7 @@ pub mod share_subscriptions {
     ) -> std::result::Result<synchronize::Response, synchronize::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/Synchronize",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/synchronize",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -3631,7 +3631,7 @@ pub mod consumer_source_data_sets {
     ) -> std::result::Result<ConsumerSourceDataSetList, list_by_share_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/ConsumerSourceDataSets",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/consumerSourceDataSets",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,

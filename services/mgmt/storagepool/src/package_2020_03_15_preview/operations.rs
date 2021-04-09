@@ -357,13 +357,13 @@ pub mod disk_pools {
                 })?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
-            http::StatusCode::ACCEPTED => {
+            http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
                 let rsp_value: DiskPool = serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
-                Ok(create_or_update::Response::Accepted202(rsp_value))
+                Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -383,7 +383,7 @@ pub mod disk_pools {
         #[derive(Debug)]
         pub enum Response {
             Ok200(DiskPool),
-            Accepted202(DiskPool),
+            Created201(DiskPool),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -791,14 +791,14 @@ pub mod iscsi_targets {
                     })?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
-            http::StatusCode::ACCEPTED => {
+            http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
                 let rsp_value: IscsiTarget =
                     serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
                     })?;
-                Ok(create_or_update::Response::Accepted202(rsp_value))
+                Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
@@ -818,7 +818,7 @@ pub mod iscsi_targets {
         #[derive(Debug)]
         pub enum Response {
             Ok200(IscsiTarget),
-            Accepted202(IscsiTarget),
+            Created201(IscsiTarget),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {

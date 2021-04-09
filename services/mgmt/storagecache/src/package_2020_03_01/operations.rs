@@ -774,30 +774,9 @@ pub mod caches {
             .await
             .map_err(|source| delete::Error::ExecuteRequestError { source })?;
         match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(delete::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(delete::Response::Accepted202(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(delete::Response::NoContent204(rsp_value))
-            }
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
@@ -815,9 +794,9 @@ pub mod caches {
         use crate::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(serde_json::Value),
-            Accepted202(serde_json::Value),
-            NoContent204(serde_json::Value),
+            Ok200,
+            Accepted202,
+            NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -876,30 +855,9 @@ pub mod caches {
             .await
             .map_err(|source| flush::Error::ExecuteRequestError { source })?;
         match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| flush::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(flush::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| flush::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(flush::Response::Accepted202(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| flush::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(flush::Response::NoContent204(rsp_value))
-            }
+            http::StatusCode::OK => Ok(flush::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(flush::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(flush::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| flush::Error::DeserializeError {
@@ -917,9 +875,9 @@ pub mod caches {
         use crate::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(serde_json::Value),
-            Accepted202(serde_json::Value),
-            NoContent204(serde_json::Value),
+            Ok200,
+            Accepted202,
+            NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -978,30 +936,9 @@ pub mod caches {
             .await
             .map_err(|source| start::Error::ExecuteRequestError { source })?;
         match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(start::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(start::Response::Accepted202(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(start::Response::NoContent204(rsp_value))
-            }
+            http::StatusCode::OK => Ok(start::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(start::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(start::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError {
@@ -1019,9 +956,9 @@ pub mod caches {
         use crate::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(serde_json::Value),
-            Accepted202(serde_json::Value),
-            NoContent204(serde_json::Value),
+            Ok200,
+            Accepted202,
+            NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1080,30 +1017,9 @@ pub mod caches {
             .await
             .map_err(|source| stop::Error::ExecuteRequestError { source })?;
         match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| stop::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(stop::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| stop::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(stop::Response::Accepted202(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| stop::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(stop::Response::NoContent204(rsp_value))
-            }
+            http::StatusCode::OK => Ok(stop::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(stop::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(stop::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| stop::Error::DeserializeError {
@@ -1121,9 +1037,9 @@ pub mod caches {
         use crate::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(serde_json::Value),
-            Accepted202(serde_json::Value),
-            NoContent204(serde_json::Value),
+            Ok200,
+            Accepted202,
+            NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1182,33 +1098,9 @@ pub mod caches {
             .await
             .map_err(|source| upgrade_firmware::Error::ExecuteRequestError { source })?;
         match rsp.status() {
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).map_err(|source| upgrade_firmware::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(upgrade_firmware::Response::Created201(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).map_err(|source| upgrade_firmware::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(upgrade_firmware::Response::Accepted202(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).map_err(|source| upgrade_firmware::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
-                Ok(upgrade_firmware::Response::NoContent204(rsp_value))
-            }
+            http::StatusCode::CREATED => Ok(upgrade_firmware::Response::Created201),
+            http::StatusCode::ACCEPTED => Ok(upgrade_firmware::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(upgrade_firmware::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
@@ -1227,9 +1119,9 @@ pub mod caches {
         use crate::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
-            Created201(serde_json::Value),
-            Accepted202(serde_json::Value),
-            NoContent204(serde_json::Value),
+            Created201,
+            Accepted202,
+            NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1565,30 +1457,9 @@ pub mod storage_targets {
             .await
             .map_err(|source| delete::Error::ExecuteRequestError { source })?;
         match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(delete::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(delete::Response::Accepted202(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-                Ok(delete::Response::NoContent204(rsp_value))
-            }
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
@@ -1606,9 +1477,9 @@ pub mod storage_targets {
         use crate::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(serde_json::Value),
-            Accepted202(serde_json::Value),
-            NoContent204(serde_json::Value),
+            Ok200,
+            Accepted202,
+            NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {

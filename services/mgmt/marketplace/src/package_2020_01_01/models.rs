@@ -134,13 +134,13 @@ pub mod plan {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
+pub struct SingleOperation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
+    pub display: Option<single_operation::Display>,
 }
-pub mod operation {
+pub mod single_operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
@@ -155,7 +155,7 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
+    pub value: Vec<SingleOperation>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
 }

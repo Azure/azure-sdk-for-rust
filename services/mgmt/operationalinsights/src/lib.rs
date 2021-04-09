@@ -19,15 +19,15 @@ pub use package_2019_09_preview::{models, operations, API_VERSION};
 mod package_2020_03_preview;
 #[cfg(feature = "package-2020-03-preview")]
 pub use package_2020_03_preview::{models, operations, API_VERSION};
-#[cfg(feature = "package-2020-10")]
-mod package_2020_10;
-#[cfg(feature = "package-2020-10")]
-pub use package_2020_10::{models, operations, API_VERSION};
 #[cfg(feature = "package-2020-08")]
 mod package_2020_08;
-use azure_core::setters;
 #[cfg(feature = "package-2020-08")]
 pub use package_2020_08::{models, operations, API_VERSION};
+#[cfg(feature = "package-2020-10")]
+mod package_2020_10;
+use azure_core::setters;
+#[cfg(feature = "package-2020-10")]
+pub use package_2020_10::{models, operations, API_VERSION};
 pub fn config(
     http_client: std::sync::Arc<std::boxed::Box<dyn azure_core::HttpClient>>,
     token_credential: Box<dyn azure_core::TokenCredential>,

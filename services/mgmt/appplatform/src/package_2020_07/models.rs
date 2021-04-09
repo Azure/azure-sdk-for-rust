@@ -169,6 +169,8 @@ pub struct NetworkProfile {
     pub app_network_resource_group: Option<String>,
     #[serde(rename = "outboundIPs", skip_serializing)]
     pub outbound_i_ps: Option<network_profile::OutboundIPs>,
+    #[serde(rename = "requiredTraffics", skip_serializing)]
+    pub required_traffics: Vec<RequiredTraffic>,
 }
 pub mod network_profile {
     use super::*;
@@ -176,6 +178,27 @@ pub mod network_profile {
     pub struct OutboundIPs {
         #[serde(rename = "publicIPs", skip_serializing)]
         pub public_i_ps: Vec<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RequiredTraffic {
+    #[serde(skip_serializing)]
+    pub protocol: Option<String>,
+    #[serde(skip_serializing)]
+    pub port: Option<i32>,
+    #[serde(skip_serializing)]
+    pub ips: Vec<String>,
+    #[serde(skip_serializing)]
+    pub fqdns: Vec<String>,
+    #[serde(skip_serializing)]
+    pub direction: Option<required_traffic::Direction>,
+}
+pub mod required_traffic {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Direction {
+        Inbound,
+        Outbound,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -109,6 +109,10 @@ pub struct ServerProperties {
     pub ha_enabled: Option<server_properties::HaEnabled>,
     #[serde(rename = "sourceServerName", skip_serializing_if = "Option::is_none")]
     pub source_server_name: Option<String>,
+    #[serde(rename = "sourceSubscriptionId", skip_serializing_if = "Option::is_none")]
+    pub source_subscription_id: Option<String>,
+    #[serde(rename = "sourceResourceGroupName", skip_serializing_if = "Option::is_none")]
+    pub source_resource_group_name: Option<String>,
     #[serde(rename = "pointInTimeUTC", skip_serializing_if = "Option::is_none")]
     pub point_in_time_utc: Option<String>,
     #[serde(rename = "availabilityZone", skip_serializing_if = "Option::is_none")]

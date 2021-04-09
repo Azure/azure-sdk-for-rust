@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainProperties {
-    #[serde(rename = "privateEndpointConnections", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "privateEndpointConnections", skip_serializing)]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<domain_properties::ProvisioningState>,
@@ -228,6 +228,8 @@ pub struct Domain {
     pub sku: Option<ResourceSku>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityInfo>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainUpdateParameters {
@@ -276,7 +278,7 @@ pub struct DomainRegenerateKeyRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainTopicProperties {
-    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<domain_topic_properties::ProvisioningState>,
 }
 pub mod domain_topic_properties {
@@ -297,6 +299,8 @@ pub struct DomainTopic {
     pub resource: Resource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<DomainTopicProperties>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainTopicsListResult {
@@ -1258,7 +1262,7 @@ pub struct SystemTopicsListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TopicProperties {
-    #[serde(rename = "privateEndpointConnections", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "privateEndpointConnections", skip_serializing)]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<topic_properties::ProvisioningState>,
@@ -1320,6 +1324,8 @@ pub struct Topic {
     pub kind: Option<topic::Kind>,
     #[serde(rename = "extendedLocation", skip_serializing_if = "Option::is_none")]
     pub extended_location: Option<ExtendedLocation>,
+    #[serde(rename = "systemData", skip_serializing)]
+    pub system_data: Option<SystemData>,
 }
 pub mod topic {
     use super::*;

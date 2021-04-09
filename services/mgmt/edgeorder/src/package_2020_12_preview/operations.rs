@@ -410,26 +410,25 @@ pub mod list_product_families_metadata {
         GetTokenError { source: azure_core::errors::AzureError },
     }
 }
-pub async fn list_order_collections_at_subscription_level(
+pub async fn list_order_at_subscription_level(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     skip_token: Option<&str>,
-) -> std::result::Result<OrderCollectionResourceList, list_order_collections_at_subscription_level::Error> {
+) -> std::result::Result<OrderResourceList, list_order_at_subscription_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
-        "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/orderCollections",
+        "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/orders",
         operation_config.base_path(),
         subscription_id
     );
-    let mut url =
-        url::Url::parse(url_str).map_err(|source| list_order_collections_at_subscription_level::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(|source| list_order_at_subscription_level::Error::ParseUrlError { source })?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::GET);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| list_order_collections_at_subscription_level::Error::GetTokenError { source })?;
+            .map_err(|source| list_order_at_subscription_level::Error::GetTokenError { source })?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -440,38 +439,36 @@ pub async fn list_order_collections_at_subscription_level(
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| list_order_collections_at_subscription_level::Error::BuildRequestError { source })?;
+        .map_err(|source| list_order_at_subscription_level::Error::BuildRequestError { source })?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| list_order_collections_at_subscription_level::Error::ExecuteRequestError { source })?;
+        .map_err(|source| list_order_at_subscription_level::Error::ExecuteRequestError { source })?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OrderCollectionResourceList = serde_json::from_slice(rsp_body).map_err(|source| {
-                list_order_collections_at_subscription_level::Error::DeserializeError {
+            let rsp_value: OrderResourceList =
+                serde_json::from_slice(rsp_body).map_err(|source| list_order_at_subscription_level::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
-                }
-            })?;
+                })?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| {
-                list_order_collections_at_subscription_level::Error::DeserializeError {
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| list_order_at_subscription_level::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
-                }
-            })?;
-            Err(list_order_collections_at_subscription_level::Error::DefaultResponse {
+                })?;
+            Err(list_order_at_subscription_level::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
             })
         }
     }
 }
-pub mod list_order_collections_at_subscription_level {
+pub mod list_order_at_subscription_level {
     use crate::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
@@ -494,26 +491,26 @@ pub mod list_order_collections_at_subscription_level {
         GetTokenError { source: azure_core::errors::AzureError },
     }
 }
-pub async fn list_orders_at_subscription_level(
+pub async fn list_order_items_at_subscription_level(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     filter: Option<&str>,
     skip_token: Option<&str>,
-) -> std::result::Result<OrderResourceList, list_orders_at_subscription_level::Error> {
+) -> std::result::Result<OrderItemResourceList, list_order_items_at_subscription_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
-        "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/orders",
+        "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/orderItems",
         operation_config.base_path(),
         subscription_id
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| list_orders_at_subscription_level::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(|source| list_order_items_at_subscription_level::Error::ParseUrlError { source })?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::GET);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| list_orders_at_subscription_level::Error::GetTokenError { source })?;
+            .map_err(|source| list_order_items_at_subscription_level::Error::GetTokenError { source })?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -527,16 +524,16 @@ pub async fn list_orders_at_subscription_level(
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| list_orders_at_subscription_level::Error::BuildRequestError { source })?;
+        .map_err(|source| list_order_items_at_subscription_level::Error::BuildRequestError { source })?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| list_orders_at_subscription_level::Error::ExecuteRequestError { source })?;
+        .map_err(|source| list_order_items_at_subscription_level::Error::ExecuteRequestError { source })?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OrderResourceList =
-                serde_json::from_slice(rsp_body).map_err(|source| list_orders_at_subscription_level::Error::DeserializeError {
+            let rsp_value: OrderItemResourceList =
+                serde_json::from_slice(rsp_body).map_err(|source| list_order_items_at_subscription_level::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -545,18 +542,18 @@ pub async fn list_orders_at_subscription_level(
         status_code => {
             let rsp_body = rsp.body();
             let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| list_orders_at_subscription_level::Error::DeserializeError {
+                serde_json::from_slice(rsp_body).map_err(|source| list_order_items_at_subscription_level::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
-            Err(list_orders_at_subscription_level::Error::DefaultResponse {
+            Err(list_order_items_at_subscription_level::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
             })
         }
     }
 }
-pub mod list_orders_at_subscription_level {
+pub mod list_order_items_at_subscription_level {
     use crate::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
@@ -1006,443 +1003,12 @@ pub mod delete_address_by_name {
         GetTokenError { source: azure_core::errors::AzureError },
     }
 }
-pub async fn list_order_collections_at_resource_group_level(
+pub async fn list_order_at_resource_group_level(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     resource_group_name: &str,
     skip_token: Option<&str>,
-) -> std::result::Result<OrderCollectionResourceList, list_order_collections_at_resource_group_level::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderCollections",
-        operation_config.base_path(),
-        subscription_id,
-        resource_group_name
-    );
-    let mut url =
-        url::Url::parse(url_str).map_err(|source| list_order_collections_at_resource_group_level::Error::ParseUrlError { source })?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(|source| list_order_collections_at_resource_group_level::Error::GetTokenError { source })?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-    }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    if let Some(skip_token) = skip_token {
-        url.query_pairs_mut().append_pair("$skipToken", skip_token);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| list_order_collections_at_resource_group_level::Error::BuildRequestError { source })?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(|source| list_order_collections_at_resource_group_level::Error::ExecuteRequestError { source })?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: OrderCollectionResourceList = serde_json::from_slice(rsp_body).map_err(|source| {
-                list_order_collections_at_resource_group_level::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                }
-            })?;
-            Ok(rsp_value)
-        }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| {
-                list_order_collections_at_resource_group_level::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                }
-            })?;
-            Err(list_order_collections_at_resource_group_level::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
-            })
-        }
-    }
-}
-pub mod list_order_collections_at_resource_group_level {
-    use crate::{models, models::*};
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::ErrorResponse,
-        },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
-    }
-}
-pub async fn get_order_collection_by_name(
-    operation_config: &crate::OperationConfig,
-    order_collection_name: &str,
-    subscription_id: &str,
-    resource_group_name: &str,
-) -> std::result::Result<OrderCollectionResource, get_order_collection_by_name::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderCollections/{}",
-        operation_config.base_path(),
-        subscription_id,
-        resource_group_name,
-        order_collection_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(|source| get_order_collection_by_name::Error::ParseUrlError { source })?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(|source| get_order_collection_by_name::Error::GetTokenError { source })?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-    }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| get_order_collection_by_name::Error::BuildRequestError { source })?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(|source| get_order_collection_by_name::Error::ExecuteRequestError { source })?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: OrderCollectionResource =
-                serde_json::from_slice(rsp_body).map_err(|source| get_order_collection_by_name::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-            Ok(rsp_value)
-        }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| get_order_collection_by_name::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-            Err(get_order_collection_by_name::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
-            })
-        }
-    }
-}
-pub mod get_order_collection_by_name {
-    use crate::{models, models::*};
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::ErrorResponse,
-        },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
-    }
-}
-pub async fn create_order_collection(
-    operation_config: &crate::OperationConfig,
-    order_collection_name: &str,
-    subscription_id: &str,
-    resource_group_name: &str,
-    order_collection_resource: &OrderCollectionResource,
-) -> std::result::Result<create_order_collection::Response, create_order_collection::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderCollections/{}",
-        operation_config.base_path(),
-        subscription_id,
-        resource_group_name,
-        order_collection_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(|source| create_order_collection::Error::ParseUrlError { source })?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::PUT);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(|source| create_order_collection::Error::GetTokenError { source })?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-    }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body =
-        azure_core::to_json(order_collection_resource).map_err(|source| create_order_collection::Error::SerializeError { source })?;
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| create_order_collection::Error::BuildRequestError { source })?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(|source| create_order_collection::Error::ExecuteRequestError { source })?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: OrderCollectionResource =
-                serde_json::from_slice(rsp_body).map_err(|source| create_order_collection::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-            Ok(create_order_collection::Response::Ok200(rsp_value))
-        }
-        http::StatusCode::ACCEPTED => Ok(create_order_collection::Response::Accepted202),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| create_order_collection::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-            Err(create_order_collection::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
-            })
-        }
-    }
-}
-pub mod create_order_collection {
-    use crate::{models, models::*};
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(OrderCollectionResource),
-        Accepted202,
-    }
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::ErrorResponse,
-        },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
-    }
-}
-pub async fn update_order_collection(
-    operation_config: &crate::OperationConfig,
-    order_collection_name: &str,
-    subscription_id: &str,
-    resource_group_name: &str,
-    if_match: Option<&str>,
-    order_collection_update_parameter: &OrderCollectionUpdateParameter,
-) -> std::result::Result<update_order_collection::Response, update_order_collection::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderCollections/{}",
-        operation_config.base_path(),
-        subscription_id,
-        resource_group_name,
-        order_collection_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(|source| update_order_collection::Error::ParseUrlError { source })?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::PATCH);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(|source| update_order_collection::Error::GetTokenError { source })?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-    }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    if let Some(if_match) = if_match {
-        req_builder = req_builder.header("If-Match", if_match);
-    }
-    let req_body = azure_core::to_json(order_collection_update_parameter)
-        .map_err(|source| update_order_collection::Error::SerializeError { source })?;
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| update_order_collection::Error::BuildRequestError { source })?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(|source| update_order_collection::Error::ExecuteRequestError { source })?;
-    match rsp.status() {
-        http::StatusCode::ACCEPTED => Ok(update_order_collection::Response::Accepted202),
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: OrderCollectionResource =
-                serde_json::from_slice(rsp_body).map_err(|source| update_order_collection::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-            Ok(update_order_collection::Response::Ok200(rsp_value))
-        }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| update_order_collection::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-            Err(update_order_collection::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
-            })
-        }
-    }
-}
-pub mod update_order_collection {
-    use crate::{models, models::*};
-    #[derive(Debug)]
-    pub enum Response {
-        Accepted202,
-        Ok200(OrderCollectionResource),
-    }
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::ErrorResponse,
-        },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
-    }
-}
-pub async fn delete_order_collection_by_name(
-    operation_config: &crate::OperationConfig,
-    order_collection_name: &str,
-    subscription_id: &str,
-    resource_group_name: &str,
-) -> std::result::Result<delete_order_collection_by_name::Response, delete_order_collection_by_name::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderCollections/{}",
-        operation_config.base_path(),
-        subscription_id,
-        resource_group_name,
-        order_collection_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(|source| delete_order_collection_by_name::Error::ParseUrlError { source })?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::DELETE);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(|source| delete_order_collection_by_name::Error::GetTokenError { source })?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-    }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| delete_order_collection_by_name::Error::BuildRequestError { source })?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(|source| delete_order_collection_by_name::Error::ExecuteRequestError { source })?;
-    match rsp.status() {
-        http::StatusCode::OK => Ok(delete_order_collection_by_name::Response::Ok200),
-        http::StatusCode::ACCEPTED => Ok(delete_order_collection_by_name::Response::Accepted202),
-        http::StatusCode::NO_CONTENT => Ok(delete_order_collection_by_name::Response::NoContent204),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| delete_order_collection_by_name::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
-            Err(delete_order_collection_by_name::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
-            })
-        }
-    }
-}
-pub mod delete_order_collection_by_name {
-    use crate::{models, models::*};
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200,
-        Accepted202,
-        NoContent204,
-    }
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::ErrorResponse,
-        },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
-    }
-}
-pub async fn list_orders_at_resource_group_level(
-    operation_config: &crate::OperationConfig,
-    subscription_id: &str,
-    resource_group_name: &str,
-    filter: Option<&str>,
-    skip_token: Option<&str>,
-) -> std::result::Result<OrderResourceList, list_orders_at_resource_group_level::Error> {
+) -> std::result::Result<OrderResourceList, list_order_at_resource_group_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orders",
@@ -1450,20 +1016,17 @@ pub async fn list_orders_at_resource_group_level(
         subscription_id,
         resource_group_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| list_orders_at_resource_group_level::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(|source| list_order_at_resource_group_level::Error::ParseUrlError { source })?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::GET);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| list_orders_at_resource_group_level::Error::GetTokenError { source })?;
+            .map_err(|source| list_order_at_resource_group_level::Error::GetTokenError { source })?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    if let Some(filter) = filter {
-        url.query_pairs_mut().append_pair("$filter", filter);
-    }
     if let Some(skip_token) = skip_token {
         url.query_pairs_mut().append_pair("$skipToken", skip_token);
     }
@@ -1471,16 +1034,16 @@ pub async fn list_orders_at_resource_group_level(
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| list_orders_at_resource_group_level::Error::BuildRequestError { source })?;
+        .map_err(|source| list_order_at_resource_group_level::Error::BuildRequestError { source })?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| list_orders_at_resource_group_level::Error::ExecuteRequestError { source })?;
+        .map_err(|source| list_order_at_resource_group_level::Error::ExecuteRequestError { source })?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
             let rsp_value: OrderResourceList =
-                serde_json::from_slice(rsp_body).map_err(|source| list_orders_at_resource_group_level::Error::DeserializeError {
+                serde_json::from_slice(rsp_body).map_err(|source| list_order_at_resource_group_level::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -1489,18 +1052,18 @@ pub async fn list_orders_at_resource_group_level(
         status_code => {
             let rsp_body = rsp.body();
             let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| list_orders_at_resource_group_level::Error::DeserializeError {
+                serde_json::from_slice(rsp_body).map_err(|source| list_order_at_resource_group_level::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
-            Err(list_orders_at_resource_group_level::Error::DefaultResponse {
+            Err(list_order_at_resource_group_level::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
             })
         }
     }
 }
-pub mod list_orders_at_resource_group_level {
+pub mod list_order_at_resource_group_level {
     use crate::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
@@ -1528,13 +1091,15 @@ pub async fn get_order_by_name(
     order_name: &str,
     subscription_id: &str,
     resource_group_name: &str,
+    location: &str,
 ) -> std::result::Result<OrderResource, get_order_by_name::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orders/{}",
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/locations/{}/orders/{}",
         operation_config.base_path(),
         subscription_id,
         resource_group_name,
+        location,
         order_name
     );
     let mut url = url::Url::parse(url_str).map_err(|source| get_order_by_name::Error::ParseUrlError { source })?;
@@ -1604,71 +1169,72 @@ pub mod get_order_by_name {
         GetTokenError { source: azure_core::errors::AzureError },
     }
 }
-pub async fn create_order(
+pub async fn list_order_items_at_resource_group_level(
     operation_config: &crate::OperationConfig,
-    order_name: &str,
     subscription_id: &str,
     resource_group_name: &str,
-    order_resource: &OrderResource,
-) -> std::result::Result<create_order::Response, create_order::Error> {
+    filter: Option<&str>,
+    skip_token: Option<&str>,
+) -> std::result::Result<OrderItemResourceList, list_order_items_at_resource_group_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orders/{}",
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems",
         operation_config.base_path(),
         subscription_id,
-        resource_group_name,
-        order_name
+        resource_group_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| create_order::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(|source| list_order_items_at_resource_group_level::Error::ParseUrlError { source })?;
     let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::PUT);
+    req_builder = req_builder.method(http::Method::GET);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| create_order::Error::GetTokenError { source })?;
+            .map_err(|source| list_order_items_at_resource_group_level::Error::GetTokenError { source })?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = azure_core::to_json(order_resource).map_err(|source| create_order::Error::SerializeError { source })?;
+    if let Some(filter) = filter {
+        url.query_pairs_mut().append_pair("$filter", filter);
+    }
+    if let Some(skip_token) = skip_token {
+        url.query_pairs_mut().append_pair("$skipToken", skip_token);
+    }
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| create_order::Error::BuildRequestError { source })?;
+        .map_err(|source| list_order_items_at_resource_group_level::Error::BuildRequestError { source })?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| create_order::Error::ExecuteRequestError { source })?;
+        .map_err(|source| list_order_items_at_resource_group_level::Error::ExecuteRequestError { source })?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OrderResource = serde_json::from_slice(rsp_body).map_err(|source| create_order::Error::DeserializeError {
-                source,
-                body: rsp_body.clone(),
-            })?;
-            Ok(create_order::Response::Ok200(rsp_value))
+            let rsp_value: OrderItemResourceList =
+                serde_json::from_slice(rsp_body).map_err(|source| list_order_items_at_resource_group_level::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+            Ok(rsp_value)
         }
-        http::StatusCode::ACCEPTED => Ok(create_order::Response::Accepted202),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| create_order::Error::DeserializeError {
-                source,
-                body: rsp_body.clone(),
-            })?;
-            Err(create_order::Error::DefaultResponse {
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| list_order_items_at_resource_group_level::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+            Err(list_order_items_at_resource_group_level::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
             })
         }
     }
 }
-pub mod create_order {
+pub mod list_order_items_at_resource_group_level {
     use crate::{models, models::*};
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(OrderResource),
-        Accepted202,
-    }
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1690,118 +1256,28 @@ pub mod create_order {
         GetTokenError { source: azure_core::errors::AzureError },
     }
 }
-pub async fn update_order(
+pub async fn get_order_item_by_name(
     operation_config: &crate::OperationConfig,
-    order_name: &str,
+    order_item_name: &str,
     subscription_id: &str,
     resource_group_name: &str,
-    if_match: Option<&str>,
-    order_update_parameter: &OrderUpdateParameter,
-) -> std::result::Result<update_order::Response, update_order::Error> {
+) -> std::result::Result<OrderItemResource, get_order_item_by_name::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orders/{}",
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems/{}",
         operation_config.base_path(),
         subscription_id,
         resource_group_name,
-        order_name
+        order_item_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| update_order::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(|source| get_order_item_by_name::Error::ParseUrlError { source })?;
     let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::PATCH);
+    req_builder = req_builder.method(http::Method::GET);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| update_order::Error::GetTokenError { source })?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-    }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    if let Some(if_match) = if_match {
-        req_builder = req_builder.header("If-Match", if_match);
-    }
-    let req_body = azure_core::to_json(order_update_parameter).map_err(|source| update_order::Error::SerializeError { source })?;
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| update_order::Error::BuildRequestError { source })?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(|source| update_order::Error::ExecuteRequestError { source })?;
-    match rsp.status() {
-        http::StatusCode::ACCEPTED => Ok(update_order::Response::Accepted202),
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: OrderResource = serde_json::from_slice(rsp_body).map_err(|source| update_order::Error::DeserializeError {
-                source,
-                body: rsp_body.clone(),
-            })?;
-            Ok(update_order::Response::Ok200(rsp_value))
-        }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| update_order::Error::DeserializeError {
-                source,
-                body: rsp_body.clone(),
-            })?;
-            Err(update_order::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
-            })
-        }
-    }
-}
-pub mod update_order {
-    use crate::{models, models::*};
-    #[derive(Debug)]
-    pub enum Response {
-        Accepted202,
-        Ok200(OrderResource),
-    }
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::ErrorResponse,
-        },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
-    }
-}
-pub async fn delete_order_by_name(
-    operation_config: &crate::OperationConfig,
-    order_name: &str,
-    subscription_id: &str,
-    resource_group_name: &str,
-) -> std::result::Result<delete_order_by_name::Response, delete_order_by_name::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orders/{}",
-        operation_config.base_path(),
-        subscription_id,
-        resource_group_name,
-        order_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(|source| delete_order_by_name::Error::ParseUrlError { source })?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::DELETE);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(|source| delete_order_by_name::Error::GetTokenError { source })?;
+            .map_err(|source| get_order_item_by_name::Error::GetTokenError { source })?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -1809,30 +1285,292 @@ pub async fn delete_order_by_name(
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| delete_order_by_name::Error::BuildRequestError { source })?;
+        .map_err(|source| get_order_item_by_name::Error::BuildRequestError { source })?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| delete_order_by_name::Error::ExecuteRequestError { source })?;
+        .map_err(|source| get_order_item_by_name::Error::ExecuteRequestError { source })?;
     match rsp.status() {
-        http::StatusCode::OK => Ok(delete_order_by_name::Response::Ok200),
-        http::StatusCode::ACCEPTED => Ok(delete_order_by_name::Response::Accepted202),
-        http::StatusCode::NO_CONTENT => Ok(delete_order_by_name::Response::NoContent204),
-        status_code => {
+        http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| delete_order_by_name::Error::DeserializeError {
+            let rsp_value: OrderItemResource =
+                serde_json::from_slice(rsp_body).map_err(|source| get_order_item_by_name::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
-            Err(delete_order_by_name::Error::DefaultResponse {
+            Ok(rsp_value)
+        }
+        status_code => {
+            let rsp_body = rsp.body();
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| get_order_item_by_name::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+            Err(get_order_item_by_name::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
             })
         }
     }
 }
-pub mod delete_order_by_name {
+pub mod get_order_item_by_name {
+    use crate::{models, models::*};
+    #[derive(Debug, thiserror :: Error)]
+    pub enum Error {
+        #[error("HTTP status code {}", status_code)]
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::ErrorResponse,
+        },
+        #[error("Failed to parse request URL: {}", source)]
+        ParseUrlError { source: url::ParseError },
+        #[error("Failed to build request: {}", source)]
+        BuildRequestError { source: http::Error },
+        #[error("Failed to execute request: {}", source)]
+        ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+        #[error("Failed to serialize request body: {}", source)]
+        SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+        #[error("Failed to deserialize response body: {}", source)]
+        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        #[error("Failed to get access token: {}", source)]
+        GetTokenError { source: azure_core::errors::AzureError },
+    }
+}
+pub async fn create_order_item(
+    operation_config: &crate::OperationConfig,
+    order_item_name: &str,
+    subscription_id: &str,
+    resource_group_name: &str,
+    order_item_resource: &OrderItemResource,
+) -> std::result::Result<create_order_item::Response, create_order_item::Error> {
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems/{}",
+        operation_config.base_path(),
+        subscription_id,
+        resource_group_name,
+        order_item_name
+    );
+    let mut url = url::Url::parse(url_str).map_err(|source| create_order_item::Error::ParseUrlError { source })?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::PUT);
+    if let Some(token_credential) = operation_config.token_credential() {
+        let token_response = token_credential
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .map_err(|source| create_order_item::Error::GetTokenError { source })?;
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    }
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    let req_body = azure_core::to_json(order_item_resource).map_err(|source| create_order_item::Error::SerializeError { source })?;
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder
+        .body(req_body)
+        .map_err(|source| create_order_item::Error::BuildRequestError { source })?;
+    let rsp = http_client
+        .execute_request(req)
+        .await
+        .map_err(|source| create_order_item::Error::ExecuteRequestError { source })?;
+    match rsp.status() {
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
+            let rsp_value: OrderItemResource =
+                serde_json::from_slice(rsp_body).map_err(|source| create_order_item::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+            Ok(create_order_item::Response::Ok200(rsp_value))
+        }
+        http::StatusCode::ACCEPTED => Ok(create_order_item::Response::Accepted202),
+        status_code => {
+            let rsp_body = rsp.body();
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| create_order_item::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+            Err(create_order_item::Error::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            })
+        }
+    }
+}
+pub mod create_order_item {
+    use crate::{models, models::*};
+    #[derive(Debug)]
+    pub enum Response {
+        Ok200(OrderItemResource),
+        Accepted202,
+    }
+    #[derive(Debug, thiserror :: Error)]
+    pub enum Error {
+        #[error("HTTP status code {}", status_code)]
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::ErrorResponse,
+        },
+        #[error("Failed to parse request URL: {}", source)]
+        ParseUrlError { source: url::ParseError },
+        #[error("Failed to build request: {}", source)]
+        BuildRequestError { source: http::Error },
+        #[error("Failed to execute request: {}", source)]
+        ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+        #[error("Failed to serialize request body: {}", source)]
+        SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+        #[error("Failed to deserialize response body: {}", source)]
+        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        #[error("Failed to get access token: {}", source)]
+        GetTokenError { source: azure_core::errors::AzureError },
+    }
+}
+pub async fn update_order_item(
+    operation_config: &crate::OperationConfig,
+    order_item_name: &str,
+    subscription_id: &str,
+    resource_group_name: &str,
+    if_match: Option<&str>,
+    order_item_update_parameter: &OrderItemUpdateParameter,
+) -> std::result::Result<update_order_item::Response, update_order_item::Error> {
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems/{}",
+        operation_config.base_path(),
+        subscription_id,
+        resource_group_name,
+        order_item_name
+    );
+    let mut url = url::Url::parse(url_str).map_err(|source| update_order_item::Error::ParseUrlError { source })?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::PATCH);
+    if let Some(token_credential) = operation_config.token_credential() {
+        let token_response = token_credential
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .map_err(|source| update_order_item::Error::GetTokenError { source })?;
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    }
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    if let Some(if_match) = if_match {
+        req_builder = req_builder.header("If-Match", if_match);
+    }
+    let req_body =
+        azure_core::to_json(order_item_update_parameter).map_err(|source| update_order_item::Error::SerializeError { source })?;
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder
+        .body(req_body)
+        .map_err(|source| update_order_item::Error::BuildRequestError { source })?;
+    let rsp = http_client
+        .execute_request(req)
+        .await
+        .map_err(|source| update_order_item::Error::ExecuteRequestError { source })?;
+    match rsp.status() {
+        http::StatusCode::ACCEPTED => Ok(update_order_item::Response::Accepted202),
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
+            let rsp_value: OrderItemResource =
+                serde_json::from_slice(rsp_body).map_err(|source| update_order_item::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+            Ok(update_order_item::Response::Ok200(rsp_value))
+        }
+        status_code => {
+            let rsp_body = rsp.body();
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| update_order_item::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+            Err(update_order_item::Error::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            })
+        }
+    }
+}
+pub mod update_order_item {
+    use crate::{models, models::*};
+    #[derive(Debug)]
+    pub enum Response {
+        Accepted202,
+        Ok200(OrderItemResource),
+    }
+    #[derive(Debug, thiserror :: Error)]
+    pub enum Error {
+        #[error("HTTP status code {}", status_code)]
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::ErrorResponse,
+        },
+        #[error("Failed to parse request URL: {}", source)]
+        ParseUrlError { source: url::ParseError },
+        #[error("Failed to build request: {}", source)]
+        BuildRequestError { source: http::Error },
+        #[error("Failed to execute request: {}", source)]
+        ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+        #[error("Failed to serialize request body: {}", source)]
+        SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+        #[error("Failed to deserialize response body: {}", source)]
+        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        #[error("Failed to get access token: {}", source)]
+        GetTokenError { source: azure_core::errors::AzureError },
+    }
+}
+pub async fn delete_order_item_by_name(
+    operation_config: &crate::OperationConfig,
+    order_item_name: &str,
+    subscription_id: &str,
+    resource_group_name: &str,
+) -> std::result::Result<delete_order_item_by_name::Response, delete_order_item_by_name::Error> {
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems/{}",
+        operation_config.base_path(),
+        subscription_id,
+        resource_group_name,
+        order_item_name
+    );
+    let mut url = url::Url::parse(url_str).map_err(|source| delete_order_item_by_name::Error::ParseUrlError { source })?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::DELETE);
+    if let Some(token_credential) = operation_config.token_credential() {
+        let token_response = token_credential
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .map_err(|source| delete_order_item_by_name::Error::GetTokenError { source })?;
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    }
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder
+        .body(req_body)
+        .map_err(|source| delete_order_item_by_name::Error::BuildRequestError { source })?;
+    let rsp = http_client
+        .execute_request(req)
+        .await
+        .map_err(|source| delete_order_item_by_name::Error::ExecuteRequestError { source })?;
+    match rsp.status() {
+        http::StatusCode::OK => Ok(delete_order_item_by_name::Response::Ok200),
+        http::StatusCode::ACCEPTED => Ok(delete_order_item_by_name::Response::Accepted202),
+        http::StatusCode::NO_CONTENT => Ok(delete_order_item_by_name::Response::NoContent204),
+        status_code => {
+            let rsp_body = rsp.body();
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| delete_order_item_by_name::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+            Err(delete_order_item_by_name::Error::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            })
+        }
+    }
+}
+pub mod delete_order_item_by_name {
     use crate::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
@@ -1861,58 +1599,59 @@ pub mod delete_order_by_name {
         GetTokenError { source: azure_core::errors::AzureError },
     }
 }
-pub async fn cancel_order(
+pub async fn cancel_order_item(
     operation_config: &crate::OperationConfig,
-    order_name: &str,
+    order_item_name: &str,
     subscription_id: &str,
     resource_group_name: &str,
     cancellation_reason: &CancellationReason,
-) -> std::result::Result<cancel_order::Response, cancel_order::Error> {
+) -> std::result::Result<cancel_order_item::Response, cancel_order_item::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orders/{}/cancel",
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems/{}/cancel",
         operation_config.base_path(),
         subscription_id,
         resource_group_name,
-        order_name
+        order_item_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| cancel_order::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(|source| cancel_order_item::Error::ParseUrlError { source })?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::POST);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| cancel_order::Error::GetTokenError { source })?;
+            .map_err(|source| cancel_order_item::Error::GetTokenError { source })?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = azure_core::to_json(cancellation_reason).map_err(|source| cancel_order::Error::SerializeError { source })?;
+    let req_body = azure_core::to_json(cancellation_reason).map_err(|source| cancel_order_item::Error::SerializeError { source })?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| cancel_order::Error::BuildRequestError { source })?;
+        .map_err(|source| cancel_order_item::Error::BuildRequestError { source })?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| cancel_order::Error::ExecuteRequestError { source })?;
+        .map_err(|source| cancel_order_item::Error::ExecuteRequestError { source })?;
     match rsp.status() {
-        http::StatusCode::OK => Ok(cancel_order::Response::Ok200),
-        http::StatusCode::NO_CONTENT => Ok(cancel_order::Response::NoContent204),
+        http::StatusCode::OK => Ok(cancel_order_item::Response::Ok200),
+        http::StatusCode::NO_CONTENT => Ok(cancel_order_item::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| cancel_order::Error::DeserializeError {
-                source,
-                body: rsp_body.clone(),
-            })?;
-            Err(cancel_order::Error::DefaultResponse {
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| cancel_order_item::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+            Err(cancel_order_item::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
             })
         }
     }
 }
-pub mod cancel_order {
+pub mod cancel_order_item {
     use crate::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
@@ -1940,58 +1679,59 @@ pub mod cancel_order {
         GetTokenError { source: azure_core::errors::AzureError },
     }
 }
-pub async fn return_order(
+pub async fn return_order_item(
     operation_config: &crate::OperationConfig,
-    order_name: &str,
+    order_item_name: &str,
     subscription_id: &str,
     resource_group_name: &str,
-    return_order_details: &ReturnOrderDetails,
-) -> std::result::Result<return_order::Response, return_order::Error> {
+    return_order_item_details: &ReturnOrderItemDetails,
+) -> std::result::Result<return_order_item::Response, return_order_item::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orders/{}/return",
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems/{}/return",
         operation_config.base_path(),
         subscription_id,
         resource_group_name,
-        order_name
+        order_item_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| return_order::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(|source| return_order_item::Error::ParseUrlError { source })?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::POST);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| return_order::Error::GetTokenError { source })?;
+            .map_err(|source| return_order_item::Error::GetTokenError { source })?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = azure_core::to_json(return_order_details).map_err(|source| return_order::Error::SerializeError { source })?;
+    let req_body = azure_core::to_json(return_order_item_details).map_err(|source| return_order_item::Error::SerializeError { source })?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| return_order::Error::BuildRequestError { source })?;
+        .map_err(|source| return_order_item::Error::BuildRequestError { source })?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| return_order::Error::ExecuteRequestError { source })?;
+        .map_err(|source| return_order_item::Error::ExecuteRequestError { source })?;
     match rsp.status() {
-        http::StatusCode::OK => Ok(return_order::Response::Ok200),
-        http::StatusCode::ACCEPTED => Ok(return_order::Response::Accepted202),
+        http::StatusCode::OK => Ok(return_order_item::Response::Ok200),
+        http::StatusCode::ACCEPTED => Ok(return_order_item::Response::Accepted202),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| return_order::Error::DeserializeError {
-                source,
-                body: rsp_body.clone(),
-            })?;
-            Err(return_order::Error::DefaultResponse {
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| return_order_item::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+            Err(return_order_item::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
             })
         }
     }
 }
-pub mod return_order {
+pub mod return_order_item {
     use crate::{models, models::*};
     #[derive(Debug)]
     pub enum Response {

@@ -18,9 +18,9 @@ pub struct GuestConfigurationAssignment {
 pub struct GuestConfigurationNavigation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kind: Option<guest_configuration_navigation::Kind>,
-    #[serde(skip_serializing)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(rename = "configurationParameter", skip_serializing_if = "Option::is_none")]
     pub configuration_parameter: Option<ConfigurationParameterList>,

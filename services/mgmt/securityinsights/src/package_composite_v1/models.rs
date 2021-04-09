@@ -60,8 +60,8 @@ pub struct ActionPropertiesBase {
 pub struct ActionRequestProperties {
     #[serde(flatten)]
     pub action_properties_base: ActionPropertiesBase,
-    #[serde(rename = "triggerUri", skip_serializing_if = "Option::is_none")]
-    pub trigger_uri: Option<String>,
+    #[serde(rename = "triggerUri")]
+    pub trigger_uri: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionResponse {
@@ -633,6 +633,8 @@ pub struct Operation {
     pub display: Option<operation::Display>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
 }
 pub mod operation {
     use super::*;
@@ -779,6 +781,8 @@ pub struct TiDataConnectorDataTypes {
 pub struct TiDataConnectorProperties {
     #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[serde(rename = "tipLookbackPeriod", skip_serializing_if = "Option::is_none")]
+    pub tip_lookback_period: Option<String>,
     #[serde(rename = "dataTypes", skip_serializing_if = "Option::is_none")]
     pub data_types: Option<TiDataConnectorDataTypes>,
 }
