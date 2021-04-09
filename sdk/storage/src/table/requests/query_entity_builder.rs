@@ -42,7 +42,7 @@ impl<'a> QueryEntityBuilder<'a> {
         &self,
     ) -> Result<QueryEntityResponse<E>, Box<dyn std::error::Error + Sync + Send>>
     where
-        E: DeserializeOwned
+        E: DeserializeOwned,
     {
         let mut url = self.table_client.url().to_owned();
 
@@ -80,7 +80,7 @@ impl<'a> QueryEntityBuilder<'a> {
         self,
     ) -> impl Stream<Item = Result<QueryEntityResponse<E>, Box<dyn std::error::Error + Sync + Send>>> + 'a
     where
-        E: DeserializeOwned
+        E: DeserializeOwned,
     {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
@@ -94,10 +94,14 @@ impl<'a> QueryEntityBuilder<'a> {
                 debug!("next_marker == {:?}", &next_marker);
                 let response = match next_marker {
                     Some(States::Init) => req.execute().await,
-                    Some(States::ContinuationNextPartitionAndRowKey(continuation_next_partition_and_row_key)) => {
-                        req.continuation_next_partition_and_row_key(continuation_next_partition_and_row_key)
-                            .execute()
-                            .await
+                    Some(States::ContinuationNextPartitionAndRowKey(
+                        continuation_next_partition_and_row_key,
+                    )) => {
+                        req.continuation_next_partition_and_row_key(
+                            continuation_next_partition_and_row_key,
+                        )
+                        .execute()
+                        .await
                     }
                     None => return None,
                 };

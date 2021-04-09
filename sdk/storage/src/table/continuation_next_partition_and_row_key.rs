@@ -5,7 +5,10 @@ use azure_core::AppendToUrlQuery;
 pub struct ContinuationNextPartitionAndRowKey(String, Option<String>);
 
 impl ContinuationNextPartitionAndRowKey {
-    pub fn new(continuation_next_partition_key: String, continuation_next_row_key: Option<String>) -> Self {
+    pub fn new(
+        continuation_next_partition_key: String,
+        continuation_next_row_key: Option<String>,
+    ) -> Self {
         Self(continuation_next_partition_key, continuation_next_row_key)
     }
 
@@ -24,19 +27,22 @@ impl ContinuationNextPartitionAndRowKey {
             .map(|item| item.to_str())
             .transpose()?;
 
-        Ok(partition_header_as_str
-            .filter(|h| !h.is_empty())
-            .map(|h| ContinuationNextPartitionAndRowKey::new(h.to_owned(), row_header_as_str.map(|h| h.to_owned()))))
+        Ok(partition_header_as_str.filter(|h| !h.is_empty()).map(|h| {
+            ContinuationNextPartitionAndRowKey::new(
+                h.to_owned(),
+                row_header_as_str.map(|h| h.to_owned()),
+            )
+        }))
     }
 }
 
 impl AppendToUrlQuery for ContinuationNextPartitionAndRowKey {
     fn append_to_url_query(&self, url: &mut url::Url) {
-        url.query_pairs_mut().append_pair("NextPartitionKey", &self.0);
+        url.query_pairs_mut()
+            .append_pair("NextPartitionKey", &self.0);
 
         if let Some(row_key) = &self.1 {
             url.query_pairs_mut().append_pair("NextRowKey", row_key);
         }
     }
 }
-
