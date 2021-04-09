@@ -4,6 +4,7 @@ mod insert_entity_builder;
 pub(crate) mod insert_or_replace_or_merge_entity_builder;
 mod list_tables_builder;
 mod submit_transaction_builder;
+mod query_entity_builder;
 pub(crate) mod update_or_merge_entity_builder;
 pub use create_table_builder::CreateTableBuilder;
 pub use delete_table_builder::DeleteTableBuilder;
@@ -12,3 +13,4 @@ pub use insert_or_replace_or_merge_entity_builder::InsertOrReplaceOrMergeEntityB
 pub use list_tables_builder::ListTablesBuilder;
 pub use submit_transaction_builder::SubmitTransactionBuilder;
 pub use update_or_merge_entity_builder::UpdateOrMergeEntityBuilder;
+pub use query_entity_builder::QueryEntityBuilder;

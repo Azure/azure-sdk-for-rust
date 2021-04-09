@@ -104,6 +104,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("response = {:?}\n", response);
     }
 
+    let mut stream = Box::pin(table.query().filter("Name = 'Carl'").top(2).stream::<MyEntity>());
+    while let Some(response) = stream.next().await {
+        println!("response = {:?}\n", response);
+    }
+
     let response = table.delete().execute().await?;
     println!("response = {:?}\n", response);
 
