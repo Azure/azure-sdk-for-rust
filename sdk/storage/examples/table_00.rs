@@ -72,6 +72,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("response = {:?}\n", response);
 
+    let response = entity_client.delete().execute().await?;
+    println!("response = {:?}\n", response);
+
     let response = table.insert().return_entity(false).execute(&entity).await?;
     println!("response = {:?}\n", response);
 
