@@ -1,9 +1,9 @@
+use crate::table::prelude::IfMatchCondition;
 use crate::table::prelude::*;
 use crate::table::responses::*;
 use crate::table::TransactionOperation;
 use azure_core::headers::{add_mandatory_header, add_optional_header};
 use azure_core::prelude::*;
-use crate::table::prelude::IfMatchCondition;
 use http::{method::Method, StatusCode};
 use serde::Serialize;
 use std::convert::TryInto;
@@ -34,8 +34,7 @@ impl<'a> DeleteEntityBuilder<'a> {
 
     pub async fn execute(
         &self,
-    ) -> Result<DeleteEntityResponse, Box<dyn std::error::Error + Sync + Send>>
-    {
+    ) -> Result<DeleteEntityResponse, Box<dyn std::error::Error + Sync + Send>> {
         let mut url = self.entity_client.url().clone();
 
         self.timeout.append_to_url_query(&mut url);
