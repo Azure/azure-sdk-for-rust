@@ -1,4 +1,3 @@
-use crate::{table::prelude::*, ContinuationNextTableName};
 use azure_core::{errors::AzureError, headers::CommonStorageResponseHeaders};
 use bytes::Bytes;
 use http::Response;
