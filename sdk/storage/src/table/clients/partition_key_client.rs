@@ -64,3 +64,37 @@ impl PartitionKeyClient {
             .prepare_request(url, method, http_header_adder, request_body)
     }
 }
+
+
+#[cfg(test)]
+#[cfg(feature = "test_integration")]
+mod integration_tests {
+    use super::*;
+    use azure_core::prelude::*;
+    use futures::StreamExt;
+    use crate::{core::prelude::*, table::clients::{AsTableClient, AsTableServiceClient}};
+    use url::Url;
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    struct TestEntity {
+        #[serde(rename = "PartitionKey")]
+        pub city: String,
+        pub name: String,
+        #[serde(rename = "RowKey")]
+        pub surname: String,
+    }
+
+    fn get_emulator_client() -> Arc<TableServiceClient> {
+        let blob_storage_url = Url::parse("http://127.0.0.1:10000").expect("the default local storage emulator URL");
+        let table_storage_url = Url::parse("http://127.0.0.1:10002").expect("the default local storage emulator URL");
+
+        let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+        let storage_account =
+            StorageAccountClient::new_emulator(http_client, &blob_storage_url, &table_storage_url)
+                .as_storage_client();
+
+        storage_account.as_table_service_client().expect("a table service client")
+    }
+
+
+}

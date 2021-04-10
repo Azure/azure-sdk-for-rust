@@ -10,7 +10,7 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     strategy:
       matrix:
         rust: [stable]
@@ -23,6 +23,8 @@ jobs:
         override: true
         components: rustfmt
         target: wasm32-unknown-unknown
+
+    - uses: Swatinem/rust-cache@v1
 
     - name: fmt
       run: |
@@ -43,6 +45,15 @@ jobs:
     - name: services check
       run: cargo check --manifest-path services/Cargo.toml --all
 
+    - name: integration tests
+      run: |
+        sqllocaldb create MSSQLLocalDB
+        sqllocaldb start MSSQLLocalDB
+
+        "C:\Program Files (x86)\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe" start
+
+        cargo test --features test_integration
+
     - name: e2e tests build
       run: |
         PROJECTS=(core  cosmos  identity  service_bus  storage)
@@ -55,3 +66,4 @@ jobs:
     - name: display free disk space
       run: df -h /
       if: ${{ always() }}
+

@@ -6,6 +6,8 @@ use http::method::Method;
 use http::status::StatusCode;
 use std::convert::TryInto;
 
+#[cfg(test)] use std::println as debug;
+
 #[derive(Debug, Clone)]
 pub struct DeleteTableBuilder<'a> {
     table_client: &'a TableClient,
@@ -30,7 +32,7 @@ impl<'a> DeleteTableBuilder<'a> {
         let url = self
             .table_client
             .url()
-            .join(&format!("/Tables('{}')", self.table_client.table_name()))?;
+            .join(&format!("Tables('{}')", self.table_client.table_name()))?;
         debug!("url = {}", url);
 
         let request = self.table_client.prepare_request(

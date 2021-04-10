@@ -98,13 +98,13 @@ impl StorageAccountClient {
         table_storage_url: &Url,
     ) -> Arc<Self> {
         let blob_storage_url =
-            Url::parse(&format!("{}devstoreaccount1", blob_storage_url.as_str())).unwrap();
+            Url::parse(&format!("{}devstoreaccount1/", blob_storage_url.as_str())).unwrap();
         let table_storage_url =
-            Url::parse(&format!("{}devstoreaccount1", table_storage_url.as_str())).unwrap();
+            Url::parse(&format!("{}devstoreaccount1/", table_storage_url.as_str())).unwrap();
         let queue_storage_url =
-            Url::parse(&format!("{}devstoreaccount1", table_storage_url.as_str())).unwrap();
+            Url::parse(&format!("{}devstoreaccount1/", table_storage_url.as_str())).unwrap();
         let filesystem_url =
-            Url::parse(&format!("{}devstoreaccount1", blob_storage_url.as_str())).unwrap();
+            Url::parse(&format!("{}devstoreaccount1/", blob_storage_url.as_str())).unwrap();
 
         Arc::new(Self {
             blob_storage_url,
