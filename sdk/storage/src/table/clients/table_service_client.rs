@@ -77,14 +77,16 @@ impl TableServiceClient {
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
+    use crate::{core::prelude::*, table::clients::AsTableClient};
     use azure_core::prelude::*;
     use futures::StreamExt;
-    use crate::{core::prelude::*, table::clients::AsTableClient};
     use url::Url;
 
     fn get_emulator_client() -> Arc<StorageClient> {
-        let blob_storage_url = Url::parse("http://127.0.0.1:10000").expect("the default local storage emulator URL");
-        let table_storage_url = Url::parse("http://127.0.0.1:10002").expect("the default local storage emulator URL");
+        let blob_storage_url =
+            Url::parse("http://127.0.0.1:10000").expect("the default local storage emulator URL");
+        let table_storage_url =
+            Url::parse("http://127.0.0.1:10002").expect("the default local storage emulator URL");
 
         let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
         let storage_account =
@@ -97,7 +99,9 @@ mod integration_tests {
     #[tokio::test]
     async fn test_list() {
         let storage_account = get_emulator_client();
-        let table_client = storage_account.as_table_service_client().expect("a table service client");
+        let table_client = storage_account
+            .as_table_service_client()
+            .expect("a table service client");
 
         println!("Create a table in the storage account");
         let table = table_client.as_table_client("TableServiceClientList");
@@ -109,7 +113,10 @@ mod integration_tests {
         let mut stream = Box::pin(table_client.list().stream());
         while let Some(result) = stream.next().await {
             let result = result.expect("the request should succeed");
-            let has_table = result.tables.iter().any(|t| t.name == "TableServiceClientList");
+            let has_table = result
+                .tables
+                .iter()
+                .any(|t| t.name == "TableServiceClientList");
             assert!(has_table, "the table should be present in the tables list");
         }
     }

@@ -65,14 +65,16 @@ impl PartitionKeyClient {
     }
 }
 
-
 #[cfg(test)]
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
+    use crate::{
+        core::prelude::*,
+        table::clients::{AsTableClient, AsTableServiceClient},
+    };
     use azure_core::prelude::*;
     use futures::StreamExt;
-    use crate::{core::prelude::*, table::clients::{AsTableClient, AsTableServiceClient}};
     use url::Url;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -85,16 +87,18 @@ mod integration_tests {
     }
 
     fn get_emulator_client() -> Arc<TableServiceClient> {
-        let blob_storage_url = Url::parse("http://127.0.0.1:10000").expect("the default local storage emulator URL");
-        let table_storage_url = Url::parse("http://127.0.0.1:10002").expect("the default local storage emulator URL");
+        let blob_storage_url =
+            Url::parse("http://127.0.0.1:10000").expect("the default local storage emulator URL");
+        let table_storage_url =
+            Url::parse("http://127.0.0.1:10002").expect("the default local storage emulator URL");
 
         let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
         let storage_account =
             StorageAccountClient::new_emulator(http_client, &blob_storage_url, &table_storage_url)
                 .as_storage_client();
 
-        storage_account.as_table_service_client().expect("a table service client")
+        storage_account
+            .as_table_service_client()
+            .expect("a table service client")
     }
-
-
 }

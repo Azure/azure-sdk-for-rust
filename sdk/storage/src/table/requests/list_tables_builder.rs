@@ -8,7 +8,7 @@ use http::status::StatusCode;
 use std::convert::TryInto;
 
 #[cfg(test)]
-use std::{println as debug};
+use std::println as debug;
 
 #[derive(Debug, Clone)]
 pub struct ListTablesBuilder<'a> {
