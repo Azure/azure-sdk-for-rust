@@ -73,6 +73,10 @@ impl EntityClient {
         )
     }
 
+    pub fn delete(&self) -> DeleteEntityBuilder {
+        DeleteEntityBuilder::new(self)
+    }
+
     pub(crate) fn url(&self) -> &Url {
         &self.url
     }
