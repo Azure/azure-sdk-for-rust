@@ -113,7 +113,9 @@ impl HttpClient for reqwest::Client {
 
         let mut response = Response::builder().status(reqwest_response.status());
 
-        response = set_version(response, reqwest_response.version());
+        if let Some(version) = get_version(&reqwest_response) {
+            response = response.version(version);
+        }
 
         for (key, value) in reqwest_response.headers() {
             response = response.header(key, value);
@@ -125,23 +127,17 @@ impl HttpClient for reqwest::Client {
     }
 }
 
-// wasm can not set the http version
+// wasm can not get the http version
 #[cfg(feature = "enable_reqwest")]
 #[cfg(target_arch = "wasm32")]
-fn set_version(
-    response: http::response::Builder,
-    _version: http::Version,
-) -> http::response::Builder {
-    response
+fn get_version(_response: &reqwest::Response) -> Option<http::Version> {
+    None
 }
 
 #[cfg(feature = "enable_reqwest")]
 #[cfg(not(target_arch = "wasm32"))]
-fn set_version(
-    response: http::response::Builder,
-    version: http::Version,
-) -> http::response::Builder {
-    response.version(version)
+fn get_version(response: &reqwest::Response) -> Option<http::Version> {
+    Some(response.version())
 }
 
 /// Serialize to json
