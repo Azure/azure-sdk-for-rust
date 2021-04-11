@@ -56,12 +56,13 @@ jobs:
 
     - name: e2e tests build
       run: |
-        PROJECTS=(core  cosmos  identity  service_bus  storage)
-        for PROJ in ${PROJECTS[@]}
-        do
+        $PROJECTS = @("core", "cosmos", "identity", "service_bus", "storage")
+        foreach ($PROJ in $PROJECTS) {
           echo "Checking e2e tests for $PROJ"
-          cargo check --tests --features test_e2e --manifest-path sdk/$PROJ/Cargo.toml || exit 1
-        done
+          if (-not (cargo check --tests --features test_e2e --manifest-path sdk/$PROJ/Cargo.toml)) {
+            exit 1
+          }
+        }
 
     - name: display free disk space
       run: df -h /
