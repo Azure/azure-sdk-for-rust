@@ -79,7 +79,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let response = entity_client.get().execute().await?;
     println!("response = {:?}\n", response);
 
-    let mut entity: MyEntity = response.entity.expect("the entity we just inserted");
+    let mut entity: MyEntity = response.entity;
     entity.city = "Rome".to_owned();
 
     let response = table.insert().return_entity(true).execute(&entity).await?;
