@@ -44,7 +44,8 @@ impl<'a> QueryEntityBuilder<'a> {
     where
         E: DeserializeOwned,
     {
-        let mut url = self.table_client.url().to_owned();
+        let mut url = self.table_client.url()
+            .join(&format!("{}()", self.table_client.table_name()))?;
 
         self.filter.append_to_url_query(&mut url);
         self.select.append_to_url_query(&mut url);
