@@ -41,17 +41,17 @@ pub struct CosmosOptions {
 }
 
 impl CosmosOptions {
-    /// TODO
-    pub fn with_client(client: Arc<Box<dyn HttpClient>>) -> Self {
-        Self {
-            retry: RetryOptions::new(3),
-            transport: TransportOptions::new(move |_ctx, req| {
-                let client = client.clone();
-                let req = req.take_inner();
-                Box::pin(async move { Ok(client.execute_request(req).await?.into()) })
-            }),
-        }
-    }
+    // TODO
+    // pub fn with_client(client: Arc<Box<dyn HttpClient>>) -> Self {
+    //     Self {
+    //         retry: RetryOptions::new(3),
+    //         transport: TransportOptions::new(move |_ctx, req| {
+    //             let client = client.clone();
+    //             let req = req.take_inner();
+    //             Box::pin(async move { Ok(client.execute_request(req).await?.into()) })
+    //         }),
+    //     }
+    // }
 }
 
 impl CosmosClient {
