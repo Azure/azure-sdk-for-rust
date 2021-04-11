@@ -120,6 +120,16 @@ mod integration_tests {
         pub surname: String,
     }
 
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    struct TestEntity2 {
+        #[serde(rename = "PartitionKey")]
+        pub city: String,
+        pub name: String,
+        #[serde(rename = "RowKey")]
+        pub surname: String,
+        pub country: String,
+    }
+
     fn get_emulator_client() -> Arc<TableServiceClient> {
         let blob_storage_url =
             Url::parse("http://127.0.0.1:10000").expect("the default local storage emulator URL");
@@ -183,9 +193,68 @@ mod integration_tests {
             .update()
             .execute(&entity, &crate::table::IfMatchCondition::Any)
             .await
-            .expect("the insert or replace operation should complete");
+            .expect("the update operation should complete");
 
         // TODO: Confirm that the entity was updated
+    }
+
+    #[tokio::test]
+    async fn test_merge() {
+        let table_client = get_emulator_client();
+
+        let table = table_client.as_table_client("EntityClientMerge");
+
+        println!("Delete the table (if it exists)");
+        match table.delete().execute().await {
+            _ => {}
+        }
+
+        println!("Create the table");
+        table
+            .create()
+            .execute()
+            .await
+            .expect("the table should be created");
+
+        let entity = TestEntity {
+            city: "Milan".to_owned(),
+            name: "Francesco".to_owned(),
+            surname: "Cogno".to_owned(),
+        };
+
+        let entity2 = TestEntity2 {
+            city: "Milan".to_owned(),
+            name: "Francesco".to_owned(),
+            surname: "Cogno".to_owned(),
+            country: "Italy".to_owned(),
+        };
+
+        let entity_client = table
+            .as_partition_key_client(&entity.city)
+            .as_entity_client(&entity.surname)
+            .expect("an entity client");
+
+        entity_client
+            .merge()
+            .execute(&entity2, &crate::table::IfMatchCondition::Any)
+            .await
+            .expect_err("the merge should fail if the entity doesn't exist");
+
+        table
+            .insert()
+            .execute(&entity)
+            .await
+            .expect("the entity should be inserted");
+
+        // TODO: Confirm that the entity was inserted
+
+        entity_client
+            .merge()
+            .execute(&entity2, &crate::table::IfMatchCondition::Any)
+            .await
+            .expect("the merge operation should complete");
+
+        // TODO: Confirm that the entity was updated with fields from entity2
     }
 
     #[tokio::test]
