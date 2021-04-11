@@ -109,7 +109,6 @@ mod integration_tests {
         table::clients::{AsTableClient, AsTableServiceClient},
     };
     use azure_core::prelude::*;
-    use futures::StreamExt;
     use url::Url;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -135,6 +134,58 @@ mod integration_tests {
         storage_account
             .as_table_service_client()
             .expect("a table service client")
+    }
+
+    #[tokio::test]
+    async fn test_update() {
+        let table_client = get_emulator_client();
+
+        let table = table_client.as_table_client("EntityClientUpdate");
+
+        println!("Delete the table (if it exists)");
+        match table.delete().execute().await {
+            _ => {}
+        }
+
+        println!("Create the table");
+        table
+            .create()
+            .execute()
+            .await
+            .expect("the table should be created");
+
+        let entity = TestEntity {
+            city: "Milan".to_owned(),
+            name: "Francesco".to_owned(),
+            surname: "Cogno".to_owned(),
+        };
+
+        let entity_client = table
+            .as_partition_key_client(&entity.city)
+            .as_entity_client(&entity.surname)
+            .expect("an entity client");
+
+        entity_client
+            .update()
+            .execute(&entity, &crate::table::IfMatchCondition::Any)
+            .await
+            .expect_err("the update should fail if the entity doesn't exist");
+
+        table
+            .insert()
+            .execute(&entity)
+            .await
+            .expect("the entity should be inserted");
+
+        // TODO: Confirm that the entity was inserted
+
+        entity_client
+            .update()
+            .execute(&entity, &crate::table::IfMatchCondition::Any)
+            .await
+            .expect("the insert or replace operation should complete");
+
+        // TODO: Confirm that the entity was updated
     }
 
     #[tokio::test]

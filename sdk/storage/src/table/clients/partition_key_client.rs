@@ -74,7 +74,7 @@ mod integration_tests {
         table::clients::{AsTableClient, AsTableServiceClient},
     };
     use azure_core::prelude::*;
-    use futures::StreamExt;
+    use http::StatusCode;
     use url::Url;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -100,5 +100,69 @@ mod integration_tests {
         storage_account
             .as_table_service_client()
             .expect("a table service client")
+    }
+
+    #[tokio::test]
+    async fn test_transaction() {
+        let table_service = get_emulator_client();
+        let table = table_service.as_table_client("PartitionKeyClientTransaction");
+
+        println!("Delete the table (if it exists)");
+        match table.delete().execute().await {
+            _ => {}
+        }
+
+        println!("Create the table");
+        table
+            .create()
+            .execute()
+            .await
+            .expect("the table should be created");
+
+        let partition_client = table.as_partition_key_client("Milan");
+
+        println!("Create the transaction");
+        let mut transaction = Transaction::default();
+
+        let entity1 = TestEntity {
+            city: partition_client.partition_key().to_owned(),
+            name: "Francesco".to_owned(),
+            surname: "Cogno".to_owned(),
+        };
+
+        let entity2 = TestEntity {
+            city: partition_client.partition_key().to_owned(),
+            name: "Francesco".to_owned(),
+            surname: "Potter".to_owned(),
+        };
+
+        transaction
+            .add(
+                table
+                    .insert()
+                    .to_transaction_operation(&entity1)
+                    .expect("a transaction operation"),
+            )
+            .add(
+                table
+                    .insert()
+                    .to_transaction_operation(&entity2)
+                    .expect("a transaction operation"),
+            );
+
+        let response = partition_client
+            .submit_transaction()
+            .execute(&transaction)
+            .await
+            .expect("the transaction to complete");
+        for response in response.operation_responses {
+            assert_eq!(
+                response.status_code,
+                StatusCode::CREATED,
+                "each of the entities should be inserted"
+            );
+        }
+
+        // TODO: Confirm that the entities were in fact inserted (and that the status codes aren't a lie)
     }
 }
