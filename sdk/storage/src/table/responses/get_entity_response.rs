@@ -19,7 +19,7 @@ struct GetEntityResponseInternal<E> {
     #[serde(rename = "odata.metadata")]
     pub metadata: String,
     #[serde(flatten)]
-    pub value: E
+    pub value: E,
 }
 
 impl<E> TryFrom<&Response<Bytes>> for GetEntityResponse<E>
