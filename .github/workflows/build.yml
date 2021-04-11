@@ -32,6 +32,7 @@ jobs:
           cargo fmt --manifest-path services/Cargo.toml --all -- --check
 
   test-sdk:
+    name: SDK Tests
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
@@ -62,6 +63,7 @@ jobs:
       run: cargo test --all
 
   test-services:
+    name: Services Tests
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
