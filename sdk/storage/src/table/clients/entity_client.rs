@@ -124,7 +124,6 @@ mod integration_tests {
     struct TestEntity2 {
         #[serde(rename = "PartitionKey")]
         pub city: String,
-        pub name: String,
         #[serde(rename = "RowKey")]
         pub surname: String,
         pub country: String,
@@ -224,7 +223,6 @@ mod integration_tests {
 
         let entity2 = TestEntity2 {
             city: "Milan".to_owned(),
-            name: "Francesco".to_owned(),
             surname: "Cogno".to_owned(),
             country: "Italy".to_owned(),
         };
@@ -301,5 +299,65 @@ mod integration_tests {
             .expect("the insert or replace operation should complete");
 
         // TODO: Confirm that the entity was updated
+    }
+
+    #[tokio::test]
+    async fn test_insert_or_merge() {
+        let table_client = get_emulator_client();
+
+        let table = table_client.as_table_client("EntityClientInsertOrMerge");
+
+        println!("Delete the table (if it exists)");
+        match table.delete().execute().await {
+            _ => {}
+        }
+
+        println!("Create the table");
+        table
+            .create()
+            .execute()
+            .await
+            .expect("the table should be created");
+
+        let mut entity = TestEntity {
+            city: "Milan".to_owned(),
+            name: "Francesco".to_owned(),
+            surname: "Cogno".to_owned(),
+        };
+
+        let entity_client = table
+            .as_partition_key_client(&entity.city)
+            .as_entity_client(&entity.surname)
+            .expect("an entity client");
+        entity_client
+            .insert_or_merge()
+            .execute(&entity)
+            .await
+            .expect("the insert or replace operation should complete");
+
+        // TODO: Confirm that the entity was inserted
+
+        entity.name = "Doe".to_owned();
+        entity_client
+            .insert_or_merge()
+            .execute(&entity)
+            .await
+            .expect("the insert or replace operation should complete");
+
+        // TODO: Confirm that the entity was updated
+
+        let entity2 = TestEntity2 {
+            city: "Milan".to_owned(),
+            surname: "Cogno".to_owned(),
+            country: "Italy".to_owned(),
+        };
+
+        entity_client
+            .insert_or_merge()
+            .execute(&entity2)
+            .await
+            .expect("the insert or merge operation should complete");
+
+        // TODO: Confirm that the entity was merged
     }
 }
