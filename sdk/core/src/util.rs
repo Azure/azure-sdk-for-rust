@@ -1,6 +1,6 @@
 use bytes::Bytes;
+use http::header::{AsHeaderName, HeaderMap, HeaderName, HeaderValue};
 use http::{self, request::Builder};
-use hyper::header::{AsHeaderName, HeaderMap, HeaderName, HeaderValue};
 use std::{
     convert::TryFrom,
     fmt::Display,

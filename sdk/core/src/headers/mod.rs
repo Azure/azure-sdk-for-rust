@@ -2,7 +2,7 @@ mod utilities;
 
 use http::request::Builder;
 
-pub use hyper::header::{IF_MODIFIED_SINCE, USER_AGENT};
+pub use http::header::{IF_MODIFIED_SINCE, USER_AGENT};
 pub use utilities::*;
 
 pub const MS_DATE: &str = "x-ms-date";
