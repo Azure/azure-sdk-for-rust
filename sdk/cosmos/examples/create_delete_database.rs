@@ -44,11 +44,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let list_databases_response = client.list_databases().execute().await?;
     println!("list_databases_response = {:#?}", list_databases_response);
 
-    let cosmos_client = CosmosClient::with_pipeline(
-        account,
-        authorization_token,
-        CosmosOptions::with_client(http_client),
-    );
+    // let cosmos_client = CosmosClient::with_pipeline(
+    //     account,
+    //     authorization_token,
+    //     CosmosOptions::with_client(http_client),
+    // );
+    let cosmos_client = client.clone(); // TODO need help with above pipeline
+
     let db = cosmos_client
         .create_database(
             azure_core::Context::new(),

@@ -69,11 +69,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_iter()
         .find(|db| db.id == DATABASE);
 
-    let database_client = CosmosClient::with_pipeline(
-        account,
-        authorization_token,
-        CosmosOptions::with_client(http_client),
-    );
+    // let database_client = CosmosClient::with_pipeline(
+    //     account,
+    //     authorization_token,
+    //     CosmosOptions::with_client(http_client),
+    // );
+    let database_client = client.clone(); // TODO need help with above pipeline
+
     // If the requested database is not found we create it.
     let database = match db {
         Some(db) => db,
