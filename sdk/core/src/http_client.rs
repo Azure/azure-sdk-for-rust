@@ -6,7 +6,8 @@ use http::{Request, Response, StatusCode};
 use hyper_rustls::HttpsConnector;
 use serde::Serialize;
 
-#[async_trait(?Send)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait HttpClient: Send + Sync + std::fmt::Debug {
     async fn execute_request(
         &self,
@@ -62,7 +63,8 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 }
 
 #[cfg(feature = "enable_hyper")]
-#[async_trait(?Send)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
     async fn execute_request(
         &self,
@@ -95,7 +97,8 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
 }
 
 #[cfg(feature = "enable_reqwest")]
-#[async_trait(?Send)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for reqwest::Client {
     async fn execute_request(
         &self,

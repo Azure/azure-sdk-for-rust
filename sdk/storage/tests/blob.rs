@@ -327,6 +327,13 @@ async fn copy_blob() {
         .unwrap();
 }
 
+async fn requires_send_future<F, O>(fut: F) -> O
+where
+    F: std::future::Future<Output = O> + Send,
+{
+    fut.await
+}
+
 #[tokio::test]
 async fn put_block_blob_and_get_properties() {
     let blob_name: &'static str = "properties";
@@ -371,25 +378,19 @@ async fn put_block_blob_and_get_properties() {
 
     assert_eq!(blob_properties.blob.properties.content_length, 6);
 
-    blob.get_properties().execute().await.unwrap();
+    let _ = requires_send_future(blob.get_properties().execute());
 }
 
 #[allow(dead_code)]
-async fn send_check() {
+fn send_check() {
     let client = initialize();
     let blob = client
         .as_storage_client()
         .as_container_client("a")
         .as_blob_client("b");
 
-    blob.acquire_lease(Duration::from_secs(10))
-        .execute()
-        .await
-        .unwrap();
-    blob.clear_page(BA512Range::new(0, 1024).unwrap())
-        .execute()
-        .await
-        .unwrap();
+    let _ = requires_send_future(blob.acquire_lease(Duration::from_secs(10)).execute());
+    let _ = requires_send_future(blob.clear_page(BA512Range::new(0, 1024).unwrap()).execute());
 }
 
 fn initialize() -> Arc<StorageAccountClient> {
