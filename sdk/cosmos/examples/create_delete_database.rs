@@ -49,7 +49,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         authorization_token,
         CosmosOptions::with_client(http_client),
     );
-
     let db = cosmos_client
         .create_database(
             azure_core::Context::new(),

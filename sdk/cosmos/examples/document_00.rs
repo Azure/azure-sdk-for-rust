@@ -74,7 +74,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         authorization_token,
         CosmosOptions::with_client(http_client),
     );
-
     // If the requested database is not found we create it.
     let database = match db {
         Some(db) => db,
