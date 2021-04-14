@@ -51,6 +51,10 @@ impl EntityClient {
         &self.row_key
     }
 
+    pub fn get(&self) -> GetEntityBuilder {
+        GetEntityBuilder::new(self)
+    }
+
     pub fn update(&self) -> UpdateOrMergeEntityBuilder {
         UpdateOrMergeEntityBuilder::new(self, update_or_merge_entity_builder::Operation::Update)
     }
