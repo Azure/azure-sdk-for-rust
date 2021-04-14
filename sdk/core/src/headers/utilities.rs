@@ -327,5 +327,5 @@ pub async fn perform_http_request(
 ) -> Result<String, AzureError> {
     debug!("req == {:?}", req);
     let res = client.request(req).await?;
-    crate::errors::check_status_extract_body_2(res, expected_status).await
+    check_status_extract_body_2(res, expected_status).await
 }
