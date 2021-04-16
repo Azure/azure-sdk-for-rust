@@ -1,8 +1,9 @@
 use crate::errors::{AzureError, UnexpectedHTTPResult};
+use crate::Body;
 use async_trait::async_trait;
 use bytes::Bytes;
+use futures::TryStreamExt;
 use http::{Request, Response, StatusCode};
-use hyper_rustls::HttpsConnector;
 use serde::Serialize;
 
 #[async_trait]
@@ -11,6 +12,11 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         &self,
         request: Request<Bytes>,
     ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>>;
+
+    async fn execute_request2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<crate::Response, Box<dyn std::error::Error + Sync + Send>>;
 
     async fn execute_request_check_status(
         &self,
@@ -60,37 +66,38 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     }
 }
 
-#[async_trait]
-impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
-    async fn execute_request(
-        &self,
-        request: Request<Bytes>,
-    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
-        let mut hyper_request = hyper::Request::builder()
-            .uri(request.uri())
-            .method(request.method());
-
-        for header in request.headers() {
-            hyper_request = hyper_request.header(header.0, header.1);
-        }
-
-        let hyper_request = hyper_request.body(hyper::Body::from(request.into_body()))?;
-
-        let hyper_response = self.request(hyper_request).await?;
-
-        let mut response = Response::builder()
-            .status(hyper_response.status())
-            .version(hyper_response.version());
-
-        for (key, value) in hyper_response.headers() {
-            response = response.header(key, value);
-        }
-
-        let response = response.body(hyper::body::to_bytes(hyper_response.into_body()).await?)?;
-
-        Ok(response)
-    }
-}
+// TODO: To reimplement once the Request and Response are validated.
+//#[async_trait]
+//impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
+//    async fn execute_request(
+//        &self,
+//        request: Request<Bytes>,
+//    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
+//        let mut hyper_request = hyper::Request::builder()
+//            .uri(request.uri())
+//            .method(request.method());
+//
+//        for header in request.headers() {
+//            hyper_request = hyper_request.header(header.0, header.1);
+//        }
+//
+//        let hyper_request = hyper_request.body(hyper::Body::from(request.into_body()))?;
+//
+//        let hyper_response = self.request(hyper_request).await?;
+//
+//        let mut response = Response::builder()
+//            .status(hyper_response.status())
+//            .version(hyper_response.version());
+//
+//        for (key, value) in hyper_response.headers() {
+//            response = response.header(key, value);
+//        }
+//
+//        let response = response.body(hyper::body::to_bytes(hyper_response.into_body()).await?)?;
+//
+//        Ok(response)
+//    }
+//}
 
 #[async_trait]
 impl HttpClient for reqwest::Client {
@@ -98,8 +105,10 @@ impl HttpClient for reqwest::Client {
         &self,
         request: Request<Bytes>,
     ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
-        let mut reqwest_request =
-            self.request(request.method().clone(), &request.uri().to_string());
+        let mut reqwest_request = self.request(
+            request.method().clone(),
+            url::Url::parse(&request.uri().to_string()).unwrap(),
+        );
         for header in request.headers() {
             reqwest_request = reqwest_request.header(header.0, header.1);
         }
@@ -117,6 +126,42 @@ impl HttpClient for reqwest::Client {
         }
 
         let response = response.body(reqwest_response.bytes().await?)?;
+
+        Ok(response)
+    }
+
+    async fn execute_request2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<crate::Response, Box<dyn std::error::Error + Sync + Send>> {
+        let mut reqwest_request = self.request(
+            request.method().clone(),
+            url::Url::parse(&request.uri().to_string()).unwrap(),
+        );
+        for header in request.headers() {
+            reqwest_request = reqwest_request.header(header.0, header.1);
+        }
+
+        let body = request.extract_body();
+
+        let reqwest_request = match body {
+            Body::Bytes(bytes) => {
+                // replace the body for subsequent retries
+                request.set_body(bytes.clone().into());
+                reqwest_request.body(bytes).build()?
+            }
+        };
+
+        let reqwest_response = self.execute(reqwest_request).await?;
+        let mut response = crate::ResponseBuilder::new(reqwest_response.status());
+
+        for (key, value) in reqwest_response.headers() {
+            response.with_header(key, value.clone());
+        }
+
+        let response = response.with_response(Box::pin(
+            reqwest_response.bytes_stream().map_err(|err| err.into()),
+        ));
 
         Ok(response)
     }

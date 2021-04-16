@@ -1,0 +1,84 @@
+use crate::policies::{Context, Policy, PolicyResult, Request, Response};
+use crate::sleep::sleep;
+use chrono::{DateTime, Local};
+use std::sync::Arc;
+use std::time::Duration;
+
+/// Retry policy with linear backoff.
+///
+/// Retry policy with linear backoff (with an added random delay up to 256 ms). Each retry will
+/// happen at least after the same, configured sleep time. The policy will retry until the maximum number of
+/// retries have been reached or the maximum allowed delay has passed (whichever comes first). The
+/// wait time is not precise.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LinearRetryPolicy {
+    delay: Duration,
+    max_retries: u32,
+    max_delay: Duration,
+}
+
+impl Default for LinearRetryPolicy {
+    fn default() -> Self {
+        Self {
+            delay: Duration::from_secs(3),
+            max_retries: 3,
+            max_delay: Duration::from_secs(10),
+        }
+    }
+}
+
+impl LinearRetryPolicy {
+    fn is_expired(
+        &self,
+        first_retry_time: &mut Box<Option<DateTime<Local>>>,
+        current_retries: &u32,
+    ) -> bool {
+        if *current_retries > self.max_retries {
+            return true;
+        }
+
+        if first_retry_time.is_none() {
+            std::mem::swap(first_retry_time, &mut Box::new(Some(Local::now())));
+        }
+
+        if Local::now()
+            > first_retry_time.unwrap() + chrono::Duration::from_std(self.max_delay).unwrap()
+        {
+            return true;
+        }
+
+        false
+    }
+}
+
+#[async_trait::async_trait]
+impl Policy for LinearRetryPolicy {
+    async fn send(
+        &self,
+        ctx: &mut Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult<Response> {
+        let mut first_retry_time = Box::new(None);
+        let mut current_retries = 0;
+
+        loop {
+            match next[0].send(ctx, request, &next[1..]).await {
+                Ok(response) => return Ok(response),
+                Err(error) => {
+                    if self.is_expired(&mut first_retry_time, &mut current_retries) {
+                        return Err(error);
+                    } else {
+                        current_retries += 1;
+
+                        let sleep_ms: u64 =
+                            self.delay.as_millis() as u64 + rand::random::<u8>() as u64;
+                        sleep(Duration::from_millis(sleep_ms)).await;
+
+                        continue;
+                    }
+                }
+            }
+        }
+    }
+}

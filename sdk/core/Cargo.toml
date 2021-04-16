@@ -32,13 +32,14 @@ hyper-rustls = "0.22"
 failure = "0.1"
 async-trait = "0.1"
 oauth2 = "=4.0.0-alpha.3"
-reqwest = "0.11"
+reqwest = { version  = "0.11", features = ["stream"] }
 paste = "1.0"
 md5 = "0.7"
+rand = "0.8"
 
 [dev-dependencies]
-tokio = "1.0"
 env_logger = "0.8"
+tokio = "1.0"
 
 [features]
 test_e2e = []

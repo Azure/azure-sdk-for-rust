@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::resources::Database;
 use crate::{CosmosError, ResourceQuota};
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::{Request as HttpRequest, Response as HttpResponse};
+use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
@@ -36,7 +36,7 @@ impl Options {
         let req = CreateDatabaseRequest { id: database_name };
 
         azure_core::headers::add_optional_header2(&self.consistency_level, request);
-        request.body(req)?;
+        request.set_body(bytes::Bytes::from(serde_json::to_string(&req)?).into());
         Ok(())
     }
 }
@@ -59,29 +59,26 @@ pub struct Response {
     pub gateway_version: String,
 }
 
-impl std::convert::TryFrom<HttpResponse> for Response {
-    type Error = CosmosError;
-
-    fn try_from(response: HttpResponse) -> Result<Self, Self::Error> {
-        let response = response.into_inner();
-        let headers = response.headers();
-        let body = response.body();
+impl Response {
+    pub async fn try_from(response: HttpResponse) -> Result<Self, CosmosError> {
+        let (_status_code, headers, pinned_stream) = response.deconstruct();
+        let body = collect_pinned_stream(pinned_stream).await?;
 
         Ok(Self {
             database: serde_json::from_slice(&body)?,
-            charge: request_charge_from_headers(headers)?,
-            etag: etag_from_headers(headers)?,
-            session_token: session_token_from_headers(headers)?,
-            last_state_change: last_state_change_from_headers(headers)?,
-            resource_quota: resource_quota_from_headers(headers)?,
-            resource_usage: resource_usage_from_headers(headers)?,
-            quorum_acked_lsn: quorum_acked_lsn_from_headers(headers)?,
-            current_write_quorum: current_write_quorum_from_headers(headers)?,
-            current_replica_set_size: current_replica_set_size_from_headers(headers)?,
-            schema_version: schema_version_from_headers(headers)?.to_owned(),
-            service_version: service_version_from_headers(headers)?.to_owned(),
-            activity_id: activity_id_from_headers(headers)?,
-            gateway_version: gateway_version_from_headers(headers)?.to_owned(),
+            charge: request_charge_from_headers(&headers)?,
+            etag: etag_from_headers(&headers)?,
+            session_token: session_token_from_headers(&headers)?,
+            last_state_change: last_state_change_from_headers(&headers)?,
+            resource_quota: resource_quota_from_headers(&headers)?,
+            resource_usage: resource_usage_from_headers(&headers)?,
+            quorum_acked_lsn: quorum_acked_lsn_from_headers(&headers)?,
+            current_write_quorum: current_write_quorum_from_headers(&headers)?,
+            current_replica_set_size: current_replica_set_size_from_headers(&headers)?,
+            schema_version: schema_version_from_headers(&headers)?.to_owned(),
+            service_version: service_version_from_headers(&headers)?.to_owned(),
+            activity_id: activity_id_from_headers(&headers)?,
+            gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
         })
     }
 }
