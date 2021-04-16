@@ -1,9 +1,9 @@
-use crate::blob::prelude::*;
-use crate::container::PublicAccess;
-use azure_core::headers::{add_mandatory_header, add_optional_header};
-use azure_core::prelude::*;
-use http::method::Method;
-use http::status::StatusCode;
+use crate::{blob::prelude::*, container::PublicAccess};
+use azure_core::{
+    headers::{add_mandatory_header, add_optional_header},
+    prelude::*,
+};
+use http::{method::Method, status::StatusCode};
 
 #[derive(Debug, Clone)]
 pub struct CreateBuilder<'a> {
@@ -38,7 +38,10 @@ impl<'a> CreateBuilder<'a> {
             .storage_client()
             .storage_account_client()
             .blob_storage_url()
-            .join(self.container_client.container_name())?;
+            .to_owned();
+        url.path_segments_mut()
+            .map_err(|_| "Invalid blob URL")?
+            .push(self.container_client.container_name());
 
         url.query_pairs_mut().append_pair("restype", "container");
 

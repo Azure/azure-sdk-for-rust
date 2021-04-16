@@ -38,10 +38,10 @@ impl<'a> InsertEntityBuilder<'a> {
     where
         E: Serialize + DeserializeOwned,
     {
-        let mut url = self
-            .table_client
-            .url()
-            .join(self.table_client.table_name())?;
+        let mut url = self.table_client.url().to_owned();
+        url.path_segments_mut()
+            .map_err(|_| "Invalid table URL")?
+            .push(self.table_client.table_name());
 
         self.timeout.append_to_url_query(&mut url);
         println!("url = {}", url);
@@ -80,10 +80,10 @@ impl<'a> InsertEntityBuilder<'a> {
     where
         E: Serialize,
     {
-        let url = self
-            .table_client
-            .url()
-            .join(self.table_client.table_name())?;
+        let mut url = self.table_client.url().to_owned();
+        url.path_segments_mut()
+            .map_err(|_| "Invalid table URL")?
+            .push(self.table_client.table_name());
 
         let request = http::Request::builder()
             .method(Method::POST)

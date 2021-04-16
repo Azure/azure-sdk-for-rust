@@ -25,10 +25,13 @@ pub struct TableServiceClient {
 
 impl TableServiceClient {
     pub(crate) fn new(storage_client: Arc<StorageClient>) -> Result<Arc<Self>, url::ParseError> {
-        let url = storage_client
+        let mut url = storage_client
             .storage_account_client()
             .table_storage_url()
-            .join("/Tables")?;
+            .to_owned();
+        url.path_segments_mut()
+            .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?
+            .push("Tables");
 
         Ok(Arc::new(Self {
             storage_client,

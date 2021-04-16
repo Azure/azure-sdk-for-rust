@@ -28,7 +28,10 @@ impl<'a> ClearMessagesBuilder<'a> {
     pub async fn execute(
         &self,
     ) -> Result<ClearMessagesResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self.queue_client.queue_url()?.join("messages")?;
+        let mut url = self.queue_client.queue_url()?.to_owned();
+        url.path_segments_mut()
+            .map_err(|_| "Invalid queue URL")?
+            .push("messages");
 
         self.timeout.append_to_url_query(&mut url);
 

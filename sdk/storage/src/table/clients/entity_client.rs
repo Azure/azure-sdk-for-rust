@@ -30,15 +30,18 @@ impl EntityClient {
         row_key: RK,
     ) -> Result<Arc<Self>, url::ParseError> {
         let row_key = row_key.into();
-        let url = partition_key_client
+        let mut url = partition_key_client
             .storage_account_client()
             .table_storage_url()
-            .join(&format!(
-                "/{}(PartitionKey='{}',RowKey='{}')",
+            .to_owned();
+        url.path_segments_mut()
+            .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?
+            .push(&format!(
+                "{}(PartitionKey='{}',RowKey='{}')",
                 partition_key_client.table_client().table_name(),
                 partition_key_client.partition_key(),
                 &row_key
-            ))?;
+            ));
 
         Ok(Arc::new(Self {
             partition_key_client,

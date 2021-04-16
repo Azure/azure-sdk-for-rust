@@ -57,8 +57,12 @@ impl PopReceiptClient {
             .storage_client()
             .storage_account_client()
             .queue_storage_url()
-            .join(&format!("{}/messages/", self.queue_client.queue_name()))?
-            .join(self.pop_receipt.message_id())?;
+            .to_owned();
+        url.path_segments_mut()
+            .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?
+            .push(self.queue_client.queue_name())
+            .push("messages")
+            .push(self.pop_receipt.message_id());
 
         url.query_pairs_mut()
             .append_pair("popreceipt", self.pop_receipt.pop_receipt());

@@ -27,10 +27,10 @@ impl<'a> DeleteTableBuilder<'a> {
     pub async fn execute(
         &self,
     ) -> Result<DeleteTableResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let url = self
-            .table_client
-            .url()
-            .join(&format!("/Tables('{}')", self.table_client.table_name()))?;
+        let mut url = self.table_client.url().to_owned();
+        url.path_segments_mut()
+            .map_err(|_| "Invalid table URL")?
+            .push(&format!("Tables('{}')", self.table_client.table_name()));
         debug!("url = {}", url);
 
         let request = self.table_client.prepare_request(

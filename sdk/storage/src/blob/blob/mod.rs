@@ -16,15 +16,14 @@ mod block_list;
 pub use self::block_list::BlockList;
 pub mod requests;
 pub mod responses;
-use crate::AccessTier;
-use crate::{CopyId, CopyProgress};
-use azure_core::headers::{
-    BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CONTENT_MD5, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS,
-    COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE,
-    LEASE_STATUS, META_PREFIX, SERVER_ENCRYPTED,
-};
+use crate::{AccessTier, CopyId, CopyProgress};
 use azure_core::{
     errors::AzureError,
+    headers::{
+        BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CONTENT_MD5, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS,
+        COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION,
+        LEASE_STATE, LEASE_STATUS, META_PREFIX, SERVER_ENCRYPTED,
+    },
     lease::{LeaseDuration, LeaseState, LeaseStatus},
     parsing::from_azure_time,
     prelude::*,
@@ -32,8 +31,7 @@ use azure_core::{
 };
 use chrono::{DateTime, Utc};
 use http::header;
-use std::str::FromStr;
-use std::{collections::HashMap, convert::TryInto};
+use std::{collections::HashMap, convert::TryInto, str::FromStr};
 
 #[cfg(feature = "azurite_workaround")]
 fn get_creation_time(h: &header::HeaderMap) -> Result<Option<DateTime<Utc>>, AzureError> {

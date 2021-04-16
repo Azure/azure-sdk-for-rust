@@ -32,10 +32,15 @@ impl QueueClient {
     }
 
     pub(crate) fn queue_url(&self) -> Result<url::Url, url::ParseError> {
-        self.storage_client()
+        let mut url = self
+            .storage_client()
             .storage_account_client()
             .queue_storage_url()
-            .join(&format!("{}/", &self.queue_name))
+            .to_owned();
+        url.path_segments_mut()
+            .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?
+            .push(&self.queue_name);
+        Ok(url)
     }
 
     pub fn queue_name(&self) -> &str {
