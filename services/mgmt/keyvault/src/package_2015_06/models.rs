@@ -27,41 +27,41 @@ pub struct AccessPolicyEntry {
     pub tenant_id: String,
     #[serde(rename = "objectId")]
     pub object_id: String,
-    #[serde(rename = "applicationId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
     pub permissions: Permissions,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Permissions {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub keys: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub secrets: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub certificates: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VaultProperties {
-    #[serde(rename = "vaultUri", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "vaultUri", default, skip_serializing_if = "Option::is_none")]
     pub vault_uri: Option<String>,
     #[serde(rename = "tenantId")]
     pub tenant_id: String,
     pub sku: Sku,
     #[serde(rename = "accessPolicies")]
     pub access_policies: Vec<AccessPolicyEntry>,
-    #[serde(rename = "enabledForDeployment", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enabledForDeployment", default, skip_serializing_if = "Option::is_none")]
     pub enabled_for_deployment: Option<bool>,
-    #[serde(rename = "enabledForDiskEncryption", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enabledForDiskEncryption", default, skip_serializing_if = "Option::is_none")]
     pub enabled_for_disk_encryption: Option<bool>,
-    #[serde(rename = "enabledForTemplateDeployment", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enabledForTemplateDeployment", default, skip_serializing_if = "Option::is_none")]
     pub enabled_for_template_deployment: Option<bool>,
-    #[serde(rename = "enableSoftDelete", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enableSoftDelete", default, skip_serializing_if = "Option::is_none")]
     pub enable_soft_delete: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VaultCreateOrUpdateParameters {
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub properties: VaultProperties,
 }
@@ -73,16 +73,16 @@ pub struct Vault {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VaultListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Vault>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Resource>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -93,6 +93,6 @@ pub struct Resource {
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }

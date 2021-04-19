@@ -4,9 +4,9 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListByCustomRpManifest {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomRpManifest>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -18,7 +18,7 @@ pub struct CustomRpRouteDefinition {
 pub struct CustomRpActionRouteDefinition {
     #[serde(flatten)]
     pub custom_rp_route_definition: CustomRpRouteDefinition,
-    #[serde(rename = "routingType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "routingType", default, skip_serializing_if = "Option::is_none")]
     pub routing_type: Option<custom_rp_action_route_definition::RoutingType>,
 }
 pub mod custom_rp_action_route_definition {
@@ -32,7 +32,7 @@ pub mod custom_rp_action_route_definition {
 pub struct CustomRpResourceTypeRouteDefinition {
     #[serde(flatten)]
     pub custom_rp_route_definition: CustomRpRouteDefinition,
-    #[serde(rename = "routingType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "routingType", default, skip_serializing_if = "Option::is_none")]
     pub routing_type: Option<custom_rp_resource_type_route_definition::RoutingType>,
 }
 pub mod custom_rp_resource_type_route_definition {
@@ -46,7 +46,7 @@ pub mod custom_rp_resource_type_route_definition {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomRpValidations {
-    #[serde(rename = "validationType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "validationType", default, skip_serializing_if = "Option::is_none")]
     pub validation_type: Option<custom_rp_validations::ValidationType>,
     pub specification: String,
 }
@@ -61,18 +61,18 @@ pub mod custom_rp_validations {
 pub struct CustomRpManifest {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<custom_rp_manifest::Properties>,
 }
 pub mod custom_rp_manifest {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
-        #[serde(skip_serializing_if = "Vec::is_empty")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub actions: Vec<CustomRpActionRouteDefinition>,
-        #[serde(rename = "resourceTypes", skip_serializing_if = "Vec::is_empty")]
+        #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
         pub resource_types: Vec<CustomRpResourceTypeRouteDefinition>,
-        #[serde(skip_serializing_if = "Vec::is_empty")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub validations: Vec<CustomRpValidations>,
         #[serde(rename = "provisioningState", skip_serializing)]
         pub provisioning_state: Option<properties::ProvisioningState>,
@@ -91,29 +91,29 @@ pub mod custom_rp_manifest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceProviderOperationList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceProviderOperation>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceProviderOperation {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<resource_provider_operation::Display>,
 }
 pub mod resource_provider_operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
 }
@@ -125,14 +125,14 @@ pub struct Association {
     pub name: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<association::Properties>,
 }
 pub mod association {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
-        #[serde(rename = "targetResourceId", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "targetResourceId", default, skip_serializing_if = "Option::is_none")]
         pub target_resource_id: Option<String>,
         #[serde(rename = "provisioningState", skip_serializing)]
         pub provisioning_state: Option<properties::ProvisioningState>,
@@ -151,9 +151,9 @@ pub mod association {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssociationsList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Association>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -165,17 +165,17 @@ pub struct Resource {
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceProvidersUpdate {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -40,9 +40,9 @@ pub mod console_properties {
 pub struct ConsoleCreateProperties {
     #[serde(rename = "osType")]
     pub os_type: console_create_properties::OsType,
-    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<console_create_properties::ProvisioningState>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
 pub mod console_create_properties {
@@ -87,7 +87,7 @@ pub struct CloudShellUserSettings {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudShellPatchUserSettings {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UserProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -122,18 +122,18 @@ pub mod user_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageProfile {
-    #[serde(rename = "storageAccountResourceId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "storageAccountResourceId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_resource_id: Option<String>,
-    #[serde(rename = "fileShareName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "fileShareName", default, skip_serializing_if = "Option::is_none")]
     pub file_share_name: Option<String>,
-    #[serde(rename = "diskSizeInGB", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "diskSizeInGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_in_gb: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TerminalSettings {
-    #[serde(rename = "fontSize", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "fontSize", default, skip_serializing_if = "Option::is_none")]
     pub font_size: Option<terminal_settings::FontSize>,
-    #[serde(rename = "fontStyle", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "fontStyle", default, skip_serializing_if = "Option::is_none")]
     pub font_style: Option<terminal_settings::FontStyle>,
 }
 pub mod terminal_settings {

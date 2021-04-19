@@ -23,7 +23,7 @@ pub struct MeterDetails {
 pub struct UsageDetail {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UsageDetailProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -61,7 +61,7 @@ pub struct UsageDetailProperties {
     pub is_estimated: Option<bool>,
     #[serde(rename = "meterId", skip_serializing)]
     pub meter_id: Option<String>,
-    #[serde(rename = "meterDetails", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "meterDetails", default, skip_serializing_if = "Option::is_none")]
     pub meter_details: Option<MeterDetails>,
     #[serde(rename = "subscriptionGuid", skip_serializing)]
     pub subscription_guid: Option<String>,
@@ -84,7 +84,7 @@ pub struct UsageDetailProperties {
 pub struct ReservationSummaries {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReservationSummariesProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -117,7 +117,7 @@ pub struct ReservationSummariesProperties {
 pub struct ReservationDetails {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReservationDetailsProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -153,14 +153,14 @@ pub struct ErrorDetails {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
 pub mod operation {

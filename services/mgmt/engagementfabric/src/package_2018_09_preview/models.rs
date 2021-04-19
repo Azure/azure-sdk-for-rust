@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -22,7 +22,7 @@ pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub sku: Sku,
 }
@@ -33,28 +33,28 @@ pub struct Account {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudErrorBody {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountPatch {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Account>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -66,7 +66,7 @@ pub struct KeyDescriptionList {
 pub struct KeyDescription {
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rank: Option<KeyRank>,
     #[serde(skip_serializing)]
     pub value: Option<String>,
@@ -78,25 +78,25 @@ pub struct RegenerateKeyParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChannelTypeDescriptionList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ChannelTypeDescription>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChannelTypeDescription {
-    #[serde(rename = "channelType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "channelType", default, skip_serializing_if = "Option::is_none")]
     pub channel_type: Option<String>,
-    #[serde(rename = "channelDescription", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "channelDescription", default, skip_serializing_if = "Option::is_none")]
     pub channel_description: Option<String>,
-    #[serde(rename = "channelFunctions", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "channelFunctions", default, skip_serializing_if = "Vec::is_empty")]
     pub channel_functions: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChannelProperties {
     #[serde(rename = "channelType")]
     pub channel_type: String,
-    #[serde(rename = "channelFunctions", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "channelFunctions", default, skip_serializing_if = "Vec::is_empty")]
     pub channel_functions: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -108,12 +108,12 @@ pub struct ProxyOnlyResource {
 pub struct Channel {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ChannelProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChannelList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Channel>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -126,7 +126,7 @@ pub struct CheckNameAvailabilityParameter {
 pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", skip_serializing)]
     pub name_available: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<CheckNameUnavailableReason>,
     #[serde(skip_serializing)]
     pub message: Option<String>,
@@ -140,7 +140,7 @@ pub struct OperationList {
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -176,9 +176,9 @@ pub struct SkuDescription {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuLocationInfoItem {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

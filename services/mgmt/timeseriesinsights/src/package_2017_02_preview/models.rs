@@ -44,7 +44,7 @@ pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -82,7 +82,7 @@ pub mod sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateOrUpdateTrackedResourceProperties {
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -94,32 +94,32 @@ pub struct EnvironmentCreateOrUpdateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentUpdateParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EnvironmentMutableProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentListResponse {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EnvironmentResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EnvironmentResourceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentCreationProperties {
     #[serde(rename = "dataRetentionTime")]
     pub data_retention_time: String,
-    #[serde(rename = "storageLimitExceededBehavior", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "storageLimitExceededBehavior", default, skip_serializing_if = "Option::is_none")]
     pub storage_limit_exceeded_behavior: Option<environment_creation_properties::StorageLimitExceededBehavior>,
 }
 pub mod environment_creation_properties {
@@ -143,7 +143,7 @@ pub struct EnvironmentResourceProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentMutableProperties {
-    #[serde(rename = "dataRetentionTime", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "dataRetentionTime", default, skip_serializing_if = "Option::is_none")]
     pub data_retention_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -176,26 +176,26 @@ pub struct IoTHubEventSourceCreateOrUpdateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSourceUpdateParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSourceUpdateParameters {
     #[serde(flatten)]
     pub event_source_update_parameters: EventSourceUpdateParameters,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubEventSourceMutableProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTHubEventSourceUpdateParameters {
     #[serde(flatten)]
     pub event_source_update_parameters: EventSourceUpdateParameters,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IoTHubEventSourceMutableProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSourceListResponse {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EventSourceResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -230,7 +230,7 @@ pub struct IoTHubEventSourceResource {
 pub struct EventSourceCommonProperties {
     #[serde(flatten)]
     pub resource_properties: ResourceProperties,
-    #[serde(rename = "timestampPropertyName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "timestampPropertyName", default, skip_serializing_if = "Option::is_none")]
     pub timestamp_property_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -290,9 +290,9 @@ pub struct IoTHubEventSourceResourceProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalTimestamp {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<local_timestamp::Format>,
-    #[serde(rename = "timeZoneOffset", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "timeZoneOffset", default, skip_serializing_if = "Option::is_none")]
     pub time_zone_offset: Option<local_timestamp::TimeZoneOffset>,
 }
 pub mod local_timestamp {
@@ -305,29 +305,29 @@ pub mod local_timestamp {
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct TimeZoneOffset {
-        #[serde(rename = "propertyName", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "propertyName", default, skip_serializing_if = "Option::is_none")]
         pub property_name: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSourceMutableProperties {
-    #[serde(rename = "timestampPropertyName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "timestampPropertyName", default, skip_serializing_if = "Option::is_none")]
     pub timestamp_property_name: Option<String>,
-    #[serde(rename = "localTimestamp", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "localTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub local_timestamp: Option<LocalTimestamp>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSourceMutableProperties {
     #[serde(flatten)]
     pub event_source_mutable_properties: EventSourceMutableProperties,
-    #[serde(rename = "sharedAccessKey", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sharedAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub shared_access_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTHubEventSourceMutableProperties {
     #[serde(flatten)]
     pub event_source_mutable_properties: EventSourceMutableProperties,
-    #[serde(rename = "sharedAccessKey", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sharedAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub shared_access_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -338,19 +338,19 @@ pub struct ReferenceDataSetCreateOrUpdateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReferenceDataSetUpdateParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReferenceDataSetListResponse {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ReferenceDataSetResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReferenceDataSetResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReferenceDataSetResourceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -367,9 +367,9 @@ pub struct ReferenceDataSetResourceProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReferenceDataSetKeyProperty {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<reference_data_set_key_property::Type>,
 }
 pub mod reference_data_set_key_property {
@@ -392,45 +392,45 @@ pub struct AccessPolicyUpdateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessPolicyListResponse {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AccessPolicyResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessPolicyResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessPolicyResourceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessPolicyResourceProperties {
-    #[serde(rename = "principalObjectId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "principalObjectId", default, skip_serializing_if = "Option::is_none")]
     pub principal_object_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub roles: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessPolicyMutableProperties {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub roles: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudErrorBody {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }

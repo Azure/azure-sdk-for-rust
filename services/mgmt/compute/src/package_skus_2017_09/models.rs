@@ -44,7 +44,7 @@ pub struct ResourceSkuRestrictions {
     pub type_: Option<resource_sku_restrictions::Type>,
     #[serde(skip_serializing)]
     pub values: Vec<String>,
-    #[serde(rename = "restrictionInfo", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "restrictionInfo", default, skip_serializing_if = "Option::is_none")]
     pub restriction_info: Option<ResourceSkuRestrictionInfo>,
     #[serde(rename = "reasonCode", skip_serializing)]
     pub reason_code: Option<resource_sku_restrictions::ReasonCode>,
@@ -76,7 +76,7 @@ pub struct ResourceSku {
     pub family: Option<String>,
     #[serde(skip_serializing)]
     pub kind: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<ResourceSkuCapacity>,
     #[serde(skip_serializing)]
     pub locations: Vec<String>,
@@ -108,6 +108,6 @@ pub struct ResourceSkuRestrictionInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSkusResult {
     pub value: Vec<ResourceSku>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

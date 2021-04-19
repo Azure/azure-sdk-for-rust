@@ -7,7 +7,7 @@ pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -21,16 +21,16 @@ pub struct Resource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridConnectionListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HybridConnection>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridConnection {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HybridConnectionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -41,28 +41,28 @@ pub struct HybridConnectionProperties {
     pub updated_at: Option<String>,
     #[serde(rename = "listenerCount", skip_serializing)]
     pub listener_count: Option<i32>,
-    #[serde(rename = "requiresClientAuthorization", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "requiresClientAuthorization", default, skip_serializing_if = "Option::is_none")]
     pub requires_client_authorization: Option<bool>,
-    #[serde(rename = "userMetadata", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "userMetadata", default, skip_serializing_if = "Option::is_none")]
     pub user_metadata: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WcfRelaysListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WcfRelay>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WcfRelay {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WcfRelayProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WcfRelayProperties {
-    #[serde(rename = "relayType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "relayType", default, skip_serializing_if = "Option::is_none")]
     pub relay_type: Option<wcf_relay_properties::RelayType>,
     #[serde(rename = "createdAt", skip_serializing)]
     pub created_at: Option<String>,
@@ -70,13 +70,13 @@ pub struct WcfRelayProperties {
     pub updated_at: Option<String>,
     #[serde(rename = "listenerCount", skip_serializing)]
     pub listener_count: Option<i32>,
-    #[serde(rename = "requiresClientAuthorization", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "requiresClientAuthorization", default, skip_serializing_if = "Option::is_none")]
     pub requires_client_authorization: Option<bool>,
-    #[serde(rename = "requiresTransportSecurity", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "requiresTransportSecurity", default, skip_serializing_if = "Option::is_none")]
     pub requires_transport_security: Option<bool>,
     #[serde(rename = "isDynamic", skip_serializing)]
     pub is_dynamic: Option<bool>,
-    #[serde(rename = "userMetadata", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "userMetadata", default, skip_serializing_if = "Option::is_none")]
     pub user_metadata: Option<String>,
 }
 pub mod wcf_relay_properties {
@@ -89,18 +89,18 @@ pub mod wcf_relay_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RelayNamespaceListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RelayNamespace>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RelayNamespace {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RelayNamespaceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -134,9 +134,9 @@ pub mod sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthorizationRuleListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AuthorizationRule>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -151,20 +151,20 @@ pub struct AuthorizationRuleProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthorizationRuleKeys {
-    #[serde(rename = "primaryConnectionString", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "primaryConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub primary_connection_string: Option<String>,
-    #[serde(rename = "secondaryConnectionString", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "secondaryConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub secondary_connection_string: Option<String>,
-    #[serde(rename = "primaryKey", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
-    #[serde(rename = "secondaryKey", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
-    #[serde(rename = "keyName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateKeysParameters {
-    #[serde(rename = "policyKey", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "policyKey", default, skip_serializing_if = "Option::is_none")]
     pub policy_key: Option<regenerate_keys_parameters::PolicyKey>,
 }
 pub mod regenerate_keys_parameters {
@@ -177,9 +177,9 @@ pub mod regenerate_keys_parameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -197,18 +197,18 @@ pub struct CheckNameAvailability {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityResult {
-    #[serde(rename = "nameAvailable", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<UnavailableReason>,
     #[serde(skip_serializing)]
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RelayNamespaceUpdateParameter {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -222,7 +222,7 @@ pub struct OperationListResult {
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
 pub mod operation {

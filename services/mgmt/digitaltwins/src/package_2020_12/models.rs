@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DigitalTwinsPatchProperties {
-    #[serde(rename = "publicNetworkAccess", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<digital_twins_patch_properties::PublicNetworkAccess>,
 }
 pub mod digital_twins_patch_properties {
@@ -25,9 +25,9 @@ pub struct DigitalTwinsProperties {
     pub provisioning_state: Option<digital_twins_properties::ProvisioningState>,
     #[serde(rename = "hostName", skip_serializing)]
     pub host_name: Option<String>,
-    #[serde(rename = "privateEndpointConnections", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
-    #[serde(rename = "publicNetworkAccess", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<digital_twins_properties::PublicNetworkAccess>,
 }
 pub mod digital_twins_properties {
@@ -56,16 +56,16 @@ pub mod digital_twins_properties {
 pub struct DigitalTwinsDescription {
     #[serde(flatten)]
     pub digital_twins_resource: DigitalTwinsResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DigitalTwinsProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DigitalTwinsPatchDescription {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<DigitalTwinsIdentity>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DigitalTwinsPatchProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -77,14 +77,14 @@ pub struct DigitalTwinsResource {
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<DigitalTwinsIdentity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DigitalTwinsIdentity {
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<digital_twins_identity::Type>,
     #[serde(rename = "principalId", skip_serializing)]
     pub principal_id: Option<String>,
@@ -101,7 +101,7 @@ pub mod digital_twins_identity {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -115,14 +115,14 @@ pub struct ErrorDefinition {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DigitalTwinsDescriptionListResult {
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DigitalTwinsDescription>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[serde(skip_serializing)]
     pub value: Vec<Operation>,
@@ -131,7 +131,7 @@ pub struct OperationListResult {
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
     #[serde(skip_serializing)]
     pub origin: Option<String>,
@@ -165,11 +165,11 @@ pub mod check_name_request {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameResult {
-    #[serde(rename = "nameAvailable", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_result::Reason>,
 }
 pub mod check_name_result {
@@ -203,11 +203,11 @@ pub struct DigitalTwinsEndpointResourceProperties {
     pub provisioning_state: Option<digital_twins_endpoint_resource_properties::ProvisioningState>,
     #[serde(rename = "createdTime", skip_serializing)]
     pub created_time: Option<String>,
-    #[serde(rename = "authenticationType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<digital_twins_endpoint_resource_properties::AuthenticationType>,
-    #[serde(rename = "deadLetterSecret", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "deadLetterSecret", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_secret: Option<String>,
-    #[serde(rename = "deadLetterUri", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "deadLetterUri", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_uri: Option<String>,
 }
 pub mod digital_twins_endpoint_resource_properties {
@@ -261,24 +261,24 @@ pub struct EventGrid {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DigitalTwinsEndpointResourceListResult {
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DigitalTwinsEndpointResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupIdInformationProperties {
-    #[serde(rename = "groupId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
-    #[serde(rename = "requiredMembers", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
     pub required_members: Vec<String>,
-    #[serde(rename = "requiredZoneNames", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupIdInformation {
     pub properties: serde_json::Value,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(skip_serializing)]
     pub name: Option<String>,
@@ -287,19 +287,19 @@ pub struct GroupIdInformation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionsResponse {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupIdInformationResponse {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GroupIdInformation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionState {
     pub status: connection_state::Status,
     pub description: String,
-    #[serde(rename = "actionsRequired", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
 pub mod connection_state {
@@ -323,11 +323,11 @@ pub struct GroupId {}
 pub struct ConnectionProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<connection_properties::ProvisioningState>,
-    #[serde(rename = "privateEndpoint", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<serde_json::Value>,
-    #[serde(rename = "groupIds", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "groupIds", default, skip_serializing_if = "Vec::is_empty")]
     pub group_ids: Vec<GroupId>,
-    #[serde(rename = "privateLinkServiceConnectionState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<serde_json::Value>,
 }
 pub mod connection_properties {

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
 pub mod operation {
@@ -19,7 +19,7 @@ pub mod operation {
         pub resource: Option<String>,
         #[serde(skip_serializing)]
         pub operation: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
 }
@@ -30,21 +30,21 @@ pub struct OperationListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AsyncOperationStatus {
-    #[serde(rename = "subscriptionId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<async_operation_status::Status>,
-    #[serde(rename = "startTime", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
-    #[serde(rename = "endTime", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<B2cTenantResourceProperties>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<async_operation_status::Error>,
 }
 pub mod async_operation_status {
@@ -57,24 +57,24 @@ pub mod async_operation_status {
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct B2cTenantResourceProperties {
-    #[serde(rename = "billingConfig", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "billingConfig", default, skip_serializing_if = "Option::is_none")]
     pub billing_config: Option<b2c_tenant_resource_properties::BillingConfig>,
-    #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
 pub mod b2c_tenant_resource_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct BillingConfig {
-        #[serde(rename = "billingType", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "billingType", default, skip_serializing_if = "Option::is_none")]
         pub billing_type: Option<billing_config::BillingType>,
         #[serde(rename = "effectiveStartDateUtc", skip_serializing)]
         pub effective_start_date_utc: Option<String>,
@@ -91,9 +91,9 @@ pub mod b2c_tenant_resource_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct B2cResourceSku {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<b2c_resource_sku::Name>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<b2c_resource_sku::Tier>,
 }
 pub mod b2c_resource_sku {
@@ -111,11 +111,11 @@ pub mod b2c_resource_sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NameAvailabilityResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(rename = "nameAvailable", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<NameAvailabilityReason>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -131,11 +131,11 @@ pub struct CheckNameAvailabilityRequestBody {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct B2cTenantUpdateRequest {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<B2cResourceSku>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<B2cTenantResourceProperties>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -143,14 +143,14 @@ pub struct B2cTenantResource {
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<b2c_tenant_resource::Type>,
     pub sku: B2cResourceSku,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<B2cTenantResourceProperties>,
     #[serde(skip_serializing)]
     pub id: Option<String>,
     #[serde(skip_serializing)]
     pub name: Option<String>,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 pub mod b2c_tenant_resource {
@@ -171,29 +171,29 @@ pub struct CreateTenantRequestBody {
     pub location: String,
     pub properties: create_tenant_request_body::Properties,
     pub sku: B2cResourceSku,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 pub mod create_tenant_request_body {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
-        #[serde(rename = "createTenantProperties", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "createTenantProperties", default, skip_serializing_if = "Option::is_none")]
         pub create_tenant_properties: Option<CreateTenantProperties>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateTenantProperties {
-    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(rename = "countryCode", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "countryCode", default, skip_serializing_if = "Option::is_none")]
     pub country_code: Option<CountryCode>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CountryCode {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

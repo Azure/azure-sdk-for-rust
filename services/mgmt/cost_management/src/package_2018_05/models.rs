@@ -11,7 +11,7 @@ pub struct ErrorDetails {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -34,14 +34,14 @@ pub struct ReportConfigListResult {
 pub struct ReportConfig {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReportConfigProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigProperties {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<ReportConfigSchedule>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<report_config_properties::Format>,
     #[serde(rename = "deliveryInfo")]
     pub delivery_info: ReportConfigDeliveryInfo,
@@ -56,7 +56,7 @@ pub mod report_config_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigSchedule {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<report_config_schedule::Status>,
     pub recurrence: report_config_schedule::Recurrence,
     #[serde(rename = "recurrencePeriod")]
@@ -86,9 +86,9 @@ pub struct ReportConfigDefinition {
     #[serde(rename = "type")]
     pub type_: report_config_definition::Type,
     pub timeframe: report_config_definition::Timeframe,
-    #[serde(rename = "timePeriod", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "timePeriod", default, skip_serializing_if = "Option::is_none")]
     pub time_period: Option<ReportConfigTimePeriod>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dataset: Option<ReportConfigDataset>,
 }
 pub mod report_config_definition {
@@ -108,7 +108,7 @@ pub mod report_config_definition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigRecurrencePeriod {
     pub from: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub to: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -116,7 +116,7 @@ pub struct ReportConfigDeliveryDestination {
     #[serde(rename = "resourceId")]
     pub resource_id: String,
     pub container: String,
-    #[serde(rename = "rootFolderPath", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "rootFolderPath", default, skip_serializing_if = "Option::is_none")]
     pub root_folder_path: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -126,15 +126,15 @@ pub struct ReportConfigTimePeriod {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigDataset {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granularity: Option<report_config_dataset::Granularity>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub configuration: Option<ReportConfigDatasetConfiguration>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub grouping: Vec<ReportConfigGrouping>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<ReportConfigFilter>,
 }
 pub mod report_config_dataset {
@@ -146,7 +146,7 @@ pub mod report_config_dataset {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigDatasetConfiguration {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub columns: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -169,15 +169,15 @@ pub struct ReportConfigGrouping {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigFilter {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub and: Vec<ReportConfigFilter>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub or: Vec<ReportConfigFilter>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub not: Option<ReportConfigFilter>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimension: Option<ReportConfigComparisonExpression>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<ReportConfigComparisonExpression>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -207,22 +207,22 @@ pub struct DimensionsListResult {
 pub struct Dimension {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DimensionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DimensionProperties {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub data: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
-    #[serde(rename = "usageStart", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "usageStart", default, skip_serializing_if = "Option::is_none")]
     pub usage_start: Option<String>,
-    #[serde(rename = "usageEnd", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "usageEnd", default, skip_serializing_if = "Option::is_none")]
     pub usage_end: Option<String>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -234,23 +234,23 @@ pub struct QueryResult {
 pub struct Query {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QueryProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryProperties {
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub columns: Vec<QueryColumn>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rows: Vec<Vec<serde_json::Value>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryColumn {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -264,7 +264,7 @@ pub struct OperationListResult {
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
 pub mod operation {

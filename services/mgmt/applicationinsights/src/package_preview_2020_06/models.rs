@@ -4,50 +4,50 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Annotation {
-    #[serde(rename = "AnnotationName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "AnnotationName", default, skip_serializing_if = "Option::is_none")]
     pub annotation_name: Option<String>,
-    #[serde(rename = "Category", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Category", default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
-    #[serde(rename = "EventTime", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "EventTime", default, skip_serializing_if = "Option::is_none")]
     pub event_time: Option<String>,
-    #[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "Properties", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Properties", default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<String>,
-    #[serde(rename = "RelatedAnnotation", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "RelatedAnnotation", default, skip_serializing_if = "Option::is_none")]
     pub related_annotation: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -57,27 +57,27 @@ pub struct AnnotationsListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InnerError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub diagnosticcontext: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnnotationError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<InnerError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiKeyRequest {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "linkedReadProperties", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "linkedReadProperties", default, skip_serializing_if = "Vec::is_empty")]
     pub linked_read_properties: Vec<String>,
-    #[serde(rename = "linkedWriteProperties", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "linkedWriteProperties", default, skip_serializing_if = "Vec::is_empty")]
     pub linked_write_properties: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -90,34 +90,34 @@ pub struct ApplicationInsightsComponentApiKey {
     pub id: Option<String>,
     #[serde(rename = "apiKey", skip_serializing)]
     pub api_key: Option<String>,
-    #[serde(rename = "createdDate", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdDate", default, skip_serializing_if = "Option::is_none")]
     pub created_date: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "linkedReadProperties", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "linkedReadProperties", default, skip_serializing_if = "Vec::is_empty")]
     pub linked_read_properties: Vec<String>,
-    #[serde(rename = "linkedWriteProperties", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "linkedWriteProperties", default, skip_serializing_if = "Vec::is_empty")]
     pub linked_write_properties: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentExportRequest {
-    #[serde(rename = "RecordTypes", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "RecordTypes", default, skip_serializing_if = "Option::is_none")]
     pub record_types: Option<String>,
-    #[serde(rename = "DestinationType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "DestinationType", default, skip_serializing_if = "Option::is_none")]
     pub destination_type: Option<String>,
-    #[serde(rename = "DestinationAddress", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "DestinationAddress", default, skip_serializing_if = "Option::is_none")]
     pub destination_address: Option<String>,
-    #[serde(rename = "IsEnabled", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "IsEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<String>,
-    #[serde(rename = "NotificationQueueEnabled", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "NotificationQueueEnabled", default, skip_serializing_if = "Option::is_none")]
     pub notification_queue_enabled: Option<String>,
-    #[serde(rename = "NotificationQueueUri", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "NotificationQueueUri", default, skip_serializing_if = "Option::is_none")]
     pub notification_queue_uri: Option<String>,
-    #[serde(rename = "DestinationStorageSubscriptionId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "DestinationStorageSubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub destination_storage_subscription_id: Option<String>,
-    #[serde(rename = "DestinationStorageLocationId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "DestinationStorageLocationId", default, skip_serializing_if = "Option::is_none")]
     pub destination_storage_location_id: Option<String>,
-    #[serde(rename = "DestinationAccountId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "DestinationAccountId", default, skip_serializing_if = "Option::is_none")]
     pub destination_account_id: Option<String>,
 }
 pub type ApplicationInsightsComponentExportConfigurationListResult = Vec<ApplicationInsightsComponentExportConfiguration>;
@@ -127,7 +127,7 @@ pub struct ApplicationInsightsComponentExportConfiguration {
     pub export_id: Option<String>,
     #[serde(rename = "InstrumentationKey", skip_serializing)]
     pub instrumentation_key: Option<String>,
-    #[serde(rename = "RecordTypes", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "RecordTypes", default, skip_serializing_if = "Option::is_none")]
     pub record_types: Option<String>,
     #[serde(rename = "ApplicationName", skip_serializing)]
     pub application_name: Option<String>,
@@ -147,7 +147,7 @@ pub struct ApplicationInsightsComponentExportConfiguration {
     pub is_user_enabled: Option<String>,
     #[serde(rename = "LastUserUpdate", skip_serializing)]
     pub last_user_update: Option<String>,
-    #[serde(rename = "NotificationQueueEnabled", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "NotificationQueueEnabled", default, skip_serializing_if = "Option::is_none")]
     pub notification_queue_enabled: Option<String>,
     #[serde(rename = "ExportStatus", skip_serializing)]
     pub export_status: Option<String>,
@@ -164,22 +164,22 @@ pub struct ApplicationInsightsComponentExportConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentBillingFeatures {
-    #[serde(rename = "DataVolumeCap", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "DataVolumeCap", default, skip_serializing_if = "Option::is_none")]
     pub data_volume_cap: Option<ApplicationInsightsComponentDataVolumeCap>,
-    #[serde(rename = "CurrentBillingFeatures", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "CurrentBillingFeatures", default, skip_serializing_if = "Vec::is_empty")]
     pub current_billing_features: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentDataVolumeCap {
-    #[serde(rename = "Cap", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Cap", default, skip_serializing_if = "Option::is_none")]
     pub cap: Option<f64>,
     #[serde(rename = "ResetTime", skip_serializing)]
     pub reset_time: Option<i64>,
-    #[serde(rename = "WarningThreshold", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "WarningThreshold", default, skip_serializing_if = "Option::is_none")]
     pub warning_threshold: Option<i64>,
-    #[serde(rename = "StopSendNotificationWhenHitThreshold", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "StopSendNotificationWhenHitThreshold", default, skip_serializing_if = "Option::is_none")]
     pub stop_send_notification_when_hit_threshold: Option<bool>,
-    #[serde(rename = "StopSendNotificationWhenHitCap", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "StopSendNotificationWhenHitCap", default, skip_serializing_if = "Option::is_none")]
     pub stop_send_notification_when_hit_cap: Option<bool>,
     #[serde(rename = "MaxHistoryCap", skip_serializing)]
     pub max_history_cap: Option<f64>,
@@ -273,52 +273,52 @@ pub type ApplicationInsightsComponentProactiveDetectionConfigurationListResult =
     Vec<ApplicationInsightsComponentProactiveDetectionConfiguration>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentProactiveDetectionConfiguration {
-    #[serde(rename = "Name", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "Enabled", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Enabled", default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
-    #[serde(rename = "SendEmailsToSubscriptionOwners", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "SendEmailsToSubscriptionOwners", default, skip_serializing_if = "Option::is_none")]
     pub send_emails_to_subscription_owners: Option<bool>,
-    #[serde(rename = "CustomEmails", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "CustomEmails", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_emails: Vec<String>,
-    #[serde(rename = "LastUpdatedTime", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "LastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
-    #[serde(rename = "RuleDefinitions", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "RuleDefinitions", default, skip_serializing_if = "Option::is_none")]
     pub rule_definitions: Option<application_insights_component_proactive_detection_configuration::RuleDefinitions>,
 }
 pub mod application_insights_component_proactive_detection_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct RuleDefinitions {
-        #[serde(rename = "Name", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
         pub name: Option<String>,
-        #[serde(rename = "DisplayName", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "DisplayName", default, skip_serializing_if = "Option::is_none")]
         pub display_name: Option<String>,
-        #[serde(rename = "Description", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "Description", default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
-        #[serde(rename = "HelpUrl", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "HelpUrl", default, skip_serializing_if = "Option::is_none")]
         pub help_url: Option<String>,
-        #[serde(rename = "IsHidden", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "IsHidden", default, skip_serializing_if = "Option::is_none")]
         pub is_hidden: Option<bool>,
-        #[serde(rename = "IsEnabledByDefault", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "IsEnabledByDefault", default, skip_serializing_if = "Option::is_none")]
         pub is_enabled_by_default: Option<bool>,
-        #[serde(rename = "IsInPreview", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "IsInPreview", default, skip_serializing_if = "Option::is_none")]
         pub is_in_preview: Option<bool>,
-        #[serde(rename = "SupportsEmailNotifications", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "SupportsEmailNotifications", default, skip_serializing_if = "Option::is_none")]
         pub supports_email_notifications: Option<bool>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkItemConfiguration {
-    #[serde(rename = "ConnectorId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ConnectorId", default, skip_serializing_if = "Option::is_none")]
     pub connector_id: Option<String>,
-    #[serde(rename = "ConfigDisplayName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ConfigDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub config_display_name: Option<String>,
-    #[serde(rename = "IsDefault", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "IsDefault", default, skip_serializing_if = "Option::is_none")]
     pub is_default: Option<bool>,
-    #[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "ConfigProperties", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ConfigProperties", default, skip_serializing_if = "Option::is_none")]
     pub config_properties: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -328,45 +328,45 @@ pub struct WorkItemConfigurationsListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkItemCreateConfiguration {
-    #[serde(rename = "ConnectorId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ConnectorId", default, skip_serializing_if = "Option::is_none")]
     pub connector_id: Option<String>,
-    #[serde(rename = "ConnectorDataConfiguration", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ConnectorDataConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub connector_data_configuration: Option<String>,
-    #[serde(rename = "ValidateOnly", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ValidateOnly", default, skip_serializing_if = "Option::is_none")]
     pub validate_only: Option<bool>,
-    #[serde(rename = "WorkItemProperties", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "WorkItemProperties", default, skip_serializing_if = "Option::is_none")]
     pub work_item_properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkItemConfigurationError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<InnerError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentFavorite {
-    #[serde(rename = "Name", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "Config", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Config", default, skip_serializing_if = "Option::is_none")]
     pub config: Option<String>,
-    #[serde(rename = "Version", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[serde(rename = "FavoriteId", skip_serializing)]
     pub favorite_id: Option<String>,
-    #[serde(rename = "FavoriteType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "FavoriteType", default, skip_serializing_if = "Option::is_none")]
     pub favorite_type: Option<application_insights_component_favorite::FavoriteType>,
-    #[serde(rename = "SourceType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "SourceType", default, skip_serializing_if = "Option::is_none")]
     pub source_type: Option<String>,
     #[serde(rename = "TimeModified", skip_serializing)]
     pub time_modified: Option<String>,
-    #[serde(rename = "Tags", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "Tags", default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
-    #[serde(rename = "Category", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Category", default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
-    #[serde(rename = "IsGeneratedFromTemplate", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "IsGeneratedFromTemplate", default, skip_serializing_if = "Option::is_none")]
     pub is_generated_from_template: Option<bool>,
     #[serde(rename = "UserId", skip_serializing)]
     pub user_id: Option<String>,
@@ -401,27 +401,27 @@ pub struct WebtestsResource {
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagsResource {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebTestListResult {
     pub value: Vec<WebTest>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebTest {
     #[serde(flatten)]
     pub webtests_resource: WebtestsResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<web_test::Kind>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebTestProperties>,
 }
 pub mod web_test {
@@ -440,21 +440,21 @@ pub struct WebTestProperties {
     pub synthetic_monitor_id: String,
     #[serde(rename = "Name")]
     pub name: String,
-    #[serde(rename = "Description", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Description", default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "Enabled", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Enabled", default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
-    #[serde(rename = "Frequency", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Frequency", default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<i32>,
-    #[serde(rename = "Timeout", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Timeout", default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<i32>,
     #[serde(rename = "Kind")]
     pub kind: web_test_properties::Kind,
-    #[serde(rename = "RetryEnabled", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "RetryEnabled", default, skip_serializing_if = "Option::is_none")]
     pub retry_enabled: Option<bool>,
     #[serde(rename = "Locations")]
     pub locations: Vec<WebTestGeolocation>,
-    #[serde(rename = "Configuration", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Configuration", default, skip_serializing_if = "Option::is_none")]
     pub configuration: Option<web_test_properties::Configuration>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
@@ -470,34 +470,34 @@ pub mod web_test_properties {
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Configuration {
-        #[serde(rename = "WebTest", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "WebTest", default, skip_serializing_if = "Option::is_none")]
         pub web_test: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebTestGeolocation {
-    #[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentAnalyticsItem {
-    #[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "Name", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "Content", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Content", default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
     #[serde(rename = "Version", skip_serializing)]
     pub version: Option<String>,
-    #[serde(rename = "Scope", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Scope", default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<application_insights_component_analytics_item::Scope>,
-    #[serde(rename = "Type", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<application_insights_component_analytics_item::Type>,
     #[serde(rename = "TimeCreated", skip_serializing)]
     pub time_created: Option<String>,
     #[serde(rename = "TimeModified", skip_serializing)]
     pub time_modified: Option<String>,
-    #[serde(rename = "Properties", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Properties", default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationInsightsComponentAnalyticsItemProperties>,
 }
 pub mod application_insights_component_analytics_item {
@@ -523,7 +523,7 @@ pub mod application_insights_component_analytics_item {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentAnalyticsItemProperties {
-    #[serde(rename = "functionAlias", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "functionAlias", default, skip_serializing_if = "Option::is_none")]
     pub function_alias: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -534,9 +534,9 @@ pub struct WorkbookResource {
     pub name: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -548,9 +548,9 @@ pub struct WorkbooksListResult {
 pub struct Workbook {
     #[serde(flatten)]
     pub workbook_resource: WorkbookResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<workbook::Kind>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkbookProperties>,
 }
 pub mod workbook {
@@ -565,11 +565,11 @@ pub mod workbook {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkProperties {
-    #[serde(rename = "sourceId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_id: Option<String>,
-    #[serde(rename = "targetId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "targetId", default, skip_serializing_if = "Option::is_none")]
     pub target_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -577,7 +577,7 @@ pub struct WorkbookProperties {
     pub name: String,
     #[serde(rename = "serializedData")]
     pub serialized_data: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[serde(rename = "workbookId")]
     pub workbook_id: String,
@@ -585,11 +585,11 @@ pub struct WorkbookProperties {
     #[serde(rename = "timeModified", skip_serializing)]
     pub time_modified: Option<String>,
     pub category: String,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
     #[serde(rename = "userId")]
     pub user_id: String,
-    #[serde(rename = "sourceResourceId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_id: Option<String>,
 }
 pub mod workbook_properties {
@@ -604,33 +604,33 @@ pub mod workbook_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorFieldContract {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkbookError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorFieldContract>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MyWorkbookResource {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -642,9 +642,9 @@ pub struct MyWorkbooksListResult {
 pub struct MyWorkbook {
     #[serde(flatten)]
     pub my_workbook_resource: MyWorkbookResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<my_workbook::Kind>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MyWorkbookProperties>,
 }
 pub mod my_workbook {
@@ -663,25 +663,25 @@ pub struct MyWorkbookProperties {
     pub display_name: String,
     #[serde(rename = "serializedData")]
     pub serialized_data: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[serde(rename = "timeModified", skip_serializing)]
     pub time_modified: Option<String>,
     pub category: String,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
     #[serde(rename = "userId", skip_serializing)]
     pub user_id: Option<String>,
-    #[serde(rename = "sourceId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MyWorkbookError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorFieldContract>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -693,7 +693,7 @@ pub struct ComponentsResource {
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -701,7 +701,7 @@ pub struct ApplicationInsightsComponent {
     #[serde(flatten)]
     pub components_resource: ComponentsResource,
     pub kind: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationInsightsComponentProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -712,9 +712,9 @@ pub struct ApplicationInsightsComponentProperties {
     pub app_id: Option<String>,
     #[serde(rename = "Application_Type")]
     pub application_type: application_insights_component_properties::ApplicationType,
-    #[serde(rename = "Flow_Type", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Flow_Type", default, skip_serializing_if = "Option::is_none")]
     pub flow_type: Option<application_insights_component_properties::FlowType>,
-    #[serde(rename = "Request_Source", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Request_Source", default, skip_serializing_if = "Option::is_none")]
     pub request_source: Option<application_insights_component_properties::RequestSource>,
     #[serde(rename = "InstrumentationKey", skip_serializing)]
     pub instrumentation_key: Option<String>,
@@ -722,29 +722,29 @@ pub struct ApplicationInsightsComponentProperties {
     pub creation_date: Option<String>,
     #[serde(rename = "TenantId", skip_serializing)]
     pub tenant_id: Option<String>,
-    #[serde(rename = "HockeyAppId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "HockeyAppId", default, skip_serializing_if = "Option::is_none")]
     pub hockey_app_id: Option<String>,
     #[serde(rename = "HockeyAppToken", skip_serializing)]
     pub hockey_app_token: Option<String>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
-    #[serde(rename = "SamplingPercentage", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "SamplingPercentage", default, skip_serializing_if = "Option::is_none")]
     pub sampling_percentage: Option<f64>,
     #[serde(rename = "ConnectionString", skip_serializing)]
     pub connection_string: Option<String>,
-    #[serde(rename = "RetentionInDays", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "RetentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_in_days: Option<i64>,
-    #[serde(rename = "DisableIpMasking", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "DisableIpMasking", default, skip_serializing_if = "Option::is_none")]
     pub disable_ip_masking: Option<bool>,
-    #[serde(rename = "ImmediatePurgeDataOn30Days", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ImmediatePurgeDataOn30Days", default, skip_serializing_if = "Option::is_none")]
     pub immediate_purge_data_on30_days: Option<bool>,
     #[serde(rename = "PrivateLinkScopedResources", skip_serializing)]
     pub private_link_scoped_resources: Vec<PrivateLinkScopedResource>,
-    #[serde(rename = "publicNetworkAccessForIngestion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "publicNetworkAccessForIngestion", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_ingestion: Option<PublicNetworkAccessType>,
-    #[serde(rename = "publicNetworkAccessForQuery", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "publicNetworkAccessForQuery", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_query: Option<PublicNetworkAccessType>,
-    #[serde(rename = "IngestionMode", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "IngestionMode", default, skip_serializing_if = "Option::is_none")]
     pub ingestion_mode: Option<application_insights_component_properties::IngestionMode>,
 }
 pub mod application_insights_component_properties {
@@ -774,15 +774,15 @@ pub mod application_insights_component_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkScopedResource {
-    #[serde(rename = "ResourceId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ResourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
-    #[serde(rename = "ScopeId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ScopeId", default, skip_serializing_if = "Option::is_none")]
     pub scope_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentListResult {
     pub value: Vec<ApplicationInsightsComponent>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -792,13 +792,13 @@ pub struct ComponentPurgeBody {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentPurgeBodyFilters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub column: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operator: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -829,17 +829,17 @@ pub enum PublicNetworkAccessType {
 pub struct ComponentLinkedStorageAccounts {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LinkedStorageAccountsProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentLinkedStorageAccountsPatch {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LinkedStorageAccountsProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedStorageAccountsProperties {
-    #[serde(rename = "linkedStorageAccount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "linkedStorageAccount", default, skip_serializing_if = "Option::is_none")]
     pub linked_storage_account: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -849,31 +849,31 @@ pub struct LiveTokenResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationLive>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationLive {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationInfo>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationInfo {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

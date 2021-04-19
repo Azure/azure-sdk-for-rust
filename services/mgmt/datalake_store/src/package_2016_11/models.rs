@@ -28,16 +28,16 @@ pub struct SubResource {
 pub struct DataLakeStoreAccount {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<EncryptionIdentity>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataLakeStoreAccountProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataLakeStoreAccountBasic {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataLakeStoreAccountPropertiesBasic>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -46,7 +46,7 @@ pub struct DataLakeStoreAccountProperties {
     pub data_lake_store_account_properties_basic: DataLakeStoreAccountPropertiesBasic,
     #[serde(rename = "defaultGroup", skip_serializing)]
     pub default_group: Option<String>,
-    #[serde(rename = "encryptionConfig", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "encryptionConfig", default, skip_serializing_if = "Option::is_none")]
     pub encryption_config: Option<EncryptionConfig>,
     #[serde(rename = "encryptionState", skip_serializing)]
     pub encryption_state: Option<data_lake_store_account_properties::EncryptionState>,
@@ -193,7 +193,7 @@ pub mod encryption_identity {
 pub struct EncryptionConfig {
     #[serde(rename = "type")]
     pub type_: encryption_config::Type,
-    #[serde(rename = "keyVaultMetaInfo", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "keyVaultMetaInfo", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_meta_info: Option<KeyVaultMetaInfo>,
 }
 pub mod encryption_config {
@@ -217,7 +217,7 @@ pub struct KeyVaultMetaInfo {
 pub struct FirewallRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FirewallRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -238,7 +238,7 @@ pub struct FirewallRuleListResult {
 pub struct VirtualNetworkRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualNetworkRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -257,7 +257,7 @@ pub struct VirtualNetworkRuleListResult {
 pub struct TrustedIdProvider {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TrustedIdProviderProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -276,7 +276,7 @@ pub struct TrustedIdProviderListResult {
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
     #[serde(skip_serializing)]
     pub origin: Option<operation::Origin>,
@@ -352,7 +352,7 @@ pub struct Usage {
     pub current_value: Option<i32>,
     #[serde(skip_serializing)]
     pub limit: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
 }
 pub mod usage {
@@ -369,7 +369,7 @@ pub mod usage {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -384,34 +384,34 @@ pub struct NameAvailabilityInformation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateDataLakeStoreAccountParameters {
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<EncryptionIdentity>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CreateDataLakeStoreAccountProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateDataLakeStoreAccountProperties {
-    #[serde(rename = "defaultGroup", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "defaultGroup", default, skip_serializing_if = "Option::is_none")]
     pub default_group: Option<String>,
-    #[serde(rename = "encryptionConfig", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "encryptionConfig", default, skip_serializing_if = "Option::is_none")]
     pub encryption_config: Option<EncryptionConfig>,
-    #[serde(rename = "encryptionState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "encryptionState", default, skip_serializing_if = "Option::is_none")]
     pub encryption_state: Option<create_data_lake_store_account_properties::EncryptionState>,
-    #[serde(rename = "firewallRules", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
     pub firewall_rules: Vec<CreateFirewallRuleWithAccountParameters>,
-    #[serde(rename = "virtualNetworkRules", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
     pub virtual_network_rules: Vec<CreateVirtualNetworkRuleWithAccountParameters>,
-    #[serde(rename = "firewallState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
     pub firewall_state: Option<create_data_lake_store_account_properties::FirewallState>,
-    #[serde(rename = "firewallAllowAzureIps", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
     pub firewall_allow_azure_ips: Option<create_data_lake_store_account_properties::FirewallAllowAzureIps>,
-    #[serde(rename = "trustedIdProviders", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "trustedIdProviders", default, skip_serializing_if = "Vec::is_empty")]
     pub trusted_id_providers: Vec<CreateTrustedIdProviderWithAccountParameters>,
-    #[serde(rename = "trustedIdProviderState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "trustedIdProviderState", default, skip_serializing_if = "Option::is_none")]
     pub trusted_id_provider_state: Option<create_data_lake_store_account_properties::TrustedIdProviderState>,
-    #[serde(rename = "newTier", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "newTier", default, skip_serializing_if = "Option::is_none")]
     pub new_tier: Option<create_data_lake_store_account_properties::NewTier>,
 }
 pub mod create_data_lake_store_account_properties {
@@ -455,30 +455,30 @@ pub mod create_data_lake_store_account_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateDataLakeStoreAccountParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateDataLakeStoreAccountProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateDataLakeStoreAccountProperties {
-    #[serde(rename = "defaultGroup", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "defaultGroup", default, skip_serializing_if = "Option::is_none")]
     pub default_group: Option<String>,
-    #[serde(rename = "encryptionConfig", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "encryptionConfig", default, skip_serializing_if = "Option::is_none")]
     pub encryption_config: Option<UpdateEncryptionConfig>,
-    #[serde(rename = "firewallRules", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
     pub firewall_rules: Vec<UpdateFirewallRuleWithAccountParameters>,
-    #[serde(rename = "virtualNetworkRules", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
     pub virtual_network_rules: Vec<UpdateVirtualNetworkRuleWithAccountParameters>,
-    #[serde(rename = "firewallState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
     pub firewall_state: Option<update_data_lake_store_account_properties::FirewallState>,
-    #[serde(rename = "firewallAllowAzureIps", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
     pub firewall_allow_azure_ips: Option<update_data_lake_store_account_properties::FirewallAllowAzureIps>,
-    #[serde(rename = "trustedIdProviders", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "trustedIdProviders", default, skip_serializing_if = "Vec::is_empty")]
     pub trusted_id_providers: Vec<UpdateTrustedIdProviderWithAccountParameters>,
-    #[serde(rename = "trustedIdProviderState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "trustedIdProviderState", default, skip_serializing_if = "Option::is_none")]
     pub trusted_id_provider_state: Option<update_data_lake_store_account_properties::TrustedIdProviderState>,
-    #[serde(rename = "newTier", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "newTier", default, skip_serializing_if = "Option::is_none")]
     pub new_tier: Option<update_data_lake_store_account_properties::NewTier>,
 }
 pub mod update_data_lake_store_account_properties {
@@ -517,12 +517,12 @@ pub mod update_data_lake_store_account_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateEncryptionConfig {
-    #[serde(rename = "keyVaultMetaInfo", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "keyVaultMetaInfo", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_meta_info: Option<UpdateKeyVaultMetaInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateKeyVaultMetaInfo {
-    #[serde(rename = "encryptionKeyVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "encryptionKeyVersion", default, skip_serializing_if = "Option::is_none")]
     pub encryption_key_version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -543,20 +543,20 @@ pub struct CreateOrUpdateFirewallRuleProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateFirewallRuleParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateFirewallRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateFirewallRuleWithAccountParameters {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateFirewallRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateFirewallRuleProperties {
-    #[serde(rename = "startIpAddress", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "startIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub start_ip_address: Option<String>,
-    #[serde(rename = "endIpAddress", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "endIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub end_ip_address: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -575,18 +575,18 @@ pub struct CreateOrUpdateVirtualNetworkRuleProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateVirtualNetworkRuleParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateVirtualNetworkRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateVirtualNetworkRuleWithAccountParameters {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateVirtualNetworkRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateVirtualNetworkRuleProperties {
-    #[serde(rename = "subnetId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -605,18 +605,18 @@ pub struct CreateOrUpdateTrustedIdProviderProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateTrustedIdProviderParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateTrustedIdProviderProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateTrustedIdProviderWithAccountParameters {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateTrustedIdProviderProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateTrustedIdProviderProperties {
-    #[serde(rename = "idProvider", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "idProvider", default, skip_serializing_if = "Option::is_none")]
     pub id_provider: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

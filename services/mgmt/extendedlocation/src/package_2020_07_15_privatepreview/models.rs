@@ -6,18 +6,18 @@ use serde::{Deserialize, Serialize};
 pub struct EnabledResourceType {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EnabledResourceTypeProperties>,
     #[serde(rename = "systemData", skip_serializing)]
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnabledResourceTypeProperties {
-    #[serde(rename = "clusterExtensionId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "clusterExtensionId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_extension_id: Option<String>,
-    #[serde(rename = "extensionType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "extensionType", default, skip_serializing_if = "Option::is_none")]
     pub extension_type: Option<String>,
-    #[serde(rename = "typesMetadata", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "typesMetadata", default, skip_serializing_if = "Vec::is_empty")]
     pub types_metadata: Vec<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -31,7 +31,7 @@ pub struct EnabledResourceTypesListResult {
 pub struct CustomLocation {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomLocationProperties>,
     #[serde(rename = "systemData", skip_serializing)]
     pub system_data: Option<SystemData>,
@@ -45,7 +45,7 @@ pub struct CustomLocationListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomLocationOperation {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<CustomLocationOperationValueDisplay>,
     #[serde(rename = "isDataAction", skip_serializing)]
     pub is_data_action: Option<bool>,
@@ -67,34 +67,34 @@ pub struct CustomLocationOperationValueDisplay {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomLocationOperationsList {
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<CustomLocationOperation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomLocationProperties {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub authentication: Option<custom_location_properties::Authentication>,
-    #[serde(rename = "clusterExtensionIds", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "clusterExtensionIds", default, skip_serializing_if = "Vec::is_empty")]
     pub cluster_extension_ids: Vec<String>,
-    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(rename = "hostResourceId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "hostResourceId", default, skip_serializing_if = "Option::is_none")]
     pub host_resource_id: Option<String>,
-    #[serde(rename = "hostType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "hostType", default, skip_serializing_if = "Option::is_none")]
     pub host_type: Option<custom_location_properties::HostType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
 pub mod custom_location_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Authentication {
-        #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub value: Option<String>,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -104,14 +104,14 @@ pub mod custom_location_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PatchableCustomLocations {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomLocationProperties>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -136,17 +136,17 @@ pub struct ErrorAdditionalInfo {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
-    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
-    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
 pub mod system_data {
@@ -184,7 +184,7 @@ pub struct Resource {
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }

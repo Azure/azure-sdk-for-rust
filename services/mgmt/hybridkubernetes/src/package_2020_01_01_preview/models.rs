@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct OperationList {
     #[serde(skip_serializing)]
     pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -20,21 +20,21 @@ pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectedClusterList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectedCluster>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -75,11 +75,11 @@ pub struct ConnectedClusterProperties {
     pub total_core_count: Option<i32>,
     #[serde(rename = "agentVersion", skip_serializing)]
     pub agent_version: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ConnectedClusterProvisioningState>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub distribution: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub infrastructure: Option<String>,
     #[serde(skip_serializing)]
     pub offering: Option<String>,
@@ -87,7 +87,7 @@ pub struct ConnectedClusterProperties {
     pub managed_identity_certificate_expiration_time: Option<String>,
     #[serde(rename = "lastConnectivityTime", skip_serializing)]
     pub last_connectivity_time: Option<String>,
-    #[serde(rename = "connectivityStatus", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "connectivityStatus", default, skip_serializing_if = "Option::is_none")]
     pub connectivity_status: Option<connected_cluster_properties::ConnectivityStatus>,
 }
 pub mod connected_cluster_properties {
@@ -102,7 +102,7 @@ pub mod connected_cluster_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CredentialResults {
-    #[serde(rename = "hybridConnectionConfig", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "hybridConnectionConfig", default, skip_serializing_if = "Option::is_none")]
     pub hybrid_connection_config: Option<HybridConnectionConfig>,
     #[serde(skip_serializing)]
     pub kubeconfigs: Vec<CredentialResult>,
@@ -137,7 +137,7 @@ pub mod authentication_details {
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Value {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub token: Option<String>,
     }
 }
@@ -153,14 +153,14 @@ pub enum ConnectedClusterProvisioningState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectedClusterPatch {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectedClusterPatchProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectedClusterPatchProperties {
-    #[serde(rename = "agentPublicKeyCertificate", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "agentPublicKeyCertificate", default, skip_serializing_if = "Option::is_none")]
     pub agent_public_key_certificate: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -176,7 +176,7 @@ pub struct HybridConnectionConfig {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -203,7 +203,7 @@ pub struct ErrorAdditionalInfo {
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }

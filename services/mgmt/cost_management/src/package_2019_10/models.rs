@@ -11,7 +11,7 @@ pub struct ErrorDetails {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -34,7 +34,7 @@ pub struct DimensionsListResult {
 pub struct Dimension {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DimensionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -45,7 +45,7 @@ pub struct DimensionProperties {
     pub filter_enabled: Option<bool>,
     #[serde(rename = "groupingEnabled", skip_serializing)]
     pub grouping_enabled: Option<bool>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub data: Vec<String>,
     #[serde(skip_serializing)]
     pub total: Option<i32>,
@@ -62,23 +62,23 @@ pub struct DimensionProperties {
 pub struct QueryResult {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QueryProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryProperties {
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub columns: Vec<QueryColumn>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rows: Vec<Vec<serde_json::Value>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryColumn {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -92,7 +92,7 @@ pub struct OperationListResult {
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
 pub mod operation {
@@ -112,9 +112,9 @@ pub struct QueryDefinition {
     #[serde(rename = "type")]
     pub type_: query_definition::Type,
     pub timeframe: query_definition::Timeframe,
-    #[serde(rename = "timePeriod", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "timePeriod", default, skip_serializing_if = "Option::is_none")]
     pub time_period: Option<QueryTimePeriod>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dataset: Option<QueryDataset>,
 }
 pub mod query_definition {
@@ -141,17 +141,17 @@ pub struct QueryTimePeriod {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryDataset {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granularity: Option<query_dataset::Granularity>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub configuration: Option<QueryDatasetConfiguration>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub grouping: Vec<QueryGrouping>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sorting: Vec<QuerySortingConfiguration>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<QueryFilter>,
 }
 pub mod query_dataset {
@@ -164,9 +164,9 @@ pub mod query_dataset {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuerySortingConfiguration {
-    #[serde(rename = "querySortingDirection", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "querySortingDirection", default, skip_serializing_if = "Option::is_none")]
     pub query_sorting_direction: Option<query_sorting_configuration::QuerySortingDirection>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 pub mod query_sorting_configuration {
@@ -179,7 +179,7 @@ pub mod query_sorting_configuration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryDatasetConfiguration {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub columns: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -202,15 +202,15 @@ pub struct QueryGrouping {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryFilter {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub and: Vec<QueryFilter>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub or: Vec<QueryFilter>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub not: Option<QueryFilter>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimension: Option<QueryComparisonExpression>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<QueryComparisonExpression>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -240,19 +240,19 @@ pub struct ExportListResult {
 pub struct Export {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExportProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportProperties {
     #[serde(flatten)]
     pub common_export_properties: CommonExportProperties,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<ExportSchedule>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommonExportProperties {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<common_export_properties::Format>,
     #[serde(rename = "deliveryInfo")]
     pub delivery_info: ExportDeliveryInfo,
@@ -267,10 +267,10 @@ pub mod common_export_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportSchedule {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<export_schedule::Status>,
     pub recurrence: export_schedule::Recurrence,
-    #[serde(rename = "recurrencePeriod", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "recurrencePeriod", default, skip_serializing_if = "Option::is_none")]
     pub recurrence_period: Option<ExportRecurrencePeriod>,
 }
 pub mod export_schedule {
@@ -295,7 +295,7 @@ pub struct ExportDeliveryInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportRecurrencePeriod {
     pub from: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub to: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -303,7 +303,7 @@ pub struct ExportDeliveryDestination {
     #[serde(rename = "resourceId")]
     pub resource_id: String,
     pub container: String,
-    #[serde(rename = "rootFolderPath", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "rootFolderPath", default, skip_serializing_if = "Option::is_none")]
     pub root_folder_path: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -315,26 +315,26 @@ pub struct ExportExecutionListResult {
 pub struct ExportExecution {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExportExecutionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportExecutionProperties {
-    #[serde(rename = "executionType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "executionType", default, skip_serializing_if = "Option::is_none")]
     pub execution_type: Option<export_execution_properties::ExecutionType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<export_execution_properties::Status>,
-    #[serde(rename = "submittedBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "submittedBy", default, skip_serializing_if = "Option::is_none")]
     pub submitted_by: Option<String>,
-    #[serde(rename = "submittedTime", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "submittedTime", default, skip_serializing_if = "Option::is_none")]
     pub submitted_time: Option<String>,
-    #[serde(rename = "processingStartTime", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "processingStartTime", default, skip_serializing_if = "Option::is_none")]
     pub processing_start_time: Option<String>,
-    #[serde(rename = "processingEndTime", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "processingEndTime", default, skip_serializing_if = "Option::is_none")]
     pub processing_end_time: Option<String>,
-    #[serde(rename = "fileName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
     pub file_name: Option<String>,
-    #[serde(rename = "runSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "runSettings", default, skip_serializing_if = "Option::is_none")]
     pub run_settings: Option<CommonExportProperties>,
 }
 pub mod export_execution_properties {

@@ -4,12 +4,12 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Location {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Tags {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -32,22 +32,22 @@ pub struct ResourceProviderOperationList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceProviderOperationDefinition {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "isDataAction", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<ResourceProviderOperationDisplay>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceProviderOperationDisplay {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -74,18 +74,18 @@ pub enum LedgerRoleName {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertBasedSecurityPrincipal {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cert: Option<String>,
-    #[serde(rename = "ledgerRoleName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ledgerRoleName", default, skip_serializing_if = "Option::is_none")]
     pub ledger_role_name: Option<LedgerRoleName>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AadBasedSecurityPrincipal {
-    #[serde(rename = "principalId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
-    #[serde(rename = "ledgerRoleName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ledgerRoleName", default, skip_serializing_if = "Option::is_none")]
     pub ledger_role_name: Option<LedgerRoleName>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -98,15 +98,15 @@ pub struct LedgerProperties {
     pub identity_service_uri: Option<String>,
     #[serde(rename = "ledgerInternalNamespace", skip_serializing)]
     pub ledger_internal_namespace: Option<String>,
-    #[serde(rename = "ledgerStorageAccount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ledgerStorageAccount", default, skip_serializing_if = "Option::is_none")]
     pub ledger_storage_account: Option<String>,
-    #[serde(rename = "ledgerType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ledgerType", default, skip_serializing_if = "Option::is_none")]
     pub ledger_type: Option<ConfidentialLedgerType>,
-    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "aadBasedSecurityPrincipals", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "aadBasedSecurityPrincipals", default, skip_serializing_if = "Vec::is_empty")]
     pub aad_based_security_principals: Vec<AadBasedSecurityPrincipal>,
-    #[serde(rename = "certBasedSecurityPrincipals", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "certBasedSecurityPrincipals", default, skip_serializing_if = "Vec::is_empty")]
     pub cert_based_security_principals: Vec<CertBasedSecurityPrincipal>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -117,19 +117,19 @@ pub struct ConfidentialLedger {
     pub location: Location,
     #[serde(flatten)]
     pub tags: Tags,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LedgerProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfidentialLedgerList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConfidentialLedger>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -154,17 +154,17 @@ pub struct ErrorAdditionalInfo {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
-    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
-    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
 pub mod system_data {

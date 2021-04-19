@@ -4,38 +4,38 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentFilter {
-    #[serde(rename = "principalId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-    #[serde(rename = "canDelegate", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "canDelegate", default, skip_serializing_if = "Option::is_none")]
     pub can_delegate: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentPropertiesWithScope {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
-    #[serde(rename = "roleDefinitionId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "roleDefinitionId", default, skip_serializing_if = "Option::is_none")]
     pub role_definition_id: Option<String>,
-    #[serde(rename = "principalId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-    #[serde(rename = "principalType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<role_assignment_properties_with_scope::PrincipalType>,
-    #[serde(rename = "canDelegate", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "canDelegate", default, skip_serializing_if = "Option::is_none")]
     pub can_delegate: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub condition: Option<String>,
-    #[serde(rename = "conditionVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "conditionVersion", default, skip_serializing_if = "Option::is_none")]
     pub condition_version: Option<String>,
-    #[serde(rename = "createdOn", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdOn", default, skip_serializing_if = "Option::is_none")]
     pub created_on: Option<String>,
-    #[serde(rename = "updatedOn", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "updatedOn", default, skip_serializing_if = "Option::is_none")]
     pub updated_on: Option<String>,
-    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
-    #[serde(rename = "updatedBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<String>,
-    #[serde(rename = "delegatedManagedIdentityResourceId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "delegatedManagedIdentityResourceId", default, skip_serializing_if = "Option::is_none")]
     pub delegated_managed_identity_resource_id: Option<String>,
 }
 pub mod role_assignment_properties_with_scope {
@@ -63,14 +63,14 @@ pub struct RoleAssignment {
     pub name: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleAssignmentPropertiesWithScope>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleAssignment>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -79,17 +79,17 @@ pub struct RoleAssignmentProperties {
     pub role_definition_id: String,
     #[serde(rename = "principalId")]
     pub principal_id: String,
-    #[serde(rename = "principalType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<role_assignment_properties::PrincipalType>,
-    #[serde(rename = "canDelegate", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "canDelegate", default, skip_serializing_if = "Option::is_none")]
     pub can_delegate: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub condition: Option<String>,
-    #[serde(rename = "conditionVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "conditionVersion", default, skip_serializing_if = "Option::is_none")]
     pub condition_version: Option<String>,
-    #[serde(rename = "delegatedManagedIdentityResourceId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "delegatedManagedIdentityResourceId", default, skip_serializing_if = "Option::is_none")]
     pub delegated_managed_identity_resource_id: Option<String>,
 }
 pub mod role_assignment_properties {
@@ -115,7 +115,7 @@ pub struct RoleAssignmentCreateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -4,9 +4,9 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Action {
-    #[serde(rename = "actionGroupId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "actionGroupId", default, skip_serializing_if = "Option::is_none")]
     pub action_group_id: Option<String>,
-    #[serde(rename = "webHookProperties", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "webHookProperties", default, skip_serializing_if = "Option::is_none")]
     pub web_hook_properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -15,29 +15,29 @@ pub struct ScheduledQueryRuleProperties {
     pub created_with_api_version: Option<String>,
     #[serde(rename = "isLegacyLogAnalyticsRule", skip_serializing)]
     pub is_legacy_log_analytics_rule: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<scheduled_query_rule_properties::Severity>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scopes: Vec<String>,
-    #[serde(rename = "evaluationFrequency", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "evaluationFrequency", default, skip_serializing_if = "Option::is_none")]
     pub evaluation_frequency: Option<String>,
-    #[serde(rename = "windowSize", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "windowSize", default, skip_serializing_if = "Option::is_none")]
     pub window_size: Option<String>,
-    #[serde(rename = "overrideQueryTimeRange", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "overrideQueryTimeRange", default, skip_serializing_if = "Option::is_none")]
     pub override_query_time_range: Option<String>,
-    #[serde(rename = "targetResourceTypes", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "targetResourceTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub target_resource_types: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub criteria: Option<ScheduledQueryRuleCriteria>,
-    #[serde(rename = "muteActionsDuration", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "muteActionsDuration", default, skip_serializing_if = "Option::is_none")]
     pub mute_actions_duration: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<Action>,
 }
 pub mod scheduled_query_rule_properties {
@@ -68,36 +68,36 @@ pub struct ScheduledQueryRuleResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledQueryRuleResourcePatch {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScheduledQueryRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledQueryRuleResourceCollection {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ScheduledQueryRuleResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledQueryRuleCriteria {
-    #[serde(rename = "allOf", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "allOf", default, skip_serializing_if = "Vec::is_empty")]
     pub all_of: Vec<Condition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Condition {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
     #[serde(rename = "timeAggregation")]
     pub time_aggregation: condition::TimeAggregation,
-    #[serde(rename = "metricMeasureColumn", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "metricMeasureColumn", default, skip_serializing_if = "Option::is_none")]
     pub metric_measure_column: Option<String>,
-    #[serde(rename = "resourceIdColumn", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "resourceIdColumn", default, skip_serializing_if = "Option::is_none")]
     pub resource_id_column: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<Dimension>,
     pub operator: condition::Operator,
     pub threshold: f64,
-    #[serde(rename = "failingPeriods", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "failingPeriods", default, skip_serializing_if = "Option::is_none")]
     pub failing_periods: Option<condition::FailingPeriods>,
 }
 pub mod condition {
@@ -120,9 +120,9 @@ pub mod condition {
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct FailingPeriods {
-        #[serde(rename = "numberOfEvaluationPeriods", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "numberOfEvaluationPeriods", default, skip_serializing_if = "Option::is_none")]
         pub number_of_evaluation_periods: Option<i64>,
-        #[serde(rename = "minFailingPeriodsToAlert", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "minFailingPeriodsToAlert", default, skip_serializing_if = "Option::is_none")]
         pub min_failing_periods_to_alert: Option<i64>,
     }
 }
@@ -142,14 +142,14 @@ pub mod dimension {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorContract {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }

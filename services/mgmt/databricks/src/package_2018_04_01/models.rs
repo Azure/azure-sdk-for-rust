@@ -7,24 +7,24 @@ pub struct Workspace {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     pub properties: WorkspaceProperties,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceProperties {
     #[serde(rename = "managedResourceGroupId")]
     pub managed_resource_group_id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<WorkspaceCustomParameters>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "uiDefinitionUri", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "uiDefinitionUri", default, skip_serializing_if = "Option::is_none")]
     pub ui_definition_uri: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub authorizations: Vec<WorkspaceProviderAuthorization>,
-    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<CreatedBy>,
-    #[serde(rename = "updatedBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<CreatedBy>,
     #[serde(rename = "createdDateTime", skip_serializing)]
     pub created_date_time: Option<CreatedDateTime>,
@@ -32,14 +32,14 @@ pub struct WorkspaceProperties {
     pub workspace_id: Option<String>,
     #[serde(rename = "workspaceUrl", skip_serializing)]
     pub workspace_url: Option<String>,
-    #[serde(rename = "storageAccountIdentity", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "storageAccountIdentity", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_identity: Option<ManagedIdentityConfiguration>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }
@@ -55,7 +55,7 @@ pub struct Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -114,21 +114,21 @@ pub struct WorkspaceCustomStringParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceCustomParameters {
-    #[serde(rename = "amlWorkspaceId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "amlWorkspaceId", default, skip_serializing_if = "Option::is_none")]
     pub aml_workspace_id: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "customVirtualNetworkId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customVirtualNetworkId", default, skip_serializing_if = "Option::is_none")]
     pub custom_virtual_network_id: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "customPublicSubnetName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customPublicSubnetName", default, skip_serializing_if = "Option::is_none")]
     pub custom_public_subnet_name: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "customPrivateSubnetName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customPrivateSubnetName", default, skip_serializing_if = "Option::is_none")]
     pub custom_private_subnet_name: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "enableNoPublicIp", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enableNoPublicIp", default, skip_serializing_if = "Option::is_none")]
     pub enable_no_public_ip: Option<WorkspaceCustomBooleanParameter>,
-    #[serde(rename = "prepareEncryption", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "prepareEncryption", default, skip_serializing_if = "Option::is_none")]
     pub prepare_encryption: Option<WorkspaceCustomBooleanParameter>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<WorkspaceEncryptionParameter>,
-    #[serde(rename = "requireInfrastructureEncryption", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "requireInfrastructureEncryption", default, skip_serializing_if = "Option::is_none")]
     pub require_infrastructure_encryption: Option<WorkspaceCustomBooleanParameter>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -146,18 +146,18 @@ pub struct CreatedBy {
 pub struct WorkspaceEncryptionParameter {
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<WorkspaceCustomParameterType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<Encryption>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Encryption {
-    #[serde(rename = "keySource", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
     pub key_source: Option<encryption::KeySource>,
-    #[serde(rename = "KeyName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "KeyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keyversion: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keyvaulturi: Option<String>,
 }
 pub mod encryption {
@@ -178,23 +178,23 @@ pub struct WorkspaceProviderAuthorization {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceUpdate {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
     pub code: String,
     pub message: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorInfo {
     pub code: String,
     pub message: String,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -203,42 +203,42 @@ pub struct ErrorResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workspace>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkPeeringList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetworkPeering>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -253,21 +253,21 @@ pub struct VirtualNetworkPeering {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkPeeringPropertiesFormat {
-    #[serde(rename = "allowVirtualNetworkAccess", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "allowVirtualNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub allow_virtual_network_access: Option<bool>,
-    #[serde(rename = "allowForwardedTraffic", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "allowForwardedTraffic", default, skip_serializing_if = "Option::is_none")]
     pub allow_forwarded_traffic: Option<bool>,
-    #[serde(rename = "allowGatewayTransit", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "allowGatewayTransit", default, skip_serializing_if = "Option::is_none")]
     pub allow_gateway_transit: Option<bool>,
-    #[serde(rename = "useRemoteGateways", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "useRemoteGateways", default, skip_serializing_if = "Option::is_none")]
     pub use_remote_gateways: Option<bool>,
-    #[serde(rename = "databricksVirtualNetwork", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "databricksVirtualNetwork", default, skip_serializing_if = "Option::is_none")]
     pub databricks_virtual_network: Option<virtual_network_peering_properties_format::DatabricksVirtualNetwork>,
-    #[serde(rename = "databricksAddressSpace", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "databricksAddressSpace", default, skip_serializing_if = "Option::is_none")]
     pub databricks_address_space: Option<AddressSpace>,
     #[serde(rename = "remoteVirtualNetwork")]
     pub remote_virtual_network: virtual_network_peering_properties_format::RemoteVirtualNetwork,
-    #[serde(rename = "remoteAddressSpace", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "remoteAddressSpace", default, skip_serializing_if = "Option::is_none")]
     pub remote_address_space: Option<AddressSpace>,
     #[serde(rename = "peeringState", skip_serializing)]
     pub peering_state: Option<virtual_network_peering_properties_format::PeeringState>,
@@ -278,12 +278,12 @@ pub mod virtual_network_peering_properties_format {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct DatabricksVirtualNetwork {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub id: Option<String>,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct RemoteVirtualNetwork {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub id: Option<String>,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -295,6 +295,6 @@ pub mod virtual_network_peering_properties_format {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddressSpace {
-    #[serde(rename = "addressPrefixes", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub address_prefixes: Vec<String>,
 }
