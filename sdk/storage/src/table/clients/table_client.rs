@@ -42,6 +42,10 @@ impl TableClient {
         CreateTableBuilder::new(self)
     }
 
+    pub fn query(&self) -> QueryEntityBuilder {
+        QueryEntityBuilder::new(self)
+    }
+
     pub fn delete(&self) -> DeleteTableBuilder {
         DeleteTableBuilder::new(self)
     }

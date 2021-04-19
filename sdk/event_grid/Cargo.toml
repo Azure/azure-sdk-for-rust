@@ -13,7 +13,7 @@ categories = ["api-bindings"]
 edition = "2018"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.1.0" }
+azure_core = { path = "../core", version = "0.1.0", features = ["enable_hyper"] }
 chrono = { version = "0.4", features = ["serde"] }
 http = "0.2"
 hyper = "0.14"

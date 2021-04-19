@@ -1,4 +1,4 @@
-use azure_core::errors::{AzureError, UnexpectedHTTPResult};
+use azure_core::errors::*;
 use hyper::{
     body::{self, Bytes},
     client::ResponseFuture,

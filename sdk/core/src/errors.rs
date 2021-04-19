@@ -1,5 +1,7 @@
 use http::header::ToStrError;
-use hyper::{self, body, Body, StatusCode};
+use http::StatusCode;
+#[cfg(feature = "enable_hyper")]
+use hyper::{self, body, Body};
 use std::io::Error as IOError;
 use std::num;
 use std::num::ParseIntError;
@@ -191,10 +193,10 @@ quick_error! {
             display("json error: {}", err)
             cause(err)
         }
-        HyperError(err: hyper::Error) {
+        HyperError(err: Box<dyn std::error::Error + Sync + Send>) {
             from()
             display("Hyper error: {}", err)
-            cause(err)
+            cause(&**err)
         }
         PermissionError(err: PermissionError) {
             from()
@@ -281,7 +283,7 @@ quick_error! {
             display("uuid error: {}", err)
             cause(err)
         }
-       ChronoParserError(err: chrono::ParseError) {
+        ChronoParserError(err: chrono::ParseError) {
             from()
             display("Chrono parser error: {}", err)
             cause(err)
@@ -373,6 +375,14 @@ impl From<failure::Error> for AzureError {
     }
 }
 
+#[cfg(feature = "enable_hyper")]
+impl From<hyper::Error> for AzureError {
+    fn from(error: hyper::Error) -> AzureError {
+        AzureError::HyperError(error.into())
+    }
+}
+
+#[cfg(feature = "enable_hyper")]
 #[inline]
 pub async fn extract_status_headers_and_body(
     resp: hyper::client::ResponseFuture,
@@ -386,6 +396,7 @@ pub async fn extract_status_headers_and_body(
     Ok((status, headers, body))
 }
 
+#[cfg(feature = "enable_hyper")]
 #[inline]
 pub async fn extract_status_and_body(
     resp: hyper::client::ResponseFuture,
@@ -396,6 +407,7 @@ pub async fn extract_status_and_body(
     Ok((status, str::from_utf8(&body)?.to_owned()))
 }
 
+#[cfg(feature = "enable_hyper")]
 #[inline]
 pub async fn extract_location_status_and_body(
     resp: hyper::client::ResponseFuture,
@@ -410,6 +422,7 @@ pub async fn extract_location_status_and_body(
     Ok((status, location, str::from_utf8(&body)?.to_owned()))
 }
 
+#[cfg(feature = "enable_hyper")]
 #[inline]
 pub async fn check_status_extract_body(
     resp: hyper::client::ResponseFuture,
@@ -427,6 +440,7 @@ pub async fn check_status_extract_body(
     }
 }
 
+#[cfg(feature = "enable_hyper")]
 pub async fn check_status_extract_body_2(
     resp: hyper::Response<Body>,
     expected_status: StatusCode,

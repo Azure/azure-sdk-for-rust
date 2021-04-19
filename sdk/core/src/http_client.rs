@@ -1,11 +1,13 @@
-use crate::errors::{AzureError, UnexpectedHTTPResult};
+use crate::errors::*;
 use async_trait::async_trait;
 use bytes::Bytes;
 use http::{Request, Response, StatusCode};
+#[cfg(feature = "enable_hyper")]
 use hyper_rustls::HttpsConnector;
 use serde::Serialize;
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait HttpClient: Send + Sync + std::fmt::Debug {
     async fn execute_request(
         &self,
@@ -60,7 +62,9 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     }
 }
 
-#[async_trait]
+#[cfg(feature = "enable_hyper")]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
     async fn execute_request(
         &self,
@@ -92,7 +96,9 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
     }
 }
 
-#[async_trait]
+#[cfg(feature = "enable_reqwest")]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for reqwest::Client {
     async fn execute_request(
         &self,
@@ -108,9 +114,11 @@ impl HttpClient for reqwest::Client {
 
         let reqwest_response = self.execute(reqwest_request).await?;
 
-        let mut response = Response::builder()
-            .status(reqwest_response.status())
-            .version(reqwest_response.version());
+        let mut response = Response::builder().status(reqwest_response.status());
+
+        if let Some(version) = get_version(&reqwest_response) {
+            response = response.version(version);
+        }
 
         for (key, value) in reqwest_response.headers() {
             response = response.header(key, value);
@@ -120,6 +128,19 @@ impl HttpClient for reqwest::Client {
 
         Ok(response)
     }
+}
+
+// wasm can not get the http version
+#[cfg(feature = "enable_reqwest")]
+#[cfg(target_arch = "wasm32")]
+fn get_version(_response: &reqwest::Response) -> Option<http::Version> {
+    None
+}
+
+#[cfg(feature = "enable_reqwest")]
+#[cfg(not(target_arch = "wasm32"))]
+fn get_version(response: &reqwest::Response) -> Option<http::Version> {
+    Some(response.version())
 }
 
 /// Serialize to json

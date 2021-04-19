@@ -72,13 +72,18 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("response = {:?}\n", response);
 
+    let response = entity_client.delete().execute().await?;
+    println!("response = {:?}\n", response);
+
     let response = table.insert().return_entity(false).execute(&entity).await?;
     println!("response = {:?}\n", response);
 
-    let mut entity = MyEntity {
-        city: "Rome".to_owned(),
-        ..entity
-    };
+    // Get an entity from the table
+    let response = entity_client.get().execute().await?;
+    println!("response = {:?}\n", response);
+
+    let mut entity: MyEntity = response.entity;
+    entity.city = "Rome".to_owned();
 
     let response = table.insert().return_entity(true).execute(&entity).await?;
     println!("response = {:?}\n", response);
@@ -100,6 +105,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("response = {:?}\n", response);
 
     let mut stream = Box::pin(table_service.list().top(2).stream());
+    while let Some(response) = stream.next().await {
+        println!("response = {:?}\n", response);
+    }
+
+    let mut stream = Box::pin(
+        table
+            .query()
+            .filter("Name = 'Carl'")
+            .top(2)
+            .stream::<MyEntity>(),
+    );
     while let Some(response) = stream.next().await {
         println!("response = {:?}\n", response);
     }
