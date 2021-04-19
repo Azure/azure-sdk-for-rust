@@ -1,0 +1,25 @@
+[package]
+name = "autorust_codegen"
+version = "0.1.0"
+authors = ["Cameron Taggart <cameron.taggart@gmail.com>"]
+edition = "2018"
+
+[lib]
+
+[dependencies]
+autorust_openapi = { git = "https://github.com/ctaggart/autorust_openapi" }
+# autorust_openapi = { path = "../autorust_openapi" }
+quote = "*"
+proc-macro2 = { version = "*", default-features = false }
+serde_json = "*"
+serde_yaml = "*"
+heck = "*"
+regex = "*"
+indexmap = { version = "*", features = ["serde-1"] }
+path_abs = "*"
+comrak = "0.8"
+serde = "1.0"
+thiserror = "1.0"
+http = "0.2"
+lazy_static = "1.4"
+syn = { version = "1.0", features = ["parsing"] }
