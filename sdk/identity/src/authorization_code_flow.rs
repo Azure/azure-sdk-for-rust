@@ -39,7 +39,7 @@ pub fn start(
         // Microsoft Graph requires client_id and client_secret in URL rather than
         // using Basic authentication.
         .set_auth_type(oauth2::AuthType::RequestBody)
-        .set_redirect_url(oauth2::RedirectUrl::from_url(redirect_url));
+        .set_redirect_uri(oauth2::RedirectUrl::from_url(redirect_url));
 
     // Microsoft Graph supports Proof Key for Code Exchange (PKCE - https://oauth.net/2/pkce/).
     // Create a PKCE code verifier and SHA-256 encode it as a code challenge.
