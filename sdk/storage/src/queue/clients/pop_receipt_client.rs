@@ -52,17 +52,11 @@ impl PopReceiptClient {
     }
 
     pub(crate) fn pop_receipt_url(&self) -> Result<url::Url, url::ParseError> {
-        let mut url = self
-            .queue_client
-            .storage_client()
-            .storage_account_client()
-            .queue_storage_url()
-            .to_owned();
-        url.path_segments_mut()
-            .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?
-            .push(self.queue_client.queue_name())
-            .push("messages")
-            .push(self.pop_receipt.message_id());
+        let mut url = self.queue_client.url_with_segments(
+            ["messages", self.pop_receipt.message_id()]
+                .iter()
+                .map(std::ops::Deref::deref),
+        )?;
 
         url.query_pairs_mut()
             .append_pair("popreceipt", self.pop_receipt.pop_receipt());

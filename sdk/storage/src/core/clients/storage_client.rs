@@ -37,6 +37,47 @@ impl StorageClient {
         self.storage_account_client.http_client()
     }
 
+    fn url_with_segments<'a, I>(mut url: url::Url, segments: I) -> Result<url::Url, url::ParseError>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        {
+            let mut segs = url
+                .path_segments_mut()
+                .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?;
+            for segment in segments.into_iter() {
+                segs.push(segment);
+            }
+        }
+        Ok(url)
+    }
+
+    pub(crate) fn blob_url_with_segments<'a, I>(
+        &'a self,
+        segments: I,
+    ) -> Result<url::Url, url::ParseError>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        Self::url_with_segments(
+            self.storage_account_client.blob_storage_url().to_owned(),
+            segments,
+        )
+    }
+
+    pub(crate) fn queue_url_with_segments<'a, I>(
+        &'a self,
+        segments: I,
+    ) -> Result<url::Url, url::ParseError>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        Self::url_with_segments(
+            self.storage_account_client.queue_storage_url().to_owned(),
+            segments,
+        )
+    }
+
     #[cfg(feature = "account")]
     pub fn get_account_information(
         &self,

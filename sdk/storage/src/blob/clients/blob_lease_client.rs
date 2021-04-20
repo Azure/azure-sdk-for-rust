@@ -41,16 +41,29 @@ impl BlobLeaseClient {
         self.blob_client.http_client()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
         self.blob_client.storage_account_client()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn container_client(&self) -> &ContainerClient {
         self.blob_client.container_client()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn blob_client(&self) -> &BlobClient {
         self.blob_client.as_ref()
+    }
+
+    pub(crate) fn url_with_segments<'a, I>(
+        &'a self,
+        segments: I,
+    ) -> Result<url::Url, url::ParseError>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        self.blob_client.url_with_segments(segments)
     }
 
     pub fn change<'a>(&'a self, proposed_lease_id: &'a ProposedLeaseId) -> ChangeLeaseBuilder<'a> {

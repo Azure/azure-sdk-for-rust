@@ -31,7 +31,7 @@ impl<'a> CreateQueueBuilder<'a> {
     pub async fn execute(
         &self,
     ) -> Result<CreateQueueResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self.queue_client.queue_url()?;
+        let mut url = self.queue_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);
 

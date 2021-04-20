@@ -37,7 +37,7 @@ impl<'a> SetQueueMetadataBuilder<'a> {
         &self,
         metadata: &Metadata,
     ) -> Result<SetQueueMetadataResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self.queue_client.queue_url()?;
+        let mut url = self.queue_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("comp", "metadata");
         self.timeout.append_to_url_query(&mut url);

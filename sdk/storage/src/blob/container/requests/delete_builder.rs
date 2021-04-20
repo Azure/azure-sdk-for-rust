@@ -29,15 +29,7 @@ impl<'a> DeleteBuilder<'a> {
     }
 
     pub async fn execute(self) -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self
-            .container_client
-            .storage_client()
-            .storage_account_client()
-            .blob_storage_url()
-            .to_owned();
-        url.path_segments_mut()
-            .map_err(|_| "Invalid blob URL")?
-            .push(self.container_client.container_name());
+        let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");
 

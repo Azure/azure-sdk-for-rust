@@ -35,10 +35,7 @@ impl<'a> PutMessageBuilder<'a> {
         &self,
         body: impl AsRef<str>,
     ) -> Result<PutMessageResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self.queue_client.queue_url()?;
-        url.path_segments_mut()
-            .map_err(|_| "Invalid queue URL")?
-            .push("messages");
+        let mut url = self.queue_client.url_with_segments(Some("messages"))?;
 
         self.visibility_timeout.append_to_url_query(&mut url);
         self.ttl.append_to_url_query(&mut url);

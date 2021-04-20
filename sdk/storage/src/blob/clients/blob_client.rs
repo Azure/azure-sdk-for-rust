@@ -45,14 +45,27 @@ impl BlobClient {
             .http_client()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
         self.container_client
             .storage_client()
             .storage_account_client()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn container_client(&self) -> &ContainerClient {
         self.container_client.as_ref()
+    }
+
+    pub(crate) fn url_with_segments<'a, I>(
+        &'a self,
+        segments: I,
+    ) -> Result<url::Url, url::ParseError>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        self.container_client
+            .url_with_segments(Some(self.blob_name.as_str()).into_iter().chain(segments))
     }
 
     pub fn get(&self) -> GetBlobBuilder {
@@ -146,11 +159,7 @@ impl BlobClient {
         &self,
         signature: &SharedAccessSignature,
     ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        let mut url = self.storage_account_client().blob_storage_url().to_owned();
-        url.path_segments_mut()
-            .map_err(|_| "Invalid blob URL")?
-            .push(self.container_client().container_name())
-            .push(self.blob_name());
+        let url = self.url_with_segments(None)?;
         Ok(format!("{}?{}", url.as_str(), signature.token()))
     }
 
