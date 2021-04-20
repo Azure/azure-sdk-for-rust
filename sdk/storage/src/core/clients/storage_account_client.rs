@@ -100,11 +100,15 @@ impl StorageAccountClient {
         http_client: Arc<Box<dyn HttpClient>>,
         blob_storage_url: &Url,
         table_storage_url: &Url,
+        queue_storage_url: &Url,
+        filesystem_url: &Url,
     ) -> Arc<Self> {
         Self::new_emulator_with_account(
             http_client,
             blob_storage_url,
             table_storage_url,
+            queue_storage_url,
+            filesystem_url,
             "devstoreaccount1",
             "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==",
         )
@@ -114,6 +118,8 @@ impl StorageAccountClient {
         http_client: Arc<Box<dyn HttpClient>>,
         blob_storage_url: &Url,
         table_storage_url: &Url,
+        queue_storage_url: &Url,
+        filesystem_url: &Url,
         account: A,
         key: K,
     ) -> Arc<Self>
@@ -127,9 +133,9 @@ impl StorageAccountClient {
         let table_storage_url =
             Url::parse(&format!("{}{}", table_storage_url.as_str(), account)).unwrap();
         let queue_storage_url =
-            Url::parse(&format!("{}{}", table_storage_url.as_str(), account)).unwrap();
+            Url::parse(&format!("{}{}", queue_storage_url.as_str(), account)).unwrap();
         let filesystem_url =
-            Url::parse(&format!("{}{}", blob_storage_url.as_str(), account)).unwrap();
+            Url::parse(&format!("{}{}", filesystem_url.as_str(), account)).unwrap();
 
         Arc::new(Self {
             blob_storage_url,
