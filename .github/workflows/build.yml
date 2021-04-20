@@ -1,6 +1,6 @@
 name: Build and Test
 
-on: 
+on:
   pull_request:
   push:
 
@@ -11,8 +11,8 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy: 
-      matrix: 
+    strategy:
+      matrix:
         rust: [stable]
     steps:
     - uses: actions/checkout@v2
@@ -22,6 +22,7 @@ jobs:
         profile: minimal
         override: true
         components: rustfmt
+        target: wasm32-unknown-unknown
 
     - name: fmt
       run: |
@@ -30,11 +31,17 @@ jobs:
         cargo fmt --manifest-path services/Cargo.toml --all -- --check
       if: matrix.rust == 'stable'
 
-    - name: sdk tests 
+    - name: check core for wasm
+      run: cargo check -p azure_core --target=wasm32-unknown-unknown
+
+    - name: check core for hyper
+      run: cargo check -p azure_core --no-default-features --features enable_hyper
+
+    - name: sdk tests
       run: cargo test --all
 
     - name: services tests
-      run: cargo build --manifest-path services/Cargo.toml --all 
+      run: cargo build --manifest-path services/Cargo.toml --all
 
     - name: e2e tests build
       run: |

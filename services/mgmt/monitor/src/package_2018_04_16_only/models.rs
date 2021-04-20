@@ -11,7 +11,7 @@ pub struct Resource {
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(skip_serializing)]
     pub kind: Option<String>,
@@ -26,25 +26,25 @@ pub struct LogSearchRuleResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSearchRuleResourcePatch {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LogSearchRulePatch>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSearchRuleResourceCollection {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LogSearchRuleResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Source {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
-    #[serde(rename = "authorizedResources", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "authorizedResources", default, skip_serializing_if = "Vec::is_empty")]
     pub authorized_resources: Vec<String>,
     #[serde(rename = "dataSourceId")]
     pub data_source_id: String,
-    #[serde(rename = "queryType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "queryType", default, skip_serializing_if = "Option::is_none")]
     pub query_type: Option<QueryType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -59,27 +59,27 @@ pub struct TriggerCondition {
     #[serde(rename = "thresholdOperator")]
     pub threshold_operator: ConditionalOperator,
     pub threshold: f64,
-    #[serde(rename = "metricTrigger", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "metricTrigger", default, skip_serializing_if = "Option::is_none")]
     pub metric_trigger: Option<LogMetricTrigger>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzNsActionGroup {
-    #[serde(rename = "actionGroup", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "actionGroup", default, skip_serializing_if = "Vec::is_empty")]
     pub action_group: Vec<String>,
-    #[serde(rename = "emailSubject", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "emailSubject", default, skip_serializing_if = "Option::is_none")]
     pub email_subject: Option<String>,
-    #[serde(rename = "customWebhookPayload", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customWebhookPayload", default, skip_serializing_if = "Option::is_none")]
     pub custom_webhook_payload: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogMetricTrigger {
-    #[serde(rename = "thresholdOperator", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "thresholdOperator", default, skip_serializing_if = "Option::is_none")]
     pub threshold_operator: Option<ConditionalOperator>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub threshold: Option<f64>,
-    #[serde(rename = "metricTriggerType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "metricTriggerType", default, skip_serializing_if = "Option::is_none")]
     pub metric_trigger_type: Option<MetricTriggerType>,
-    #[serde(rename = "metricColumn", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "metricColumn", default, skip_serializing_if = "Option::is_none")]
     pub metric_column: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -118,18 +118,18 @@ pub struct LogSearchRule {
     pub created_with_api_version: Option<String>,
     #[serde(rename = "isLegacyLogAnalyticsRule", skip_serializing)]
     pub is_legacy_log_analytics_rule: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<log_search_rule::Enabled>,
     #[serde(rename = "lastUpdatedTime", skip_serializing)]
     pub last_updated_time: Option<String>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<log_search_rule::ProvisioningState>,
     pub source: Source,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<Schedule>,
     pub action: Action,
 }
@@ -152,7 +152,7 @@ pub mod log_search_rule {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSearchRulePatch {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<log_search_rule_patch::Enabled>,
 }
 pub mod log_search_rule_patch {
@@ -175,9 +175,9 @@ pub struct AlertingAction {
     #[serde(flatten)]
     pub action: Action,
     pub severity: AlertSeverity,
-    #[serde(rename = "aznsAction", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "aznsAction", default, skip_serializing_if = "Option::is_none")]
     pub azns_action: Option<AzNsActionGroup>,
-    #[serde(rename = "throttlingInMin", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "throttlingInMin", default, skip_serializing_if = "Option::is_none")]
     pub throttling_in_min: Option<i32>,
     pub trigger: TriggerCondition,
 }
@@ -198,7 +198,7 @@ pub mod dimension {
 pub struct Criteria {
     #[serde(rename = "metricName")]
     pub metric_name: String,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<Dimension>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -209,13 +209,13 @@ pub struct LogToMetricAction {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorContract {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }

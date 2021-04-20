@@ -4,30 +4,30 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DenyAssignmentFilter {
-    #[serde(rename = "denyAssignmentName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "denyAssignmentName", default, skip_serializing_if = "Option::is_none")]
     pub deny_assignment_name: Option<String>,
-    #[serde(rename = "principalId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-    #[serde(rename = "gdprExportPrincipalId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "gdprExportPrincipalId", default, skip_serializing_if = "Option::is_none")]
     pub gdpr_export_principal_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DenyAssignmentProperties {
-    #[serde(rename = "denyAssignmentName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "denyAssignmentName", default, skip_serializing_if = "Option::is_none")]
     pub deny_assignment_name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub permissions: Vec<DenyAssignmentPermission>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
-    #[serde(rename = "doNotApplyToChildScopes", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "doNotApplyToChildScopes", default, skip_serializing_if = "Option::is_none")]
     pub do_not_apply_to_child_scopes: Option<bool>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub principals: Vec<Principal>,
-    #[serde(rename = "excludePrincipals", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "excludePrincipals", default, skip_serializing_if = "Vec::is_empty")]
     pub exclude_principals: Vec<Principal>,
-    #[serde(rename = "isSystemProtected", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "isSystemProtected", default, skip_serializing_if = "Option::is_none")]
     pub is_system_protected: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -38,25 +38,25 @@ pub struct DenyAssignment {
     pub name: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DenyAssignmentProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DenyAssignmentListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DenyAssignment>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DenyAssignmentPermission {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<String>,
-    #[serde(rename = "notActions", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "notActions", default, skip_serializing_if = "Vec::is_empty")]
     pub not_actions: Vec<String>,
-    #[serde(rename = "dataActions", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "dataActions", default, skip_serializing_if = "Vec::is_empty")]
     pub data_actions: Vec<String>,
-    #[serde(rename = "notDataActions", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "notDataActions", default, skip_serializing_if = "Vec::is_empty")]
     pub not_data_actions: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -68,7 +68,7 @@ pub struct Principal {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

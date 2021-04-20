@@ -11,21 +11,21 @@ pub struct Resource {
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroupResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroup>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroupList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ActionGroupResource>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -33,25 +33,25 @@ pub struct ActionGroup {
     #[serde(rename = "groupShortName")]
     pub group_short_name: String,
     pub enabled: bool,
-    #[serde(rename = "emailReceivers", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "emailReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub email_receivers: Vec<EmailReceiver>,
-    #[serde(rename = "smsReceivers", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "smsReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub sms_receivers: Vec<SmsReceiver>,
-    #[serde(rename = "webhookReceivers", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "webhookReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub webhook_receivers: Vec<WebhookReceiver>,
-    #[serde(rename = "itsmReceivers", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "itsmReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub itsm_receivers: Vec<ItsmReceiver>,
-    #[serde(rename = "azureAppPushReceivers", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "azureAppPushReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub azure_app_push_receivers: Vec<AzureAppPushReceiver>,
-    #[serde(rename = "automationRunbookReceivers", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "automationRunbookReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub automation_runbook_receivers: Vec<AutomationRunbookReceiver>,
-    #[serde(rename = "voiceReceivers", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "voiceReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub voice_receivers: Vec<VoiceReceiver>,
-    #[serde(rename = "logicAppReceivers", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "logicAppReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub logic_app_receivers: Vec<LogicAppReceiver>,
-    #[serde(rename = "azureFunctionReceivers", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "azureFunctionReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub azure_function_receivers: Vec<AzureFunctionReceiver>,
-    #[serde(rename = "armRoleReceivers", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "armRoleReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub arm_role_receivers: Vec<ArmRoleReceiver>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -59,7 +59,7 @@ pub struct EmailReceiver {
     pub name: String,
     #[serde(rename = "emailAddress")]
     pub email_address: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -69,7 +69,7 @@ pub struct SmsReceiver {
     pub country_code: String,
     #[serde(rename = "phoneNumber")]
     pub phone_number: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -105,9 +105,9 @@ pub struct AutomationRunbookReceiver {
     pub webhook_resource_id: String,
     #[serde(rename = "isGlobalRunbook")]
     pub is_global_runbook: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "serviceUri", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "serviceUri", default, skip_serializing_if = "Option::is_none")]
     pub service_uri: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -155,34 +155,34 @@ pub struct EnableRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroupPatchBody {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroupPatch>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroupPatch {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizableString {
     pub value: String,
-    #[serde(rename = "localizedValue", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaselineMetadataValue {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -191,19 +191,19 @@ pub struct BaselineResponse {
     pub id: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub baseline: Vec<Baseline>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metdata: Vec<BaselineMetadataValue>,
-    #[serde(rename = "predictionResultType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "predictionResultType", default, skip_serializing_if = "Option::is_none")]
     pub prediction_result_type: Option<baseline_response::PredictionResultType>,
-    #[serde(rename = "errorType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "errorType", default, skip_serializing_if = "Option::is_none")]
     pub error_type: Option<baseline_response::ErrorType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BaselineProperties>,
 }
 pub mod baseline_response {
@@ -215,11 +215,11 @@ pub mod baseline_response {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaselineProperties {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timespan: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<String>,
     #[serde(rename = "internalOperationId", skip_serializing)]
     pub internal_operation_id: Option<String>,
@@ -231,11 +231,11 @@ pub struct Baseline {
     pub low_thresholds: Vec<f64>,
     #[serde(rename = "highThresholds")]
     pub high_thresholds: Vec<f64>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
-    #[serde(rename = "PredictionResultType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "PredictionResultType", default, skip_serializing_if = "Option::is_none")]
     pub prediction_result_type: Option<baseline::PredictionResultType>,
-    #[serde(rename = "ErrorType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ErrorType", default, skip_serializing_if = "Option::is_none")]
     pub error_type: Option<baseline::ErrorType>,
 }
 pub mod baseline {
@@ -255,32 +255,32 @@ pub mod baseline {
 pub struct TimeSeriesInformation {
     pub sensitivities: Vec<String>,
     pub values: Vec<f64>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CalculateBaselineResponse {
     #[serde(rename = "type")]
     pub type_: String,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
     pub baseline: Vec<Baseline>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub statistics: Option<calculate_baseline_response::Statistics>,
     #[serde(rename = "internalOperationId", skip_serializing)]
     pub internal_operation_id: Option<String>,
-    #[serde(rename = "errorType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "errorType", default, skip_serializing_if = "Option::is_none")]
     pub error_type: Option<calculate_baseline_response::ErrorType>,
 }
 pub mod calculate_baseline_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Statistics {
-        #[serde(rename = "isEligible", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "isEligible", default, skip_serializing_if = "Option::is_none")]
         pub is_eligible: Option<bool>,
-        #[serde(skip_serializing_if = "Vec::is_empty")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub status: Vec<String>,
-        #[serde(rename = "seasonalityPeriod", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "seasonalityPeriod", default, skip_serializing_if = "Option::is_none")]
         pub seasonality_period: Option<i32>,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

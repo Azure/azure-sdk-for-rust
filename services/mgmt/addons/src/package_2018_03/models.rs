@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CanonicalSupportPlanProperties {
-    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<canonical_support_plan_properties::ProvisioningState>,
 }
 pub mod canonical_support_plan_properties {
@@ -33,11 +33,11 @@ pub struct CanonicalSupportPlanResponseEnvelope {
 pub type CanonicalSupportPlanInfo = Vec<CanonicalSupportPlanInfoDefinition>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CanonicalSupportPlanInfoDefinition {
-    #[serde(rename = "supportPlanType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "supportPlanType", default, skip_serializing_if = "Option::is_none")]
     pub support_plan_type: Option<canonical_support_plan_info_definition::SupportPlanType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
-    #[serde(rename = "oneTimeCharge", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "oneTimeCharge", default, skip_serializing_if = "Option::is_none")]
     pub one_time_charge: Option<canonical_support_plan_info_definition::OneTimeCharge>,
 }
 pub mod canonical_support_plan_info_definition {
@@ -64,20 +64,20 @@ pub mod canonical_support_plan_info_definition {
 pub type OperationList = Vec<OperationsDefinition>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsDefinition {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationsDisplayDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsDisplayDefinition {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -4,37 +4,37 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsList {
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<Operation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmartDetectionMigrationRequest {
     pub scope: Vec<String>,
-    #[serde(rename = "actionGroupCreationPolicy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "actionGroupCreationPolicy", default, skip_serializing_if = "Option::is_none")]
     pub action_group_creation_policy: Option<smart_detection_migration_request::ActionGroupCreationPolicy>,
-    #[serde(rename = "customActionGroupName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customActionGroupName", default, skip_serializing_if = "Option::is_none")]
     pub custom_action_group_name: Option<String>,
 }
 pub mod smart_detection_migration_request {
@@ -53,7 +53,7 @@ pub struct MigrationStatusResponse {
     pub name: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MigrationStatusResponseProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -62,7 +62,7 @@ pub struct MigrationStatusResponseProperties {
     pub migration_id: String,
     pub status: migration_status_response_properties::Status,
     pub scope: Vec<String>,
-    #[serde(rename = "armDeploymentName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "armDeploymentName", default, skip_serializing_if = "Option::is_none")]
     pub arm_deployment_name: Option<String>,
 }
 pub mod migration_status_response_properties {
@@ -79,13 +79,13 @@ pub mod migration_status_response_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrationErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<MigrationErrorResponseBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrationErrorResponseBody {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }

@@ -4,52 +4,52 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InfoField {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub project: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageSample {
-    #[serde(rename = "subscriptionId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
-    #[serde(rename = "meterId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "meterId", default, skip_serializing_if = "Option::is_none")]
     pub meter_id: Option<String>,
-    #[serde(rename = "usageStartTime", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "usageStartTime", default, skip_serializing_if = "Option::is_none")]
     pub usage_start_time: Option<String>,
-    #[serde(rename = "usageEndTime", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "usageEndTime", default, skip_serializing_if = "Option::is_none")]
     pub usage_end_time: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quantity: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
-    #[serde(rename = "meterName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "meterName", default, skip_serializing_if = "Option::is_none")]
     pub meter_name: Option<String>,
-    #[serde(rename = "meterCategory", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "meterCategory", default, skip_serializing_if = "Option::is_none")]
     pub meter_category: Option<String>,
-    #[serde(rename = "meterSubCategory", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "meterSubCategory", default, skip_serializing_if = "Option::is_none")]
     pub meter_sub_category: Option<String>,
-    #[serde(rename = "meterRegion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "meterRegion", default, skip_serializing_if = "Option::is_none")]
     pub meter_region: Option<String>,
-    #[serde(rename = "infoFields", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "infoFields", default, skip_serializing_if = "Option::is_none")]
     pub info_fields: Option<InfoField>,
-    #[serde(rename = "instanceData", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "instanceData", default, skip_serializing_if = "Option::is_none")]
     pub instance_data: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageAggregation {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UsageSample>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageAggregationListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<UsageAggregation>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -65,45 +65,45 @@ pub struct RateCardQueryParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceRateCardInfo {
-    #[serde(rename = "Currency", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Currency", default, skip_serializing_if = "Option::is_none")]
     pub currency: Option<String>,
-    #[serde(rename = "Locale", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Locale", default, skip_serializing_if = "Option::is_none")]
     pub locale: Option<String>,
-    #[serde(rename = "IsTaxIncluded", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "IsTaxIncluded", default, skip_serializing_if = "Option::is_none")]
     pub is_tax_included: Option<bool>,
-    #[serde(rename = "OfferTerms", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "OfferTerms", default, skip_serializing_if = "Vec::is_empty")]
     pub offer_terms: Vec<OfferTermInfo>,
-    #[serde(rename = "Meters", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "Meters", default, skip_serializing_if = "Vec::is_empty")]
     pub meters: Vec<MeterInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MeterInfo {
-    #[serde(rename = "MeterId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "MeterId", default, skip_serializing_if = "Option::is_none")]
     pub meter_id: Option<String>,
-    #[serde(rename = "MeterName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "MeterName", default, skip_serializing_if = "Option::is_none")]
     pub meter_name: Option<String>,
-    #[serde(rename = "MeterCategory", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "MeterCategory", default, skip_serializing_if = "Option::is_none")]
     pub meter_category: Option<String>,
-    #[serde(rename = "MeterSubCategory", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "MeterSubCategory", default, skip_serializing_if = "Option::is_none")]
     pub meter_sub_category: Option<String>,
-    #[serde(rename = "Unit", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Unit", default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
-    #[serde(rename = "MeterTags", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "MeterTags", default, skip_serializing_if = "Vec::is_empty")]
     pub meter_tags: Vec<String>,
-    #[serde(rename = "MeterRegion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "MeterRegion", default, skip_serializing_if = "Option::is_none")]
     pub meter_region: Option<String>,
-    #[serde(rename = "MeterRates", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "MeterRates", default, skip_serializing_if = "Option::is_none")]
     pub meter_rates: Option<serde_json::Value>,
-    #[serde(rename = "EffectiveDate", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "EffectiveDate", default, skip_serializing_if = "Option::is_none")]
     pub effective_date: Option<String>,
-    #[serde(rename = "IncludedQuantity", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "IncludedQuantity", default, skip_serializing_if = "Option::is_none")]
     pub included_quantity: Option<f32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfferTermInfo {
     #[serde(rename = "Name")]
     pub name: offer_term_info::Name,
-    #[serde(rename = "EffectiveDate", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "EffectiveDate", default, skip_serializing_if = "Option::is_none")]
     pub effective_date: Option<String>,
 }
 pub mod offer_term_info {
@@ -122,31 +122,31 @@ pub mod offer_term_info {
 pub struct MonetaryCredit {
     #[serde(flatten)]
     pub offer_term_info: OfferTermInfo,
-    #[serde(rename = "Credit", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Credit", default, skip_serializing_if = "Option::is_none")]
     pub credit: Option<f64>,
-    #[serde(rename = "ExcludedMeterIds", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "ExcludedMeterIds", default, skip_serializing_if = "Vec::is_empty")]
     pub excluded_meter_ids: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonetaryCommitment {
     #[serde(flatten)]
     pub offer_term_info: OfferTermInfo,
-    #[serde(rename = "TieredDiscount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "TieredDiscount", default, skip_serializing_if = "Option::is_none")]
     pub tiered_discount: Option<serde_json::Value>,
-    #[serde(rename = "ExcludedMeterIds", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "ExcludedMeterIds", default, skip_serializing_if = "Vec::is_empty")]
     pub excluded_meter_ids: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecurringCharge {
     #[serde(flatten)]
     pub offer_term_info: OfferTermInfo,
-    #[serde(rename = "RecurringCharge", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "RecurringCharge", default, skip_serializing_if = "Option::is_none")]
     pub recurring_charge: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }

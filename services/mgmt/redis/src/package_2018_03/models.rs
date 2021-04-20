@@ -24,15 +24,15 @@ pub mod sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisCommonProperties {
-    #[serde(rename = "redisConfiguration", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "redisConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub redis_configuration: Option<serde_json::Value>,
-    #[serde(rename = "enableNonSslPort", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enableNonSslPort", default, skip_serializing_if = "Option::is_none")]
     pub enable_non_ssl_port: Option<bool>,
-    #[serde(rename = "tenantSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "tenantSettings", default, skip_serializing_if = "Option::is_none")]
     pub tenant_settings: Option<serde_json::Value>,
-    #[serde(rename = "shardCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "shardCount", default, skip_serializing_if = "Option::is_none")]
     pub shard_count: Option<i32>,
-    #[serde(rename = "minimumTlsVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "minimumTlsVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<redis_common_properties::MinimumTlsVersion>,
 }
 pub mod redis_common_properties {
@@ -52,16 +52,16 @@ pub struct RedisCreateProperties {
     #[serde(flatten)]
     pub redis_common_properties: RedisCommonProperties,
     pub sku: Sku,
-    #[serde(rename = "subnetId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
-    #[serde(rename = "staticIP", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "staticIP", default, skip_serializing_if = "Option::is_none")]
     pub static_ip: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisUpdateProperties {
     #[serde(flatten)]
     pub redis_common_properties: RedisCommonProperties,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -78,7 +78,7 @@ pub struct RedisProperties {
     pub port: Option<i32>,
     #[serde(rename = "sslPort", skip_serializing)]
     pub ssl_port: Option<i32>,
-    #[serde(rename = "accessKeys", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "accessKeys", default, skip_serializing_if = "Option::is_none")]
     pub access_keys: Option<RedisAccessKeys>,
     #[serde(rename = "linkedServers", skip_serializing)]
     pub linked_servers: Vec<RedisLinkedServer>,
@@ -119,24 +119,24 @@ pub struct ProxyResource {
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisCreateParameters {
     pub properties: RedisCreateProperties,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisUpdateParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RedisUpdateProperties>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -165,7 +165,7 @@ pub struct RedisFirewallRuleProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisFirewallRuleListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RedisFirewallRule>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -175,12 +175,12 @@ pub struct RedisResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     pub properties: RedisProperties,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RedisResource>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -202,7 +202,7 @@ pub mod redis_regenerate_key_parameters {
 pub struct RedisRebootParameters {
     #[serde(rename = "rebootType")]
     pub reboot_type: redis_reboot_parameters::RebootType,
-    #[serde(rename = "shardId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "shardId", default, skip_serializing_if = "Option::is_none")]
     pub shard_id: Option<i32>,
 }
 pub mod redis_reboot_parameters {
@@ -216,14 +216,14 @@ pub mod redis_reboot_parameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportRdbParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<String>,
     pub prefix: String,
     pub container: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportRdbParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<String>,
     pub files: Vec<String>,
 }
@@ -233,7 +233,7 @@ pub struct ScheduleEntry {
     pub day_of_week: schedule_entry::DayOfWeek,
     #[serde(rename = "startHourUtc")]
     pub start_hour_utc: i32,
-    #[serde(rename = "maintenanceWindow", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window: Option<String>,
 }
 pub mod schedule_entry {
@@ -264,7 +264,7 @@ pub struct RedisPatchSchedule {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisPatchScheduleListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RedisPatchSchedule>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -283,7 +283,7 @@ pub struct RedisLinkedServer {
 pub struct RedisLinkedServerWithProperties {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RedisLinkedServerProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -295,7 +295,7 @@ pub struct RedisLinkedServerProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisLinkedServerWithPropertiesList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RedisLinkedServerWithProperties>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -323,28 +323,28 @@ pub struct RedisLinkedServerCreateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -366,7 +366,7 @@ pub struct UpgradeNotification {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NotificationListResponse {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<UpgradeNotification>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,

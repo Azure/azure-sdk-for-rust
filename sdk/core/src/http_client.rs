@@ -4,9 +4,12 @@ use async_trait::async_trait;
 use bytes::Bytes;
 use futures::TryStreamExt;
 use http::{Request, Response, StatusCode};
+#[cfg(feature = "enable_hyper")]
+use hyper_rustls::HttpsConnector;
 use serde::Serialize;
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait HttpClient: Send + Sync + std::fmt::Debug {
     async fn execute_request(
         &self,
@@ -67,7 +70,9 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 }
 
 // TODO: To reimplement once the Request and Response are validated.
-//#[async_trait]
+//#[cfg(feature = "enable_hyper")]
+//#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+//#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 //impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
 //    async fn execute_request(
 //        &self,
@@ -99,7 +104,9 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 //    }
 //}
 
-#[async_trait]
+#[cfg(feature = "enable_reqwest")]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for reqwest::Client {
     async fn execute_request(
         &self,
@@ -165,6 +172,20 @@ impl HttpClient for reqwest::Client {
 
         Ok(response)
     }
+}
+
+// wasm can not get the http version
+#[cfg(feature = "enable_reqwest")]
+#[cfg(target_arch = "wasm32")]
+fn get_version(_response: &reqwest::Response) -> Option<http::Version> {
+    None
+}
+
+#[cfg(feature = "enable_reqwest")]
+#[cfg(not(target_arch = "wasm32"))]
+#[allow(dead_code)]
+fn get_version(response: &reqwest::Response) -> Option<http::Version> {
+    Some(response.version())
 }
 
 /// Serialize to json

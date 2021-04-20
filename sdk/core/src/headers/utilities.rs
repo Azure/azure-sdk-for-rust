@@ -1,12 +1,14 @@
 use super::*;
-use crate::errors::{check_status_extract_body_2, AzureError};
+use crate::errors::*;
 use crate::request_options::LeaseId;
 use crate::util::HeaderMapExt;
 use crate::{Consistency, RequestId, SessionToken};
 use chrono::{DateTime, Utc};
+use http::header::{HeaderName, DATE, ETAG, LAST_MODIFIED};
+#[cfg(feature = "enable_hyper")]
 use http::status::StatusCode;
 use http::HeaderMap;
-use hyper::header::{HeaderName, DATE, ETAG, LAST_MODIFIED};
+#[cfg(feature = "enable_hyper")]
 use hyper::{Body, Client, Request};
 use std::str::FromStr;
 use uuid::Uuid;
@@ -317,6 +319,7 @@ pub fn content_type_from_headers(headers: &HeaderMap) -> Result<&str, AzureError
         .to_str()?)
 }
 
+#[cfg(feature = "enable_hyper")]
 pub async fn perform_http_request(
     client: &Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>,
     req: Request<Body>,

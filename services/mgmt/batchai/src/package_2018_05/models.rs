@@ -17,7 +17,7 @@ pub struct Usage {
     pub current_value: Option<i32>,
     #[serde(skip_serializing)]
     pub limit: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
 }
 pub mod usage {
@@ -42,12 +42,12 @@ pub struct FileServerBaseProperties {
     pub ssh_configuration: SshConfiguration,
     #[serde(rename = "dataDisks")]
     pub data_disks: DataDisks,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<ResourceId>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileServerListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FileServer>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -56,7 +56,7 @@ pub struct FileServerListResult {
 pub struct DataDisks {
     #[serde(rename = "diskSizeInGB")]
     pub disk_size_in_gb: i32,
-    #[serde(rename = "cachingType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "cachingType", default, skip_serializing_if = "Option::is_none")]
     pub caching_type: Option<data_disks::CachingType>,
     #[serde(rename = "diskCount")]
     pub disk_count: i32,
@@ -91,36 +91,36 @@ pub struct KeyVaultSecretReference {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MountSettings {
-    #[serde(rename = "mountPoint", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "mountPoint", default, skip_serializing_if = "Option::is_none")]
     pub mount_point: Option<String>,
-    #[serde(rename = "fileServerPublicIP", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "fileServerPublicIP", default, skip_serializing_if = "Option::is_none")]
     pub file_server_public_ip: Option<String>,
-    #[serde(rename = "fileServerInternalIP", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "fileServerInternalIP", default, skip_serializing_if = "Option::is_none")]
     pub file_server_internal_ip: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SshConfiguration {
-    #[serde(rename = "publicIPsToAllow", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "publicIPsToAllow", default, skip_serializing_if = "Vec::is_empty")]
     pub public_i_ps_to_allow: Vec<String>,
     #[serde(rename = "userAccountSettings")]
     pub user_account_settings: UserAccountSettings,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileServerCreateParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FileServerBaseProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileServerProperties {
-    #[serde(rename = "vmSize", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<String>,
-    #[serde(rename = "sshConfiguration", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sshConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub ssh_configuration: Option<SshConfiguration>,
-    #[serde(rename = "dataDisks", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "dataDisks", default, skip_serializing_if = "Option::is_none")]
     pub data_disks: Option<DataDisks>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<ResourceId>,
-    #[serde(rename = "mountSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "mountSettings", default, skip_serializing_if = "Option::is_none")]
     pub mount_settings: Option<MountSettings>,
     #[serde(rename = "provisioningStateTransitionTime", skip_serializing)]
     pub provisioning_state_transition_time: Option<String>,
@@ -149,24 +149,24 @@ pub mod file_server_properties {
 pub struct FileServer {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FileServerProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterBaseProperties {
     #[serde(rename = "vmSize")]
     pub vm_size: String,
-    #[serde(rename = "vmPriority", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "vmPriority", default, skip_serializing_if = "Option::is_none")]
     pub vm_priority: Option<cluster_base_properties::VmPriority>,
-    #[serde(rename = "scaleSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "scaleSettings", default, skip_serializing_if = "Option::is_none")]
     pub scale_settings: Option<ScaleSettings>,
-    #[serde(rename = "virtualMachineConfiguration", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "virtualMachineConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_configuration: Option<VirtualMachineConfiguration>,
-    #[serde(rename = "nodeSetup", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nodeSetup", default, skip_serializing_if = "Option::is_none")]
     pub node_setup: Option<NodeSetup>,
     #[serde(rename = "userAccountSettings")]
     pub user_account_settings: UserAccountSettings,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<ResourceId>,
 }
 pub mod cluster_base_properties {
@@ -181,7 +181,7 @@ pub mod cluster_base_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpdateProperties {
-    #[serde(rename = "scaleSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "scaleSettings", default, skip_serializing_if = "Option::is_none")]
     pub scale_settings: Option<ScaleSettings>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -195,9 +195,9 @@ pub enum DeallocationOption {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScaleSettings {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub manual: Option<ManualScaleSettings>,
-    #[serde(rename = "autoScale", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "autoScale", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale: Option<AutoScaleSettings>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -206,19 +206,19 @@ pub struct AutoScaleSettings {
     pub minimum_node_count: i32,
     #[serde(rename = "maximumNodeCount")]
     pub maximum_node_count: i32,
-    #[serde(rename = "initialNodeCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "initialNodeCount", default, skip_serializing_if = "Option::is_none")]
     pub initial_node_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManualScaleSettings {
     #[serde(rename = "targetNodeCount")]
     pub target_node_count: i32,
-    #[serde(rename = "nodeDeallocationOption", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nodeDeallocationOption", default, skip_serializing_if = "Option::is_none")]
     pub node_deallocation_option: Option<DeallocationOption>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineConfiguration {
-    #[serde(rename = "imageReference", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
     pub image_reference: Option<ImageReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -226,9 +226,9 @@ pub struct ImageReference {
     pub publisher: String,
     pub offer: String,
     pub sku: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-    #[serde(rename = "virtualMachineImageId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "virtualMachineImageId", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_image_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -248,9 +248,9 @@ pub struct NodeStateCounts {
 pub struct UserAccountSettings {
     #[serde(rename = "adminUserName")]
     pub admin_user_name: String,
-    #[serde(rename = "adminUserSshPublicKey", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "adminUserSshPublicKey", default, skip_serializing_if = "Option::is_none")]
     pub admin_user_ssh_public_key: Option<String>,
-    #[serde(rename = "adminUserPassword", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "adminUserPassword", default, skip_serializing_if = "Option::is_none")]
     pub admin_user_password: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -261,27 +261,27 @@ pub struct PerformanceCountersSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppInsightsReference {
     pub component: ResourceId,
-    #[serde(rename = "instrumentationKey", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "instrumentationKey", default, skip_serializing_if = "Option::is_none")]
     pub instrumentation_key: Option<String>,
-    #[serde(rename = "instrumentationKeySecretReference", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "instrumentationKeySecretReference", default, skip_serializing_if = "Option::is_none")]
     pub instrumentation_key_secret_reference: Option<KeyVaultSecretReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeSetup {
-    #[serde(rename = "setupTask", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "setupTask", default, skip_serializing_if = "Option::is_none")]
     pub setup_task: Option<SetupTask>,
-    #[serde(rename = "mountVolumes", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "mountVolumes", default, skip_serializing_if = "Option::is_none")]
     pub mount_volumes: Option<MountVolumes>,
-    #[serde(rename = "performanceCountersSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "performanceCountersSettings", default, skip_serializing_if = "Option::is_none")]
     pub performance_counters_settings: Option<PerformanceCountersSettings>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SetupTask {
     #[serde(rename = "commandLine")]
     pub command_line: String,
-    #[serde(rename = "environmentVariables", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "environmentVariables", default, skip_serializing_if = "Vec::is_empty")]
     pub environment_variables: Vec<EnvironmentVariable>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub secrets: Vec<EnvironmentVariableWithSecretValue>,
     #[serde(rename = "stdOutErrPathPrefix")]
     pub std_out_err_path_prefix: String,
@@ -290,29 +290,29 @@ pub struct SetupTask {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterCreateParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClusterBaseProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpdateParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClusterUpdateProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterProperties {
-    #[serde(rename = "vmSize", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<String>,
-    #[serde(rename = "vmPriority", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "vmPriority", default, skip_serializing_if = "Option::is_none")]
     pub vm_priority: Option<cluster_properties::VmPriority>,
-    #[serde(rename = "scaleSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "scaleSettings", default, skip_serializing_if = "Option::is_none")]
     pub scale_settings: Option<ScaleSettings>,
-    #[serde(rename = "virtualMachineConfiguration", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "virtualMachineConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_configuration: Option<VirtualMachineConfiguration>,
-    #[serde(rename = "nodeSetup", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nodeSetup", default, skip_serializing_if = "Option::is_none")]
     pub node_setup: Option<NodeSetup>,
-    #[serde(rename = "userAccountSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "userAccountSettings", default, skip_serializing_if = "Option::is_none")]
     pub user_account_settings: Option<UserAccountSettings>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<ResourceId>,
     #[serde(rename = "creationTime", skip_serializing)]
     pub creation_time: Option<String>,
@@ -328,7 +328,7 @@ pub struct ClusterProperties {
     pub errors: Vec<BatchAiError>,
     #[serde(rename = "currentNodeCount", skip_serializing)]
     pub current_node_count: Option<i32>,
-    #[serde(rename = "nodeStateCounts", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nodeStateCounts", default, skip_serializing_if = "Option::is_none")]
     pub node_state_counts: Option<NodeStateCounts>,
 }
 pub mod cluster_properties {
@@ -363,7 +363,7 @@ pub mod cluster_properties {
 pub struct Cluster {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClusterProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -375,46 +375,46 @@ pub struct ClusterListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobBaseProperties {
-    #[serde(rename = "schedulingPriority", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "schedulingPriority", default, skip_serializing_if = "Option::is_none")]
     pub scheduling_priority: Option<job_base_properties::SchedulingPriority>,
     pub cluster: ResourceId,
-    #[serde(rename = "mountVolumes", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "mountVolumes", default, skip_serializing_if = "Option::is_none")]
     pub mount_volumes: Option<MountVolumes>,
     #[serde(rename = "nodeCount")]
     pub node_count: i32,
-    #[serde(rename = "containerSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "containerSettings", default, skip_serializing_if = "Option::is_none")]
     pub container_settings: Option<ContainerSettings>,
-    #[serde(rename = "cntkSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "cntkSettings", default, skip_serializing_if = "Option::is_none")]
     pub cntk_settings: Option<CntKsettings>,
-    #[serde(rename = "pyTorchSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pyTorchSettings", default, skip_serializing_if = "Option::is_none")]
     pub py_torch_settings: Option<PyTorchSettings>,
-    #[serde(rename = "tensorFlowSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "tensorFlowSettings", default, skip_serializing_if = "Option::is_none")]
     pub tensor_flow_settings: Option<TensorFlowSettings>,
-    #[serde(rename = "caffeSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "caffeSettings", default, skip_serializing_if = "Option::is_none")]
     pub caffe_settings: Option<CaffeSettings>,
-    #[serde(rename = "caffe2Settings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "caffe2Settings", default, skip_serializing_if = "Option::is_none")]
     pub caffe2_settings: Option<Caffe2Settings>,
-    #[serde(rename = "chainerSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "chainerSettings", default, skip_serializing_if = "Option::is_none")]
     pub chainer_settings: Option<ChainerSettings>,
-    #[serde(rename = "customToolkitSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customToolkitSettings", default, skip_serializing_if = "Option::is_none")]
     pub custom_toolkit_settings: Option<CustomToolkitSettings>,
-    #[serde(rename = "customMpiSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customMpiSettings", default, skip_serializing_if = "Option::is_none")]
     pub custom_mpi_settings: Option<CustomMpiSettings>,
-    #[serde(rename = "horovodSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "horovodSettings", default, skip_serializing_if = "Option::is_none")]
     pub horovod_settings: Option<HorovodSettings>,
-    #[serde(rename = "jobPreparation", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "jobPreparation", default, skip_serializing_if = "Option::is_none")]
     pub job_preparation: Option<JobPreparation>,
     #[serde(rename = "stdOutErrPathPrefix")]
     pub std_out_err_path_prefix: String,
-    #[serde(rename = "inputDirectories", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "inputDirectories", default, skip_serializing_if = "Vec::is_empty")]
     pub input_directories: Vec<InputDirectory>,
-    #[serde(rename = "outputDirectories", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "outputDirectories", default, skip_serializing_if = "Vec::is_empty")]
     pub output_directories: Vec<OutputDirectory>,
-    #[serde(rename = "environmentVariables", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "environmentVariables", default, skip_serializing_if = "Vec::is_empty")]
     pub environment_variables: Vec<EnvironmentVariable>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub secrets: Vec<EnvironmentVariableWithSecretValue>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints: Option<job_base_properties::Constraints>,
 }
 pub mod job_base_properties {
@@ -430,62 +430,62 @@ pub mod job_base_properties {
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Constraints {
-        #[serde(rename = "maxWallClockTime", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "maxWallClockTime", default, skip_serializing_if = "Option::is_none")]
         pub max_wall_clock_time: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCreateParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobBaseProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobProperties {
-    #[serde(rename = "schedulingPriority", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "schedulingPriority", default, skip_serializing_if = "Option::is_none")]
     pub scheduling_priority: Option<job_properties::SchedulingPriority>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cluster: Option<ResourceId>,
-    #[serde(rename = "mountVolumes", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "mountVolumes", default, skip_serializing_if = "Option::is_none")]
     pub mount_volumes: Option<MountVolumes>,
-    #[serde(rename = "nodeCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nodeCount", default, skip_serializing_if = "Option::is_none")]
     pub node_count: Option<i32>,
-    #[serde(rename = "containerSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "containerSettings", default, skip_serializing_if = "Option::is_none")]
     pub container_settings: Option<ContainerSettings>,
-    #[serde(rename = "toolType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "toolType", default, skip_serializing_if = "Option::is_none")]
     pub tool_type: Option<ToolType>,
-    #[serde(rename = "cntkSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "cntkSettings", default, skip_serializing_if = "Option::is_none")]
     pub cntk_settings: Option<CntKsettings>,
-    #[serde(rename = "pyTorchSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pyTorchSettings", default, skip_serializing_if = "Option::is_none")]
     pub py_torch_settings: Option<PyTorchSettings>,
-    #[serde(rename = "tensorFlowSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "tensorFlowSettings", default, skip_serializing_if = "Option::is_none")]
     pub tensor_flow_settings: Option<TensorFlowSettings>,
-    #[serde(rename = "caffeSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "caffeSettings", default, skip_serializing_if = "Option::is_none")]
     pub caffe_settings: Option<CaffeSettings>,
-    #[serde(rename = "caffe2Settings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "caffe2Settings", default, skip_serializing_if = "Option::is_none")]
     pub caffe2_settings: Option<Caffe2Settings>,
-    #[serde(rename = "chainerSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "chainerSettings", default, skip_serializing_if = "Option::is_none")]
     pub chainer_settings: Option<ChainerSettings>,
-    #[serde(rename = "customToolkitSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customToolkitSettings", default, skip_serializing_if = "Option::is_none")]
     pub custom_toolkit_settings: Option<CustomToolkitSettings>,
-    #[serde(rename = "customMpiSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customMpiSettings", default, skip_serializing_if = "Option::is_none")]
     pub custom_mpi_settings: Option<CustomMpiSettings>,
-    #[serde(rename = "horovodSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "horovodSettings", default, skip_serializing_if = "Option::is_none")]
     pub horovod_settings: Option<HorovodSettings>,
-    #[serde(rename = "jobPreparation", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "jobPreparation", default, skip_serializing_if = "Option::is_none")]
     pub job_preparation: Option<JobPreparation>,
     #[serde(rename = "jobOutputDirectoryPathSegment", skip_serializing)]
     pub job_output_directory_path_segment: Option<String>,
-    #[serde(rename = "stdOutErrPathPrefix", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "stdOutErrPathPrefix", default, skip_serializing_if = "Option::is_none")]
     pub std_out_err_path_prefix: Option<String>,
-    #[serde(rename = "inputDirectories", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "inputDirectories", default, skip_serializing_if = "Vec::is_empty")]
     pub input_directories: Vec<InputDirectory>,
-    #[serde(rename = "outputDirectories", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "outputDirectories", default, skip_serializing_if = "Vec::is_empty")]
     pub output_directories: Vec<OutputDirectory>,
-    #[serde(rename = "environmentVariables", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "environmentVariables", default, skip_serializing_if = "Vec::is_empty")]
     pub environment_variables: Vec<EnvironmentVariable>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub secrets: Vec<EnvironmentVariableWithSecretValue>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints: Option<job_properties::Constraints>,
     #[serde(rename = "creationTime", skip_serializing)]
     pub creation_time: Option<String>,
@@ -497,7 +497,7 @@ pub struct JobProperties {
     pub execution_state: Option<job_properties::ExecutionState>,
     #[serde(rename = "executionStateTransitionTime", skip_serializing)]
     pub execution_state_transition_time: Option<String>,
-    #[serde(rename = "executionInfo", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "executionInfo", default, skip_serializing_if = "Option::is_none")]
     pub execution_info: Option<job_properties::ExecutionInfo>,
 }
 pub mod job_properties {
@@ -513,7 +513,7 @@ pub mod job_properties {
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Constraints {
-        #[serde(rename = "maxWallClockTime", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "maxWallClockTime", default, skip_serializing_if = "Option::is_none")]
         pub max_wall_clock_time: Option<String>,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -556,7 +556,7 @@ pub mod job_properties {
 pub struct Job {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -597,7 +597,7 @@ pub struct File {
     pub file_type: Option<file::FileType>,
     #[serde(rename = "downloadUrl", skip_serializing)]
     pub download_url: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FileProperties>,
 }
 pub mod file {
@@ -664,9 +664,9 @@ pub enum ToolType {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NameValuePair {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -677,32 +677,32 @@ pub struct EnvironmentVariable {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentVariableWithSecretValue {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
-    #[serde(rename = "valueSecretReference", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "valueSecretReference", default, skip_serializing_if = "Option::is_none")]
     pub value_secret_reference: Option<KeyVaultSecretReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageSourceRegistry {
-    #[serde(rename = "serverUrl", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "serverUrl", default, skip_serializing_if = "Option::is_none")]
     pub server_url: Option<String>,
     pub image: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<PrivateRegistryCredentials>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateRegistryCredentials {
     pub username: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
-    #[serde(rename = "passwordSecretReference", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "passwordSecretReference", default, skip_serializing_if = "Option::is_none")]
     pub password_secret_reference: Option<KeyVaultSecretReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerSettings {
     #[serde(rename = "imageSourceRegistry")]
     pub image_source_registry: ImageSourceRegistry,
-    #[serde(rename = "shmSize", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "shmSize", default, skip_serializing_if = "Option::is_none")]
     pub shm_size: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -715,14 +715,14 @@ pub struct OutputDirectory {
     pub id: String,
     #[serde(rename = "pathPrefix")]
     pub path_prefix: String,
-    #[serde(rename = "pathSuffix", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pathSuffix", default, skip_serializing_if = "Option::is_none")]
     pub path_suffix: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureStorageCredentialsInfo {
-    #[serde(rename = "accountKey", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "accountKey", default, skip_serializing_if = "Option::is_none")]
     pub account_key: Option<String>,
-    #[serde(rename = "accountKeySecretReference", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "accountKeySecretReference", default, skip_serializing_if = "Option::is_none")]
     pub account_key_secret_reference: Option<KeyVaultSecretReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -734,9 +734,9 @@ pub struct AzureFileShareReference {
     pub credentials: AzureStorageCredentialsInfo,
     #[serde(rename = "relativeMountPath")]
     pub relative_mount_path: String,
-    #[serde(rename = "fileMode", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "fileMode", default, skip_serializing_if = "Option::is_none")]
     pub file_mode: Option<String>,
-    #[serde(rename = "directoryMode", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "directoryMode", default, skip_serializing_if = "Option::is_none")]
     pub directory_mode: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -748,18 +748,18 @@ pub struct AzureBlobFileSystemReference {
     pub credentials: AzureStorageCredentialsInfo,
     #[serde(rename = "relativeMountPath")]
     pub relative_mount_path: String,
-    #[serde(rename = "mountOptions", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "mountOptions", default, skip_serializing_if = "Option::is_none")]
     pub mount_options: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileServerReference {
     #[serde(rename = "fileServer")]
     pub file_server: ResourceId,
-    #[serde(rename = "sourceDirectory", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sourceDirectory", default, skip_serializing_if = "Option::is_none")]
     pub source_directory: Option<String>,
     #[serde(rename = "relativeMountPath")]
     pub relative_mount_path: String,
-    #[serde(rename = "mountOptions", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "mountOptions", default, skip_serializing_if = "Option::is_none")]
     pub mount_options: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -771,73 +771,73 @@ pub struct UnmanagedFileSystemReference {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MountVolumes {
-    #[serde(rename = "azureFileShares", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "azureFileShares", default, skip_serializing_if = "Vec::is_empty")]
     pub azure_file_shares: Vec<AzureFileShareReference>,
-    #[serde(rename = "azureBlobFileSystems", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "azureBlobFileSystems", default, skip_serializing_if = "Vec::is_empty")]
     pub azure_blob_file_systems: Vec<AzureBlobFileSystemReference>,
-    #[serde(rename = "fileServers", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "fileServers", default, skip_serializing_if = "Vec::is_empty")]
     pub file_servers: Vec<FileServerReference>,
-    #[serde(rename = "unmanagedFileSystems", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "unmanagedFileSystems", default, skip_serializing_if = "Vec::is_empty")]
     pub unmanaged_file_systems: Vec<UnmanagedFileSystemReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CntKsettings {
-    #[serde(rename = "languageType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "languageType", default, skip_serializing_if = "Option::is_none")]
     pub language_type: Option<String>,
-    #[serde(rename = "configFilePath", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "configFilePath", default, skip_serializing_if = "Option::is_none")]
     pub config_file_path: Option<String>,
-    #[serde(rename = "pythonScriptFilePath", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pythonScriptFilePath", default, skip_serializing_if = "Option::is_none")]
     pub python_script_file_path: Option<String>,
-    #[serde(rename = "pythonInterpreterPath", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pythonInterpreterPath", default, skip_serializing_if = "Option::is_none")]
     pub python_interpreter_path: Option<String>,
-    #[serde(rename = "commandLineArgs", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "commandLineArgs", default, skip_serializing_if = "Option::is_none")]
     pub command_line_args: Option<String>,
-    #[serde(rename = "processCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "processCount", default, skip_serializing_if = "Option::is_none")]
     pub process_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CaffeSettings {
-    #[serde(rename = "configFilePath", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "configFilePath", default, skip_serializing_if = "Option::is_none")]
     pub config_file_path: Option<String>,
-    #[serde(rename = "pythonScriptFilePath", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pythonScriptFilePath", default, skip_serializing_if = "Option::is_none")]
     pub python_script_file_path: Option<String>,
-    #[serde(rename = "pythonInterpreterPath", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pythonInterpreterPath", default, skip_serializing_if = "Option::is_none")]
     pub python_interpreter_path: Option<String>,
-    #[serde(rename = "commandLineArgs", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "commandLineArgs", default, skip_serializing_if = "Option::is_none")]
     pub command_line_args: Option<String>,
-    #[serde(rename = "processCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "processCount", default, skip_serializing_if = "Option::is_none")]
     pub process_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Caffe2Settings {
     #[serde(rename = "pythonScriptFilePath")]
     pub python_script_file_path: String,
-    #[serde(rename = "pythonInterpreterPath", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pythonInterpreterPath", default, skip_serializing_if = "Option::is_none")]
     pub python_interpreter_path: Option<String>,
-    #[serde(rename = "commandLineArgs", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "commandLineArgs", default, skip_serializing_if = "Option::is_none")]
     pub command_line_args: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChainerSettings {
     #[serde(rename = "pythonScriptFilePath")]
     pub python_script_file_path: String,
-    #[serde(rename = "pythonInterpreterPath", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pythonInterpreterPath", default, skip_serializing_if = "Option::is_none")]
     pub python_interpreter_path: Option<String>,
-    #[serde(rename = "commandLineArgs", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "commandLineArgs", default, skip_serializing_if = "Option::is_none")]
     pub command_line_args: Option<String>,
-    #[serde(rename = "processCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "processCount", default, skip_serializing_if = "Option::is_none")]
     pub process_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomToolkitSettings {
-    #[serde(rename = "commandLine", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "commandLine", default, skip_serializing_if = "Option::is_none")]
     pub command_line: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomMpiSettings {
     #[serde(rename = "commandLine")]
     pub command_line: String,
-    #[serde(rename = "processCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "processCount", default, skip_serializing_if = "Option::is_none")]
     pub process_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -849,46 +849,46 @@ pub struct JobPreparation {
 pub struct PyTorchSettings {
     #[serde(rename = "pythonScriptFilePath")]
     pub python_script_file_path: String,
-    #[serde(rename = "pythonInterpreterPath", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pythonInterpreterPath", default, skip_serializing_if = "Option::is_none")]
     pub python_interpreter_path: Option<String>,
-    #[serde(rename = "commandLineArgs", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "commandLineArgs", default, skip_serializing_if = "Option::is_none")]
     pub command_line_args: Option<String>,
-    #[serde(rename = "processCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "processCount", default, skip_serializing_if = "Option::is_none")]
     pub process_count: Option<i32>,
-    #[serde(rename = "communicationBackend", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "communicationBackend", default, skip_serializing_if = "Option::is_none")]
     pub communication_backend: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HorovodSettings {
     #[serde(rename = "pythonScriptFilePath")]
     pub python_script_file_path: String,
-    #[serde(rename = "pythonInterpreterPath", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pythonInterpreterPath", default, skip_serializing_if = "Option::is_none")]
     pub python_interpreter_path: Option<String>,
-    #[serde(rename = "commandLineArgs", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "commandLineArgs", default, skip_serializing_if = "Option::is_none")]
     pub command_line_args: Option<String>,
-    #[serde(rename = "processCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "processCount", default, skip_serializing_if = "Option::is_none")]
     pub process_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TensorFlowSettings {
     #[serde(rename = "pythonScriptFilePath")]
     pub python_script_file_path: String,
-    #[serde(rename = "pythonInterpreterPath", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pythonInterpreterPath", default, skip_serializing_if = "Option::is_none")]
     pub python_interpreter_path: Option<String>,
-    #[serde(rename = "masterCommandLineArgs", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "masterCommandLineArgs", default, skip_serializing_if = "Option::is_none")]
     pub master_command_line_args: Option<String>,
-    #[serde(rename = "workerCommandLineArgs", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "workerCommandLineArgs", default, skip_serializing_if = "Option::is_none")]
     pub worker_command_line_args: Option<String>,
-    #[serde(rename = "parameterServerCommandLineArgs", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "parameterServerCommandLineArgs", default, skip_serializing_if = "Option::is_none")]
     pub parameter_server_command_line_args: Option<String>,
-    #[serde(rename = "workerCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "workerCount", default, skip_serializing_if = "Option::is_none")]
     pub worker_count: Option<i32>,
-    #[serde(rename = "parameterServerCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "parameterServerCount", default, skip_serializing_if = "Option::is_none")]
     pub parameter_server_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -915,11 +915,11 @@ pub struct BatchAiError {
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[serde(skip_serializing)]
     pub origin: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
 pub mod operation {
@@ -953,12 +953,12 @@ pub struct WorkspaceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceCreateParameters {
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceUpdateParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -988,7 +988,7 @@ pub mod workspace_properties {
 pub struct Workspace {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspaceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1025,6 +1025,6 @@ pub mod experiment_properties {
 pub struct Experiment {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExperimentProperties>,
 }
