@@ -29,7 +29,7 @@ impl ResponseBuilder {
         self
     }
 
-    pub fn with_response(self, response: PinnedStream) -> Response {
+    pub fn with_pinned_stream(self, response: PinnedStream) -> Response {
         Response::new(self.status, self.headers, response)
     }
 }

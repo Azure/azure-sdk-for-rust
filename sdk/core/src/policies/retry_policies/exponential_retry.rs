@@ -31,7 +31,7 @@ impl Default for ExponentialRetryPolicy {
 impl ExponentialRetryPolicy {
     fn is_expired(
         &self,
-        first_retry_time: &mut Box<Option<DateTime<Local>>>,
+        first_retry_time: &mut Option<DateTime<Local>>,
         current_retries: &u32,
     ) -> bool {
         if *current_retries > self.max_retries {
@@ -39,16 +39,11 @@ impl ExponentialRetryPolicy {
         }
 
         if first_retry_time.is_none() {
-            std::mem::swap(first_retry_time, &mut Box::new(Some(Local::now())));
+            *first_retry_time = Some(Local::now());
         }
 
-        if Local::now()
+        Local::now()
             > first_retry_time.unwrap() + chrono::Duration::from_std(self.max_delay).unwrap()
-        {
-            return true;
-        }
-
-        false
     }
 }
 
@@ -60,7 +55,7 @@ impl Policy for ExponentialRetryPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
-        let mut first_retry_time = Box::new(None);
+        let mut first_retry_time = None;
         let mut current_retries = 0;
 
         loop {
@@ -72,12 +67,10 @@ impl Policy for ExponentialRetryPolicy {
                     } else {
                         current_retries += 1;
 
-                        let sleep_ms: u64 = self.delay.as_millis() as u64
+                        let sleep_ms = self.delay.as_millis() as u64
                             * u64::pow(2u64, current_retries - 1)
                             + rand::random::<u8>() as u64;
                         sleep(Duration::from_millis(sleep_ms)).await;
-
-                        continue;
                     }
                 }
             }

@@ -1,5 +1,6 @@
 use crate::errors::{AzureError, UnexpectedHTTPResult};
 use crate::Body;
+use async_std::fs::File;
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures::TryStreamExt;
@@ -16,6 +17,10 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         request: Request<Bytes>,
     ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>>;
 
+    /// This function will be the only one remaining in the trait as soon as the trait stabilizes.
+    /// It will be renamed to `execute_request`. The other helper functions (ie
+    /// `execute_request_check_status`) will be removed since the status check will be
+    /// responsibility of another policy (not the transport one).
     async fn execute_request2(
         &self,
         request: &mut crate::Request,
@@ -149,13 +154,33 @@ impl HttpClient for reqwest::Client {
             reqwest_request = reqwest_request.header(header.0, header.1);
         }
 
-        let body = request.extract_body();
+        let body = request.take_body();
 
         let reqwest_request = match body {
             Body::Bytes(bytes) => {
                 // replace the body for subsequent retries
                 request.set_body(bytes.clone().into());
                 reqwest_request.body(bytes).build()?
+            }
+            Body::Path(path) => {
+                // replace the body for subsequent retries
+                request.set_body(path.clone().into());
+                let file = File::open(path).await?;
+                let seekable_stream = crate::SelfResetStream::new(file).await?;
+                reqwest_request
+                    .body(reqwest::Body::wrap_stream(seekable_stream))
+                    .build()?
+            }
+            Body::SeekableStream(mut seekable_stream) => {
+                // replace the body for subsequent retries
+                let stream_clone = dyn_clone::clone_box(seekable_stream.as_ref());
+                request.set_body(stream_clone.into());
+
+                seekable_stream.reset().await?;
+
+                reqwest_request
+                    .body(reqwest::Body::wrap_stream(seekable_stream))
+                    .build()?
             }
         };
 
@@ -166,7 +191,7 @@ impl HttpClient for reqwest::Client {
             response.with_header(key, value.clone());
         }
 
-        let response = response.with_response(Box::pin(
+        let response = response.with_pinned_stream(Box::pin(
             reqwest_response.bytes_stream().map_err(|err| err.into()),
         ));
 

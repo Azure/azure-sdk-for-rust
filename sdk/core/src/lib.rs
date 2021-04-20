@@ -24,6 +24,7 @@ pub mod prelude;
 mod request;
 mod request_options;
 mod response;
+mod seekable_stream;
 mod sleep;
 pub mod util;
 
@@ -40,6 +41,7 @@ pub use http_client::{to_json, HttpClient};
 pub use models::*;
 pub use request::*;
 pub use response::*;
+pub use seekable_stream::*;
 
 pub type RequestId = Uuid;
 pub type SessionToken = String;
