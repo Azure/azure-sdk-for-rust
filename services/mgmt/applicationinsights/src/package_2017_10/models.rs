@@ -4,25 +4,25 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EaSubscriptionMigrationDate {
-    #[serde(rename = "isGrandFatherableSubscription", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "isGrandFatherableSubscription", default, skip_serializing_if = "Option::is_none")]
     pub is_grand_fatherable_subscription: Option<bool>,
-    #[serde(rename = "optedInDate", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "optedInDate", default, skip_serializing_if = "Option::is_none")]
     pub opted_in_date: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudErrorBody {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -38,22 +38,22 @@ pub struct Resource {
 pub struct ApplicationInsightsComponentPricingPlan {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PricingPlanProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PricingPlanProperties {
-    #[serde(rename = "planType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "planType", default, skip_serializing_if = "Option::is_none")]
     pub plan_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cap: Option<f64>,
     #[serde(rename = "resetHour", skip_serializing)]
     pub reset_hour: Option<i64>,
-    #[serde(rename = "warningThreshold", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "warningThreshold", default, skip_serializing_if = "Option::is_none")]
     pub warning_threshold: Option<i64>,
-    #[serde(rename = "stopSendNotificationWhenHitThreshold", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "stopSendNotificationWhenHitThreshold", default, skip_serializing_if = "Option::is_none")]
     pub stop_send_notification_when_hit_threshold: Option<bool>,
-    #[serde(rename = "stopSendNotificationWhenHitCap", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "stopSendNotificationWhenHitCap", default, skip_serializing_if = "Option::is_none")]
     pub stop_send_notification_when_hit_cap: Option<bool>,
     #[serde(rename = "maxHistoryCap", skip_serializing)]
     pub max_history_cap: Option<f64>,

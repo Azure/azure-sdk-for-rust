@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Result {
-    #[serde(rename = "sampleProperty", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sampleProperty", default, skip_serializing_if = "Option::is_none")]
     pub sample_property: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -21,11 +21,11 @@ pub struct ErrorDefinition {
 pub struct ComplianceStatus {
     #[serde(rename = "complianceState", skip_serializing)]
     pub compliance_state: Option<compliance_status::ComplianceState>,
-    #[serde(rename = "lastConfigApplied", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastConfigApplied", default, skip_serializing_if = "Option::is_none")]
     pub last_config_applied: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(rename = "messageLevel", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "messageLevel", default, skip_serializing_if = "Option::is_none")]
     pub message_level: Option<compliance_status::MessageLevel>,
 }
 pub mod compliance_status {
@@ -51,9 +51,9 @@ pub struct ChartVersion {}
 pub struct ChartValues {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HelmOperatorProperties {
-    #[serde(rename = "chartVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "chartVersion", default, skip_serializing_if = "Option::is_none")]
     pub chart_version: Option<ChartVersion>,
-    #[serde(rename = "chartValues", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "chartValues", default, skip_serializing_if = "Option::is_none")]
     pub chart_values: Option<ChartValues>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -73,7 +73,7 @@ pub enum OperatorScopeDefinition {
 pub struct SourceControlConfiguration {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<source_control_configuration::Properties>,
     #[serde(rename = "systemData", skip_serializing)]
     pub system_data: Option<SystemData>,
@@ -82,27 +82,27 @@ pub mod source_control_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
-        #[serde(rename = "repositoryUrl", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "repositoryUrl", default, skip_serializing_if = "Option::is_none")]
         pub repository_url: Option<String>,
-        #[serde(rename = "operatorNamespace", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "operatorNamespace", default, skip_serializing_if = "Option::is_none")]
         pub operator_namespace: Option<String>,
-        #[serde(rename = "operatorInstanceName", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "operatorInstanceName", default, skip_serializing_if = "Option::is_none")]
         pub operator_instance_name: Option<String>,
-        #[serde(rename = "operatorType", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "operatorType", default, skip_serializing_if = "Option::is_none")]
         pub operator_type: Option<OperatorTypeDefinition>,
-        #[serde(rename = "operatorParams", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "operatorParams", default, skip_serializing_if = "Option::is_none")]
         pub operator_params: Option<String>,
-        #[serde(rename = "configurationProtectedSettings", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "configurationProtectedSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_protected_settings: Option<ConfigurationProtectedSettings>,
-        #[serde(rename = "operatorScope", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "operatorScope", default, skip_serializing_if = "Option::is_none")]
         pub operator_scope: Option<OperatorScopeDefinition>,
         #[serde(rename = "repositoryPublicKey", skip_serializing)]
         pub repository_public_key: Option<String>,
-        #[serde(rename = "sshKnownHostsContents", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "sshKnownHostsContents", default, skip_serializing_if = "Option::is_none")]
         pub ssh_known_hosts_contents: Option<String>,
-        #[serde(rename = "enableHelmOperator", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "enableHelmOperator", default, skip_serializing_if = "Option::is_none")]
         pub enable_helm_operator: Option<bool>,
-        #[serde(rename = "helmOperatorProperties", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "helmOperatorProperties", default, skip_serializing_if = "Option::is_none")]
         pub helm_operator_properties: Option<HelmOperatorProperties>,
         #[serde(rename = "provisioningState", skip_serializing)]
         pub provisioning_state: Option<properties::ProvisioningState>,
@@ -130,9 +130,9 @@ pub struct SourceControlConfigurationList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceProviderOperation {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<resource_provider_operation::Display>,
     #[serde(rename = "isDataAction", skip_serializing)]
     pub is_data_action: Option<bool>,
@@ -141,36 +141,36 @@ pub mod resource_provider_operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceProviderOperationList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceProviderOperation>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
-    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
-    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
 pub mod system_data {

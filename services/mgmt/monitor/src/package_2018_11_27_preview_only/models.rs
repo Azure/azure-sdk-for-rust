@@ -18,7 +18,7 @@ pub struct ResponseWithError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {
     pub code: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -43,7 +43,7 @@ pub struct DataContainer {
 pub struct VmInsightsOnboardingStatus {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<vm_insights_onboarding_status::Properties>,
 }
 pub mod vm_insights_onboarding_status {
@@ -56,7 +56,7 @@ pub mod vm_insights_onboarding_status {
         pub onboarding_status: properties::OnboardingStatus,
         #[serde(rename = "dataStatus")]
         pub data_status: properties::DataStatus,
-        #[serde(skip_serializing_if = "Vec::is_empty")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub data: Vec<DataContainer>,
     }
     pub mod properties {

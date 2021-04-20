@@ -16,45 +16,45 @@ pub enum ScanState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScanProperties {
-    #[serde(rename = "triggerType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "triggerType", default, skip_serializing_if = "Option::is_none")]
     pub trigger_type: Option<ScanTriggerType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<ScanState>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub server: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub database: Option<String>,
-    #[serde(rename = "sqlVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sqlVersion", default, skip_serializing_if = "Option::is_none")]
     pub sql_version: Option<String>,
-    #[serde(rename = "startTime", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
-    #[serde(rename = "endTime", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
-    #[serde(rename = "highSeverityFailedRulesCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "highSeverityFailedRulesCount", default, skip_serializing_if = "Option::is_none")]
     pub high_severity_failed_rules_count: Option<i32>,
-    #[serde(rename = "mediumSeverityFailedRulesCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "mediumSeverityFailedRulesCount", default, skip_serializing_if = "Option::is_none")]
     pub medium_severity_failed_rules_count: Option<i32>,
-    #[serde(rename = "lowSeverityFailedRulesCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lowSeverityFailedRulesCount", default, skip_serializing_if = "Option::is_none")]
     pub low_severity_failed_rules_count: Option<i32>,
-    #[serde(rename = "totalPassedRulesCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "totalPassedRulesCount", default, skip_serializing_if = "Option::is_none")]
     pub total_passed_rules_count: Option<i32>,
-    #[serde(rename = "totalFailedRulesCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "totalFailedRulesCount", default, skip_serializing_if = "Option::is_none")]
     pub total_failed_rules_count: Option<i32>,
-    #[serde(rename = "totalRulesCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "totalRulesCount", default, skip_serializing_if = "Option::is_none")]
     pub total_rules_count: Option<i32>,
-    #[serde(rename = "isBaselineApplied", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "isBaselineApplied", default, skip_serializing_if = "Option::is_none")]
     pub is_baseline_applied: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Scan {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScanProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Scans {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Scan>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -65,31 +65,31 @@ pub enum RuleStatus {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Remediation {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scripts: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub automated: Option<bool>,
-    #[serde(rename = "portalLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "portalLink", default, skip_serializing_if = "Option::is_none")]
     pub portal_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Baseline {
-    #[serde(rename = "expectedResults", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "expectedResults", default, skip_serializing_if = "Vec::is_empty")]
     pub expected_results: Vec<Vec<String>>,
-    #[serde(rename = "updatedTime", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "updatedTime", default, skip_serializing_if = "Option::is_none")]
     pub updated_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaselineAdjustedResult {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub baseline: Option<Baseline>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<RuleStatus>,
-    #[serde(rename = "resultsNotInBaseline", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "resultsNotInBaseline", default, skip_serializing_if = "Vec::is_empty")]
     pub results_not_in_baseline: Vec<Vec<String>>,
-    #[serde(rename = "resultsOnlyInBaseline", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "resultsOnlyInBaseline", default, skip_serializing_if = "Vec::is_empty")]
     pub results_only_in_baseline: Vec<Vec<String>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -109,104 +109,104 @@ pub enum RuleType {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryCheck {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
-    #[serde(rename = "expectedResult", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "expectedResult", default, skip_serializing_if = "Vec::is_empty")]
     pub expected_result: Vec<Vec<String>>,
-    #[serde(rename = "columnNames", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "columnNames", default, skip_serializing_if = "Vec::is_empty")]
     pub column_names: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BenchmarkReference {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub benchmark: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reference: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VaRule {
-    #[serde(rename = "ruleId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ruleId", default, skip_serializing_if = "Option::is_none")]
     pub rule_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<RuleSeverity>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
-    #[serde(rename = "ruleType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ruleType", default, skip_serializing_if = "Option::is_none")]
     pub rule_type: Option<RuleType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rationale: Option<String>,
-    #[serde(rename = "queryCheck", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "queryCheck", default, skip_serializing_if = "Option::is_none")]
     pub query_check: Option<QueryCheck>,
-    #[serde(rename = "benchmarkReferences", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "benchmarkReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub benchmark_references: Vec<BenchmarkReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScanResultProperties {
-    #[serde(rename = "ruleId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ruleId", default, skip_serializing_if = "Option::is_none")]
     pub rule_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<RuleStatus>,
-    #[serde(rename = "isTrimmed", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "isTrimmed", default, skip_serializing_if = "Option::is_none")]
     pub is_trimmed: Option<bool>,
-    #[serde(rename = "queryResults", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "queryResults", default, skip_serializing_if = "Vec::is_empty")]
     pub query_results: Vec<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub remediation: Option<Remediation>,
-    #[serde(rename = "baselineAdjustedResult", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "baselineAdjustedResult", default, skip_serializing_if = "Option::is_none")]
     pub baseline_adjusted_result: Option<BaselineAdjustedResult>,
-    #[serde(rename = "ruleMetadata", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ruleMetadata", default, skip_serializing_if = "Option::is_none")]
     pub rule_metadata: Option<VaRule>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScanResult {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScanResultProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScanResults {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ScanResult>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleResultsInput {
-    #[serde(rename = "latestScan", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "latestScan", default, skip_serializing_if = "Option::is_none")]
     pub latest_scan: Option<bool>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub results: Vec<Vec<String>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleResultsProperties {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub results: Vec<Vec<String>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleResults {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RuleResultsProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RulesResults {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RuleResults>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RulesResultsInput {
-    #[serde(rename = "latestScan", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "latestScan", default, skip_serializing_if = "Option::is_none")]
     pub latest_scan: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub results: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

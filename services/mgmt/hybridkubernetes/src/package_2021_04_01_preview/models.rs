@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct OperationList {
     #[serde(skip_serializing)]
     pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -20,21 +20,21 @@ pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectedClusterList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectedCluster>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -75,11 +75,11 @@ pub struct ConnectedClusterProperties {
     pub total_core_count: Option<i32>,
     #[serde(rename = "agentVersion", skip_serializing)]
     pub agent_version: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ConnectedClusterProvisioningState>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub distribution: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub infrastructure: Option<String>,
     #[serde(skip_serializing)]
     pub offering: Option<String>,
@@ -89,9 +89,9 @@ pub struct ConnectedClusterProperties {
     pub last_connectivity_time: Option<String>,
     #[serde(rename = "connectivityStatus", skip_serializing)]
     pub connectivity_status: Option<connected_cluster_properties::ConnectivityStatus>,
-    #[serde(rename = "privateLinkState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "privateLinkState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_state: Option<connected_cluster_properties::PrivateLinkState>,
-    #[serde(rename = "privateLinkScopeResourceId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "privateLinkScopeResourceId", default, skip_serializing_if = "Option::is_none")]
     pub private_link_scope_resource_id: Option<String>,
 }
 pub mod connected_cluster_properties {
@@ -111,7 +111,7 @@ pub mod connected_cluster_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CredentialResults {
-    #[serde(rename = "hybridConnectionConfig", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "hybridConnectionConfig", default, skip_serializing_if = "Option::is_none")]
     pub hybrid_connection_config: Option<HybridConnectionConfig>,
     #[serde(skip_serializing)]
     pub kubeconfigs: Vec<CredentialResult>,
@@ -135,16 +135,16 @@ pub enum ConnectedClusterProvisioningState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectedClusterPatch {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectedClusterPatchProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectedClusterPatchProperties {
-    #[serde(rename = "privateLinkState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "privateLinkState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_state: Option<connected_cluster_patch_properties::PrivateLinkState>,
-    #[serde(rename = "privateLinkScopeResourceId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "privateLinkScopeResourceId", default, skip_serializing_if = "Option::is_none")]
     pub private_link_scope_resource_id: Option<String>,
 }
 pub mod connected_cluster_patch_properties {
@@ -168,17 +168,17 @@ pub struct HybridConnectionConfig {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
-    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
-    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
 pub mod system_data {
@@ -216,7 +216,7 @@ pub mod list_cluster_user_credentials_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -243,7 +243,7 @@ pub struct ErrorAdditionalInfo {
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }

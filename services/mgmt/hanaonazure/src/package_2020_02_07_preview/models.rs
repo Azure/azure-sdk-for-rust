@@ -4,14 +4,14 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<Display>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -29,7 +29,7 @@ pub struct Display {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
 pub mod error_response {
@@ -44,21 +44,21 @@ pub mod error_response {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Tags {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapMonitorListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SapMonitor>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapMonitor {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SapMonitorProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -67,17 +67,17 @@ pub struct SapMonitorProperties {
     pub provisioning_state: Option<sap_monitor_properties::ProvisioningState>,
     #[serde(rename = "managedResourceGroupName", skip_serializing)]
     pub managed_resource_group_name: Option<String>,
-    #[serde(rename = "logAnalyticsWorkspaceArmId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "logAnalyticsWorkspaceArmId", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_workspace_arm_id: Option<String>,
-    #[serde(rename = "enableCustomerAnalytics", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enableCustomerAnalytics", default, skip_serializing_if = "Option::is_none")]
     pub enable_customer_analytics: Option<bool>,
-    #[serde(rename = "logAnalyticsWorkspaceId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "logAnalyticsWorkspaceId", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_workspace_id: Option<String>,
-    #[serde(rename = "logAnalyticsWorkspaceSharedKey", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "logAnalyticsWorkspaceSharedKey", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_workspace_shared_key: Option<String>,
     #[serde(rename = "sapMonitorCollectorVersion", skip_serializing)]
     pub sap_monitor_collector_version: Option<String>,
-    #[serde(rename = "monitorSubnet", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "monitorSubnet", default, skip_serializing_if = "Option::is_none")]
     pub monitor_subnet: Option<String>,
 }
 pub mod sap_monitor_properties {
@@ -95,25 +95,25 @@ pub mod sap_monitor_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProviderInstanceListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProviderInstance>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProviderInstance {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProviderInstanceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProviderInstanceProperties {
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<String>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<provider_instance_properties::ProvisioningState>,
@@ -135,7 +135,7 @@ pub mod provider_instance_properties {
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }

@@ -56,13 +56,13 @@ pub enum ServerRole {
 pub struct FullyQualifiedDomainName {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerProperties {
-    #[serde(rename = "serverEdition", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "serverEdition", default, skip_serializing_if = "Option::is_none")]
     pub server_edition: Option<server_properties::ServerEdition>,
-    #[serde(rename = "storageQuotaInMb", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "storageQuotaInMb", default, skip_serializing_if = "Option::is_none")]
     pub storage_quota_in_mb: Option<i64>,
-    #[serde(rename = "vCores", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "vCores", default, skip_serializing_if = "Option::is_none")]
     pub v_cores: Option<i64>,
-    #[serde(rename = "enableHa", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enableHa", default, skip_serializing_if = "Option::is_none")]
     pub enable_ha: Option<bool>,
     #[serde(rename = "enablePublicIp", skip_serializing)]
     pub enable_public_ip: Option<bool>,
@@ -80,18 +80,18 @@ pub type ServerRoleGroupList = Vec<ServerRoleGroup>;
 pub struct ServerRoleGroup {
     #[serde(flatten)]
     pub server_properties: ServerProperties,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<ServerRole>,
-    #[serde(rename = "serverCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "serverCount", default, skip_serializing_if = "Option::is_none")]
     pub server_count: Option<i32>,
     #[serde(rename = "serverNames", skip_serializing)]
     pub server_names: Vec<ServerNameItem>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerNameItem {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "fullyQualifiedDomainName", skip_serializing)]
     pub fully_qualified_domain_name: Option<FullyQualifiedDomainName>,
@@ -102,21 +102,21 @@ pub struct ServerGroupServerProperties {
     pub server_properties: ServerProperties,
     #[serde(rename = "fullyQualifiedDomainName", skip_serializing)]
     pub fully_qualified_domain_name: Option<FullyQualifiedDomainName>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<ServerRole>,
     #[serde(skip_serializing)]
     pub state: Option<ServerState>,
     #[serde(rename = "haState", skip_serializing)]
     pub ha_state: Option<ServerHaState>,
-    #[serde(rename = "administratorLogin", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "administratorLogin", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login: Option<String>,
-    #[serde(rename = "postgresqlVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "postgresqlVersion", default, skip_serializing_if = "Option::is_none")]
     pub postgresql_version: Option<PostgreSqlVersion>,
-    #[serde(rename = "citusVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "citusVersion", default, skip_serializing_if = "Option::is_none")]
     pub citus_version: Option<CitusVersion>,
-    #[serde(rename = "availabilityZone", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub availability_zone: Option<String>,
-    #[serde(rename = "standbyAvailabilityZone", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "standbyAvailabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub standby_availability_zone: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -125,47 +125,47 @@ pub struct ServerGroupServer {
     pub proxy_resource: ProxyResource,
     #[serde(rename = "systemData", skip_serializing)]
     pub system_data: Option<SystemData>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerGroupServerProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerGroupServerListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerGroupServer>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerGroupForUpdate {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerGroupPropertiesForUpdate>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerGroupPropertiesForUpdate {
-    #[serde(rename = "administratorLoginPassword", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login_password: Option<String>,
-    #[serde(rename = "backupRetentionDays", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "backupRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub backup_retention_days: Option<i32>,
-    #[serde(rename = "postgresqlVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "postgresqlVersion", default, skip_serializing_if = "Option::is_none")]
     pub postgresql_version: Option<PostgreSqlVersion>,
-    #[serde(rename = "citusVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "citusVersion", default, skip_serializing_if = "Option::is_none")]
     pub citus_version: Option<CitusVersion>,
-    #[serde(rename = "enableShardsOnCoordinator", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enableShardsOnCoordinator", default, skip_serializing_if = "Option::is_none")]
     pub enable_shards_on_coordinator: Option<bool>,
-    #[serde(rename = "serverRoleGroups", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "serverRoleGroups", default, skip_serializing_if = "Option::is_none")]
     pub server_role_groups: Option<ServerRoleGroupList>,
-    #[serde(rename = "maintenanceWindow", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window: Option<MaintenanceWindow>,
-    #[serde(rename = "availabilityZone", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub availability_zone: Option<String>,
-    #[serde(rename = "standbyAvailabilityZone", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "standbyAvailabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub standby_availability_zone: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerGroupListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerGroup>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -176,28 +176,28 @@ pub struct ServerGroup {
     pub tracked_resource: TrackedResource,
     #[serde(rename = "systemData", skip_serializing)]
     pub system_data: Option<SystemData>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerGroupProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerGroupProperties {
-    #[serde(rename = "createMode", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<server_group_properties::CreateMode>,
-    #[serde(rename = "administratorLogin", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "administratorLogin", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login: Option<String>,
-    #[serde(rename = "administratorLoginPassword", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login_password: Option<String>,
-    #[serde(rename = "backupRetentionDays", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "backupRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub backup_retention_days: Option<i32>,
-    #[serde(rename = "postgresqlVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "postgresqlVersion", default, skip_serializing_if = "Option::is_none")]
     pub postgresql_version: Option<PostgreSqlVersion>,
-    #[serde(rename = "citusVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "citusVersion", default, skip_serializing_if = "Option::is_none")]
     pub citus_version: Option<CitusVersion>,
-    #[serde(rename = "enableMx", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enableMx", default, skip_serializing_if = "Option::is_none")]
     pub enable_mx: Option<bool>,
-    #[serde(rename = "enableZfs", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enableZfs", default, skip_serializing_if = "Option::is_none")]
     pub enable_zfs: Option<bool>,
-    #[serde(rename = "enableShardsOnCoordinator", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enableShardsOnCoordinator", default, skip_serializing_if = "Option::is_none")]
     pub enable_shards_on_coordinator: Option<bool>,
     #[serde(skip_serializing)]
     pub state: Option<ServerState>,
@@ -205,29 +205,29 @@ pub struct ServerGroupProperties {
     pub earliest_restore_time: Option<String>,
     #[serde(rename = "resourceProviderType", skip_serializing)]
     pub resource_provider_type: Option<server_group_properties::ResourceProviderType>,
-    #[serde(rename = "serverRoleGroups", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "serverRoleGroups", default, skip_serializing_if = "Option::is_none")]
     pub server_role_groups: Option<ServerRoleGroupList>,
-    #[serde(rename = "maintenanceWindow", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window: Option<MaintenanceWindow>,
-    #[serde(rename = "availabilityZone", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub availability_zone: Option<String>,
-    #[serde(rename = "standbyAvailabilityZone", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "standbyAvailabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub standby_availability_zone: Option<String>,
-    #[serde(rename = "delegatedSubnetArguments", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "delegatedSubnetArguments", default, skip_serializing_if = "Option::is_none")]
     pub delegated_subnet_arguments: Option<server_group_properties::DelegatedSubnetArguments>,
     #[serde(rename = "readReplicas", skip_serializing)]
     pub read_replicas: Vec<String>,
     #[serde(rename = "sourceServerGroup", skip_serializing)]
     pub source_server_group: Option<String>,
-    #[serde(rename = "sourceSubscriptionId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sourceSubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub source_subscription_id: Option<String>,
-    #[serde(rename = "sourceResourceGroupName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sourceResourceGroupName", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_group_name: Option<String>,
-    #[serde(rename = "sourceServerGroupName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sourceServerGroupName", default, skip_serializing_if = "Option::is_none")]
     pub source_server_group_name: Option<String>,
-    #[serde(rename = "sourceLocation", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sourceLocation", default, skip_serializing_if = "Option::is_none")]
     pub source_location: Option<String>,
-    #[serde(rename = "pointInTimeUTC", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pointInTimeUTC", default, skip_serializing_if = "Option::is_none")]
     pub point_in_time_utc: Option<String>,
 }
 pub mod server_group_properties {
@@ -245,19 +245,19 @@ pub mod server_group_properties {
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct DelegatedSubnetArguments {
-        #[serde(rename = "subnetArmResourceId", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "subnetArmResourceId", default, skip_serializing_if = "Option::is_none")]
         pub subnet_arm_resource_id: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MaintenanceWindow {
-    #[serde(rename = "customWindow", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customWindow", default, skip_serializing_if = "Option::is_none")]
     pub custom_window: Option<String>,
-    #[serde(rename = "startHour", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "startHour", default, skip_serializing_if = "Option::is_none")]
     pub start_hour: Option<i32>,
-    #[serde(rename = "startMinute", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "startMinute", default, skip_serializing_if = "Option::is_none")]
     pub start_minute: Option<i32>,
-    #[serde(rename = "dayOfWeek", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "dayOfWeek", default, skip_serializing_if = "Option::is_none")]
     pub day_of_week: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -266,7 +266,7 @@ pub struct ServerGroupConfiguration {
     pub proxy_resource: ProxyResource,
     #[serde(rename = "systemData", skip_serializing)]
     pub system_data: Option<SystemData>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerGroupConfigurationProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -301,7 +301,7 @@ pub struct ServerRoleGroupConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerGroupConfigurationListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerGroupConfiguration>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -336,12 +336,12 @@ pub struct ServerConfiguration {
     pub proxy_resource: ProxyResource,
     #[serde(rename = "systemData", skip_serializing)]
     pub system_data: Option<SystemData>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerConfigurationProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerConfigurationListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerConfiguration>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -363,7 +363,7 @@ pub struct FirewallRule {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRuleListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FirewallRule>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -376,12 +376,12 @@ pub struct Role {
     pub proxy_resource: ProxyResource,
     #[serde(rename = "systemData", skip_serializing)]
     pub system_data: Option<SystemData>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Role>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -399,9 +399,9 @@ pub struct OperationDisplay {
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
-    #[serde(rename = "isDataAction", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
     #[serde(skip_serializing)]
     pub origin: Option<operation::Origin>,
@@ -421,7 +421,7 @@ pub mod operation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -442,44 +442,44 @@ pub mod name_availability_request {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NameAvailability {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(rename = "nameAvailable", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudErrorBody {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
-    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
-    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
 pub mod system_data {
@@ -517,7 +517,7 @@ pub struct Resource {
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }

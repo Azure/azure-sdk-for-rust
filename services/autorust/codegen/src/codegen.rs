@@ -254,9 +254,9 @@ impl CodeGen {
             } else {
                 if !is_required {
                     if is_vec {
-                        serde_attrs.push(quote! { skip_serializing_if = "Vec::is_empty"});
+                        serde_attrs.push(quote! { default, skip_serializing_if = "Vec::is_empty"});
                     } else {
-                        serde_attrs.push(quote! { skip_serializing_if = "Option::is_none"});
+                        serde_attrs.push(quote! { default, skip_serializing_if = "Option::is_none"});
                     }
                 }
             }

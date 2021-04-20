@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
 pub mod error_response {
@@ -19,9 +19,9 @@ pub mod error_response {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateStoreList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateStore>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -33,30 +33,30 @@ pub enum PrivateStoreOperation {
 pub struct PrivateStore {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateStoreProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateStoreProperties {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub availability: Option<private_store_properties::Availability>,
-    #[serde(rename = "privateStoreId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "privateStoreId", default, skip_serializing_if = "Option::is_none")]
     pub private_store_id: Option<String>,
-    #[serde(rename = "eTag", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
-    #[serde(rename = "privateStoreName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "privateStoreName", default, skip_serializing_if = "Option::is_none")]
     pub private_store_name: Option<String>,
-    #[serde(rename = "tenantTag", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "tenantTag", default, skip_serializing_if = "Option::is_none")]
     pub tenant_tag: Option<String>,
-    #[serde(rename = "tenantIds", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "tenantIds", default, skip_serializing_if = "Vec::is_empty")]
     pub tenant_ids: Vec<String>,
-    #[serde(rename = "customerTag", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customerTag", default, skip_serializing_if = "Option::is_none")]
     pub customer_tag: Option<String>,
-    #[serde(rename = "hasCommercialAssociation", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "hasCommercialAssociation", default, skip_serializing_if = "Option::is_none")]
     pub has_commercial_association: Option<bool>,
-    #[serde(rename = "hasMultiTenantAssociation", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "hasMultiTenantAssociation", default, skip_serializing_if = "Option::is_none")]
     pub has_multi_tenant_association: Option<bool>,
-    #[serde(rename = "isGov", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "isGov", default, skip_serializing_if = "Option::is_none")]
     pub is_gov: Option<bool>,
 }
 pub mod private_store_properties {
@@ -71,16 +71,16 @@ pub mod private_store_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfferListResponse {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Offer>,
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Offer {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OfferProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -91,7 +91,7 @@ pub struct OfferProperties {
     pub offer_display_name: Option<String>,
     #[serde(rename = "publisherDisplayName", skip_serializing)]
     pub publisher_display_name: Option<String>,
-    #[serde(rename = "eTag", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
     #[serde(rename = "privateStoreId", skip_serializing)]
     pub private_store_id: Option<String>,
@@ -99,13 +99,13 @@ pub struct OfferProperties {
     pub created_at: Option<String>,
     #[serde(rename = "modifiedAt", skip_serializing)]
     pub modified_at: Option<String>,
-    #[serde(rename = "specificPlanIdsLimitation", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "specificPlanIdsLimitation", default, skip_serializing_if = "Vec::is_empty")]
     pub specific_plan_ids_limitation: Vec<String>,
-    #[serde(rename = "updateSuppressedDueIdempotence", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "updateSuppressedDueIdempotence", default, skip_serializing_if = "Option::is_none")]
     pub update_suppressed_due_idempotence: Option<bool>,
-    #[serde(rename = "iconFileUris", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "iconFileUris", default, skip_serializing_if = "Option::is_none")]
     pub icon_file_uris: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub plans: Vec<Plan>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -116,7 +116,7 @@ pub struct Plan {
     pub plan_id: Option<String>,
     #[serde(rename = "planDisplayName", skip_serializing)]
     pub plan_display_name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub accessibility: Option<plan::Accessibility>,
     #[serde(rename = "altStackReference", skip_serializing)]
     pub alt_stack_reference: Option<String>,
@@ -135,26 +135,26 @@ pub mod plan {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SingleOperation {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<single_operation::Display>,
 }
 pub mod single_operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SingleOperation>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,

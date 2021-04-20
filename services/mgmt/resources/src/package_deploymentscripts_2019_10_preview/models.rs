@@ -8,7 +8,7 @@ pub struct DeploymentScript {
     pub azure_resource_base: AzureResourceBase,
     pub identity: ManagedServiceIdentity,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub kind: deployment_script::Kind,
     #[serde(rename = "systemData", skip_serializing)]
@@ -27,7 +27,7 @@ pub mod deployment_script {
 pub struct DeploymentScriptUpdateParameter {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -62,34 +62,34 @@ pub struct AzureCliScriptProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScriptConfigurationBase {
-    #[serde(rename = "primaryScriptUri", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "primaryScriptUri", default, skip_serializing_if = "Option::is_none")]
     pub primary_script_uri: Option<String>,
-    #[serde(rename = "supportingScriptUris", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "supportingScriptUris", default, skip_serializing_if = "Vec::is_empty")]
     pub supporting_script_uris: Vec<String>,
-    #[serde(rename = "scriptContent", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "scriptContent", default, skip_serializing_if = "Option::is_none")]
     pub script_content: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub arguments: Option<String>,
-    #[serde(rename = "environmentVariables", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "environmentVariables", default, skip_serializing_if = "Vec::is_empty")]
     pub environment_variables: Vec<EnvironmentVariable>,
-    #[serde(rename = "forceUpdateTag", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
     pub force_update_tag: Option<String>,
     #[serde(rename = "retentionInterval")]
     pub retention_interval: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentScriptPropertiesBase {
-    #[serde(rename = "containerSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "containerSettings", default, skip_serializing_if = "Option::is_none")]
     pub container_settings: Option<ContainerConfiguration>,
-    #[serde(rename = "storageAccountSettings", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "storageAccountSettings", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_settings: Option<StorageAccountConfiguration>,
-    #[serde(rename = "cleanupPreference", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "cleanupPreference", default, skip_serializing_if = "Option::is_none")]
     pub cleanup_preference: Option<deployment_script_properties_base::CleanupPreference>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<deployment_script_properties_base::ProvisioningState>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ScriptStatus>,
     #[serde(skip_serializing)]
     pub outputs: Option<serde_json::Value>,
@@ -114,14 +114,14 @@ pub mod deployment_script_properties_base {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerConfiguration {
-    #[serde(rename = "containerGroupName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "containerGroupName", default, skip_serializing_if = "Option::is_none")]
     pub container_group_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountConfiguration {
-    #[serde(rename = "storageAccountName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_name: Option<String>,
-    #[serde(rename = "storageAccountKey", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "storageAccountKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -136,16 +136,16 @@ pub struct ScriptStatus {
     pub end_time: Option<String>,
     #[serde(rename = "expirationTime", skip_serializing)]
     pub expiration_time: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedServiceIdentity {
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<managed_service_identity::Type>,
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
-    #[serde(rename = "userAssignedIdentities", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
 pub mod managed_service_identity {
@@ -165,28 +165,28 @@ pub struct UserAssignedIdentity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentVariable {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
-    #[serde(rename = "secureValue", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "secureValue", default, skip_serializing_if = "Option::is_none")]
     pub secure_value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentScriptListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DeploymentScript>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScriptLogsList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ScriptLog>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScriptLog {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LogProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -205,22 +205,22 @@ pub struct AzureResourceBase {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentScriptsError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
-    #[serde(rename = "createdBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
-    #[serde(rename = "createdByType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
 pub mod system_data {

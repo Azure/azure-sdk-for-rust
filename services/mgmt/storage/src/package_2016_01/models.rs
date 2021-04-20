@@ -63,24 +63,24 @@ pub mod sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomain {
     pub name: String,
-    #[serde(rename = "useSubDomainName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "useSubDomainName", default, skip_serializing_if = "Option::is_none")]
     pub use_sub_domain_name: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionService {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[serde(rename = "lastEnabledTime", skip_serializing)]
     pub last_enabled_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionServices {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub blob: Option<EncryptionService>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Encryption {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub services: Option<EncryptionServices>,
     #[serde(rename = "keySource")]
     pub key_source: encryption::KeySource,
@@ -95,11 +95,11 @@ pub mod encryption {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountPropertiesCreateParameters {
-    #[serde(rename = "customDomain", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customDomain", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain: Option<CustomDomain>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
-    #[serde(rename = "accessTier", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
     pub access_tier: Option<storage_account_properties_create_parameters::AccessTier>,
 }
 pub mod storage_account_properties_create_parameters {
@@ -115,9 +115,9 @@ pub struct StorageAccountCreateParameters {
     pub sku: Sku,
     pub kind: storage_account_create_parameters::Kind,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountPropertiesCreateParameters>,
 }
 pub mod storage_account_create_parameters {
@@ -143,7 +143,7 @@ pub struct Endpoints {
 pub struct StorageAccountProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<storage_account_properties::ProvisioningState>,
-    #[serde(rename = "primaryEndpoints", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "primaryEndpoints", default, skip_serializing_if = "Option::is_none")]
     pub primary_endpoints: Option<Endpoints>,
     #[serde(rename = "primaryLocation", skip_serializing)]
     pub primary_location: Option<String>,
@@ -157,11 +157,11 @@ pub struct StorageAccountProperties {
     pub status_of_secondary: Option<storage_account_properties::StatusOfSecondary>,
     #[serde(rename = "creationTime", skip_serializing)]
     pub creation_time: Option<String>,
-    #[serde(rename = "customDomain", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customDomain", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain: Option<CustomDomain>,
-    #[serde(rename = "secondaryEndpoints", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "secondaryEndpoints", default, skip_serializing_if = "Option::is_none")]
     pub secondary_endpoints: Option<Endpoints>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
     #[serde(rename = "accessTier", skip_serializing)]
     pub access_tier: Option<storage_account_properties::AccessTier>,
@@ -195,11 +195,11 @@ pub mod storage_account_properties {
 pub struct StorageAccount {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[serde(skip_serializing)]
     pub kind: Option<storage_account::Kind>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountProperties>,
 }
 pub mod storage_account {
@@ -246,11 +246,11 @@ pub struct StorageAccountRegenerateKeyParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountPropertiesUpdateParameters {
-    #[serde(rename = "customDomain", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customDomain", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain: Option<CustomDomain>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
-    #[serde(rename = "accessTier", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
     pub access_tier: Option<storage_account_properties_update_parameters::AccessTier>,
 }
 pub mod storage_account_properties_update_parameters {
@@ -263,11 +263,11 @@ pub mod storage_account_properties_update_parameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountUpdateParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountPropertiesUpdateParameters>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -285,7 +285,7 @@ pub struct Usage {
     pub current_value: Option<i32>,
     #[serde(skip_serializing)]
     pub limit: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
 }
 pub mod usage {
@@ -302,7 +302,7 @@ pub mod usage {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -313,8 +313,8 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }

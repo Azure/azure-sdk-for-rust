@@ -6,14 +6,14 @@ use serde::{Deserialize, Serialize};
 pub struct Account {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<AccountIdentity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountUpdate {
     #[serde(flatten)]
     pub update_resource: UpdateResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<AccountIdentity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -22,7 +22,7 @@ pub struct AccountIdentity {
     pub principal_id: Option<String>,
     #[serde(rename = "tenantId", skip_serializing)]
     pub tenant_id: Option<String>,
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<account_identity::Type>,
 }
 pub mod account_identity {
@@ -35,34 +35,34 @@ pub mod account_identity {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Account>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationProfileAssignmentList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConfigurationProfileAssignment>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationProfileAssignment {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProfileAssignmentProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationProfileAssignmentProperties {
-    #[serde(rename = "configurationProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "configurationProfile", default, skip_serializing_if = "Option::is_none")]
     pub configuration_profile: Option<configuration_profile_assignment_properties::ConfigurationProfile>,
-    #[serde(rename = "targetId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "targetId", default, skip_serializing_if = "Option::is_none")]
     pub target_id: Option<String>,
-    #[serde(rename = "accountId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
-    #[serde(rename = "configurationProfilePreferenceId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "configurationProfilePreferenceId", default, skip_serializing_if = "Option::is_none")]
     pub configuration_profile_preference_id: Option<String>,
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<configuration_profile_assignment_properties::ProvisioningState>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compliance: Option<ConfigurationProfileAssignmentCompliance>,
 }
 pub mod configuration_profile_assignment_properties {
@@ -99,47 +99,47 @@ pub mod configuration_profile_assignment_compliance {
 pub struct ConfigurationProfilePreference {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProfilePreferenceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationProfilePreferenceUpdate {
     #[serde(flatten)]
     pub update_resource: UpdateResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProfilePreferenceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationProfilePreferenceProperties {
-    #[serde(rename = "vmBackup", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "vmBackup", default, skip_serializing_if = "Option::is_none")]
     pub vm_backup: Option<ConfigurationProfilePreferenceVmBackup>,
-    #[serde(rename = "antiMalware", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "antiMalware", default, skip_serializing_if = "Option::is_none")]
     pub anti_malware: Option<ConfigurationProfilePreferenceAntiMalware>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationProfilePreferenceVmBackup {
-    #[serde(rename = "timeZone", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
-    #[serde(rename = "instantRpRetentionRangeInDays", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "instantRpRetentionRangeInDays", default, skip_serializing_if = "Option::is_none")]
     pub instant_rp_retention_range_in_days: Option<i32>,
-    #[serde(rename = "retentionPolicy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<String>,
-    #[serde(rename = "schedulePolicy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "schedulePolicy", default, skip_serializing_if = "Option::is_none")]
     pub schedule_policy: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationProfilePreferenceAntiMalware {
-    #[serde(rename = "enableRealTimeProtection", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enableRealTimeProtection", default, skip_serializing_if = "Option::is_none")]
     pub enable_real_time_protection: Option<configuration_profile_preference_anti_malware::EnableRealTimeProtection>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exclusions: Option<serde_json::Value>,
-    #[serde(rename = "runScheduledScan", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "runScheduledScan", default, skip_serializing_if = "Option::is_none")]
     pub run_scheduled_scan: Option<configuration_profile_preference_anti_malware::RunScheduledScan>,
-    #[serde(rename = "scanType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "scanType", default, skip_serializing_if = "Option::is_none")]
     pub scan_type: Option<configuration_profile_preference_anti_malware::ScanType>,
-    #[serde(rename = "scanDay", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "scanDay", default, skip_serializing_if = "Option::is_none")]
     pub scan_day: Option<String>,
-    #[serde(rename = "scanTimeInMinutes", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "scanTimeInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub scan_time_in_minutes: Option<String>,
 }
 pub mod configuration_profile_preference_anti_malware {
@@ -162,52 +162,52 @@ pub mod configuration_profile_preference_anti_malware {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationProfilePreferenceList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConfigurationProfilePreference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "isDataAction", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<operation::Properties>,
 }
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
-        #[serde(rename = "statusCode", skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
         pub status_code: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateResource {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -234,7 +234,7 @@ pub struct ErrorAdditionalInfo {
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }

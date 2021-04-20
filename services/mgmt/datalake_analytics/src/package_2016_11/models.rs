@@ -28,14 +28,14 @@ pub struct SubResource {
 pub struct DataLakeAnalyticsAccount {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataLakeAnalyticsAccountProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataLakeAnalyticsAccountBasic {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataLakeAnalyticsAccountPropertiesBasic>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -46,7 +46,7 @@ pub struct DataLakeAnalyticsAccountProperties {
     pub default_data_lake_store_account: Option<String>,
     #[serde(rename = "dataLakeStoreAccounts", skip_serializing)]
     pub data_lake_store_accounts: Vec<DataLakeStoreAccountInformation>,
-    #[serde(rename = "publicDataLakeStoreAccounts", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "publicDataLakeStoreAccounts", default, skip_serializing_if = "Vec::is_empty")]
     pub public_data_lake_store_accounts: Vec<DataLakeStoreAccountInformation>,
     #[serde(rename = "storageAccounts", skip_serializing)]
     pub storage_accounts: Vec<StorageAccountInformation>,
@@ -58,27 +58,27 @@ pub struct DataLakeAnalyticsAccountProperties {
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
     #[serde(rename = "firewallRules", skip_serializing)]
     pub firewall_rules: Vec<FirewallRule>,
-    #[serde(rename = "firewallState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
     pub firewall_state: Option<data_lake_analytics_account_properties::FirewallState>,
-    #[serde(rename = "firewallAllowAzureIps", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
     pub firewall_allow_azure_ips: Option<data_lake_analytics_account_properties::FirewallAllowAzureIps>,
-    #[serde(rename = "newTier", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "newTier", default, skip_serializing_if = "Option::is_none")]
     pub new_tier: Option<data_lake_analytics_account_properties::NewTier>,
     #[serde(rename = "currentTier", skip_serializing)]
     pub current_tier: Option<data_lake_analytics_account_properties::CurrentTier>,
-    #[serde(rename = "maxJobCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maxJobCount", default, skip_serializing_if = "Option::is_none")]
     pub max_job_count: Option<i32>,
     #[serde(rename = "systemMaxJobCount", skip_serializing)]
     pub system_max_job_count: Option<i32>,
-    #[serde(rename = "maxDegreeOfParallelism", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maxDegreeOfParallelism", default, skip_serializing_if = "Option::is_none")]
     pub max_degree_of_parallelism: Option<i32>,
     #[serde(rename = "systemMaxDegreeOfParallelism", skip_serializing)]
     pub system_max_degree_of_parallelism: Option<i32>,
-    #[serde(rename = "maxDegreeOfParallelismPerJob", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maxDegreeOfParallelismPerJob", default, skip_serializing_if = "Option::is_none")]
     pub max_degree_of_parallelism_per_job: Option<i32>,
     #[serde(rename = "minPriorityPerJob", skip_serializing)]
     pub min_priority_per_job: Option<i32>,
-    #[serde(rename = "queryStoreRetention", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "queryStoreRetention", default, skip_serializing_if = "Option::is_none")]
     pub query_store_retention: Option<i32>,
     #[serde(rename = "debugDataAccessLevel", skip_serializing)]
     pub debug_data_access_level: Option<data_lake_analytics_account_properties::DebugDataAccessLevel>,
@@ -190,7 +190,7 @@ pub struct DataLakeAnalyticsAccountListResult {
 pub struct DataLakeStoreAccountInformation {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataLakeStoreAccountInformationProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -209,7 +209,7 @@ pub struct DataLakeStoreAccountInformationListResult {
 pub struct StorageAccountInformation {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountInformationProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -228,7 +228,7 @@ pub struct StorageAccountInformationListResult {
 pub struct StorageContainer {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageContainerProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -259,7 +259,7 @@ pub struct SasTokenInformationListResult {
 pub struct ComputePolicy {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ComputePolicyProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -293,7 +293,7 @@ pub struct ComputePolicyListResult {
 pub struct FirewallRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FirewallRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -320,7 +320,7 @@ pub enum VirtualNetworkRuleState {
 pub struct VirtualNetworkRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualNetworkRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -341,7 +341,7 @@ pub struct VirtualNetworkRuleListResult {
 pub struct HiveMetastore {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HiveMetastoreProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -376,9 +376,9 @@ pub enum NestedResourceProvisioningState {
 pub struct Operation {
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationMetaPropertyInfo>,
     #[serde(skip_serializing)]
     pub origin: Option<operation::Origin>,
@@ -415,45 +415,45 @@ pub struct OperationListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationMetaMetricAvailabilitiesSpecification {
-    #[serde(rename = "timeGrain", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
-    #[serde(rename = "blobDuration", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationMetaMetricSpecification {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "displayDescription", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
-    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
-    #[serde(rename = "aggregationType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub availabilities: Vec<OperationMetaMetricAvailabilitiesSpecification>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationMetaLogSpecification {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(rename = "blobDuration", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationMetaServiceSpecification {
-    #[serde(rename = "metricSpecifications", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<OperationMetaMetricSpecification>,
-    #[serde(rename = "logSpecifications", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub log_specifications: Vec<OperationMetaLogSpecification>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationMetaPropertyInfo {
-    #[serde(rename = "serviceSpecification", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<OperationMetaServiceSpecification>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -492,7 +492,7 @@ pub struct NameAvailabilityInformation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateDataLakeAnalyticsAccountParameters {
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub properties: CreateDataLakeAnalyticsAccountProperties,
 }
@@ -502,27 +502,27 @@ pub struct CreateDataLakeAnalyticsAccountProperties {
     pub default_data_lake_store_account: String,
     #[serde(rename = "dataLakeStoreAccounts")]
     pub data_lake_store_accounts: Vec<AddDataLakeStoreWithAccountParameters>,
-    #[serde(rename = "storageAccounts", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "storageAccounts", default, skip_serializing_if = "Vec::is_empty")]
     pub storage_accounts: Vec<AddStorageAccountWithAccountParameters>,
-    #[serde(rename = "computePolicies", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "computePolicies", default, skip_serializing_if = "Vec::is_empty")]
     pub compute_policies: Vec<CreateComputePolicyWithAccountParameters>,
-    #[serde(rename = "firewallRules", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
     pub firewall_rules: Vec<CreateFirewallRuleWithAccountParameters>,
-    #[serde(rename = "firewallState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
     pub firewall_state: Option<create_data_lake_analytics_account_properties::FirewallState>,
-    #[serde(rename = "firewallAllowAzureIps", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
     pub firewall_allow_azure_ips: Option<create_data_lake_analytics_account_properties::FirewallAllowAzureIps>,
-    #[serde(rename = "newTier", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "newTier", default, skip_serializing_if = "Option::is_none")]
     pub new_tier: Option<create_data_lake_analytics_account_properties::NewTier>,
-    #[serde(rename = "maxJobCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maxJobCount", default, skip_serializing_if = "Option::is_none")]
     pub max_job_count: Option<i32>,
-    #[serde(rename = "maxDegreeOfParallelism", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maxDegreeOfParallelism", default, skip_serializing_if = "Option::is_none")]
     pub max_degree_of_parallelism: Option<i32>,
-    #[serde(rename = "maxDegreeOfParallelismPerJob", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maxDegreeOfParallelismPerJob", default, skip_serializing_if = "Option::is_none")]
     pub max_degree_of_parallelism_per_job: Option<i32>,
-    #[serde(rename = "minPriorityPerJob", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "minPriorityPerJob", default, skip_serializing_if = "Option::is_none")]
     pub min_priority_per_job: Option<i32>,
-    #[serde(rename = "queryStoreRetention", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "queryStoreRetention", default, skip_serializing_if = "Option::is_none")]
     pub query_store_retention: Option<i32>,
 }
 pub mod create_data_lake_analytics_account_properties {
@@ -560,36 +560,36 @@ pub mod create_data_lake_analytics_account_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateDataLakeAnalyticsAccountParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateDataLakeAnalyticsAccountProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateDataLakeAnalyticsAccountProperties {
-    #[serde(rename = "dataLakeStoreAccounts", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "dataLakeStoreAccounts", default, skip_serializing_if = "Vec::is_empty")]
     pub data_lake_store_accounts: Vec<UpdateDataLakeStoreWithAccountParameters>,
-    #[serde(rename = "storageAccounts", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "storageAccounts", default, skip_serializing_if = "Vec::is_empty")]
     pub storage_accounts: Vec<UpdateStorageAccountWithAccountParameters>,
-    #[serde(rename = "computePolicies", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "computePolicies", default, skip_serializing_if = "Vec::is_empty")]
     pub compute_policies: Vec<UpdateComputePolicyWithAccountParameters>,
-    #[serde(rename = "firewallRules", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
     pub firewall_rules: Vec<UpdateFirewallRuleWithAccountParameters>,
-    #[serde(rename = "firewallState", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
     pub firewall_state: Option<update_data_lake_analytics_account_properties::FirewallState>,
-    #[serde(rename = "firewallAllowAzureIps", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
     pub firewall_allow_azure_ips: Option<update_data_lake_analytics_account_properties::FirewallAllowAzureIps>,
-    #[serde(rename = "newTier", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "newTier", default, skip_serializing_if = "Option::is_none")]
     pub new_tier: Option<update_data_lake_analytics_account_properties::NewTier>,
-    #[serde(rename = "maxJobCount", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maxJobCount", default, skip_serializing_if = "Option::is_none")]
     pub max_job_count: Option<i32>,
-    #[serde(rename = "maxDegreeOfParallelism", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maxDegreeOfParallelism", default, skip_serializing_if = "Option::is_none")]
     pub max_degree_of_parallelism: Option<i32>,
-    #[serde(rename = "maxDegreeOfParallelismPerJob", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maxDegreeOfParallelismPerJob", default, skip_serializing_if = "Option::is_none")]
     pub max_degree_of_parallelism_per_job: Option<i32>,
-    #[serde(rename = "minPriorityPerJob", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "minPriorityPerJob", default, skip_serializing_if = "Option::is_none")]
     pub min_priority_per_job: Option<i32>,
-    #[serde(rename = "queryStoreRetention", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "queryStoreRetention", default, skip_serializing_if = "Option::is_none")]
     pub query_store_retention: Option<i32>,
 }
 pub mod update_data_lake_analytics_account_properties {
@@ -627,29 +627,29 @@ pub mod update_data_lake_analytics_account_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddDataLakeStoreParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AddDataLakeStoreProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddDataLakeStoreWithAccountParameters {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AddDataLakeStoreProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddDataLakeStoreProperties {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub suffix: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateDataLakeStoreWithAccountParameters {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateDataLakeStoreProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateDataLakeStoreProperties {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub suffix: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -665,25 +665,25 @@ pub struct AddStorageAccountWithAccountParameters {
 pub struct AddStorageAccountProperties {
     #[serde(rename = "accessKey")]
     pub access_key: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub suffix: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateStorageAccountParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateStorageAccountProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateStorageAccountWithAccountParameters {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateStorageAccountProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateStorageAccountProperties {
-    #[serde(rename = "accessKey", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "accessKey", default, skip_serializing_if = "Option::is_none")]
     pub access_key: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub suffix: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -701,9 +701,9 @@ pub struct CreateOrUpdateComputePolicyProperties {
     pub object_id: String,
     #[serde(rename = "objectType")]
     pub object_type: create_or_update_compute_policy_properties::ObjectType,
-    #[serde(rename = "maxDegreeOfParallelismPerJob", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maxDegreeOfParallelismPerJob", default, skip_serializing_if = "Option::is_none")]
     pub max_degree_of_parallelism_per_job: Option<i32>,
-    #[serde(rename = "minPriorityPerJob", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "minPriorityPerJob", default, skip_serializing_if = "Option::is_none")]
     pub min_priority_per_job: Option<i32>,
 }
 pub mod create_or_update_compute_policy_properties {
@@ -717,24 +717,24 @@ pub mod create_or_update_compute_policy_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateComputePolicyParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateComputePolicyProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateComputePolicyWithAccountParameters {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateComputePolicyProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateComputePolicyProperties {
-    #[serde(rename = "objectId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
-    #[serde(rename = "objectType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
     pub object_type: Option<update_compute_policy_properties::ObjectType>,
-    #[serde(rename = "maxDegreeOfParallelismPerJob", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maxDegreeOfParallelismPerJob", default, skip_serializing_if = "Option::is_none")]
     pub max_degree_of_parallelism_per_job: Option<i32>,
-    #[serde(rename = "minPriorityPerJob", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "minPriorityPerJob", default, skip_serializing_if = "Option::is_none")]
     pub min_priority_per_job: Option<i32>,
 }
 pub mod update_compute_policy_properties {
@@ -764,20 +764,20 @@ pub struct CreateOrUpdateFirewallRuleProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateFirewallRuleParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateFirewallRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateFirewallRuleWithAccountParameters {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateFirewallRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateFirewallRuleProperties {
-    #[serde(rename = "startIpAddress", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "startIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub start_ip_address: Option<String>,
-    #[serde(rename = "endIpAddress", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "endIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub end_ip_address: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -796,7 +796,7 @@ pub mod check_name_availability_parameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

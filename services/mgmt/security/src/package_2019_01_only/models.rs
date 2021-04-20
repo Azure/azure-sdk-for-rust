@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Alert>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -13,7 +13,7 @@ pub struct AlertList {
 pub struct Alert {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -42,7 +42,7 @@ pub struct AlertProperties {
     pub compromised_entity: Option<String>,
     #[serde(rename = "associatedResource", skip_serializing)]
     pub associated_resource: Option<String>,
-    #[serde(rename = "extendedProperties", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
     pub extended_properties: Option<AlertExtendedProperties>,
     #[serde(rename = "systemSource", skip_serializing)]
     pub system_source: Option<String>,
@@ -50,11 +50,11 @@ pub struct AlertProperties {
     pub can_be_investigated: Option<bool>,
     #[serde(rename = "isIncident", skip_serializing)]
     pub is_incident: Option<bool>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub entities: Vec<AlertEntity>,
     #[serde(rename = "confidenceScore", skip_serializing)]
     pub confidence_score: Option<f32>,
-    #[serde(rename = "confidenceReasons", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "confidenceReasons", default, skip_serializing_if = "Vec::is_empty")]
     pub confidence_reasons: Vec<AlertConfidenceReason>,
     #[serde(rename = "subscriptionId", skip_serializing)]
     pub subscription_id: Option<String>,
@@ -91,7 +91,7 @@ pub struct AlertEntity {
 pub struct AlertExtendedProperties {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SettingsList {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Setting>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -100,7 +100,7 @@ pub struct SettingsList {
 pub struct DataExportSettings {
     #[serde(flatten)]
     pub setting: Setting,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataExportSettingProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -123,7 +123,7 @@ pub struct DataExportSettingProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

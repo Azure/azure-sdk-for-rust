@@ -11,50 +11,50 @@ pub struct Resource {
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
     pub location: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudErrorBody {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PurchasePlan {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub product: Option<String>,
-    #[serde(rename = "promotionCode", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
     pub promotion_code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftRouterProfile {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "publicSubdomain", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "publicSubdomain", default, skip_serializing_if = "Option::is_none")]
     pub public_subdomain: Option<String>,
     #[serde(skip_serializing)]
     pub fqdn: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkProfile {
-    #[serde(rename = "vnetCidr", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "vnetCidr", default, skip_serializing_if = "Option::is_none")]
     pub vnet_cidr: Option<String>,
-    #[serde(rename = "peerVnetId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "peerVnetId", default, skip_serializing_if = "Option::is_none")]
     pub peer_vnet_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -140,14 +140,14 @@ pub enum OpenShiftAgentPoolProfileRole {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterMasterPoolProfile {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     pub count: i32,
     #[serde(rename = "vmSize")]
     pub vm_size: OpenShiftContainerServiceVmSize,
-    #[serde(rename = "subnetCidr", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "subnetCidr", default, skip_serializing_if = "Option::is_none")]
     pub subnet_cidr: Option<String>,
-    #[serde(rename = "osType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -156,23 +156,23 @@ pub struct OpenShiftManagedClusterAgentPoolProfile {
     pub count: i32,
     #[serde(rename = "vmSize")]
     pub vm_size: OpenShiftContainerServiceVmSize,
-    #[serde(rename = "subnetCidr", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "subnetCidr", default, skip_serializing_if = "Option::is_none")]
     pub subnet_cidr: Option<String>,
-    #[serde(rename = "osType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<OpenShiftAgentPoolProfileRole>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterIdentityProvider {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<OpenShiftManagedClusterBaseIdentityProvider>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterAuthProfile {
-    #[serde(rename = "identityProviders", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "identityProviders", default, skip_serializing_if = "Vec::is_empty")]
     pub identity_providers: Vec<OpenShiftManagedClusterIdentityProvider>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -181,19 +181,19 @@ pub struct OpenShiftManagedClusterProperties {
     pub provisioning_state: Option<String>,
     #[serde(rename = "openShiftVersion")]
     pub open_shift_version: String,
-    #[serde(rename = "publicHostname", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "publicHostname", default, skip_serializing_if = "Option::is_none")]
     pub public_hostname: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
-    #[serde(rename = "networkProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<NetworkProfile>,
-    #[serde(rename = "routerProfiles", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "routerProfiles", default, skip_serializing_if = "Vec::is_empty")]
     pub router_profiles: Vec<OpenShiftRouterProfile>,
-    #[serde(rename = "masterPoolProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "masterPoolProfile", default, skip_serializing_if = "Option::is_none")]
     pub master_pool_profile: Option<OpenShiftManagedClusterMasterPoolProfile>,
-    #[serde(rename = "agentPoolProfiles", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "agentPoolProfiles", default, skip_serializing_if = "Vec::is_empty")]
     pub agent_pool_profiles: Vec<OpenShiftManagedClusterAgentPoolProfile>,
-    #[serde(rename = "authProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "authProfile", default, skip_serializing_if = "Option::is_none")]
     pub auth_profile: Option<OpenShiftManagedClusterAuthProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -216,12 +216,12 @@ pub struct OpenShiftManagedClusterAadIdentityProvider {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagsObject {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OpenShiftManagedCluster>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -596,23 +596,23 @@ pub struct KeyVaultSecretRef {
     pub vault_id: String,
     #[serde(rename = "secretName")]
     pub secret_name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceServicePrincipalProfile {
     #[serde(rename = "clientId")]
     pub client_id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secret: Option<String>,
-    #[serde(rename = "keyVaultSecretRef", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "keyVaultSecretRef", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_secret_ref: Option<KeyVaultSecretRef>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceOrchestratorProfile {
     #[serde(rename = "orchestratorType")]
     pub orchestrator_type: container_service_orchestrator_profile::OrchestratorType,
-    #[serde(rename = "orchestratorVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "orchestratorVersion", default, skip_serializing_if = "Option::is_none")]
     pub orchestrator_version: Option<String>,
 }
 pub mod container_service_orchestrator_profile {
@@ -630,19 +630,19 @@ pub mod container_service_orchestrator_profile {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceMasterProfile {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<container_service_master_profile::Count>,
     #[serde(rename = "dnsPrefix")]
     pub dns_prefix: String,
     #[serde(rename = "vmSize")]
     pub vm_size: ContainerServiceVmSize,
-    #[serde(rename = "osDiskSizeGB", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "osDiskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub os_disk_size_gb: Option<ContainerServiceOsDisk>,
-    #[serde(rename = "vnetSubnetID", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "vnetSubnetID", default, skip_serializing_if = "Option::is_none")]
     pub vnet_subnet_id: Option<ContainerServiceVnetSubnetId>,
-    #[serde(rename = "firstConsecutiveStaticIP", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "firstConsecutiveStaticIP", default, skip_serializing_if = "Option::is_none")]
     pub first_consecutive_static_ip: Option<String>,
-    #[serde(rename = "storageProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<ContainerServiceStorageProfile>,
     #[serde(skip_serializing)]
     pub fqdn: Option<String>,
@@ -655,23 +655,23 @@ pub mod container_service_master_profile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceAgentPoolProfile {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
     #[serde(rename = "vmSize")]
     pub vm_size: ContainerServiceVmSize,
-    #[serde(rename = "osDiskSizeGB", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "osDiskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub os_disk_size_gb: Option<ContainerServiceOsDisk>,
-    #[serde(rename = "dnsPrefix", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "dnsPrefix", default, skip_serializing_if = "Option::is_none")]
     pub dns_prefix: Option<String>,
     #[serde(skip_serializing)]
     pub fqdn: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ports: Vec<i64>,
-    #[serde(rename = "storageProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<ContainerServiceStorageProfile>,
-    #[serde(rename = "vnetSubnetID", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "vnetSubnetID", default, skip_serializing_if = "Option::is_none")]
     pub vnet_subnet_id: Option<ContainerServiceVnetSubnetId>,
-    #[serde(rename = "osType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -717,7 +717,7 @@ pub struct ContainerService {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContainerService>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -728,19 +728,19 @@ pub struct ContainerServiceProperties {
     pub provisioning_state: Option<String>,
     #[serde(rename = "orchestratorProfile")]
     pub orchestrator_profile: ContainerServiceOrchestratorProfile,
-    #[serde(rename = "customProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "customProfile", default, skip_serializing_if = "Option::is_none")]
     pub custom_profile: Option<ContainerServiceCustomProfile>,
-    #[serde(rename = "servicePrincipalProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "servicePrincipalProfile", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_profile: Option<ContainerServiceServicePrincipalProfile>,
     #[serde(rename = "masterProfile")]
     pub master_profile: ContainerServiceMasterProfile,
-    #[serde(rename = "agentPoolProfiles", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "agentPoolProfiles", default, skip_serializing_if = "Vec::is_empty")]
     pub agent_pool_profiles: Vec<ContainerServiceAgentPoolProfile>,
-    #[serde(rename = "windowsProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "windowsProfile", default, skip_serializing_if = "Option::is_none")]
     pub windows_profile: Option<ContainerServiceWindowsProfile>,
     #[serde(rename = "linuxProfile")]
     pub linux_profile: ContainerServiceLinuxProfile,
-    #[serde(rename = "diagnosticsProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
     pub diagnostics_profile: Option<ContainerServiceDiagnosticsProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -754,7 +754,7 @@ pub struct OperationValue {
     pub origin: Option<String>,
     #[serde(skip_serializing)]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationValueDisplay>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -772,40 +772,40 @@ pub struct OperationValueDisplay {
 pub struct ManagedClusterServicePrincipalProfile {
     #[serde(rename = "clientId")]
     pub client_id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secret: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAgentPoolProfile {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
     #[serde(rename = "vmSize")]
     pub vm_size: ContainerServiceVmSize,
-    #[serde(rename = "osDiskSizeGB", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "osDiskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub os_disk_size_gb: Option<ContainerServiceOsDisk>,
-    #[serde(rename = "storageProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<ContainerServiceStorageProfile>,
-    #[serde(rename = "vnetSubnetID", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "vnetSubnetID", default, skip_serializing_if = "Option::is_none")]
     pub vnet_subnet_id: Option<ContainerServiceVnetSubnetId>,
-    #[serde(rename = "maxPods", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "maxPods", default, skip_serializing_if = "Option::is_none")]
     pub max_pods: Option<i32>,
-    #[serde(rename = "osType", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceNetworkProfile {
-    #[serde(rename = "networkPlugin", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "networkPlugin", default, skip_serializing_if = "Option::is_none")]
     pub network_plugin: Option<container_service_network_profile::NetworkPlugin>,
-    #[serde(rename = "networkPolicy", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "networkPolicy", default, skip_serializing_if = "Option::is_none")]
     pub network_policy: Option<container_service_network_profile::NetworkPolicy>,
-    #[serde(rename = "podCidr", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "podCidr", default, skip_serializing_if = "Option::is_none")]
     pub pod_cidr: Option<String>,
-    #[serde(rename = "serviceCidr", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "serviceCidr", default, skip_serializing_if = "Option::is_none")]
     pub service_cidr: Option<String>,
-    #[serde(rename = "dnsServiceIP", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "dnsServiceIP", default, skip_serializing_if = "Option::is_none")]
     pub dns_service_ip: Option<String>,
-    #[serde(rename = "dockerBridgeCidr", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "dockerBridgeCidr", default, skip_serializing_if = "Option::is_none")]
     pub docker_bridge_cidr: Option<String>,
 }
 pub mod container_service_network_profile {
@@ -825,7 +825,7 @@ pub mod container_service_network_profile {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterListResult {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedCluster>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
@@ -841,27 +841,27 @@ pub struct ManagedCluster {
 pub struct ManagedClusterProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
-    #[serde(rename = "kubernetesVersion", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "kubernetesVersion", default, skip_serializing_if = "Option::is_none")]
     pub kubernetes_version: Option<String>,
-    #[serde(rename = "dnsPrefix", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "dnsPrefix", default, skip_serializing_if = "Option::is_none")]
     pub dns_prefix: Option<String>,
     #[serde(skip_serializing)]
     pub fqdn: Option<String>,
-    #[serde(rename = "agentPoolProfiles", skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "agentPoolProfiles", default, skip_serializing_if = "Vec::is_empty")]
     pub agent_pool_profiles: Vec<ManagedClusterAgentPoolProfile>,
-    #[serde(rename = "linuxProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "linuxProfile", default, skip_serializing_if = "Option::is_none")]
     pub linux_profile: Option<ContainerServiceLinuxProfile>,
-    #[serde(rename = "servicePrincipalProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "servicePrincipalProfile", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_profile: Option<ManagedClusterServicePrincipalProfile>,
-    #[serde(rename = "addonProfiles", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "addonProfiles", default, skip_serializing_if = "Option::is_none")]
     pub addon_profiles: Option<serde_json::Value>,
     #[serde(rename = "nodeResourceGroup", skip_serializing)]
     pub node_resource_group: Option<String>,
-    #[serde(rename = "enableRBAC", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enableRBAC", default, skip_serializing_if = "Option::is_none")]
     pub enable_rbac: Option<bool>,
-    #[serde(rename = "networkProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<ContainerServiceNetworkProfile>,
-    #[serde(rename = "aadProfile", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "aadProfile", default, skip_serializing_if = "Option::is_none")]
     pub aad_profile: Option<ManagedClusterAadProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -880,18 +880,18 @@ pub struct ManagedClusterAccessProfile {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessProfile {
-    #[serde(rename = "kubeConfig", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "kubeConfig", default, skip_serializing_if = "Option::is_none")]
     pub kube_config: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterPoolUpgradeProfile {
     #[serde(rename = "kubernetesVersion")]
     pub kubernetes_version: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "osType")]
     pub os_type: OsType,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub upgrades: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -907,15 +907,15 @@ pub struct ManagedClusterAadProfile {
     pub client_app_id: String,
     #[serde(rename = "serverAppID")]
     pub server_app_id: String,
-    #[serde(rename = "serverAppSecret", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "serverAppSecret", default, skip_serializing_if = "Option::is_none")]
     pub server_app_secret: Option<String>,
-    #[serde(rename = "tenantID", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "tenantID", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAddonProfile {
     pub enabled: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

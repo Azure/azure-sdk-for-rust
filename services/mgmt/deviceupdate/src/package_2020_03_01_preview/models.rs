@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct Account {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<account::Properties>,
 }
 pub mod account {
@@ -33,9 +33,9 @@ pub mod account {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountList {
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Account>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -52,7 +52,7 @@ pub mod instance {
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[serde(rename = "accountName", skip_serializing)]
         pub account_name: Option<String>,
-        #[serde(rename = "iotHubs", skip_serializing_if = "Vec::is_empty")]
+        #[serde(rename = "iotHubs", default, skip_serializing_if = "Vec::is_empty")]
         pub iot_hubs: Vec<IotHubSettings>,
     }
     pub mod properties {
@@ -70,35 +70,35 @@ pub mod instance {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InstanceList {
-    #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Instance>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotHubSettings {
     #[serde(rename = "resourceId")]
     pub resource_id: String,
-    #[serde(rename = "ioTHubConnectionString", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ioTHubConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub io_t_hub_connection_string: Option<String>,
-    #[serde(rename = "eventHubConnectionString", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "eventHubConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub event_hub_connection_string: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDefinition {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountUpdate {
     #[serde(flatten)]
     pub tag_update: TagUpdate,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagUpdate {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -114,7 +114,7 @@ pub struct Operation {
     pub name: Option<String>,
     #[serde(rename = "isDataAction", skip_serializing)]
     pub is_data_action: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[serde(skip_serializing)]
     pub origin: Option<operation::Origin>,
@@ -152,7 +152,7 @@ pub mod operation {
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }
