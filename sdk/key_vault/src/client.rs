@@ -38,7 +38,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// ```
     pub fn new(vault_url: &str, token_credential: &'a T) -> Result<Self> {
         let vault_url = Url::parse(vault_url)?;
-        let endpoint = endpoint_suffix(&vault_url)?;
+        let endpoint = extract_endpoint(&vault_url)?;
         let client = KeyClient {
             vault_url,
             endpoint,
@@ -169,18 +169,16 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     }
 }
 
-/// Helper to get vault endpoint suffix with trailing slash
-/// ex. `vault.azure.net/` where the full client url is `myvault.vault.azure.net`
-fn endpoint_suffix(url: &Url) -> Result<String, KeyVaultError> {
-    let mut endpoint = url
+/// Helper to get vault endpoint with a scheme and a trailing slash
+/// ex. `https://vault.azure.net/` where the full client url is `https://myvault.vault.azure.net`
+fn extract_endpoint(url: &Url) -> Result<String, KeyVaultError> {
+    let endpoint = url
         .host_str()
         .ok_or(KeyVaultError::DomainParse)?
         .splitn(2, '.') // FIXME: replace with split_once() when it is in stable
         .last()
-        .ok_or(KeyVaultError::DomainParse)?
-        .to_string();
-    endpoint.push('/');
-    Ok(endpoint)
+        .ok_or(KeyVaultError::DomainParse)?;
+    Ok(format!("{}://{}/", url.scheme(), endpoint))
 }
 
 #[cfg(test)]
@@ -188,17 +186,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn can_get_endpoint_suffix() {
+    fn can_extract_endpoint() {
         let suffix =
-            endpoint_suffix(&Url::parse("https://myvault.vault.azure.net").unwrap()).unwrap();
-        assert_eq!(suffix, "vault.azure.net/");
+            extract_endpoint(&Url::parse("https://myvault.vault.azure.net").unwrap()).unwrap();
+        assert_eq!(suffix, "https://vault.azure.net/");
 
         let suffix =
-            endpoint_suffix(&Url::parse("https://myvault.mycustom.vault.server.net").unwrap())
+            extract_endpoint(&Url::parse("https://myvault.mycustom.vault.server.net").unwrap())
                 .unwrap();
-        assert_eq!(suffix, "mycustom.vault.server.net/");
+        assert_eq!(suffix, "https://mycustom.vault.server.net/");
 
-        let suffix = endpoint_suffix(&Url::parse("https://myvault.internal").unwrap()).unwrap();
-        assert_eq!(suffix, "internal/");
+        let suffix = extract_endpoint(&Url::parse("https://myvault.internal").unwrap()).unwrap();
+        assert_eq!(suffix, "https://internal/");
+
+        let suffix =
+            extract_endpoint(&Url::parse("some-scheme://myvault.vault.azure.net").unwrap())
+                .unwrap();
+        assert_eq!(suffix, "some-scheme://vault.azure.net/");
     }
 }
