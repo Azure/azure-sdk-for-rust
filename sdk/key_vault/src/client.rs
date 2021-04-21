@@ -200,7 +200,8 @@ mod tests {
         assert_eq!(suffix, "https://internal/");
 
         let suffix =
-            extract_endpoint(&Url::parse("some-scheme://myvault.vault.azure.net").unwrap()).unwrap();
+            extract_endpoint(&Url::parse("some-scheme://myvault.vault.azure.net").unwrap())
+                .unwrap();
         assert_eq!(suffix, "some-scheme://vault.azure.net/");
     }
 }
