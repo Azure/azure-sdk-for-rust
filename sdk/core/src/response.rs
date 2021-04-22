@@ -8,12 +8,14 @@ type PinnedStream = Pin<
     Box<dyn Stream<Item = Result<Bytes, Box<dyn std::error::Error + Send + Sync>>> + Send + Sync>,
 >;
 
+#[allow(dead_code)]
 pub(crate) struct ResponseBuilder {
     status: StatusCode,
     headers: HeaderMap,
 }
 
 impl ResponseBuilder {
+    #[allow(dead_code)]
     pub fn new(status: StatusCode) -> Self {
         Self {
             status,
@@ -27,6 +29,7 @@ impl ResponseBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_pinned_stream(self, response: PinnedStream) -> Response {
         Response::new(self.status, self.headers, response)
     }
