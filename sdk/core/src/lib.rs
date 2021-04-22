@@ -11,6 +11,7 @@ extern crate serde_derive;
 #[macro_use]
 mod macros;
 
+mod bytes_stream;
 mod context;
 pub mod errors;
 pub mod headers;
@@ -35,6 +36,7 @@ use oauth2::AccessToken;
 use std::fmt::Debug;
 use uuid::Uuid;
 
+pub use bytes_stream::*;
 pub use context::Context;
 pub use headers::AddAsHeader;
 pub use http_client::{to_json, HttpClient};

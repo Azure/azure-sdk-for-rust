@@ -25,6 +25,7 @@ impl TransportPolicy {
 }
 
 #[async_trait::async_trait]
+#[cfg(not(target_arch = "wasm32"))]
 impl Policy for TransportPolicy {
     async fn send(
         &self,

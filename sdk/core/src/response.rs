@@ -1,14 +1,11 @@
+use bytes::Bytes;
 use futures::Stream;
 use futures::StreamExt;
 use http::{header::HeaderName, HeaderMap, HeaderValue, StatusCode};
 use std::pin::Pin;
 
 type PinnedStream = Pin<
-    Box<
-        dyn Stream<Item = Result<bytes::Bytes, Box<dyn std::error::Error + Send + Sync>>>
-            + Send
-            + Sync,
-    >,
+    Box<dyn Stream<Item = Result<Bytes, Box<dyn std::error::Error + Send + Sync>>> + Send + Sync>,
 >;
 
 pub(crate) struct ResponseBuilder {
@@ -65,7 +62,7 @@ impl Response {
 /// Convenience function that transforms a `PinnedStream` in a `bytes::Bytes` struct by collecting all the chunks. It consumes the response stream.
 pub async fn collect_pinned_stream(
     mut pinned_stream: PinnedStream,
-) -> Result<bytes::Bytes, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<Bytes, Box<dyn std::error::Error + Send + Sync>> {
     let mut final_result = Vec::new();
 
     while let Some(res) = pinned_stream.next().await {

@@ -1,12 +1,11 @@
 use crate::errors::{AzureError, UnexpectedHTTPResult};
 use crate::Body;
-use async_std::fs::File;
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures::TryStreamExt;
 use http::{Request, Response, StatusCode};
-#[cfg(feature = "enable_hyper")]
-use hyper_rustls::HttpsConnector;
+//#[cfg(feature = "enable_hyper")]
+//use hyper_rustls::HttpsConnector;
 use serde::Serialize;
 
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
@@ -20,10 +19,12 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// This function will be the only one remaining in the trait as soon as the trait stabilizes.
     /// It will be renamed to `execute_request`. The other helper functions (ie
     /// `execute_request_check_status`) will be removed since the status check will be
-    /// responsibility of another policy (not the transport one).
+    /// responsibility of another policy (not the transport one). It does not consume the request.
+    /// Implementors are expected to clone the necessary parts of the request and pass them to the
+    /// underlying transport.
     async fn execute_request2(
         &self,
-        request: &mut crate::Request,
+        request: &crate::Request,
     ) -> Result<crate::Response, Box<dyn std::error::Error + Sync + Send>>;
 
     async fn execute_request_check_status(
@@ -121,17 +122,15 @@ impl HttpClient for reqwest::Client {
             request.method().clone(),
             url::Url::parse(&request.uri().to_string()).unwrap(),
         );
-        for header in request.headers() {
-            reqwest_request = reqwest_request.header(header.0, header.1);
+        for (header, value) in request.headers() {
+            reqwest_request = reqwest_request.header(header, value);
         }
 
         let reqwest_request = reqwest_request.body(request.into_body()).build()?;
 
         let reqwest_response = self.execute(reqwest_request).await?;
 
-        let mut response = Response::builder()
-            .status(reqwest_response.status())
-            .version(reqwest_response.version());
+        let mut response = Response::builder().status(reqwest_response.status());
 
         for (key, value) in reqwest_response.headers() {
             response = response.header(key, value);
@@ -142,9 +141,10 @@ impl HttpClient for reqwest::Client {
         Ok(response)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     async fn execute_request2(
         &self,
-        request: &mut crate::Request,
+        request: &crate::Request,
     ) -> Result<crate::Response, Box<dyn std::error::Error + Sync + Send>> {
         let mut reqwest_request = self.request(
             request.method().clone(),
@@ -154,28 +154,13 @@ impl HttpClient for reqwest::Client {
             reqwest_request = reqwest_request.header(header.0, header.1);
         }
 
-        let body = request.take_body();
+        // We clone the body since we need to give ownership of it to
+        // Reqwest.
+        let body = request.clone_body();
 
         let reqwest_request = match body {
-            Body::Bytes(bytes) => {
-                // replace the body for subsequent retries
-                request.set_body(bytes.clone().into());
-                reqwest_request.body(bytes).build()?
-            }
-            Body::Path(path) => {
-                // replace the body for subsequent retries
-                request.set_body(path.clone().into());
-                let file = File::open(path).await?;
-                let seekable_stream = crate::SelfResetStream::new(file).await?;
-                reqwest_request
-                    .body(reqwest::Body::wrap_stream(seekable_stream))
-                    .build()?
-            }
+            Body::Bytes(bytes) => reqwest_request.body(bytes).build()?,
             Body::SeekableStream(mut seekable_stream) => {
-                // replace the body for subsequent retries
-                let stream_clone = dyn_clone::clone_box(seekable_stream.as_ref());
-                request.set_body(stream_clone.into());
-
                 seekable_stream.reset().await?;
 
                 reqwest_request
@@ -197,20 +182,20 @@ impl HttpClient for reqwest::Client {
 
         Ok(response)
     }
-}
 
-// wasm can not get the http version
-#[cfg(feature = "enable_reqwest")]
-#[cfg(target_arch = "wasm32")]
-fn get_version(_response: &reqwest::Response) -> Option<http::Version> {
-    None
-}
+    #[cfg(target_arch = "wasm32")]
+    /// Stub implementation. Will remove as soon as reqwest starts
+    /// supporting wasm.
+    async fn execute_request2(
+        &self,
+        _request: &crate::Request,
+    ) -> Result<crate::Response, Box<dyn std::error::Error + Sync + Send>> {
+        let mut response = crate::ResponseBuilder::new(http::StatusCode::OK);
 
-#[cfg(feature = "enable_reqwest")]
-#[cfg(not(target_arch = "wasm32"))]
-#[allow(dead_code)]
-fn get_version(response: &reqwest::Response) -> Option<http::Version> {
-    Some(response.version())
+        let response = response.with_pinned_stream(Box::pin(crate::BytesStream::new_empty()));
+
+        Ok(response)
+    }
 }
 
 /// Serialize to json

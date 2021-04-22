@@ -1,24 +1,16 @@
 use crate::SeekableStream;
-use async_std::path::PathBuf;
 use http::{HeaderMap, Method, Uri};
 use std::fmt::Debug;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Body {
     Bytes(bytes::Bytes),
-    Path(PathBuf),
     SeekableStream(Box<dyn SeekableStream>),
 }
 
 impl From<bytes::Bytes> for Body {
     fn from(bytes: bytes::Bytes) -> Self {
         Self::Bytes(bytes)
-    }
-}
-
-impl From<PathBuf> for Body {
-    fn from(path: PathBuf) -> Self {
-        Self::Path(path)
     }
 }
 
@@ -32,7 +24,7 @@ impl From<Box<dyn SeekableStream>> for Body {
 ///
 /// A pipeline request is composed by a destination (uri), a method, a collection of headers and a
 /// body. Policies are expected to enrich the request by mutating it.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Request {
     uri: Uri,
     method: Method,
@@ -61,13 +53,9 @@ impl Request {
         self.body = body;
     }
 
-    /// Swaps the body with an empty one an returns ownership on the internal
-    /// one. Care must be taken to make sure the body is preserved between
-    /// retries.
-    pub fn take_body(&mut self) -> Body {
-        let mut b = Body::Bytes(bytes::Bytes::new());
-        std::mem::swap(&mut self.body, &mut b);
-        b
+    /// Clones the internal body and gives it back to the caller.
+    pub fn clone_body(&self) -> Body {
+        self.body.clone()
     }
 }
 
