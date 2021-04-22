@@ -21,6 +21,7 @@ impl ResponseBuilder {
         }
     }
 
+    #[allow(dead_code)]
     pub fn with_header(&mut self, key: &HeaderName, value: HeaderValue) -> &mut Self {
         self.headers.append(key, value);
         self

@@ -1,4 +1,6 @@
+#[allow(unused_imports)]
 use crate::policies::{Policy, PolicyResult};
+#[allow(unused_imports)]
 use crate::{Context, HttpClient, Request, Response};
 use std::sync::Arc;
 

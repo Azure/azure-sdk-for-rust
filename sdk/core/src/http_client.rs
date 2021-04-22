@@ -1,11 +1,14 @@
 use crate::errors::{AzureError, UnexpectedHTTPResult};
+#[allow(unused_imports)]
 use crate::Body;
 use async_trait::async_trait;
 use bytes::Bytes;
+#[allow(unused_imports)]
 use futures::TryStreamExt;
 use http::{Request, Response, StatusCode};
-//#[cfg(feature = "enable_hyper")]
-//use hyper_rustls::HttpsConnector;
+#[cfg(feature = "enable_hyper")]
+#[allow(unused_imports)]
+use hyper_rustls::HttpsConnector;
 use serde::Serialize;
 
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
@@ -190,7 +193,7 @@ impl HttpClient for reqwest::Client {
         &self,
         _request: &crate::Request,
     ) -> Result<crate::Response, Box<dyn std::error::Error + Sync + Send>> {
-        let mut response = crate::ResponseBuilder::new(http::StatusCode::OK);
+        let response = crate::ResponseBuilder::new(http::StatusCode::OK);
 
         let response = response.with_pinned_stream(Box::pin(crate::BytesStream::new_empty()));
 
