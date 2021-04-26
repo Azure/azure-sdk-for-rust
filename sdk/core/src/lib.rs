@@ -64,10 +64,10 @@ pub trait TokenCredential: Send + Sync {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Consistency {
-    Md5([u8; 16]),
-    Crc64([u8; 8]),
-}
+pub struct ConsistencyCRC64(pub [u8; 8]);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ConsistencyMD5(pub [u8; 16]);
 
 pub trait AppendToUrlQuery {
     fn append_to_url_query(&self, url: &mut url::Url);
