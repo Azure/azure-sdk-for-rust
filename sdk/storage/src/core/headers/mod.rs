@@ -1,4 +1,4 @@
-use crate::{AzureStorageError, Consistency};
+use crate::{AzureStorageError, ConsistencyCRC64, ConsistencyMD5};
 use http::HeaderMap;
 
 pub const CONTENT_CRC64: &str = "x-ms-content-crc64";
@@ -65,15 +65,10 @@ pub fn content_md5_from_headers_optional(
     }
 }
 
-pub fn consistency_from_headers(headers: &HeaderMap) -> Result<Consistency, AzureStorageError> {
-    if let Some(content_crc64) = content_crc64_from_headers_optional(headers)? {
-        return Ok(Consistency::Crc64(content_crc64));
-    } else if let Some(content_md5) = content_md5_from_headers_optional(headers)? {
-        return Ok(Consistency::Md5(content_md5));
-    }
-
-    Err(AzureStorageError::HeadersNotFound(vec![
-        CONTENT_CRC64.to_owned(),
-        CONTENT_MD5.to_owned(),
-    ]))
+pub fn consistency_from_headers(
+    headers: &HeaderMap,
+) -> Result<(Option<ConsistencyMD5>, Option<ConsistencyCRC64>), AzureStorageError> {
+    let content_crc64 = content_crc64_from_headers_optional(headers)?.map(ConsistencyCRC64);
+    let content_md5 = content_md5_from_headers_optional(headers)?.map(ConsistencyMD5);
+    Ok((content_md5, content_crc64))
 }

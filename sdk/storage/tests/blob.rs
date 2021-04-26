@@ -133,10 +133,7 @@ async fn put_and_get_block_list() {
         .await
         .unwrap();
 
-    match &put_block_response.consistency {
-        Consistency::Crc64(_) => {}
-        _ => panic!("must receive a content_crc64 header"),
-    }
+    assert!(put_block_response.content_crc64.is_some());
 
     blob.put_block("block2", Bytes::from(contents2))
         .execute()
@@ -150,10 +147,7 @@ async fn put_and_get_block_list() {
         .await
         .unwrap();
 
-    match &put_block_response.consistency {
-        Consistency::Crc64(_) => {}
-        _ => panic!("must receive a content_crc64 header"),
-    }
+    assert!(put_block_response.content_crc64.is_some());
 
     let received_block_list = blob
         .get_block_list()
