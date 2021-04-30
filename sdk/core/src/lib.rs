@@ -32,6 +32,8 @@ use uuid::Uuid;
 
 pub use self::http::{Request, Response};
 pub use headers::AddAsHeader;
+#[cfg(feature = "enable_wasi_experimental_http")]
+pub use http_client::WasiHttpClient;
 pub use http_client::{to_json, HttpClient};
 pub use models::*;
 pub use policy::*;

@@ -2,3 +2,7 @@
 members = [
   "sdk/*"
 ]
+
+[patch.crates-io]
+ring = { git = "https://github.com/radu-matei/ring", branch = "wasm32-wasi", version = "0.16.20" }
+oauth2 = { git = "https://github.com/radu-matei/oauth2-rs", branch = "wasm32-wasi"}
