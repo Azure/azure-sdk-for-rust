@@ -2,7 +2,9 @@ use crate::headers::from_headers::*;
 use crate::resources::document::{Document, DocumentAttributes};
 use crate::{CosmosError, ResourceQuota};
 
-use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
+use azure_core::headers::{
+    continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
+};
 use azure_core::SessionToken;
 use chrono::{DateTime, Utc};
 use http::response::Response;
