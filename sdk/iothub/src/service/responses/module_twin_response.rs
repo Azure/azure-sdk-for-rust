@@ -43,6 +43,8 @@ impl std::convert::TryFrom<Response<bytes::Bytes>> for ModuleTwinResponse {
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let body = response.body();
 
+        debug!("body == {:#?}", std::str::from_utf8(body));
+
         let module_twin_response: ModuleTwinResponse = serde_json::from_slice(body)?;
 
         Ok(module_twin_response)

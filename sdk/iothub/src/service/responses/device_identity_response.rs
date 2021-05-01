@@ -44,6 +44,8 @@ impl std::convert::TryFrom<Response<bytes::Bytes>> for DeviceIdentityResponse {
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let body = response.body();
 
+        debug!("body == {:#?}", std::str::from_utf8(body));
+
         let device_identity_response: DeviceIdentityResponse = serde_json::from_slice(body)?;
 
         Ok(device_identity_response)
