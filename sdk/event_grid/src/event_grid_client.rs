@@ -1,14 +1,17 @@
-use crate::event_grid_request_builder::EventGridRequestBuilder;
 use crate::Event;
-use azure_core::errors::AzureError;
-use hyper::{self, client::HttpConnector, Method, StatusCode};
-use hyper_rustls::HttpsConnector;
+use azure_core::{errors::AzureError, HttpClient};
+use bytes::Bytes;
+use http::{
+    header::{CONTENT_LENGTH, CONTENT_TYPE},
+    Method, StatusCode,
+};
 use serde::ser::Serialize;
+use std::sync::Arc;
 use url::Url;
 
 #[derive(Clone)]
 pub struct EventGridClient {
-    client: hyper::Client<HttpsConnector<HttpConnector>>,
+    client: Arc<Box<dyn HttpClient>>,
     pub topic_host_name: String,
     pub topic_key: String,
 }
@@ -21,9 +24,13 @@ impl EventGridClient {
     /// # assert_eq!(client.topic_host_name, "https://name.location.eventgrid.azure.net");
     /// # assert_eq!(client.topic_key, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
     /// ```
-    pub fn new(topic_host_name: String, topic_key: String) -> Self {
+    pub fn new(
+        topic_host_name: String,
+        topic_key: String,
+        client: Arc<Box<dyn HttpClient>>,
+    ) -> Self {
         Self {
-            client: hyper::Client::builder().build(HttpsConnector::with_native_roots()),
+            client,
             topic_host_name,
             topic_key,
         }
@@ -35,14 +42,25 @@ impl EventGridClient {
     where
         T: Serialize,
     {
-        let body = serde_json::to_string(&events).unwrap();
-        EventGridRequestBuilder::new(Method::POST, &self.events_url()?)
-            .sas_key(&self.topic_key)
-            .body(Some(&body), Some("application/json"))?
-            .request(&self.client)
-            .expect(StatusCode::OK)
-            .await?;
+        let body = Bytes::from(serde_json::to_vec(&events)?);
+        let req = http::request::Builder::new()
+            .uri(&self.events_url()?)
+            .method(Method::POST)
+            .header("aeg-sas-key", &self.topic_key)
+            .header(CONTENT_TYPE, "application/json")
+            .header(CONTENT_LENGTH, &body.len().to_string())
+            .body(body)?;
 
+        let _res = self
+            .client
+            .execute_request_check_status(req, StatusCode::OK)
+            .await?;
+        // EventGridRequestBuilder::new(Method::POST, &self.events_url()?)
+        //     .sas_key(&self.topic_key)
+        //     .body(Some(&body), Some("application/json"))?
+        //     .request(&self.client)
+        //     .expect(StatusCode::OK)
+        //     .await?;
         Ok(())
     }
 
