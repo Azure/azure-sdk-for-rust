@@ -145,7 +145,7 @@ impl HttpClient for WasiHttpClient {
         &self,
         request: Request<Bytes>,
     ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
-        println!("trying to make request to: {}", request.uri());
+        // println!("trying to make request to: {}", request.uri());
         let mut r = http::request::Builder::new()
             .uri(request.uri())
             .method(request.method().clone());
