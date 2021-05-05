@@ -35,7 +35,7 @@ oauth2 = { git = "https://github.com/radu-matei/oauth2-rs", branch = "wasm32-was
 reqwest = { version = "0.11", optional = true }
 paste = "1.0"
 md5 = "0.7"
-wasi-experimental-http = { git = "https://github.com/radu-matei/wasi-experimental-http", branch = "headers_get_all", optional = true}
+wasi-experimental-http = { version = "0.3", optional = true}
 
 [dev-dependencies]
 tokio = "1.0"
