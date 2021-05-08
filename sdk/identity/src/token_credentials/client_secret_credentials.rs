@@ -133,7 +133,7 @@ impl TokenCredential for ClientSecretCredential {
 
         let token_result = client
             .exchange_client_credentials()
-            .add_scope(Scope::new(format!("{}.default", resource)))
+            .add_scope(Scope::new(format!("{}/.default", resource)))
             .request_async(async_http_client)
             .await
             .map(|r| {
