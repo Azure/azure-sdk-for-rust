@@ -64,7 +64,7 @@ fn peek_lock_prepare(
     let sas = generate_signature(policy_name, signing_key, &url.as_str(), duration);
     debug!("sas == {}", sas);
 
-    let request = hyper::Request::post(String::from(url))
+    let request = hyper::Request::post(Into::<String>::into(url))
         .header(header::AUTHORIZATION, sas)
         .header(header::CONTENT_LENGTH, 0)
         .body(Body::empty())?;
