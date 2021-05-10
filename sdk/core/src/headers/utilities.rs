@@ -2,7 +2,7 @@ use super::*;
 use crate::errors::*;
 use crate::request_options::LeaseId;
 use crate::util::HeaderMapExt;
-use crate::{Consistency, RequestId, SessionToken};
+use crate::{ConsistencyCRC64, ConsistencyMD5, RequestId, SessionToken};
 use chrono::{DateTime, Utc};
 use http::header::{HeaderName, DATE, ETAG, LAST_MODIFIED};
 #[cfg(feature = "enable_hyper")]
@@ -116,17 +116,17 @@ pub fn content_crc64_from_headers(headers: &HeaderMap) -> Result<[u8; 8], AzureE
     Ok(content_crc64)
 }
 
-pub fn consistency_from_headers(headers: &HeaderMap) -> Result<Consistency, AzureError> {
-    if let Some(content_crc64) = content_crc64_from_headers_optional(headers)? {
-        return Ok(Consistency::Crc64(content_crc64));
-    } else if let Some(content_md5) = content_md5_from_headers_optional(headers)? {
-        return Ok(Consistency::Md5(content_md5));
-    }
+pub fn consistency_from_headers(
+    headers: &HeaderMap,
+) -> Result<(ConsistencyMD5, Option<ConsistencyCRC64>), AzureError> {
+    let content_crc64 = content_crc64_from_headers_optional(headers)?.map(ConsistencyCRC64);
+    let content_md5 = if let Some(content_md5) = content_md5_from_headers_optional(headers)? {
+        ConsistencyMD5(content_md5)
+    } else {
+        return Err(AzureError::HeadersNotFound(vec![CONTENT_MD5.to_owned()]));
+    };
 
-    Err(AzureError::HeadersNotFound(vec![
-        CONTENT_CRC64.to_owned(),
-        CONTENT_MD5.to_owned(),
-    ]))
+    Ok((content_md5, content_crc64))
 }
 
 pub fn last_modified_from_headers_optional(
