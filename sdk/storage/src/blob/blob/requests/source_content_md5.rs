@@ -1,4 +1,5 @@
-use crate::AddAsHeader;
+use azure_core::headers::SOURCE_CONTENT_MD5;
+use azure_core::AddAsHeader;
 use http::request::Builder;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
@@ -6,7 +7,7 @@ pub struct SourceContentMD5([u8; 16]);
 
 impl AddAsHeader for SourceContentMD5 {
     fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(crate::SOURCE_CONTENT_MD5, base64::encode(self.0))
+        builder.header(SOURCE_CONTENT_MD5, base64::encode(self.0))
     }
 }
 
