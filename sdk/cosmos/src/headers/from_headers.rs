@@ -2,7 +2,7 @@ use crate::headers::*;
 use crate::resource_quota::resource_quotas_from_str;
 use crate::resources::document::IndexingDirective;
 use crate::ResourceQuota;
-use azure_core::errors::AzureError;
+use azure_core::errors::*;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 
@@ -67,7 +67,8 @@ pub(crate) fn resource_quota_from_headers(
         .get(HEADER_RESOURCE_QUOTA)
         .ok_or_else(|| AzureError::HeaderNotFound(HEADER_RESOURCE_QUOTA.to_owned()))?
         .to_str()?;
-    Ok(resource_quotas_from_str(s)?)
+    Ok(resource_quotas_from_str(s)
+        .map_err(|err| AzureError::GenericErrorWithText(err.to_string()))?)
 }
 
 pub(crate) fn resource_usage_from_headers(
@@ -77,7 +78,8 @@ pub(crate) fn resource_usage_from_headers(
         .get(HEADER_RESOURCE_USAGE)
         .ok_or_else(|| AzureError::HeaderNotFound(HEADER_RESOURCE_USAGE.to_owned()))?
         .to_str()?;
-    Ok(resource_quotas_from_str(s)?)
+    Ok(resource_quotas_from_str(s)
+        .map_err(|err| AzureError::GenericErrorWithText(err.to_string()))?)
 }
 
 pub(crate) fn quorum_acked_lsn_from_headers(headers: &HeaderMap) -> Result<u64, AzureError> {
