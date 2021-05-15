@@ -10,7 +10,7 @@ use azure_core::{
         LEASE_STATUS, META_PREFIX,
     },
     lease::{LeaseDuration, LeaseState, LeaseStatus},
-    parsing::{cast_must, cast_optional, traverse},
+    parsing_xml::{cast_must, cast_optional, traverse},
 };
 use chrono::{DateTime, Utc};
 use http::request::Builder;
