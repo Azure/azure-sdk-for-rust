@@ -1,4 +1,4 @@
-use azure_core::errors::AzureError;
+use crate::AzureStorageError;
 use azure_core::headers::{utc_date_from_rfc2822, CommonStorageResponseHeaders};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -41,7 +41,7 @@ struct PeekMessagesInternal {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for PeekMessagesResponse {
-    type Error = AzureError;
+    type Error = AzureStorageError;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

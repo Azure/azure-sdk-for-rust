@@ -7,8 +7,8 @@ extern crate log;
 extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;
-#[macro_use]
-extern crate quick_error;
+
+pub use self::core::AzureStorageError;
 
 #[cfg(feature = "account")]
 pub mod account;

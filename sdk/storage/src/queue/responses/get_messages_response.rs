@@ -1,5 +1,4 @@
-use crate::queue::PopReceipt;
-use azure_core::errors::AzureError;
+use crate::{queue::PopReceipt, AzureStorageError};
 use azure_core::headers::{utc_date_from_rfc2822, CommonStorageResponseHeaders};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -53,7 +52,7 @@ struct MessagesInternal {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for GetMessagesResponse {
-    type Error = AzureError;
+    type Error = AzureStorageError;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

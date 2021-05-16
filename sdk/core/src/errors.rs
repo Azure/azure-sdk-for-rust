@@ -9,7 +9,6 @@ use std::str;
 use std::str::ParseBoolError;
 use std::string;
 use url::ParseError as URLParseError;
-use xml::BuilderError as XMLError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ParsingError {
@@ -173,8 +172,6 @@ pub enum AzureError {
     PermissionError(#[from] PermissionError),
     #[error("IO error: {}", 0)]
     IOError(#[from] IOError),
-    #[error("XML error: {}", 0)]
-    XMLError(#[from] XMLError),
     #[error("UnexpectedXMLError: {}", 0)]
     UnexpectedXMLError(String),
     #[error("Azure Path parse error: {}", 0)]
@@ -224,8 +221,6 @@ pub enum AzureError {
     UTF8Error(#[from] str::Utf8Error),
     #[error("FromUTF8 error: {}", 0)]
     FromUtf8Error(#[from] string::FromUtf8Error),
-    #[error("XML deserialization error: {}", 0)]
-    SerdeXMLDeserializationError(#[from] serde_xml_rs::Error),
     #[error("A required header is missing: {}", 0)]
     MissingHeaderError(String),
     #[error(
