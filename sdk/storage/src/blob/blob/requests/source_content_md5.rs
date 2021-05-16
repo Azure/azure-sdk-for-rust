@@ -1,4 +1,3 @@
-use azure_core::headers::SOURCE_CONTENT_MD5;
 use azure_core::AddAsHeader;
 use http::request::Builder;
 
@@ -7,7 +6,7 @@ pub struct SourceContentMD5([u8; 16]);
 
 impl AddAsHeader for SourceContentMD5 {
     fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(SOURCE_CONTENT_MD5, base64::encode(self.0))
+        builder.header("x-ms-source-content-md5", base64::encode(self.0))
     }
 }
 

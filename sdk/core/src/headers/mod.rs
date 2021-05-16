@@ -70,7 +70,6 @@ pub const COPY_PROGRESS: &str = "x-ms-copy-progress";
 pub const COPY_SOURCE: &str = "x-ms-copy-source";
 pub const COPY_STATUS: &str = "x-ms-copy-status";
 pub const CONTENT_MD5: &str = "Content-MD5";
-pub const SOURCE_CONTENT_MD5: &str = "x-ms-source-content-md5";
 pub const SERVER_ENCRYPTED: &str = "x-ms-server-encrypted";
 pub const BLOB_TYPE: &str = "x-ms-blob-type";
 pub const CONTENT_CRC64: &str = "x-ms-content-crc64";
