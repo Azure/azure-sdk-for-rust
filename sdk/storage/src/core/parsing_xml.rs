@@ -1,4 +1,4 @@
-use crate::{errors::TraversingError, parsing::FromStringOptional};
+use azure_core::{errors::TraversingError, parsing::FromStringOptional};
 use xml::Element;
 use xml::Xml::{CharacterNode, ElementNode};
 

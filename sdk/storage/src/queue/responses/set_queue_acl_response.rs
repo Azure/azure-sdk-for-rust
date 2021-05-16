@@ -1,4 +1,4 @@
-use azure_core::errors::AzureError;
+use crate::AzureStorageError;
 use azure_core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::response::Response;
@@ -10,7 +10,7 @@ pub struct SetQueueACLResponse {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for SetQueueACLResponse {
-    type Error = AzureError;
+    type Error = AzureStorageError;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         debug!("response == {:?}", response);

@@ -2,15 +2,15 @@ use azure_core::AddAsHeader;
 pub mod requests;
 pub mod responses;
 
+use crate::parsing_xml::{cast_must, cast_optional, traverse};
+use crate::AzureStorageError;
 use azure_core::incompletevector::IncompleteVector;
 use azure_core::{
-    errors::AzureError,
     headers::{
         BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE,
         LEASE_STATUS, META_PREFIX,
     },
     lease::{LeaseDuration, LeaseState, LeaseStatus},
-    parsing_xml::{cast_must, cast_optional, traverse},
 };
 use chrono::{DateTime, Utc};
 use http::request::Builder;
@@ -38,7 +38,7 @@ impl AddAsHeader for PublicAccess {
 
 pub(crate) fn public_access_from_header(
     header_map: &HeaderMap,
-) -> Result<PublicAccess, AzureError> {
+) -> Result<PublicAccess, AzureStorageError> {
     let pa = match header_map.get(BLOB_PUBLIC_ACCESS) {
         Some(pa) => PublicAccess::from_str(pa.to_str()?)?,
         None => PublicAccess::None,
@@ -85,7 +85,7 @@ impl Container {
     pub(crate) fn from_response<NAME>(
         name: NAME,
         headers: &HeaderMap,
-    ) -> Result<Container, AzureError>
+    ) -> Result<Container, AzureStorageError>
     where
         NAME: Into<String>,
     {
@@ -93,7 +93,9 @@ impl Container {
             Some(last_modified) => last_modified.to_str()?,
             None => {
                 static LM: header::HeaderName = header::LAST_MODIFIED;
-                return Err(AzureError::MissingHeaderError(LM.as_str().to_owned()));
+                return Err(AzureStorageError::MissingHeaderError(
+                    LM.as_str().to_owned(),
+                ));
             }
         };
         let last_modified = DateTime::parse_from_rfc2822(last_modified)?;
@@ -102,7 +104,7 @@ impl Container {
         let e_tag = match headers.get(header::ETAG) {
             Some(e_tag) => e_tag.to_str()?.to_owned(),
             None => {
-                return Err(AzureError::MissingHeaderError(
+                return Err(AzureStorageError::MissingHeaderError(
                     header::ETAG.as_str().to_owned(),
                 ));
             }
@@ -110,13 +112,21 @@ impl Container {
 
         let lease_status = match headers.get(LEASE_STATUS) {
             Some(lease_status) => lease_status.to_str()?,
-            None => return Err(AzureError::MissingHeaderError(LEASE_STATUS.to_owned())),
+            None => {
+                return Err(AzureStorageError::MissingHeaderError(
+                    LEASE_STATUS.to_owned(),
+                ))
+            }
         };
         let lease_status = LeaseStatus::from_str(lease_status)?;
 
         let lease_state = match headers.get(LEASE_STATE) {
             Some(lease_state) => lease_state.to_str()?,
-            None => return Err(AzureError::MissingHeaderError(LEASE_STATE.to_owned())),
+            None => {
+                return Err(AzureStorageError::MissingHeaderError(
+                    LEASE_STATE.to_owned(),
+                ))
+            }
         };
         let lease_state = LeaseState::from_str(lease_state)?;
 
@@ -130,7 +140,7 @@ impl Container {
         let has_immutability_policy = match headers.get(HAS_IMMUTABILITY_POLICY) {
             Some(has_immutability_policy) => bool::from_str(has_immutability_policy.to_str()?)?,
             None => {
-                return Err(AzureError::MissingHeaderError(
+                return Err(AzureStorageError::MissingHeaderError(
                     HAS_IMMUTABILITY_POLICY.to_owned(),
                 ))
             }
@@ -138,7 +148,11 @@ impl Container {
 
         let has_legal_hold = match headers.get(HAS_LEGAL_HOLD) {
             Some(has_legal_hold) => bool::from_str(has_legal_hold.to_str()?)?,
-            None => return Err(AzureError::MissingHeaderError(HAS_LEGAL_HOLD.to_owned())),
+            None => {
+                return Err(AzureStorageError::MissingHeaderError(
+                    HAS_LEGAL_HOLD.to_owned(),
+                ))
+            }
         };
 
         let mut metadata: HashMap<String, String> = HashMap::new();
@@ -162,7 +176,7 @@ impl Container {
         })
     }
 
-    fn parse(elem: &Element) -> Result<Container, AzureError> {
+    fn parse(elem: &Element) -> Result<Container, AzureStorageError> {
         let name = cast_must::<String>(elem, &["Name"])?;
         let last_modified = cast_must::<DateTime<Utc>>(elem, &["Properties", "Last-Modified"])?;
         let e_tag = cast_must::<String>(elem, &["Properties", "Etag"])?;
@@ -193,7 +207,7 @@ impl Container {
                     let elem = match key {
                         Xml::ElementNode(elem) => elem,
                         _ => {
-                            return Err(AzureError::UnexpectedXMLError(String::from(
+                            return Err(AzureStorageError::UnexpectedXMLError(String::from(
                                 "Metadata should contain an ElementNode",
                             )));
                         }
@@ -202,7 +216,7 @@ impl Container {
                     let key = elem.name.to_owned();
 
                     if elem.children.is_empty() {
-                        return Err(AzureError::UnexpectedXMLError(String::from(
+                        return Err(AzureStorageError::UnexpectedXMLError(String::from(
                             "Metadata node should not be empty",
                         )));
                     }
@@ -211,7 +225,7 @@ impl Container {
                         match elem.children[0] {
                             Xml::CharacterNode(ref content) => content.to_owned(),
                             _ => {
-                                return Err(AzureError::UnexpectedXMLError(String::from(
+                                return Err(AzureStorageError::UnexpectedXMLError(String::from(
                                     "Metadata node should contain a CharacterNode with metadata value",
                                 )));
                             }
@@ -242,7 +256,7 @@ impl Container {
 
 pub(crate) fn incomplete_vector_from_container_response(
     body: &str,
-) -> Result<IncompleteVector<Container>, AzureError> {
+) -> Result<IncompleteVector<Container>, AzureStorageError> {
     let elem: Element = body.parse()?;
 
     let mut v = Vec::new();

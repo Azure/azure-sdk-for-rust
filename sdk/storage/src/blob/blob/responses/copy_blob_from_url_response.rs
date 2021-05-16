@@ -1,7 +1,9 @@
-use crate::blob::blob::{copy_status_from_headers, CopyStatus};
 use crate::core::copy_id_from_headers;
 use crate::core::CopyId;
-use azure_core::errors::AzureError;
+use crate::{
+    blob::blob::{copy_status_from_headers, CopyStatus},
+    AzureStorageError,
+};
 use azure_core::headers::{
     content_md5_from_headers_optional, date_from_headers, etag_from_headers,
     last_modified_from_headers, request_id_from_headers, server_from_headers, version_from_headers,
@@ -25,7 +27,7 @@ pub struct CopyBlobFromUrlResponse {
 }
 
 impl TryFrom<&HeaderMap> for CopyBlobFromUrlResponse {
-    type Error = AzureError;
+    type Error = AzureStorageError;
     fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
         debug!("headers == {:#?}", headers);
         Ok(Self {

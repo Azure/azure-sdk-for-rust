@@ -1,4 +1,4 @@
-use azure_core::errors::AzureError;
+use crate::AzureStorageError;
 use azure_core::headers::{
     consistency_from_headers, date_from_headers, request_id_from_headers,
     request_server_encrypted_from_headers,
@@ -16,7 +16,7 @@ pub struct PutBlockResponse {
 }
 
 impl PutBlockResponse {
-    pub(crate) fn from_headers(headers: &HeaderMap) -> Result<PutBlockResponse, AzureError> {
+    pub(crate) fn from_headers(headers: &HeaderMap) -> Result<PutBlockResponse, AzureStorageError> {
         debug!("{:#?}", headers);
 
         let consistency = consistency_from_headers(headers)?;

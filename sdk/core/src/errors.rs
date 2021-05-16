@@ -9,7 +9,6 @@ use std::str;
 use std::str::ParseBoolError;
 use std::string;
 use url::ParseError as URLParseError;
-use xml::BuilderError as XMLError;
 
 #[derive(Debug)]
 pub enum ParsingError {
@@ -208,11 +207,6 @@ quick_error! {
             display("IO error: {}", err)
             cause(err)
         }
-        XMLError(err: XMLError) {
-            from()
-            display("XML error: {}", err)
-            cause(err)
-        }
         UnexpectedXMLError(err: String) {
             display("UnexpectedXMLError: {}", err)
         }
@@ -296,11 +290,6 @@ quick_error! {
         FromUtf8Error(err: string::FromUtf8Error) {
             from()
             display("FromUTF8 error: {}", err)
-            cause(err)
-        }
-        SerdeXMLDeserializationError(err:serde_xml_rs::Error) {
-            from()
-            display("XML deserialization error: {}", err)
             cause(err)
         }
         MissingHeaderError(header: String) {

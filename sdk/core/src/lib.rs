@@ -18,7 +18,6 @@ mod http_client;
 pub mod incompletevector;
 mod models;
 pub mod parsing;
-pub mod parsing_xml;
 mod policy;
 pub mod prelude;
 mod request_options;
