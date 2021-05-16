@@ -49,7 +49,7 @@ queue = []
 table = []
 data_lake = []
 
-# This section specifies the required features for the examples. 
+# This section specifies the required features for the examples.
 [[example]]
 name="table_00"
 required-features = ["table"]
