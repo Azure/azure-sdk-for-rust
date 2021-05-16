@@ -13,7 +13,7 @@ pub use self::into_azure_path::IntoAzurePath;
 use azure_core::headers::*;
 pub use copy_id::{copy_id_from_headers, CopyId};
 pub use copy_progress::CopyProgress;
-pub mod parsing_xml;
+pub(crate) mod parsing_xml;
 mod stored_access_policy;
 pub use errors::AzureStorageError;
 
