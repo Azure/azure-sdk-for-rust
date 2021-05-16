@@ -82,9 +82,14 @@ pub struct Blob {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct BlobProperties {
+    #[cfg(not(feature = "azurite_workaround"))]
     #[serde(rename = "Creation-Time")]
     #[serde(with = "azure_core::parsing::rfc2822_time_format")]
     pub creation_time: DateTime<Utc>,
+    #[cfg(feature = "azurite_workaround")]
+    #[serde(rename = "Creation-Time")]
+    #[serde(with = "azure_core::parsing::rfc2822_time_format_optional")]
+    pub creation_time: Option<DateTime<Utc>>,
     #[serde(rename = "Last-Modified")]
     #[serde(with = "azure_core::parsing::rfc2822_time_format")]
     pub last_modified: DateTime<Utc>,

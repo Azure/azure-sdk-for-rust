@@ -251,6 +251,7 @@ pub fn lease_time_from_headers(headers: &HeaderMap) -> Result<u8, AzureError> {
     Ok(lease_time)
 }
 
+#[cfg(not(feature = "azurite_workaround"))]
 pub fn delete_type_permanent_from_headers(headers: &HeaderMap) -> Result<bool, AzureError> {
     let delete_type_permanent = headers
         .get(DELETE_TYPE_PERMANENT)
@@ -258,6 +259,19 @@ pub fn delete_type_permanent_from_headers(headers: &HeaderMap) -> Result<bool, A
         .to_str()?;
 
     let delete_type_permanent = delete_type_permanent.parse::<bool>()?;
+
+    trace!("delete_type_permanent == {:?}", delete_type_permanent);
+    Ok(delete_type_permanent)
+}
+
+#[cfg(feature = "azurite_workaround")]
+pub fn delete_type_permanent_from_headers(headers: &HeaderMap) -> Result<Option<bool>, AzureError> {
+    let delete_type_permanent = headers
+        .get(DELETE_TYPE_PERMANENT)
+        .map(|delete_type_permanent| -> Result<_, AzureError> {
+            Ok(delete_type_permanent.to_str()?.parse::<bool>()?)
+        })
+        .transpose()?;
 
     trace!("delete_type_permanent == {:?}", delete_type_permanent);
     Ok(delete_type_permanent)
