@@ -40,25 +40,23 @@ impl ContentRange {
 impl FromStr for ContentRange {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<ContentRange, ParseError> {
-        let remaining = match s.strip_prefix(PREFIX) {
-            Some(s) => s,
-            None => return Err(ParseError::TokenNotFound(PREFIX.to_owned())),
-        };
+        let remaining = s
+            .strip_prefix(PREFIX)
+            .ok_or(ParseError::TokenNotFound(PREFIX.to_owned()))?;
 
-        let v = remaining.split('-').collect::<Vec<_>>();
-        if v.len() != 2 {
-            return Err(ParseError::SplitNotFound('-'));
-        }
+        let mut split_at_dash = remaining.split('-');
+        let start = split_at_dash.next().unwrap().parse()?;
 
-        let start = v[0].parse()?;
+        let mut split_at_slash = split_at_dash
+            .next()
+            .ok_or(ParseError::SplitNotFound('-'))?
+            .split('/');
 
-        let v = v[1].split('/').collect::<Vec<_>>();
-        if v.len() != 2 {
-            return Err(ParseError::SplitNotFound('/'));
-        }
-
-        let end = v[0].parse()?;
-        let total_length = v[1].parse()?;
+        let end = split_at_slash.next().unwrap().parse()?;
+        let total_length = split_at_slash
+            .next()
+            .ok_or(ParseError::SplitNotFound('/'))?
+            .parse()?;
 
         Ok(ContentRange {
             start,
@@ -94,6 +92,24 @@ mod test {
         assert_eq!(range.start(), 172032);
         assert_eq!(range.end(), 172489);
         assert_eq!(range.total_length(), 172490);
+    }
+
+    #[test]
+    #[should_panic(expected = "TokenNotFound(\"bytes \")")]
+    fn test_parse_no_starting_token() {
+        "something else".parse::<ContentRange>().unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "SplitNotFound('-')")]
+    fn test_parse_no_dash() {
+        "bytes 100".parse::<ContentRange>().unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "SplitNotFound('/')")]
+    fn test_parse_no_slash() {
+        "bytes 100-500".parse::<ContentRange>().unwrap();
     }
 
     #[test]
