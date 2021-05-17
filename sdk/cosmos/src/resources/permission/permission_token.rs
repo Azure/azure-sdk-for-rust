@@ -1,5 +1,4 @@
 use super::AuthorizationToken;
-use crate::errors::{self, TokenParsingError};
 
 const PERMISSION_TYPE_PREFIX: &str = "type=";
 const VERSION_PREFIX: &str = "ver=";
@@ -40,48 +39,72 @@ impl std::fmt::Display for PermissionToken {
 }
 
 impl std::convert::TryFrom<String> for PermissionToken {
-    type Error = failure::Error;
+    type Error = PermissionTokenParsingError;
     fn try_from(s: String) -> Result<Self, Self::Error> {
         Self::try_from(s.as_str())
     }
 }
 
+const MIN_REQUIRED_PARTS_COUNT: usize = 3;
+
 impl std::convert::TryFrom<&str> for PermissionToken {
-    type Error = failure::Error;
+    type Error = PermissionTokenParsingError;
     fn try_from(s: &str) -> Result<Self, Self::Error> {
         trace!("converting {} into PermissionToken", s);
 
-        let tokens: Vec<&str> = s.split('&').collect();
+        let parts: Vec<&str> = s.split('&').collect();
 
-        if tokens.len() < 3 {
-            return Err(TokenParsingError::InsufficientTokens {
-                s: s.to_owned(),
-                required: 3,
-                found: tokens.len() as u32,
+        if parts.len() < MIN_REQUIRED_PARTS_COUNT {
+            return Err(PermissionTokenParsingError::InsufficientParts {
+                token_string: s.to_owned(),
+                found: parts.len() as u32,
             }
             .into());
         }
-        let version = errors::item_or_error(s, &tokens, VERSION_PREFIX)?;
+        let version = get_item(s, &parts, VERSION_PREFIX)?;
         if version != "1.0" && version != "1" {
-            return Err(failure::format_err!(
-                "unrecognized version number: {}",
-                version
-            ));
+            return Err(PermissionTokenParsingError::UnrecognizedVersionNumber {
+                provided_version: version.to_owned(),
+            });
         }
 
-        let permission_type = errors::item_or_error(s, &tokens, PERMISSION_TYPE_PREFIX)?;
-        let signature = errors::item_or_error(s, &tokens, SIGNATURE_PREFIX)?.to_owned();
+        let permission_type = get_item(s, &parts, PERMISSION_TYPE_PREFIX)?;
+        let signature = get_item(s, &parts, SIGNATURE_PREFIX)?.to_owned();
         let token = match permission_type {
             "master" => AuthorizationToken::Primary(base64::decode(signature)?),
             "resource" => AuthorizationToken::Resource(signature),
             _ => {
-                return Err(failure::format_err!(
-                    "Unrecognized error permission type {}",
-                    permission_type
-                ))
+                return Err(PermissionTokenParsingError::UnrecognizedPermissionType {
+                    provided_type: permission_type.to_owned(),
+                })
             }
         };
         Ok(Self { token })
+    }
+}
+
+fn get_item<'a>(
+    token_string: &'a str,
+    parts: &[&'a str],
+    name: &str,
+) -> Result<&'a str, PermissionTokenParsingError> {
+    let mut tokens = parts.iter().filter(|t| t.starts_with(name));
+
+    match tokens.next() {
+        Some(_t) if tokens.next().is_some() => Err(PermissionTokenParsingError::DuplicatePart {
+            token_string: token_string.to_owned(),
+            part: name.to_owned(),
+            // Add 2 since we've already called `next` twice
+            occurrences: 2 + tokens.count() as u32,
+        }),
+        Some(t) => {
+            // we checked for < 1 and > 1 so this is == 1
+            Ok(&t[name.len()..])
+        }
+        None => Err(PermissionTokenParsingError::MissingPart {
+            token_string: token_string.to_owned(),
+            missing_part: name.to_owned(),
+        }),
     }
 }
 
@@ -89,6 +112,52 @@ impl std::convert::From<AuthorizationToken> for PermissionToken {
     fn from(token: AuthorizationToken) -> Self {
         Self { token }
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum PermissionTokenParsingError {
+    #[error(
+        "Permission token string has an insufficient number of ';' separated parts. Required number is {}, but found {}. Full string: \"{}\"",
+        MIN_REQUIRED_PARTS_COUNT,
+        found,
+        token_string
+    )]
+    InsufficientParts { token_string: String, found: u32 },
+    #[error(
+        "A required part of permission token is missing: {}. Full string: \"{}\"",
+        missing_part,
+        token_string
+    )]
+    MissingPart {
+        token_string: String,
+        missing_part: String,
+    },
+    #[error(
+        "Duplicate part found in permission token. Part: {}. Occurrences: {}. Full string: \"{}\"",
+        part,
+        occurrences,
+        token_string
+    )]
+    DuplicatePart {
+        token_string: String,
+        part: String,
+        occurrences: u32,
+    },
+    #[error(
+        "Unrecognized version number provided in permission token: {}",
+        provided_version
+    )]
+    UnrecognizedVersionNumber { provided_version: String },
+    #[error(
+        "Unrecognized permission type provided in permission token: {}",
+        provided_type
+    )]
+    UnrecognizedPermissionType { provided_type: String },
+    #[error("The authorization token was not properly base64 encoded: {}", error)]
+    InvalidBase64Encoding {
+        #[from]
+        error: base64::DecodeError,
+    },
 }
 
 #[cfg(test)]

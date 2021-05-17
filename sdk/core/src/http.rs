@@ -1,3 +1,5 @@
+use crate::errors::HttpError;
+
 pub struct Request {
     inner: http::Request<bytes::Bytes>,
 }
@@ -10,12 +12,9 @@ impl Request {
         std::mem::replace(&mut self.inner, http::Request::new(bytes::Bytes::new()))
     }
 
-    pub fn body<T: serde::Serialize>(
-        &mut self,
-        body: T,
-    ) -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
+    pub fn body<T: serde::Serialize>(&mut self, body: T) -> Result<(), HttpError> {
         let b = self.inner.body_mut();
-        *b = crate::to_json(&body)?;
+        *b = crate::to_json(&body).map_err(HttpError::BodySerializationError)?;
         Ok(())
     }
 }

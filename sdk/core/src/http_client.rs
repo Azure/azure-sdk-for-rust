@@ -9,23 +9,20 @@ use serde::Serialize;
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait HttpClient: Send + Sync + std::fmt::Debug {
-    async fn execute_request(
-        &self,
-        request: Request<Bytes>,
-    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>>;
+    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>, HttpError>;
 
     async fn execute_request_check_status(
         &self,
         request: Request<Bytes>,
         expected_status: StatusCode,
-    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<Response<Bytes>, HttpError> {
         let response = self.execute_request(request).await?;
         if expected_status != response.status() {
-            Err(Box::new(AzureError::from(UnexpectedHTTPResult::new(
+            Err(HttpError::new_unexpected_status_code(
                 expected_status,
                 response.status(),
                 std::str::from_utf8(response.body())?,
-            ))))
+            ))
         } else {
             Ok(response)
         }
@@ -35,26 +32,24 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         &self,
         request: Request<Bytes>,
         expected_statuses: &[StatusCode],
-    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<Response<Bytes>, HttpError> {
         let response = self.execute_request(request).await?;
         if !expected_statuses
             .iter()
             .any(|expected_status| *expected_status == response.status())
         {
             if expected_statuses.len() == 1 {
-                Err(Box::new(AzureError::from(UnexpectedHTTPResult::new(
+                Err(HttpError::new_unexpected_status_code(
                     expected_statuses[0],
                     response.status(),
                     std::str::from_utf8(response.body())?,
-                ))))
+                ))
             } else {
-                Err(Box::new(AzureError::from(
-                    UnexpectedHTTPResult::new_multiple(
-                        expected_statuses.to_vec(),
-                        response.status(),
-                        std::str::from_utf8(response.body())?,
-                    ),
-                )))
+                Err(HttpError::new_multiple_unexpected_status_code(
+                    expected_statuses.to_vec(),
+                    response.status(),
+                    std::str::from_utf8(response.body())?,
+                ))
             }
         } else {
             Ok(response)
@@ -66,10 +61,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> {
-    async fn execute_request(
-        &self,
-        request: Request<Bytes>,
-    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
+    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>, HttpError> {
         let mut hyper_request = hyper::Request::builder()
             .uri(request.uri())
             .method(request.method());
@@ -78,9 +70,14 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
             hyper_request = hyper_request.header(header.0, header.1);
         }
 
-        let hyper_request = hyper_request.body(hyper::Body::from(request.into_body()))?;
+        let hyper_request = hyper_request
+            .body(hyper::Body::from(request.into_body()))
+            .map_err(HttpError::BuildRequestError)?;
 
-        let hyper_response = self.request(hyper_request).await?;
+        let hyper_response = self
+            .request(hyper_request)
+            .await
+            .map_err(HttpError::ExecuteRequestError)?;
 
         let mut response = Response::builder()
             .status(hyper_response.status())
@@ -90,7 +87,13 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
             response = response.header(key, value);
         }
 
-        let response = response.body(hyper::body::to_bytes(hyper_response.into_body()).await?)?;
+        let response = response
+            .body(
+                hyper::body::to_bytes(hyper_response.into_body())
+                    .await
+                    .map_err(HttpError::ReadBytesError)?,
+            )
+            .map_err(HttpError::BuildResponseError)?;
 
         Ok(response)
     }
@@ -100,19 +103,22 @@ impl HttpClient for hyper::Client<HttpsConnector<hyper::client::HttpConnector>> 
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for reqwest::Client {
-    async fn execute_request(
-        &self,
-        request: Request<Bytes>,
-    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
+    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>, HttpError> {
         let mut reqwest_request =
             self.request(request.method().clone(), &request.uri().to_string());
         for header in request.headers() {
             reqwest_request = reqwest_request.header(header.0, header.1);
         }
 
-        let reqwest_request = reqwest_request.body(request.into_body()).build()?;
+        let reqwest_request = reqwest_request
+            .body(request.into_body())
+            .build()
+            .map_err(HttpError::BuildClientRequestError)?;
 
-        let reqwest_response = self.execute(reqwest_request).await?;
+        let reqwest_response = self
+            .execute(reqwest_request)
+            .await
+            .map_err(HttpError::ExecuteRequestError)?;
 
         let mut response = Response::builder().status(reqwest_response.status());
 
@@ -124,7 +130,14 @@ impl HttpClient for reqwest::Client {
             response = response.header(key, value);
         }
 
-        let response = response.body(reqwest_response.bytes().await?)?;
+        let response = response
+            .body(
+                reqwest_response
+                    .bytes()
+                    .await
+                    .map_err(HttpError::ReadBytesError)?,
+            )
+            .map_err(HttpError::BuildResponseError)?;
 
         Ok(response)
     }
@@ -144,7 +157,7 @@ fn get_version(response: &reqwest::Response) -> Option<http::Version> {
 }
 
 /// Serialize to json
-pub fn to_json<T>(value: &T) -> Result<Bytes, Box<dyn std::error::Error + Sync + Send>>
+pub fn to_json<T>(value: &T) -> Result<Bytes, serde_json::Error>
 where
     T: ?Sized + Serialize,
 {

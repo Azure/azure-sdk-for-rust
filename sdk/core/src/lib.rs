@@ -61,12 +61,6 @@ pub trait TokenCredential: Send + Sync {
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError>;
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Consistency {
-    Md5([u8; 16]),
-    Crc64([u8; 8]),
-}
-
 pub trait AppendToUrlQuery {
     fn append_to_url_query(&self, url: &mut url::Url);
 }
