@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let database_client = CosmosClient::with_pipeline(
         account,
         authorization_token,
-        CosmosOptions::with_client(http_client),
+        CosmosOptions::with_client(Arc::new(reqwest::Client::new())),
     );
     // If the requested database is not found we create it.
     let database = match db {

@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let cosmos_client = CosmosClient::with_pipeline(
         account,
         authorization_token,
-        CosmosOptions::with_client(http_client),
+        CosmosOptions::with_client(Arc::new(reqwest::Client::new())),
     );
     let db = cosmos_client
         .create_database(

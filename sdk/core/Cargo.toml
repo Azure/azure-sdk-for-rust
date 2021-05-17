@@ -28,11 +28,13 @@ bytes = "1.0"
 hyper-rustls = { version = "0.22", optional = true }
 async-trait = "0.1"
 oauth2 = "4.0.0"
-reqwest = { version = "0.11", optional = true }
+reqwest = { version = "0.11", features = ["stream"], optional = true }
+rand = "0.7"
+dyn-clone = "1.0"
 
 [dev-dependencies]
-tokio = "1.0"
 env_logger = "0.8"
+tokio = { version = "1.0", features = ["default"] }
 
 [features]
 default = ["enable_reqwest"]
