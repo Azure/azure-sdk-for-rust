@@ -1,5 +1,5 @@
+use crate::AzureStorageError;
 use azure_core::{
-    errors::AzureError,
     headers::{etag_from_headers, last_modified_from_headers, CommonStorageResponseHeaders},
     prelude::Etag,
 };
@@ -16,7 +16,7 @@ pub struct SetFileSystemPropertiesResponse {
 }
 
 impl TryFrom<&Response<Bytes>> for SetFileSystemPropertiesResponse {
-    type Error = AzureError;
+    type Error = AzureStorageError;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         trace!("body == {}", std::str::from_utf8(response.body())?);

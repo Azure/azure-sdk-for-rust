@@ -1,4 +1,4 @@
-use crate::errors::AzureError;
+use crate::AzureStorageError;
 use chrono::{DateTime, FixedOffset};
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -39,7 +39,7 @@ impl StoredAccessPolicyList {
         StoredAccessPolicyList::default()
     }
 
-    pub fn from_xml(xml: &str) -> Result<StoredAccessPolicyList, AzureError> {
+    pub fn from_xml(xml: &str) -> Result<StoredAccessPolicyList, AzureStorageError> {
         debug!("{}", xml);
 
         let mut sal = StoredAccessPolicyList::default();
@@ -114,24 +114,24 @@ mod test {
 
     #[test]
     fn parse_from_xml() {
-        let resp = "<?xml version=\"1.0\" encoding=\"utf-8\"?>  
-    <SignedIdentifiers>  
-      <SignedIdentifier>   
-          <Id>MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=</Id>  
-          <AccessPolicy>  
-            <Start>2009-09-28T08:49:37.0000000Z</Start>  
-            <Expiry>2009-09-29T08:49:37.0000000Z</Expiry>  
-            <Permission>rwd</Permission>  
-          </AccessPolicy>  
-      </SignedIdentifier>  
-      <SignedIdentifier>   
-          <Id>000zNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=</Id>  
-          <AccessPolicy>  
-            <Start>2018-09-28T08:49:37.0000000Z</Start>  
-            <Expiry>2020-09-29T08:49:37.0000000Z</Expiry>  
-            <Permission>rd</Permission>  
-          </AccessPolicy>  
-      </SignedIdentifier>    
+        let resp = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+    <SignedIdentifiers>
+      <SignedIdentifier>
+          <Id>MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=</Id>
+          <AccessPolicy>
+            <Start>2009-09-28T08:49:37.0000000Z</Start>
+            <Expiry>2009-09-29T08:49:37.0000000Z</Expiry>
+            <Permission>rwd</Permission>
+          </AccessPolicy>
+      </SignedIdentifier>
+      <SignedIdentifier>
+          <Id>000zNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=</Id>
+          <AccessPolicy>
+            <Start>2018-09-28T08:49:37.0000000Z</Start>
+            <Expiry>2020-09-29T08:49:37.0000000Z</Expiry>
+            <Permission>rd</Permission>
+          </AccessPolicy>
+      </SignedIdentifier>
     </SignedIdentifiers>";
 
         let sis: SignedIdentifiers = serde_xml_rs::de::from_reader(resp.as_bytes()).unwrap();

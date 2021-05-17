@@ -1,5 +1,3 @@
-use azure_core::errors::AzureError;
-
 // Key names.
 pub const ACCOUNT_KEY_KEY_NAME: &str = "AccountKey";
 pub const ACCOUNT_NAME_KEY_NAME: &str = "AccountName";
@@ -17,28 +15,16 @@ pub const QUEUE_SECONDARY_ENDPOINT_KEY_NAME: &str = "QueueSecondaryEndpoint";
 pub const FILE_ENDPOINT_KEY_NAME: &str = "FileEndpoint";
 pub const FILE_SECONDARY_ENDPOINT_KEY_NAME: &str = "FileSecondaryEndpoint";
 
-quick_error! {
-    #[derive(Debug)]
-    pub enum ConnectionStringError {
-        MissingValue { key: String } {
-            display("Missing value for key '{}'", key)
-        }
-        UnexpectedKey { key: String } {
-            display("Unexpected for key '{}'", key)
-        }
-        ParsingError { msg: String } {
-            display("{}", msg)
-        }
-        UnsupportedProtocol { protocol: String } {
-            display("unsupported protocol {}", protocol)
-        }
-    }
-}
-
-impl From<ConnectionStringError> for AzureError {
-    fn from(err: ConnectionStringError) -> Self {
-        AzureError::GenericErrorWithText(err.to_string())
-    }
+#[derive(Debug, thiserror::Error)]
+pub enum ConnectionStringError {
+    #[error("Missing value for key '{}'", key)]
+    MissingValue { key: String },
+    #[error("Unexpected key '{}'", key)]
+    UnexpectedKey { key: String },
+    #[error("Parsing error: {}", msg)]
+    ParsingError { msg: String },
+    #[error("Unsupported protocol {}", protocol)]
+    UnsupportedProtocol { protocol: String },
 }
 
 #[derive(Debug, PartialEq, Eq)]

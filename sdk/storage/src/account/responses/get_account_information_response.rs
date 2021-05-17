@@ -1,4 +1,4 @@
-use azure_core::errors::AzureError;
+use crate::AzureStorageError;
 use azure_core::headers::{
     account_kind_from_headers, date_from_headers, request_id_from_headers, sku_name_from_headers,
 };
@@ -17,7 +17,7 @@ pub struct GetAccountInformationResponse {
 impl GetAccountInformationResponse {
     pub(crate) fn from_headers(
         headers: &HeaderMap,
-    ) -> Result<GetAccountInformationResponse, AzureError> {
+    ) -> Result<GetAccountInformationResponse, AzureStorageError> {
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
         let sku_name = sku_name_from_headers(headers)?;

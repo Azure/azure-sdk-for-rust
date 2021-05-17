@@ -1,6 +1,8 @@
-use crate::core::{ConnectionString, No};
 use crate::shared_access_signature::SharedAccessSignatureBuilder;
-use azure_core::errors::AzureError;
+use crate::{
+    core::{ConnectionString, No},
+    AzureStorageError,
+};
 use azure_core::headers::*;
 use azure_core::prelude::*;
 use bytes::Bytes;
@@ -183,7 +185,7 @@ impl StorageAccountClient {
     pub fn new_connection_string(
         http_client: Arc<Box<dyn HttpClient>>,
         connection_string: &str,
-    ) -> Result<Arc<Self>, AzureError> {
+    ) -> Result<Arc<Self>, AzureStorageError> {
         match ConnectionString::new(connection_string)? {
             ConnectionString {
                 account_name: Some(account),
@@ -244,10 +246,10 @@ impl StorageAccountClient {
                 http_client,
             })),
            _ => {
-                Err(AzureError::GenericErrorWithText(
+                Err(AzureStorageError::GenericErrorWithText(
                     "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
                         .to_owned(),
-                ))
+                ).into())
             }
         }
     }
@@ -278,15 +280,16 @@ impl StorageAccountClient {
 
     pub fn shared_access_signature(
         &self,
-    ) -> Result<SharedAccessSignatureBuilder<No, No, No, No>, AzureError> {
+    ) -> Result<SharedAccessSignatureBuilder<No, No, No, No>, AzureStorageError> {
         match self.storage_credentials {
             StorageCredentials::Key(ref account, ref key) => {
                 Ok(SharedAccessSignatureBuilder::new(account, key))
             }
-            _ => Err(AzureError::OperationNotSupported(
+            _ => Err(AzureStorageError::OperationNotSupported(
                 "Shared access signature generation".to_owned(),
                 "SAS can be generated only from key and account clients".to_owned(),
-            )),
+            )
+            .into()),
         }
     }
 
@@ -297,7 +300,7 @@ impl StorageAccountClient {
         http_header_adder: &dyn Fn(Builder) -> Builder,
         service_type: ServiceType,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), AzureError> {
+    ) -> Result<(Request<Bytes>, url::Url), AzureStorageError> {
         let dt = chrono::Utc::now();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 

@@ -1,5 +1,4 @@
-use crate::blob::blob::Blob;
-use azure_core::errors::AzureError;
+use crate::{blob::blob::Blob, AzureStorageError};
 use azure_core::headers::{date_from_headers, request_id_from_headers};
 use azure_core::RequestId;
 use bytes::Bytes;
@@ -17,7 +16,7 @@ pub struct GetBlobResponse {
 }
 
 impl TryFrom<(&str, Response<Bytes>)> for GetBlobResponse {
-    type Error = AzureError;
+    type Error = AzureStorageError;
     fn try_from((blob_name, response): (&str, Response<Bytes>)) -> Result<Self, Self::Error> {
         debug!("response.headers() == {:#?}", response.headers());
 

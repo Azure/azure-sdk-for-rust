@@ -9,35 +9,31 @@ use std::str;
 use std::str::ParseBoolError;
 use std::string;
 use url::ParseError as URLParseError;
-use xml::BuilderError as XMLError;
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum ParsingError {
+    #[error("Element not found: {}", 0)]
     ElementNotFound(String),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum ParseError {
+    #[error("Split not found")]
     SplitNotFound,
+    #[error("Parse int error {}", 0)]
     ParseIntError(ParseIntError),
 }
 
-quick_error! {
-    #[derive(Debug)]
-     pub enum AzurePathParseError {
-        PathSeparatorNotFoundError {
-            display("Path separator not found")
-        }
-        MultiplePathSeparatorsFoundError {
-            display("Multiple path separators found")
-        }
-        MissingContainerError {
-            display("Missing container name")
-        }
-        MissingBlobError {
-            display("Missing blob name")
-        }
-    }
+#[derive(Debug, thiserror::Error)]
+pub enum AzurePathParseError {
+    #[error("Path separator not found")]
+    PathSeparatorNotFoundError,
+    #[error("Multiple path separators found")]
+    MultiplePathSeparatorsFoundError,
+    #[error("Missing container name")]
+    MissingContainerError,
+    #[error("Missing blob name")]
+    MissingBlobError,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -67,6 +63,12 @@ pub struct UnexpectedHTTPResult {
     expected: Vec<StatusCode>,
     received: StatusCode,
     body: String,
+}
+
+impl From<UnexpectedHTTPResult> for AzureError {
+    fn from(result: UnexpectedHTTPResult) -> AzureError {
+        AzureError::UnexpectedHTTPResult(result)
+    }
 }
 
 impl UnexpectedHTTPResult {
@@ -115,249 +117,149 @@ impl std::error::Error for UnexpectedHTTPResult {
     }
 }
 
-quick_error! {
-    #[derive(Debug)]
-    pub enum Not512ByteAlignedError {
-        StartRange(u: u64) {
-            display("start range not 512-byte aligned: {}", u)
-        }
-        EndRange(u: u64) {
-            display("end range not 512-byte aligned: {}", u)
-        }
-    }
+#[derive(Debug, thiserror::Error)]
+pub enum Not512ByteAlignedError {
+    #[error("start range not 512-byte aligned: {}", 0)]
+    StartRange(u64),
+    #[error("end range not 512-byte aligned: {}", 0)]
+    EndRange(u64),
 }
 
-quick_error! {
-    #[derive(Debug)]
-    pub enum PermissionError {
-        NonSupportedToken(service:String, received_token: char, supported_tokens: Vec<char>) {
-            display("Permission token not supported in this service ({}). Received token {}, supported tokens {:?}",
-                service, received_token, supported_tokens)
-        }
-    }
-}
-quick_error! {
-    #[derive(Debug)]
-    pub enum Parse512AlignedError {
-        SplitNotFound {
-            display("split not found")
-        }
-        ParseIntError(p :ParseIntError) {
-            from()
-            display("parse int error: {}", p)
-            cause(p)
-        }
-        Not512ByteAlignedError(nb: Not512ByteAlignedError)  {
-            from()
-            display("not 512 byte aligned error: {}", nb)
-            cause(nb)
-        }
-    }
+#[derive(Debug, thiserror::Error)]
+pub enum PermissionError {
+    #[error("Permission token not supported in this service ({}). Received token {}, supported tokens {:?}",
+        service, received_token, supported_tokens)]
+    NonSupportedToken {
+        service: String,
+        received_token: char,
+        supported_tokens: Vec<char>,
+    },
 }
 
-quick_error! {
-    #[derive(Debug)]
-    pub enum AzureError {
-        PageNot512ByteAlignedError(start: u64, end: u64) {
-            display("{}-{} is not 512 byte aligned", start, end)
-        }
-        Not512ByteAlignedError(size: u64) {
-            display("{} is not 512 byte aligned", size)
-        }
-        OperationNotSupported(operation: String, reason: String){
-            display("Operation not supported. Operation == {}, reason == {}", operation, reason)
-        }
-        Base64DecodeError(err: base64::DecodeError) {
-            from()
-            display("base64 decode error: {}", err)
-            cause(err)
-        }
-        DigestNot16BytesLong(len : u64) {
-            display("digest length {} bytes instead of 16", len)
-        }
-        CRC64Not8BytesLong(len : u64) {
-            display("CRC64 length {} bytes instead of 8", len)
-        }
-        ParseBoolError(err: ParseBoolError) {
-            from()
-            display("parse bool error: {}", err)
-            cause(err)
-        }
-        ToStrError(err: ToStrError) {
-            from()
-            display("to str error: {}", err)
-            cause(err)
-        }
-        JSONError(err: serde_json::Error) {
-            from()
-            display("json error: {}", err)
-            cause(err)
-        }
-        HyperError(err: Box<dyn std::error::Error + Sync + Send>) {
-            from()
-            display("Hyper error: {}", err)
-            cause(&**err)
-        }
-        PermissionError(err: PermissionError) {
-            from()
-            display("Permission error: {}", err)
-            cause(err)
-        }
-        IOError(err: IOError) {
-            from()
-            display("IO error: {}", err)
-            cause(err)
-        }
-        XMLError(err: XMLError) {
-            from()
-            display("XML error: {}", err)
-            cause(err)
-        }
-        UnexpectedXMLError(err: String) {
-            display("UnexpectedXMLError: {}", err)
-        }
-        AzurePathParseError(err: AzurePathParseError) {
-            from()
-            display("Azure Path parse error: {}", err)
-            cause(err)
-        }
-        UnexpectedHTTPResult(err: UnexpectedHTTPResult) {
-            from()
-            display("UnexpectedHTTPResult error: {}", err)
-        }
-        UnexpectedValue(err: UnexpectedValue) {
-            from()
-            display("UnexpectedValue error: {:?}", err)
-        }
-        HeaderNotFound(msg: String) {
-            display("Header not found: {}", msg)
-        }
-        HeadersNotFound(headers: Vec<String>) {
-            display("At least one of these headers must be present: {:?}", headers)
-        }
-        UrlQueryParameterNotFound(expected_parameter: String, url: url::Url) {
-            display("The expected query parameter {} was not found in the provided Url: {:?}", expected_parameter, url)
-        }
-        ResponseParsingError(err: TraversingError){
-            from()
-            display("Traversing error: {}", err)
-            cause(err)
-        }
-        ParseIntError(err: num::ParseIntError){
-            from()
-            display("Parse int error: {}", err)
-            cause(err)
-        }
-        ParseFloatError(err: std::num::ParseFloatError) {
-            from()
-            display("Parse float error: {}", err)
-            cause(err)
-        }
-        ParseError(err: ParseError){
-            from()
-            display("Parse error")
-        }
-        GenericError
-        GenericErrorWithText(err: String) {
-            display("Generic error: {}", err)
-        }
-        ParsingError(err: ParsingError){
-            from()
-            display("Parsing error")
-        }
-        InputParametersError(msg: String) {
-            display("Input parameters error: {}", msg)
-        }
-        URLParseError(err: URLParseError){
-            from()
-            display("URL parse error: {}", err)
-            cause(err)
-        }
-        HttpPrepareError(err: http::Error) {
-            from()
-            display("Error preparing HTTP request: {}", err) // todo: revisit usages / message here
-            cause(err)
-        }
-        ParseUuidError(err: uuid::Error) {
-            from()
-            display("uuid error: {}", err)
-            cause(err)
-        }
-        ChronoParserError(err: chrono::ParseError) {
-            from()
-            display("Chrono parser error: {}", err)
-            cause(err)
-        }
-        UTF8Error(err: str::Utf8Error) {
-            from()
-            display("UTF8 conversion error: {}", err)
-            cause(err)
-        }
-        FromUtf8Error(err: string::FromUtf8Error) {
-            from()
-            display("FromUTF8 error: {}", err)
-            cause(err)
-        }
-        SerdeXMLDeserializationError(err:serde_xml_rs::Error) {
-            from()
-            display("XML deserialization error: {}", err)
-            cause(err)
-        }
-        MissingHeaderError(header: String) {
-            display("A required header is missing: {}", header)
-        }
-        MissingValueError(value: String, expected_type: String) {
-            display("An expected JSON node is missing: {} of expected type {}", value, expected_type)
-        }
-        InvalidStatusCode(err: http::status::InvalidStatusCode) {
-            from()
-            display("Invalid status code: {:?}", err)
-            cause(err)
-        }
-        TransactionResponseParseError(err: String) {
-            from()
-            display("Error parsing the transaction response: {:?}", err)
-        }
-    }
+#[derive(Debug, thiserror::Error)]
+pub enum Parse512AlignedError {
+    #[error("split not found")]
+    SplitNotFound,
+    #[error("parse int error: {}", 0)]
+    ParseIntError(#[from] ParseIntError),
+    #[error("not 512 byte aligned error: {}", 0)]
+    Not512ByteAlignedError(#[from] Not512ByteAlignedError),
 }
 
-quick_error! {
-    #[derive(Debug)]
-    pub enum TraversingError {
-        PathNotFound(msg: String) {
-            display("Path not found: {}", msg)
-        }
-        MultipleNode(msg: String) {
-            display("Multiple node: {}", msg)
-        }
-        EnumerationNotMatched(msg: String) {
-            display("Enumeration not matched: {}", msg)
-        }
-        BooleanNotMatched(s: String) {
-            display("Input string cannot be converted in boolean: {}", s)
-        }
-        UnexpectedNodeTypeError(expected: String) {
-            display("Unexpected node type received: expected {}", expected)
-        }
-        DateTimeParseError(err: chrono::format::ParseError){
-            from()
-            display("DateTime parse error: {}", err)
-            cause(err)
-        }
-        TextNotFound
-        ParseIntError(err: num::ParseIntError){
-            from()
-            display("Parse int error: {}", err)
-            cause(err)
-        }
-        GenericParseError(msg: String) {
-            display("Generic parse error: {}", msg)
-        }
-        ParsingError(err: ParsingError){
-            from()
-            display("Parsing error: {:?}", err)
-        }
-   }
+#[derive(Debug, thiserror::Error)]
+pub enum AzureError {
+    #[error("{}-{} is not 512 byte aligned", start, end)]
+    PageNot512ByteAlignedError { start: u64, end: u64 },
+    #[error("{} is not 512 byte aligned", size)]
+    Not512ByteAlignedError { size: u64 },
+    #[error("Operation not supported. Operation == {}, reason == {}", 0, 1)]
+    OperationNotSupported(String, String),
+    #[error("base64 decode error: {}", 0)]
+    Base64DecodeError(#[from] base64::DecodeError),
+    #[error("digest length {} bytes instead of 16", 0)]
+    DigestNot16BytesLong(u64),
+    #[error("CRC64 length {} bytes instead of 8", 0)]
+    CRC64Not8BytesLong(u64),
+    #[error("parse bool error: {}", 0)]
+    ParseBoolError(#[from] ParseBoolError),
+    #[error("to str error: {}", 0)]
+    ToStrError(#[from] ToStrError),
+    #[error("json error: {}", 0)]
+    JSONError(#[from] serde_json::Error),
+    #[error("Hyper error: {}", 0)]
+    HyperError(#[from] Box<dyn std::error::Error + Sync + Send>),
+    #[error("Permission error: {}", 0)]
+    PermissionError(#[from] PermissionError),
+    #[error("IO error: {}", 0)]
+    IOError(#[from] IOError),
+    #[error("UnexpectedXMLError: {}", 0)]
+    UnexpectedXMLError(String),
+    #[error("Azure Path parse error: {}", 0)]
+    AzurePathParseError(#[from] AzurePathParseError),
+    #[error("UnexpectedHTTPResult error: {}", 0)]
+    UnexpectedHTTPResult(UnexpectedHTTPResult),
+    #[error("UnexpectedValue error: {:?}", 0)]
+    UnexpectedValue(UnexpectedValue),
+    #[error("Header not found: {}", 0)]
+    HeaderNotFound(String),
+    #[error("At least one of these headers must be present: {:?}", 0)]
+    HeadersNotFound(Vec<String>),
+    #[error(
+        "The expected query parameter {} was not found in the provided Url: {:?}",
+        expected_parameter,
+        url
+    )]
+    UrlQueryParameterNotFound {
+        expected_parameter: String,
+        url: url::Url,
+    },
+    #[error("Traversing error: {}", 0)]
+    ResponseParsingError(#[from] TraversingError),
+    #[error("Parse int error: {}", 0)]
+    ParseIntError(#[from] num::ParseIntError),
+    #[error("Parse float error: {}", 0)]
+    ParseFloatError(#[from] std::num::ParseFloatError),
+    #[error("Parse error: {}", 0)]
+    ParseError(#[from] ParseError),
+    #[error("Generic error")]
+    GenericError,
+    #[error("Generic error: {}", 0)]
+    GenericErrorWithText(String),
+    #[error("Parsing error: {}", 0)]
+    ParsingError(#[from] ParsingError),
+    #[error("Input parameters error: {}", 0)]
+    InputParametersError(String),
+    #[error("URL parse error: {}", 0)]
+    URLParseError(#[from] URLParseError),
+    #[error("Error preparing HTTP request: {}", 0)]
+    HttpPrepareError(#[from] http::Error),
+    #[error("uuid error: {}", 0)]
+    ParseUuidError(#[from] uuid::Error),
+    #[error("Chrono parser error: {}", 0)]
+    ChronoParserError(#[from] chrono::ParseError),
+    #[error("UTF8 conversion error: {}", 0)]
+    UTF8Error(#[from] str::Utf8Error),
+    #[error("FromUTF8 error: {}", 0)]
+    FromUtf8Error(#[from] string::FromUtf8Error),
+    #[error("A required header is missing: {}", 0)]
+    MissingHeaderError(String),
+    #[error(
+        "An expected JSON node is missing: {} of expected type {}",
+        value,
+        expected_type
+    )]
+    MissingValueError {
+        value: String,
+        expected_type: String,
+    },
+    #[error("Invalid status code: {:?}", 0)]
+    InvalidStatusCode(#[from] http::status::InvalidStatusCode),
+    #[error("Error parsing the transaction response: {:?}", 0)]
+    TransactionResponseParseError(String),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum TraversingError {
+    #[error("Path not found: {}", 0)]
+    PathNotFound(String),
+    #[error("Multiple node: {}", 0)]
+    MultipleNode(String),
+    #[error("Enumeration not matched: {}", 0)]
+    EnumerationNotMatched(String),
+    #[error("Input string cannot be converted in boolean: {}", 0)]
+    BooleanNotMatched(String),
+    #[error("Unexpected node type received: expected {}", 0)]
+    UnexpectedNodeTypeError(String),
+    #[error("DateTime parse error: {}", 0)]
+    DateTimeParseError(#[from] chrono::format::ParseError),
+    #[error("Text not found")]
+    TextNotFound,
+    #[error("Parse int error: {}", 0)]
+    ParseIntError(#[from] num::ParseIntError),
+    #[error("Generic parse error: {}", 0)]
+    GenericParseError(String),
+    #[error("Parsing error: {:?}", 0)]
+    ParsingError(#[from] ParsingError),
 }
 
 impl From<()> for AzureError {
