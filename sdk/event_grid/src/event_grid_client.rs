@@ -1,8 +1,6 @@
 use crate::event_grid_request_builder::EventGridRequestBuilder;
 use crate::Event;
 use azure_core::errors::AzureError;
-use hyper::{self, client::HttpConnector, Method, StatusCode};
-use hyper_rustls::HttpsConnector;
 use serde::ser::Serialize;
 use url::Url;
 

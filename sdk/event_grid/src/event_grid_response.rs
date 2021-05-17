@@ -1,9 +1,4 @@
 use azure_core::errors::*;
-use hyper::{
-    body::{self, Bytes},
-    client::ResponseFuture,
-    HeaderMap, StatusCode,
-};
 
 pub struct EventGridResponse {
     response: ResponseFuture,
