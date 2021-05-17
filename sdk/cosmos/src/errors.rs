@@ -32,6 +32,8 @@ pub enum CosmosError {
     JsonError(#[from] serde_json::Error),
     #[error("UTF-8 conversion error: {}", 0)]
     Utf8Error(#[from] std::str::Utf8Error),
+    #[error("base64 decode error: {}", 0)]
+    DecodeError(#[from] base64::DecodeError),
 }
 
 #[derive(Debug, thiserror::Error)]
