@@ -1,4 +1,11 @@
 [workspace]
 members = [
-  "sdk/*"
+  "sdk/core",
+  "sdk/cosmos",
+  # "sdk/event_grid",
+  "sdk/identity",
+  "sdk/iothub",
+  "sdk/key_vault",
+  # "sdk/service_bus",
+  "sdk/storage",
 ]
