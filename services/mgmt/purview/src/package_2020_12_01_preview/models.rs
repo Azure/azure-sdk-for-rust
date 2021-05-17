@@ -47,6 +47,8 @@ pub struct AccountProperties {
     pub endpoints: Option<serde_json::Value>,
     #[serde(rename = "friendlyName", skip_serializing)]
     pub friendly_name: Option<String>,
+    #[serde(rename = "managedResourceGroupName", default, skip_serializing_if = "Option::is_none")]
+    pub managed_resource_group_name: Option<String>,
     #[serde(rename = "managedResources", skip_serializing)]
     pub managed_resources: Option<serde_json::Value>,
     #[serde(rename = "privateEndpointConnections", skip_serializing)]
@@ -126,17 +128,17 @@ pub struct ManagedResources {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdAt", skip_serializing)]
     pub created_at: Option<String>,
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdBy", skip_serializing)]
     pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "createdByType", skip_serializing)]
     pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedAt", skip_serializing)]
     pub last_modified_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedBy", skip_serializing)]
     pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "lastModifiedByType", skip_serializing)]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
 }
 pub mod system_data {

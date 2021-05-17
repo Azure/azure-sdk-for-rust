@@ -140,6 +140,8 @@ pub struct MetricTrigger {
     pub threshold: f64,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<ScaleRuleMetricDimension>,
+    #[serde(rename = "dividePerInstance", default, skip_serializing_if = "Option::is_none")]
+    pub divide_per_instance: Option<bool>,
 }
 pub mod metric_trigger {
     use super::*;

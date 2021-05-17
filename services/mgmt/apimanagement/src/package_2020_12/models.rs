@@ -1497,10 +1497,17 @@ pub struct OperationEntityBaseContract {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationResultContract {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OperationResultContractProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationResultContractProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<operation_result_contract::Status>,
+    pub status: Option<operation_result_contract_properties::Status>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub started: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1512,7 +1519,7 @@ pub struct OperationResultContract {
     #[serde(rename = "actionLog", skip_serializing)]
     pub action_log: Vec<OperationResultLogItemContract>,
 }
-pub mod operation_result_contract {
+pub mod operation_result_contract_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -2397,6 +2404,11 @@ pub struct TagTagResourceContractProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TenantConfigurationSyncStateContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TenantConfigurationSyncStateContractProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TenantConfigurationSyncStateContractProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branch: Option<String>,
     #[serde(rename = "commitId", default, skip_serializing_if = "Option::is_none")]
     pub commit_id: Option<String>,
@@ -2410,6 +2422,8 @@ pub struct TenantConfigurationSyncStateContract {
     pub sync_date: Option<String>,
     #[serde(rename = "configurationChangeDate", default, skip_serializing_if = "Option::is_none")]
     pub configuration_change_date: Option<String>,
+    #[serde(rename = "lastOperationId", default, skip_serializing_if = "Option::is_none")]
+    pub last_operation_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TermsOfServiceProperties {

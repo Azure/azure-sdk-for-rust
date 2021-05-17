@@ -492,8 +492,8 @@ pub struct ReservationRecommendationDetailsModel {
     pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReservationRecommendationDetailsProperties>,
 }
@@ -580,6 +580,8 @@ pub struct ReservationRecommendationsListResult {
     pub next_link: Option<String>,
     #[serde(rename = "previousLink", skip_serializing)]
     pub previous_link: Option<String>,
+    #[serde(rename = "totalCost", skip_serializing)]
+    pub total_cost: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservationRecommendation {
@@ -650,6 +652,8 @@ pub struct ModernReservationRecommendation {
     #[serde(flatten)]
     pub reservation_recommendation: ReservationRecommendation,
     pub properties: ModernReservationRecommendationProperties,
+    #[serde(rename = "eTag", skip_serializing)]
+    pub e_tag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ModernReservationRecommendationProperties {
@@ -685,6 +689,10 @@ pub struct ModernReservationRecommendationProperties {
     pub sku_properties: Vec<SkuProperty>,
     #[serde(rename = "skuName", skip_serializing)]
     pub sku_name: Option<String>,
+    #[serde(rename = "resourceType", skip_serializing)]
+    pub resource_type: Option<String>,
+    #[serde(rename = "subscriptionId", skip_serializing)]
+    pub subscription_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ModernReservationTransactionProperties {

@@ -53,6 +53,15 @@ pub mod role_assignment_schedule_properties {
         User,
         Group,
         ServicePrincipal,
+        Unknown,
+        DirectoryRoleTemplate,
+        ForeignGroup,
+        Application,
+        #[serde(rename = "MSI")]
+        Msi,
+        DirectoryObjectOrGroup,
+        Everyone,
+        Device,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AssignmentType {
@@ -221,6 +230,15 @@ pub mod role_assignment_schedule_instance_properties {
         User,
         Group,
         ServicePrincipal,
+        Unknown,
+        DirectoryRoleTemplate,
+        ForeignGroup,
+        Application,
+        #[serde(rename = "MSI")]
+        Msi,
+        DirectoryObjectOrGroup,
+        Everyone,
+        Device,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -338,6 +356,15 @@ pub mod role_assignment_schedule_request_properties {
         User,
         Group,
         ServicePrincipal,
+        Unknown,
+        DirectoryRoleTemplate,
+        ForeignGroup,
+        Application,
+        #[serde(rename = "MSI")]
+        Msi,
+        DirectoryObjectOrGroup,
+        Everyone,
+        Device,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RequestType {
@@ -477,6 +504,15 @@ pub mod role_eligibility_schedule_properties {
         User,
         Group,
         ServicePrincipal,
+        Unknown,
+        DirectoryRoleTemplate,
+        ForeignGroup,
+        Application,
+        #[serde(rename = "MSI")]
+        Msi,
+        DirectoryObjectOrGroup,
+        Everyone,
+        Device,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MemberType {
@@ -575,6 +611,15 @@ pub mod role_eligibility_schedule_instance_properties {
         User,
         Group,
         ServicePrincipal,
+        Unknown,
+        DirectoryRoleTemplate,
+        ForeignGroup,
+        Application,
+        #[serde(rename = "MSI")]
+        Msi,
+        DirectoryObjectOrGroup,
+        Everyone,
+        Device,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
@@ -685,6 +730,15 @@ pub mod role_eligibility_schedule_request_properties {
         User,
         Group,
         ServicePrincipal,
+        Unknown,
+        DirectoryRoleTemplate,
+        ForeignGroup,
+        Application,
+        #[serde(rename = "MSI")]
+        Msi,
+        DirectoryObjectOrGroup,
+        Everyone,
+        Device,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RequestType {
@@ -937,11 +991,8 @@ pub mod role_management_policy_notification_rule {
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NotificationLevel {
-        #[serde(rename = "NONE")]
         None,
-        #[serde(rename = "CRITICAL")]
         Critical,
-        #[serde(rename = "ALL")]
         All,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1069,4 +1120,131 @@ pub mod policy_assignment_properties {
         #[serde(rename = "lastModifiedDateTime", default, skip_serializing_if = "Option::is_none")]
         pub last_modified_date_time: Option<String>,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EligibleChildResourcesListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<EligibleChildResource>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EligibleChildResource {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ValidationResponseErrorInfo {
+    #[serde(skip_serializing)]
+    pub code: Option<String>,
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ValidationResponse {
+    #[serde(rename = "isValid", skip_serializing)]
+    pub is_valid: Option<bool>,
+    #[serde(rename = "errorInfo", default, skip_serializing_if = "Option::is_none")]
+    pub error_info: Option<ValidationResponseErrorInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleAssignmentFilter {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleAssignmentListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<RoleAssignment>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleAssignmentProperties {
+    #[serde(skip_serializing)]
+    pub scope: Option<String>,
+    #[serde(rename = "roleDefinitionId")]
+    pub role_definition_id: String,
+    #[serde(rename = "principalId")]
+    pub principal_id: String,
+    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
+    pub principal_type: Option<role_assignment_properties::PrincipalType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub condition: Option<String>,
+    #[serde(rename = "conditionVersion", default, skip_serializing_if = "Option::is_none")]
+    pub condition_version: Option<String>,
+    #[serde(rename = "createdOn", skip_serializing)]
+    pub created_on: Option<String>,
+    #[serde(rename = "updatedOn", skip_serializing)]
+    pub updated_on: Option<String>,
+    #[serde(rename = "createdBy", skip_serializing)]
+    pub created_by: Option<String>,
+    #[serde(rename = "updatedBy", skip_serializing)]
+    pub updated_by: Option<String>,
+    #[serde(rename = "delegatedManagedIdentityResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub delegated_managed_identity_resource_id: Option<String>,
+}
+pub mod role_assignment_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PrincipalType {
+        User,
+        Group,
+        ServicePrincipal,
+        Unknown,
+        DirectoryRoleTemplate,
+        ForeignGroup,
+        Application,
+        #[serde(rename = "MSI")]
+        Msi,
+        DirectoryObjectOrGroup,
+        Everyone,
+        Device,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleAssignment {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(skip_serializing)]
+    pub name: Option<String>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RoleAssignmentProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleAssignmentCreateParameters {
+    pub properties: RoleAssignmentProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(skip_serializing)]
+    pub code: Option<String>,
+    #[serde(skip_serializing)]
+    pub message: Option<String>,
+    #[serde(skip_serializing)]
+    pub target: Option<String>,
+    #[serde(skip_serializing)]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", skip_serializing)]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing)]
+    pub info: Option<serde_json::Value>,
 }

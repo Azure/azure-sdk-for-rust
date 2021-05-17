@@ -3,6 +3,84 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use crate::models::*;
+pub async fn check_name_availability(
+    operation_config: &crate::OperationConfig,
+    subscription_id: &str,
+    request: &CheckNameAvailabilityRequest,
+) -> std::result::Result<CheckNameAvailabilityResponse, check_name_availability::Error> {
+    let http_client = operation_config.http_client();
+    let url_str = &format!(
+        "{}/subscriptions/{}/providers/Microsoft.DeviceUpdate/checknameavailability",
+        operation_config.base_path(),
+        subscription_id
+    );
+    let mut url = url::Url::parse(url_str).map_err(|source| check_name_availability::Error::ParseUrlError { source })?;
+    let mut req_builder = http::request::Builder::new();
+    req_builder = req_builder.method(http::Method::POST);
+    if let Some(token_credential) = operation_config.token_credential() {
+        let token_response = token_credential
+            .get_token(operation_config.token_credential_resource())
+            .await
+            .map_err(|source| check_name_availability::Error::GetTokenError { source })?;
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    }
+    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    let req_body = azure_core::to_json(request).map_err(|source| check_name_availability::Error::SerializeError { source })?;
+    req_builder = req_builder.uri(url.as_str());
+    let req = req_builder
+        .body(req_body)
+        .map_err(|source| check_name_availability::Error::BuildRequestError { source })?;
+    let rsp = http_client
+        .execute_request(req)
+        .await
+        .map_err(|source| check_name_availability::Error::ExecuteRequestError { source })?;
+    match rsp.status() {
+        http::StatusCode::OK => {
+            let rsp_body = rsp.body();
+            let rsp_value: CheckNameAvailabilityResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| check_name_availability::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+            Ok(rsp_value)
+        }
+        status_code => {
+            let rsp_body = rsp.body();
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| check_name_availability::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+            Err(check_name_availability::Error::DefaultResponse {
+                status_code,
+                value: rsp_value,
+            })
+        }
+    }
+}
+pub mod check_name_availability {
+    use crate::{models, models::*};
+    #[derive(Debug, thiserror :: Error)]
+    pub enum Error {
+        #[error("HTTP status code {}", status_code)]
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::ErrorResponse,
+        },
+        #[error("Failed to parse request URL: {}", source)]
+        ParseUrlError { source: url::ParseError },
+        #[error("Failed to build request: {}", source)]
+        BuildRequestError { source: http::Error },
+        #[error("Failed to execute request: {}", source)]
+        ExecuteRequestError { source: azure_core::errors::HttpError },
+        #[error("Failed to serialize request body: {}", source)]
+        SerializeError { source: serde_json::Error },
+        #[error("Failed to deserialize response body: {}", source)]
+        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+        #[error("Failed to get access token: {}", source)]
+        GetTokenError { source: azure_core::errors::AzureError },
+    }
+}
 pub mod accounts {
     use crate::models::*;
     pub async fn list_by_subscription(
@@ -47,7 +125,7 @@ pub mod accounts {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition =
+                let rsp_value: ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_subscription::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
@@ -66,16 +144,16 @@ pub mod accounts {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorDefinition,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -126,7 +204,7 @@ pub mod accounts {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition =
+                let rsp_value: ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
@@ -145,16 +223,16 @@ pub mod accounts {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorDefinition,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -206,7 +284,7 @@ pub mod accounts {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -224,16 +302,16 @@ pub mod accounts {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorDefinition,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -286,7 +364,7 @@ pub mod accounts {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition = serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -304,16 +382,16 @@ pub mod accounts {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorDefinition,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -326,7 +404,7 @@ pub mod accounts {
         subscription_id: &str,
         account_name: &str,
         account_update_payload: &AccountUpdate,
-    ) -> std::result::Result<Account, update::Error> {
+    ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}",
@@ -362,11 +440,19 @@ pub mod accounts {
                     source,
                     body: rsp_body.clone(),
                 })?;
-                Ok(rsp_value)
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: Account = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Ok(update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -379,21 +465,26 @@ pub mod accounts {
     }
     pub mod update {
         use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(Account),
+            Created201(Account),
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorDefinition,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -440,7 +531,7 @@ pub mod accounts {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -464,16 +555,88 @@ pub mod accounts {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorDefinition,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn head(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        subscription_id: &str,
+        account_name: &str,
+    ) -> std::result::Result<(), head::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| head::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::HEAD);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| head::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| head::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| head::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => Ok(()),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| head::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(head::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod head {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: azure_core::errors::HttpError },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -529,7 +692,7 @@ pub mod instances {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition =
+                let rsp_value: ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_account::Error::DeserializeError {
                         source,
                         body: rsp_body.clone(),
@@ -548,16 +711,16 @@ pub mod instances {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorDefinition,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -611,7 +774,7 @@ pub mod instances {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -629,16 +792,16 @@ pub mod instances {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorDefinition,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -693,7 +856,7 @@ pub mod instances {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition = serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -711,16 +874,16 @@ pub mod instances {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorDefinition,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -775,7 +938,7 @@ pub mod instances {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -793,16 +956,16 @@ pub mod instances {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorDefinition,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -851,7 +1014,7 @@ pub mod instances {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -875,16 +1038,90 @@ pub mod instances {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorDefinition,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
+            #[error("Failed to deserialize response body: {}", source)]
+            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
+            #[error("Failed to get access token: {}", source)]
+            GetTokenError { source: azure_core::errors::AzureError },
+        }
+    }
+    pub async fn head(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        subscription_id: &str,
+        account_name: &str,
+        instance_name: &str,
+    ) -> std::result::Result<(), head::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/instances/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            account_name,
+            instance_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(|source| head::Error::ParseUrlError { source })?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::HEAD);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(|source| head::Error::GetTokenError { source })?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(|source| head::Error::BuildRequestError { source })?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(|source| head::Error::ExecuteRequestError { source })?;
+        match rsp.status() {
+            http::StatusCode::OK => Ok(()),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| head::Error::DeserializeError {
+                    source,
+                    body: rsp_body.clone(),
+                })?;
+                Err(head::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod head {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {}", source)]
+            ParseUrlError { source: url::ParseError },
+            #[error("Failed to build request: {}", source)]
+            BuildRequestError { source: http::Error },
+            #[error("Failed to execute request: {}", source)]
+            ExecuteRequestError { source: azure_core::errors::HttpError },
+            #[error("Failed to serialize request body: {}", source)]
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -928,7 +1165,7 @@ pub mod operations {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError {
                     source,
                     body: rsp_body.clone(),
                 })?;
@@ -946,16 +1183,16 @@ pub mod operations {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorDefinition,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {}", source)]
             ParseUrlError { source: url::ParseError },
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]

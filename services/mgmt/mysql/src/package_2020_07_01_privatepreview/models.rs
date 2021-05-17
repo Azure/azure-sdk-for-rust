@@ -53,6 +53,8 @@ pub struct StorageProfile {
     pub storage_iops: Option<i32>,
     #[serde(rename = "storageAutogrow", default, skip_serializing_if = "Option::is_none")]
     pub storage_autogrow: Option<storage_profile::StorageAutogrow>,
+    #[serde(rename = "fileStorageSkuName", skip_serializing)]
+    pub file_storage_sku_name: Option<String>,
 }
 pub mod storage_profile {
     use super::*;

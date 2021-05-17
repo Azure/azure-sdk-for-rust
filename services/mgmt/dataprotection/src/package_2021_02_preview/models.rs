@@ -291,8 +291,8 @@ pub struct BackupCriteria {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupInstance {
-    #[serde(rename = "friendlyName")]
-    pub friendly_name: String,
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
     #[serde(rename = "dataSourceInfo")]
     pub data_source_info: Datasource,
     #[serde(rename = "dataSourceSetInfo", default, skip_serializing_if = "Option::is_none")]
@@ -1069,6 +1069,19 @@ pub mod supported_feature {
         PrivatePreview,
         PublicPreview,
         GenerallyAvailable,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SyncBackupInstanceRequest {
+    #[serde(rename = "syncType", default, skip_serializing_if = "Option::is_none")]
+    pub sync_type: Option<sync_backup_instance_request::SyncType>,
+}
+pub mod sync_backup_instance_request {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SyncType {
+        Default,
+        ForceResync,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

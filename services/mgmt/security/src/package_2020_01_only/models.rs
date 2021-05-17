@@ -306,7 +306,7 @@ pub struct SecurityAssessmentMetadataProperties {
     #[serde(rename = "remediationDescription", default, skip_serializing_if = "Option::is_none")]
     pub remediation_description: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub category: Vec<String>,
+    pub categories: Vec<String>,
     pub severity: security_assessment_metadata_properties::Severity,
     #[serde(rename = "userImpact", default, skip_serializing_if = "Option::is_none")]
     pub user_impact: Option<security_assessment_metadata_properties::UserImpact>,

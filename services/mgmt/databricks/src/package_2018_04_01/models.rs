@@ -124,12 +124,28 @@ pub struct WorkspaceCustomParameters {
     pub custom_private_subnet_name: Option<WorkspaceCustomStringParameter>,
     #[serde(rename = "enableNoPublicIp", default, skip_serializing_if = "Option::is_none")]
     pub enable_no_public_ip: Option<WorkspaceCustomBooleanParameter>,
+    #[serde(rename = "loadBalancerBackendPoolName", default, skip_serializing_if = "Option::is_none")]
+    pub load_balancer_backend_pool_name: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "loadBalancerId", default, skip_serializing_if = "Option::is_none")]
+    pub load_balancer_id: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "natGatewayName", default, skip_serializing_if = "Option::is_none")]
+    pub nat_gateway_name: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "publicIpName", default, skip_serializing_if = "Option::is_none")]
+    pub public_ip_name: Option<WorkspaceCustomStringParameter>,
     #[serde(rename = "prepareEncryption", default, skip_serializing_if = "Option::is_none")]
     pub prepare_encryption: Option<WorkspaceCustomBooleanParameter>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<WorkspaceEncryptionParameter>,
     #[serde(rename = "requireInfrastructureEncryption", default, skip_serializing_if = "Option::is_none")]
     pub require_infrastructure_encryption: Option<WorkspaceCustomBooleanParameter>,
+    #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_name: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "storageAccountSkuName", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_sku_name: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "vnetAddressPrefix", default, skip_serializing_if = "Option::is_none")]
+    pub vnet_address_prefix: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "resourceTags", default, skip_serializing_if = "Option::is_none")]
+    pub resource_tags: Option<WorkspaceCustomObjectParameter>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreatedDateTime {}
