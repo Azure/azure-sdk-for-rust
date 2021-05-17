@@ -17,7 +17,7 @@ pub enum CosmosError {
     #[error("http error: {}", 0)]
     AzureHttpError(#[from] azure_core::errors::HttpError),
     #[error("stream error: {}", 0)]
-    StreamError(#[from] azure_core::StreamError),
+    StreamError(#[from] azure_core::errors::StreamError),
     #[error("http error: {}", 0)]
     HttpError(#[from] http::Error),
     #[error("Parse int error: {}", 0)]

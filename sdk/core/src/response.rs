@@ -1,13 +1,11 @@
-use crate::StreamError;
+use crate::errors::StreamError;
 use bytes::Bytes;
 use futures::Stream;
 use futures::StreamExt;
 use http::{header::HeaderName, HeaderMap, HeaderValue, StatusCode};
 use std::pin::Pin;
 
-type PinnedStream = Pin<
-    Box<dyn Stream<Item = Result<Bytes, Box<dyn std::error::Error + Send + Sync>>> + Send + Sync>,
->;
+type PinnedStream = Pin<Box<dyn Stream<Item = Result<Bytes, StreamError>> + Send + Sync>>;
 
 #[allow(dead_code)]
 pub(crate) struct ResponseBuilder {
@@ -69,7 +67,7 @@ pub async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> Result<By
     let mut final_result = Vec::new();
 
     while let Some(res) = pinned_stream.next().await {
-        let res = res.map_err(StreamError::CollectPinnedError)?;
+        let res = res?;
         final_result.extend(&res);
     }
 

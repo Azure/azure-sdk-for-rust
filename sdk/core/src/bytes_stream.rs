@@ -1,4 +1,4 @@
-use crate::seekable_stream::StreamError;
+use crate::errors::StreamError;
 use crate::SeekableStream;
 use bytes::Bytes;
 use futures::io::AsyncRead;

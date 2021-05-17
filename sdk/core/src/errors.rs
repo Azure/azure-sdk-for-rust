@@ -68,6 +68,14 @@ impl From<UnexpectedHTTPResult> for AzureError {
 }
 
 #[derive(Debug, thiserror::Error)]
+pub enum StreamError {
+    #[error("Stream poll error: {}", 0)]
+    PollError(std::io::Error),
+    #[error("Stream read error: {}", 0)]
+    ReadError(HttpClientError),
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum HttpError {
     #[error("Failed to serialize request body as json: {}", 0)]
     BodySerializationError(serde_json::Error),
@@ -92,14 +100,16 @@ pub enum HttpError {
     BuildClientRequestError(HttpClientError),
     #[error("Failed to execute request: {}", 0)]
     ExecuteRequestError(HttpClientError),
-    #[error("Failed to read response bytes: {}", 0)]
+    #[error("Failed to read response as bytes: {}", 0)]
     ReadBytesError(HttpClientError),
+    #[error("Failed to read response as stream: {}", 0)]
+    ReadStreamError(HttpClientError),
     #[error("Failed to build response: {}", 0)]
     BuildResponseError(http::Error),
     #[error("to str error: {}", 0)]
     ToStrError(#[from] http::header::ToStrError),
     #[error("Failed to reset stream: {}", 0)]
-    StreamResetError(crate::StreamError),
+    StreamResetError(StreamError),
 }
 
 impl HttpError {

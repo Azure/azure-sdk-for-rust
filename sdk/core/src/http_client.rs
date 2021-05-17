@@ -195,7 +195,9 @@ impl HttpClient for reqwest::Client {
         }
 
         let response = response.with_pinned_stream(Box::pin(
-            reqwest_response.bytes_stream().map_err(|err| err.into()),
+            reqwest_response
+                .bytes_stream()
+                .map_err(crate::errors::StreamError::ReadError),
         ));
 
         Ok(response)

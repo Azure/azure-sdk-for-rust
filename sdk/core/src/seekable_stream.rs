@@ -1,16 +1,9 @@
+use crate::errors::StreamError;
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures::io::AsyncRead;
 use futures::stream::Stream;
 use futures::task::Poll;
-
-#[derive(Debug, thiserror::Error)]
-pub enum StreamError {
-    #[error("Stream poll error: {}", 0)]
-    PollError(std::io::Error),
-    #[error("Stream collect pinned error: {}", 0)]
-    CollectPinnedError(Box<dyn std::error::Error + Sync + std::marker::Send>),
-}
 
 #[async_trait]
 pub trait SeekableStream:
