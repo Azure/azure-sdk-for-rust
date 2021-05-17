@@ -93,7 +93,7 @@ impl<'a> GetBlobBuilder<'a> {
             End,
         }
 
-        // this can either be the range requested by the caller or the completed file.
+        // this can either be the range requested by the caller or the complete file.
         let requested_range = self.range.unwrap_or(Range::new(0, u64::MAX));
 
         futures::stream::unfold(States::Init, move |state| async move {
@@ -123,8 +123,9 @@ impl<'a> GetBlobBuilder<'a> {
 
             debug!("response.content_range == {:?}", response.content_range);
 
-            // now that we know what is the remote blob size, let's update the
-            // bounduary (only if it is smaller than the requested size).
+            // now that we know what the remote blob size is, let's update the
+            // boundary. We do this only if it's smaller than the requested size because the could
+            // have specified a smaller range.
             remaining.end =
                 std::cmp::min(requested_range.end, response.content_range.total_length());
 
