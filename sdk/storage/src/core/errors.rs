@@ -2,6 +2,8 @@
 pub enum AzureStorageError {
     #[error(transparent)]
     CoreError(#[from] azure_core::errors::AzureError),
+    #[error("Parse error: {}", 0)]
+    ParseError(azure_core::errors::ParseError),
     #[error("Parsing error: {}", 0)]
     ParsingError(azure_core::errors::ParsingError),
     #[error("Permission error: {}", 0)]
@@ -64,5 +66,11 @@ pub enum AzureStorageError {
 impl From<azure_core::errors::ParsingError> for AzureStorageError {
     fn from(err: azure_core::errors::ParsingError) -> AzureStorageError {
         AzureStorageError::ParsingError(err)
+    }
+}
+
+impl From<azure_core::errors::ParseError> for AzureStorageError {
+    fn from(err: azure_core::errors::ParseError) -> AzureStorageError {
+        AzureStorageError::ParseError(err)
     }
 }
