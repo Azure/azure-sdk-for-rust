@@ -1,3 +1,4 @@
+use crate::StreamError;
 use bytes::Bytes;
 use futures::Stream;
 use futures::StreamExt;
@@ -64,13 +65,11 @@ impl Response {
 }
 
 /// Convenience function that transforms a `PinnedStream` in a `bytes::Bytes` struct by collecting all the chunks. It consumes the response stream.
-pub async fn collect_pinned_stream(
-    mut pinned_stream: PinnedStream,
-) -> Result<Bytes, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> Result<Bytes, StreamError> {
     let mut final_result = Vec::new();
 
     while let Some(res) = pinned_stream.next().await {
-        let res = res?;
+        let res = res.map_err(StreamError::CollectPinnedError)?;
         final_result.extend(&res);
     }
 

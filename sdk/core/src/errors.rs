@@ -98,6 +98,8 @@ pub enum HttpError {
     BuildResponseError(http::Error),
     #[error("to str error: {}", 0)]
     ToStrError(#[from] http::header::ToStrError),
+    #[error("Failed to reset stream: {}", 0)]
+    StreamResetError(crate::StreamError),
 }
 
 impl HttpError {

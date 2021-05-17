@@ -1,10 +1,10 @@
+use crate::seekable_stream::StreamError;
+use crate::SeekableStream;
 use bytes::Bytes;
 use futures::io::AsyncRead;
 use futures::stream::Stream;
 use std::pin::Pin;
 use std::task::Poll;
-
-use crate::SeekableStream;
 
 /// Convenience struct that maps a `bytes::Bytes` buffer into a stream.
 ///
@@ -38,7 +38,7 @@ impl From<Bytes> for BytesStream {
 }
 
 impl Stream for BytesStream {
-    type Item = Result<Bytes, Box<dyn std::error::Error + Send + Sync>>;
+    type Item = Result<Bytes, StreamError>;
 
     fn poll_next(
         self: Pin<&mut Self>,
@@ -59,7 +59,7 @@ impl Stream for BytesStream {
 
 #[async_trait::async_trait]
 impl SeekableStream for BytesStream {
-    async fn reset(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn reset(&mut self) -> Result<(), StreamError> {
         self.bytes_read = 0;
         Ok(())
     }

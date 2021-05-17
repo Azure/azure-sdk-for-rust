@@ -1,4 +1,4 @@
-use crate::errors::{AzureError, UnexpectedHTTPResult};
+use crate::errors::HttpError;
 #[allow(unused_imports)]
 use crate::Body;
 use async_trait::async_trait;
@@ -25,7 +25,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     async fn execute_request2(
         &self,
         request: &crate::Request,
-    ) -> Result<crate::Response, Box<dyn std::error::Error + Sync + Send>>;
+    ) -> Result<crate::Response, HttpError>;
 
     async fn execute_request_check_status(
         &self,
@@ -112,10 +112,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for reqwest::Client {
-    async fn execute_request(
-        &self,
-        request: Request<Bytes>,
-    ) -> Result<Response<Bytes>, Box<dyn std::error::Error + Sync + Send>> {
+    async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>, HttpError> {
         let mut reqwest_request = self.request(
             request.method().clone(),
             url::Url::parse(&request.uri().to_string()).unwrap(),
@@ -124,9 +121,15 @@ impl HttpClient for reqwest::Client {
             reqwest_request = reqwest_request.header(header, value);
         }
 
-        let reqwest_request = reqwest_request.body(request.into_body()).build()?;
+        let reqwest_request = reqwest_request
+            .body(request.into_body())
+            .build()
+            .map_err(HttpError::BuildClientRequestError)?;
 
-        let reqwest_response = self.execute(reqwest_request).await?;
+        let reqwest_response = self
+            .execute(reqwest_request)
+            .await
+            .map_err(HttpError::ExecuteRequestError)?;
 
         let mut response = Response::builder().status(reqwest_response.status());
 
@@ -134,7 +137,14 @@ impl HttpClient for reqwest::Client {
             response = response.header(key, value);
         }
 
-        let response = response.body(reqwest_response.bytes().await?)?;
+        let response = response
+            .body(
+                reqwest_response
+                    .bytes()
+                    .await
+                    .map_err(HttpError::ReadBytesError)?,
+            )
+            .map_err(HttpError::BuildResponseError)?;
 
         Ok(response)
     }
@@ -143,7 +153,7 @@ impl HttpClient for reqwest::Client {
     async fn execute_request2(
         &self,
         request: &crate::Request,
-    ) -> Result<crate::Response, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<crate::Response, HttpError> {
         let mut reqwest_request = self.request(
             request.method().clone(),
             url::Url::parse(&request.uri().to_string()).unwrap(),
@@ -157,17 +167,27 @@ impl HttpClient for reqwest::Client {
         let body = request.clone_body();
 
         let reqwest_request = match body {
-            Body::Bytes(bytes) => reqwest_request.body(bytes).build()?,
+            Body::Bytes(bytes) => reqwest_request
+                .body(bytes)
+                .build()
+                .map_err(HttpError::BuildClientRequestError)?,
             Body::SeekableStream(mut seekable_stream) => {
-                seekable_stream.reset().await?;
+                seekable_stream
+                    .reset()
+                    .await
+                    .map_err(HttpError::StreamResetError)?;
 
                 reqwest_request
                     .body(reqwest::Body::wrap_stream(seekable_stream))
-                    .build()?
+                    .build()
+                    .map_err(HttpError::BuildClientRequestError)?
             }
         };
 
-        let reqwest_response = self.execute(reqwest_request).await?;
+        let reqwest_response = self
+            .execute(reqwest_request)
+            .await
+            .map_err(HttpError::ExecuteRequestError)?;
         let mut response = crate::ResponseBuilder::new(reqwest_response.status());
 
         for (key, value) in reqwest_response.headers() {
@@ -187,7 +207,7 @@ impl HttpClient for reqwest::Client {
     async fn execute_request2(
         &self,
         _request: &crate::Request,
-    ) -> Result<crate::Response, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<crate::Response, HttpError> {
         let response = crate::ResponseBuilder::new(http::StatusCode::OK);
 
         let response = response.with_pinned_stream(Box::pin(crate::BytesStream::new_empty()));

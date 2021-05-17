@@ -157,7 +157,8 @@ impl CosmosClient {
             .pipeline()
             .unwrap()
             .send(&mut ctx, &mut request)
-            .await?;
+            .await
+            .map_err(CosmosError::PolicyError)?;
 
         Ok(crate::operations::create_database::Response::try_from(response).await?)
     }
