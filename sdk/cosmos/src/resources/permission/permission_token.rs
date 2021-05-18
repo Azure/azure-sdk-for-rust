@@ -61,15 +61,15 @@ impl std::convert::TryFrom<&str> for PermissionToken {
             }
             .into());
         }
-        let version = get_item(s, &parts, VERSION_PREFIX)?;
+        let version = try_get_item(s, &parts, VERSION_PREFIX)?;
         if version != "1.0" && version != "1" {
             return Err(PermissionTokenParsingError::UnrecognizedVersionNumber {
                 provided_version: version.to_owned(),
             });
         }
 
-        let permission_type = get_item(s, &parts, PERMISSION_TYPE_PREFIX)?;
-        let signature = get_item(s, &parts, SIGNATURE_PREFIX)?.to_owned();
+        let permission_type = try_get_item(s, &parts, PERMISSION_TYPE_PREFIX)?;
+        let signature = try_get_item(s, &parts, SIGNATURE_PREFIX)?.to_owned();
         let token = match permission_type {
             "master" => AuthorizationToken::Primary(base64::decode(signature)?),
             "resource" => AuthorizationToken::Resource(signature),
@@ -83,7 +83,7 @@ impl std::convert::TryFrom<&str> for PermissionToken {
     }
 }
 
-fn get_item<'a>(
+fn try_get_item<'a>(
     token_string: &'a str,
     parts: &[&'a str],
     name: &str,
