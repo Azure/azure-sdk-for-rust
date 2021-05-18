@@ -23,6 +23,10 @@ pub use package_2020_03_preview::{models, operations, API_VERSION};
 mod package_2020_08;
 #[cfg(feature = "package-2020-08")]
 pub use package_2020_08::{models, operations, API_VERSION};
+#[cfg(feature = "package-2020-10-only")]
+mod package_2020_10_only;
+#[cfg(feature = "package-2020-10-only")]
+pub use package_2020_10_only::{models, operations, API_VERSION};
 #[cfg(feature = "package-2020-10")]
 mod package_2020_10;
 use azure_core::setters;

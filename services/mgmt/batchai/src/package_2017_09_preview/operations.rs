@@ -57,9 +57,9 @@ pub mod operations {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -139,9 +139,9 @@ pub mod clusters {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -225,9 +225,9 @@ pub mod clusters {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -305,9 +305,9 @@ pub mod clusters {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -385,9 +385,9 @@ pub mod clusters {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -467,9 +467,9 @@ pub mod clusters {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -554,9 +554,9 @@ pub mod clusters {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -645,9 +645,9 @@ pub mod clusters {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -727,9 +727,9 @@ pub mod jobs {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -813,9 +813,9 @@ pub mod jobs {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -893,9 +893,9 @@ pub mod jobs {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -975,9 +975,9 @@ pub mod jobs {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -1054,9 +1054,9 @@ pub mod jobs {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -1141,9 +1141,9 @@ pub mod jobs {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -1232,9 +1232,9 @@ pub mod jobs {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -1325,9 +1325,9 @@ pub mod jobs {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -1407,9 +1407,9 @@ pub mod file_servers {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -1493,9 +1493,9 @@ pub mod file_servers {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -1573,9 +1573,9 @@ pub mod file_servers {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -1660,9 +1660,9 @@ pub mod file_servers {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]
@@ -1751,9 +1751,9 @@ pub mod file_servers {
             #[error("Failed to build request: {}", source)]
             BuildRequestError { source: http::Error },
             #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+            ExecuteRequestError { source: azure_core::errors::HttpError },
             #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+            SerializeError { source: serde_json::Error },
             #[error("Failed to deserialize response body: {}", source)]
             DeserializeError { source: serde_json::Error, body: bytes::Bytes },
             #[error("Failed to get access token: {}", source)]

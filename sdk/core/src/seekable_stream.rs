@@ -1,3 +1,4 @@
+use crate::errors::StreamError;
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures::io::AsyncRead;
@@ -8,13 +9,13 @@ use futures::task::Poll;
 pub trait SeekableStream:
     AsyncRead + Unpin + std::fmt::Debug + Send + Sync + dyn_clone::DynClone
 {
-    async fn reset(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
+    async fn reset(&mut self) -> Result<(), StreamError>;
 }
 
 dyn_clone::clone_trait_object!(SeekableStream);
 
 impl Stream for dyn SeekableStream {
-    type Item = Result<Bytes, Box<dyn std::error::Error + Send + Sync>>;
+    type Item = Result<Bytes, StreamError>;
 
     fn poll_next(
         self: std::pin::Pin<&mut Self>,
@@ -29,7 +30,7 @@ impl Stream for dyn SeekableStream {
                 let bytes = bytes.slice(0..bytes_read);
                 Poll::Ready(Some(Ok(bytes)))
             }
-            Poll::Ready(Err(error)) => Poll::Ready(Some(Err(error.into()))),
+            Poll::Ready(Err(err)) => Poll::Ready(Some(Err(StreamError::PollError(err)))),
             Poll::Pending => Poll::Pending,
         }
     }

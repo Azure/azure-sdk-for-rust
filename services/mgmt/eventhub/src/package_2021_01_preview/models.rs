@@ -66,11 +66,13 @@ pub mod sku {
     pub enum Name {
         Basic,
         Standard,
+        Premium,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Basic,
         Standard,
+        Premium,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

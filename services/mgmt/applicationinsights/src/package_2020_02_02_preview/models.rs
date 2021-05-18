@@ -77,6 +77,10 @@ pub struct ApplicationInsightsComponentProperties {
     pub public_network_access_for_query: Option<PublicNetworkAccessType>,
     #[serde(rename = "IngestionMode", default, skip_serializing_if = "Option::is_none")]
     pub ingestion_mode: Option<application_insights_component_properties::IngestionMode>,
+    #[serde(rename = "DisableLocalAuth", default, skip_serializing_if = "Option::is_none")]
+    pub disable_local_auth: Option<bool>,
+    #[serde(rename = "ForceCustomerStorageForProfiler", default, skip_serializing_if = "Option::is_none")]
+    pub force_customer_storage_for_profiler: Option<bool>,
 }
 pub mod application_insights_component_properties {
     use super::*;

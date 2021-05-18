@@ -39,6 +39,8 @@ pub struct MetricTrigger {
     pub threshold: f64,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<ScaleRuleMetricDimension>,
+    #[serde(rename = "dividePerInstance", default, skip_serializing_if = "Option::is_none")]
+    pub divide_per_instance: Option<bool>,
 }
 pub mod metric_trigger {
     use super::*;
@@ -878,6 +880,10 @@ pub enum Unit {
     MilliSeconds,
     ByteSeconds,
     Unspecified,
+    Cores,
+    MilliCores,
+    NanoCores,
+    BitsPerSecond,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricDefinition {
@@ -887,6 +893,10 @@ pub struct MetricDefinition {
     pub resource_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
+    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<Unit>,
     #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
@@ -951,6 +961,10 @@ pub struct Metric {
     #[serde(rename = "type")]
     pub type_: String,
     pub name: LocalizableString,
+    #[serde(rename = "displayDescription")]
+    pub display_description: String,
+    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
     pub unit: Unit,
     pub timeseries: Vec<TimeSeriesElement>,
 }

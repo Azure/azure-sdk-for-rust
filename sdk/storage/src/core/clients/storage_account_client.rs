@@ -1,8 +1,8 @@
-use crate::shared_access_signature::SharedAccessSignatureBuilder;
 use crate::{
     core::{ConnectionString, No},
     AzureStorageError,
 };
+use crate::{headers::CONTENT_MD5, shared_access_signature::SharedAccessSignatureBuilder};
 use azure_core::headers::*;
 use azure_core::prelude::*;
 use bytes::Bytes;

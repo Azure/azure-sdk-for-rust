@@ -1,14 +1,10 @@
-use http::header::ToStrError;
 use http::StatusCode;
 #[cfg(feature = "enable_hyper")]
 use hyper::{self, body, Body};
-use std::io::Error as IOError;
-use std::num;
-use std::num::ParseIntError;
-use std::str;
-use std::str::ParseBoolError;
-use std::string;
-use url::ParseError as URLParseError;
+#[cfg(feature = "enable_hyper")]
+type HttpClientError = hyper::Error;
+#[cfg(feature = "enable_reqwest")]
+type HttpClientError = reqwest::Error;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ParsingError {
@@ -23,7 +19,7 @@ pub enum ParseError {
     #[error("Expected split char \'{}\' not found", 0)]
     SplitNotFound(char),
     #[error("Parse int error {}", 0)]
-    ParseIntError(ParseIntError),
+    ParseIntError(std::num::ParseIntError),
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -73,52 +69,76 @@ impl From<UnexpectedHTTPResult> for AzureError {
     }
 }
 
-impl UnexpectedHTTPResult {
-    pub fn new(expected: StatusCode, received: StatusCode, body: &str) -> UnexpectedHTTPResult {
-        UnexpectedHTTPResult {
+#[derive(Debug, thiserror::Error)]
+pub enum StreamError {
+    #[error("Stream poll error: {}", 0)]
+    PollError(std::io::Error),
+    #[error("Stream read error: {}", 0)]
+    ReadError(HttpClientError),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum HttpError {
+    #[error("Failed to serialize request body as json: {}", 0)]
+    BodySerializationError(serde_json::Error),
+    #[error(
+        "Unexpected HTTP result (expected: {:?}, received: {:?}, body: {:?})",
+        expected,
+        received,
+        body
+    )]
+    UnexpectedStatusCode {
+        expected: Vec<StatusCode>,
+        received: StatusCode,
+        body: String,
+    },
+    #[error("UTF8 conversion error: {}", 0)]
+    UTF8Error(#[from] std::str::Utf8Error),
+    #[error("From UTF8 conversion error: {}", 0)]
+    FromUtf8Error(#[from] std::string::FromUtf8Error),
+    #[error("Failed to build request: {}", 0)]
+    BuildRequestError(http::Error),
+    #[error("Failed to build request: {}", 0)]
+    BuildClientRequestError(HttpClientError),
+    #[error("Failed to execute request: {}", 0)]
+    ExecuteRequestError(HttpClientError),
+    #[error("Failed to read response as bytes: {}", 0)]
+    ReadBytesError(HttpClientError),
+    #[error("Failed to read response as stream: {}", 0)]
+    ReadStreamError(HttpClientError),
+    #[error("Failed to build response: {}", 0)]
+    BuildResponseError(http::Error),
+    #[error("to str error: {}", 0)]
+    ToStrError(#[from] http::header::ToStrError),
+    #[error("Failed to reset stream: {}", 0)]
+    StreamResetError(StreamError),
+}
+
+impl HttpError {
+    pub fn new_unexpected_status_code(
+        expected: StatusCode,
+        received: StatusCode,
+        body: &str,
+    ) -> HttpError {
+        HttpError::UnexpectedStatusCode {
             expected: vec![expected],
             received,
             body: body.to_owned(),
         }
     }
 
-    pub fn new_multiple(
+    pub fn new_multiple_unexpected_status_code(
         allowed: Vec<StatusCode>,
         received: StatusCode,
         body: &str,
-    ) -> UnexpectedHTTPResult {
-        UnexpectedHTTPResult {
+    ) -> HttpError {
+        HttpError::UnexpectedStatusCode {
             expected: allowed,
             received,
             body: body.to_owned(),
         }
     }
-
-    pub fn status_code(&self) -> StatusCode {
-        self.received
-    }
 }
-
-impl std::fmt::Display for UnexpectedHTTPResult {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Unexpected HTTP result (expected: {:?}, received: {:?})",
-            self.expected, self.received
-        )
-    }
-}
-
-impl std::error::Error for UnexpectedHTTPResult {
-    fn description(&self) -> &str {
-        "Unexpected HTTP result"
-    }
-
-    fn cause(&self) -> Option<&dyn std::error::Error> {
-        None
-    }
-}
-
 #[derive(Debug, thiserror::Error)]
 pub enum Not512ByteAlignedError {
     #[error("start range not 512-byte aligned: {}", 0)]
@@ -143,37 +163,31 @@ pub enum Parse512AlignedError {
     #[error("split not found")]
     SplitNotFound,
     #[error("parse int error: {}", 0)]
-    ParseIntError(#[from] ParseIntError),
+    ParseIntError(#[from] std::num::ParseIntError),
     #[error("not 512 byte aligned error: {}", 0)]
     Not512ByteAlignedError(#[from] Not512ByteAlignedError),
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum AzureError {
+    #[error("http error: {}", 0)]
+    HttpError(#[from] HttpError),
     #[error("{}-{} is not 512 byte aligned", start, end)]
     PageNot512ByteAlignedError { start: u64, end: u64 },
     #[error("{} is not 512 byte aligned", size)]
     Not512ByteAlignedError { size: u64 },
     #[error("Operation not supported. Operation == {}, reason == {}", 0, 1)]
     OperationNotSupported(String, String),
-    #[error("base64 decode error: {}", 0)]
-    Base64DecodeError(#[from] base64::DecodeError),
-    #[error("digest length {} bytes instead of 16", 0)]
-    DigestNot16BytesLong(u64),
-    #[error("CRC64 length {} bytes instead of 8", 0)]
-    CRC64Not8BytesLong(u64),
     #[error("parse bool error: {}", 0)]
-    ParseBoolError(#[from] ParseBoolError),
+    ParseBoolError(#[from] std::str::ParseBoolError),
     #[error("to str error: {}", 0)]
-    ToStrError(#[from] ToStrError),
+    ToStrError(#[from] http::header::ToStrError),
     #[error("json error: {}", 0)]
     JSONError(#[from] serde_json::Error),
-    #[error("Hyper error: {}", 0)]
-    HyperError(#[from] Box<dyn std::error::Error + Sync + Send>),
     #[error("Permission error: {}", 0)]
     PermissionError(#[from] PermissionError),
     #[error("IO error: {}", 0)]
-    IOError(#[from] IOError),
+    IOError(#[from] std::io::Error),
     #[error("UnexpectedXMLError: {}", 0)]
     UnexpectedXMLError(String),
     #[error("Azure Path parse error: {}", 0)]
@@ -198,7 +212,7 @@ pub enum AzureError {
     #[error("Traversing error: {}", 0)]
     ResponseParsingError(#[from] TraversingError),
     #[error("Parse int error: {}", 0)]
-    ParseIntError(#[from] num::ParseIntError),
+    ParseIntError(#[from] std::num::ParseIntError),
     #[error("Parse float error: {}", 0)]
     ParseFloatError(#[from] std::num::ParseFloatError),
     #[error("Parse error: {}", 0)]
@@ -212,7 +226,7 @@ pub enum AzureError {
     #[error("Input parameters error: {}", 0)]
     InputParametersError(String),
     #[error("URL parse error: {}", 0)]
-    URLParseError(#[from] URLParseError),
+    URLParseError(#[from] url::ParseError),
     #[error("Error preparing HTTP request: {}", 0)]
     HttpPrepareError(#[from] http::Error),
     #[error("uuid error: {}", 0)]
@@ -220,9 +234,9 @@ pub enum AzureError {
     #[error("Chrono parser error: {}", 0)]
     ChronoParserError(#[from] chrono::ParseError),
     #[error("UTF8 conversion error: {}", 0)]
-    UTF8Error(#[from] str::Utf8Error),
+    UTF8Error(#[from] std::str::Utf8Error),
     #[error("FromUTF8 error: {}", 0)]
-    FromUtf8Error(#[from] string::FromUtf8Error),
+    FromUtf8Error(#[from] std::string::FromUtf8Error),
     #[error("A required header is missing: {}", 0)]
     MissingHeaderError(String),
     #[error(
@@ -257,7 +271,7 @@ pub enum TraversingError {
     #[error("Text not found")]
     TextNotFound,
     #[error("Parse int error: {}", 0)]
-    ParseIntError(#[from] num::ParseIntError),
+    ParseIntError(#[from] std::num::ParseIntError),
     #[error("Generic parse error: {}", 0)]
     GenericParseError(String),
     #[error("Parsing error: {:?}", 0)]
@@ -271,23 +285,17 @@ impl From<()> for AzureError {
 }
 
 #[cfg(feature = "enable_hyper")]
-impl From<hyper::Error> for AzureError {
-    fn from(error: hyper::Error) -> AzureError {
-        AzureError::HyperError(error.into())
-    }
-}
-
-#[cfg(feature = "enable_hyper")]
 #[inline]
 pub async fn extract_status_headers_and_body(
     resp: hyper::client::ResponseFuture,
 ) -> Result<(hyper::StatusCode, hyper::HeaderMap, body::Bytes), AzureError> {
-    let res = resp.await?;
+    let res = resp.await.map_err(HttpError::ExecuteRequestError)?;
     let (head, body) = res.into_parts();
     let status = head.status;
     let headers = head.headers;
-    let body = body::to_bytes(body).await?;
-
+    let body = body::to_bytes(body)
+        .await
+        .map_err(HttpError::ReadBytesError)?;
     Ok((status, headers, body))
 }
 
@@ -295,26 +303,30 @@ pub async fn extract_status_headers_and_body(
 #[inline]
 pub async fn extract_status_and_body(
     resp: hyper::client::ResponseFuture,
-) -> Result<(StatusCode, String), AzureError> {
-    let res = resp.await?;
+) -> Result<(StatusCode, String), HttpError> {
+    let res = resp.await.map_err(HttpError::ExecuteRequestError)?;
     let status = res.status();
-    let body = body::to_bytes(res.into_body()).await?;
-    Ok((status, str::from_utf8(&body)?.to_owned()))
+    let body = body::to_bytes(res.into_body())
+        .await
+        .map_err(HttpError::ReadBytesError)?;
+    Ok((status, std::str::from_utf8(&body)?.to_owned()))
 }
 
 #[cfg(feature = "enable_hyper")]
 #[inline]
 pub async fn extract_location_status_and_body(
     resp: hyper::client::ResponseFuture,
-) -> Result<(http::StatusCode, String, String), AzureError> {
-    let res = resp.await?;
+) -> Result<(http::StatusCode, String, String), HttpError> {
+    let res = resp.await.map_err(HttpError::ExecuteRequestError)?;
     let status = res.status();
     let location: String = match res.headers().get("Location") {
         Some(header_value) => header_value.to_str()?.to_owned(),
         _ => "".to_owned(),
     };
-    let body = body::to_bytes(res.into_body()).await?;
-    Ok((status, location, str::from_utf8(&body)?.to_owned()))
+    let body = body::to_bytes(res.into_body())
+        .await
+        .map_err(HttpError::ReadBytesError)?;
+    Ok((status, location, std::str::from_utf8(&body)?.to_owned()))
 }
 
 #[cfg(feature = "enable_hyper")]
@@ -327,11 +339,7 @@ pub async fn check_status_extract_body(
     if status == expected_status_code {
         Ok(body)
     } else {
-        Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
-            expected_status_code,
-            status,
-            &body,
-        )))
+        Err(HttpError::new_unexpected_status_code(expected_status_code, status, &body).into())
     }
 }
 
@@ -341,16 +349,13 @@ pub async fn check_status_extract_body_2(
     expected_status: StatusCode,
 ) -> Result<String, AzureError> {
     let received_status = resp.status();
-
-    let body = body::to_bytes(resp.into_body()).await?;
+    let body = body::to_bytes(resp.into_body())
+        .await
+        .map_err(HttpError::ReadBytesError)?;
     let s = String::from_utf8(body.to_vec())?;
     debug!("body: {}", s);
     if received_status != expected_status {
-        Err(AzureError::UnexpectedHTTPResult(UnexpectedHTTPResult::new(
-            expected_status,
-            received_status,
-            &s,
-        )))
+        Err(HttpError::new_unexpected_status_code(expected_status, received_status, &s).into())
     } else {
         Ok(s)
     }
@@ -385,18 +390,4 @@ mod test {
     fn test_azure_error_sync() {
         error_generator().map_err(sync_fn).unwrap();
     }
-
-    // This does not compile
-    //#[test]
-    //fn test_not_send() {
-    //    let a = std::rc::Rc::new(100);
-    //    send_fn(a);
-    //}
-
-    // This does not compile
-    //#[test]
-    //fn test_not_sync() {
-    //    let a = std::cell::Cell::new(500);
-    //    sync_fn(a);
-    //}
 }

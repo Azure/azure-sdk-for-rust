@@ -1,6 +1,8 @@
 use azure_core::AddAsHeader;
 use http::request::Builder;
 
+use crate::headers::{CONTENT_CRC64, CONTENT_MD5};
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub enum Hash {
     MD5([u8; 16]),
@@ -10,10 +12,8 @@ pub enum Hash {
 impl AddAsHeader for Hash {
     fn add_as_header(&self, builder: Builder) -> Builder {
         match self {
-            Hash::MD5(md5) => builder.header(azure_core::headers::CONTENT_MD5, base64::encode(md5)),
-            Hash::CRC64(crc64) => {
-                builder.header(azure_core::headers::CONTENT_CRC64, &format!("{}", crc64))
-            }
+            Hash::MD5(md5) => builder.header(CONTENT_MD5, base64::encode(md5)),
+            Hash::CRC64(crc64) => builder.header(CONTENT_CRC64, &format!("{}", crc64)),
         }
     }
 }

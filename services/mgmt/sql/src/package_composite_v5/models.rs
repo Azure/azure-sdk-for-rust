@@ -25,6 +25,31 @@ pub struct RecoverableDatabaseListResult {
     pub value: Vec<RecoverableDatabase>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerConnectionPolicyProperties {
+    #[serde(rename = "connectionType")]
+    pub connection_type: server_connection_policy_properties::ConnectionType,
+}
+pub mod server_connection_policy_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ConnectionType {
+        Default,
+        Proxy,
+        Redirect,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerConnectionPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(skip_serializing)]
+    pub kind: Option<String>,
+    #[serde(skip_serializing)]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ServerConnectionPolicyProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataMaskingPolicyProperties {
     #[serde(rename = "dataMaskingState")]
     pub data_masking_state: data_masking_policy_properties::DataMaskingState,
@@ -402,6 +427,28 @@ pub struct ElasticPoolDatabaseActivity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPoolDatabaseActivityListResult {
     pub value: Vec<ElasticPoolDatabaseActivity>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransparentDataEncryptionProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<transparent_data_encryption_properties::Status>,
+}
+pub mod transparent_data_encryption_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Enabled,
+        Disabled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransparentDataEncryption {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(skip_serializing)]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TransparentDataEncryptionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SloUsageMetric {
@@ -1164,407 +1211,6 @@ pub struct DatabaseColumn {
     pub properties: Option<DatabaseColumnProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseExtensionsProperties {
-    #[serde(rename = "operationMode")]
-    pub operation_mode: database_extensions_properties::OperationMode,
-    #[serde(rename = "storageKeyType")]
-    pub storage_key_type: database_extensions_properties::StorageKeyType,
-    #[serde(rename = "storageKey")]
-    pub storage_key: String,
-    #[serde(rename = "storageUri")]
-    pub storage_uri: String,
-}
-pub mod database_extensions_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OperationMode {
-        PolybaseImport,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StorageKeyType {
-        SharedAccessKey,
-        StorageAccessKey,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseExtensions {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DatabaseExtensionsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImportExportExtensionsOperationResultProperties {
-    #[serde(rename = "requestId", skip_serializing)]
-    pub request_id: Option<String>,
-    #[serde(rename = "requestType", skip_serializing)]
-    pub request_type: Option<String>,
-    #[serde(rename = "lastModifiedTime", skip_serializing)]
-    pub last_modified_time: Option<String>,
-    #[serde(rename = "serverName", skip_serializing)]
-    pub server_name: Option<String>,
-    #[serde(rename = "databaseName", skip_serializing)]
-    pub database_name: Option<String>,
-    #[serde(skip_serializing)]
-    pub status: Option<String>,
-    #[serde(rename = "errorMessage", skip_serializing)]
-    pub error_message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImportExportExtensionsOperationResult {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ImportExportExtensionsOperationResultProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImportExportExtensionsOperationListResult {
-    #[serde(skip_serializing)]
-    pub value: Vec<ImportExportExtensionsOperationResult>,
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseOperationListResult {
-    #[serde(skip_serializing)]
-    pub value: Vec<DatabaseOperation>,
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseOperationProperties {
-    #[serde(rename = "databaseName", skip_serializing)]
-    pub database_name: Option<String>,
-    #[serde(skip_serializing)]
-    pub operation: Option<String>,
-    #[serde(rename = "operationFriendlyName", skip_serializing)]
-    pub operation_friendly_name: Option<String>,
-    #[serde(rename = "percentComplete", skip_serializing)]
-    pub percent_complete: Option<i32>,
-    #[serde(rename = "serverName", skip_serializing)]
-    pub server_name: Option<String>,
-    #[serde(rename = "startTime", skip_serializing)]
-    pub start_time: Option<String>,
-    #[serde(skip_serializing)]
-    pub state: Option<database_operation_properties::State>,
-    #[serde(rename = "errorCode", skip_serializing)]
-    pub error_code: Option<i32>,
-    #[serde(rename = "errorDescription", skip_serializing)]
-    pub error_description: Option<String>,
-    #[serde(rename = "errorSeverity", skip_serializing)]
-    pub error_severity: Option<i32>,
-    #[serde(rename = "isUserError", skip_serializing)]
-    pub is_user_error: Option<bool>,
-    #[serde(rename = "estimatedCompletionTime", skip_serializing)]
-    pub estimated_completion_time: Option<String>,
-    #[serde(skip_serializing)]
-    pub description: Option<String>,
-    #[serde(rename = "isCancellable", skip_serializing)]
-    pub is_cancellable: Option<bool>,
-}
-pub mod database_operation_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum State {
-        Pending,
-        InProgress,
-        Succeeded,
-        Failed,
-        CancelInProgress,
-        Cancelled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseOperation {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DatabaseOperationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseListResult {
-    #[serde(skip_serializing)]
-    pub value: Vec<Database>,
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseProperties {
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
-    pub create_mode: Option<database_properties::CreateMode>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub collation: Option<String>,
-    #[serde(rename = "maxSizeBytes", default, skip_serializing_if = "Option::is_none")]
-    pub max_size_bytes: Option<i64>,
-    #[serde(rename = "sampleName", default, skip_serializing_if = "Option::is_none")]
-    pub sample_name: Option<database_properties::SampleName>,
-    #[serde(rename = "elasticPoolId", default, skip_serializing_if = "Option::is_none")]
-    pub elastic_pool_id: Option<String>,
-    #[serde(rename = "sourceDatabaseId", default, skip_serializing_if = "Option::is_none")]
-    pub source_database_id: Option<String>,
-    #[serde(skip_serializing)]
-    pub status: Option<database_properties::Status>,
-    #[serde(rename = "databaseId", skip_serializing)]
-    pub database_id: Option<String>,
-    #[serde(rename = "creationDate", skip_serializing)]
-    pub creation_date: Option<String>,
-    #[serde(rename = "currentServiceObjectiveName", skip_serializing)]
-    pub current_service_objective_name: Option<String>,
-    #[serde(rename = "requestedServiceObjectiveName", skip_serializing)]
-    pub requested_service_objective_name: Option<String>,
-    #[serde(rename = "defaultSecondaryLocation", skip_serializing)]
-    pub default_secondary_location: Option<String>,
-    #[serde(rename = "failoverGroupId", skip_serializing)]
-    pub failover_group_id: Option<String>,
-    #[serde(rename = "restorePointInTime", default, skip_serializing_if = "Option::is_none")]
-    pub restore_point_in_time: Option<String>,
-    #[serde(rename = "sourceDatabaseDeletionDate", default, skip_serializing_if = "Option::is_none")]
-    pub source_database_deletion_date: Option<String>,
-    #[serde(rename = "recoveryServicesRecoveryPointId", default, skip_serializing_if = "Option::is_none")]
-    pub recovery_services_recovery_point_id: Option<String>,
-    #[serde(rename = "longTermRetentionBackupResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub long_term_retention_backup_resource_id: Option<String>,
-    #[serde(rename = "recoverableDatabaseId", default, skip_serializing_if = "Option::is_none")]
-    pub recoverable_database_id: Option<String>,
-    #[serde(rename = "restorableDroppedDatabaseId", default, skip_serializing_if = "Option::is_none")]
-    pub restorable_dropped_database_id: Option<String>,
-    #[serde(rename = "catalogCollation", default, skip_serializing_if = "Option::is_none")]
-    pub catalog_collation: Option<database_properties::CatalogCollation>,
-    #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
-    pub zone_redundant: Option<bool>,
-    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
-    pub license_type: Option<database_properties::LicenseType>,
-    #[serde(rename = "maxLogSizeBytes", skip_serializing)]
-    pub max_log_size_bytes: Option<i64>,
-    #[serde(rename = "earliestRestoreDate", skip_serializing)]
-    pub earliest_restore_date: Option<String>,
-    #[serde(rename = "readScale", default, skip_serializing_if = "Option::is_none")]
-    pub read_scale: Option<database_properties::ReadScale>,
-    #[serde(rename = "highAvailabilityReplicaCount", default, skip_serializing_if = "Option::is_none")]
-    pub high_availability_replica_count: Option<i32>,
-    #[serde(rename = "secondaryType", default, skip_serializing_if = "Option::is_none")]
-    pub secondary_type: Option<database_properties::SecondaryType>,
-    #[serde(rename = "currentSku", default, skip_serializing_if = "Option::is_none")]
-    pub current_sku: Option<Sku>,
-    #[serde(rename = "autoPauseDelay", default, skip_serializing_if = "Option::is_none")]
-    pub auto_pause_delay: Option<i32>,
-    #[serde(rename = "currentBackupStorageRedundancy", skip_serializing)]
-    pub current_backup_storage_redundancy: Option<database_properties::CurrentBackupStorageRedundancy>,
-    #[serde(rename = "requestedBackupStorageRedundancy", default, skip_serializing_if = "Option::is_none")]
-    pub requested_backup_storage_redundancy: Option<database_properties::RequestedBackupStorageRedundancy>,
-    #[serde(rename = "minCapacity", default, skip_serializing_if = "Option::is_none")]
-    pub min_capacity: Option<f64>,
-    #[serde(rename = "pausedDate", skip_serializing)]
-    pub paused_date: Option<String>,
-    #[serde(rename = "resumedDate", skip_serializing)]
-    pub resumed_date: Option<String>,
-    #[serde(rename = "maintenanceConfigurationId", default, skip_serializing_if = "Option::is_none")]
-    pub maintenance_configuration_id: Option<String>,
-}
-pub mod database_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreateMode {
-        Default,
-        Copy,
-        Secondary,
-        PointInTimeRestore,
-        Restore,
-        Recovery,
-        RestoreExternalBackup,
-        RestoreExternalBackupSecondary,
-        RestoreLongTermRetentionBackup,
-        OnlineSecondary,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SampleName {
-        #[serde(rename = "AdventureWorksLT")]
-        AdventureWorksLt,
-        WideWorldImportersStd,
-        WideWorldImportersFull,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Online,
-        Restoring,
-        RecoveryPending,
-        Recovering,
-        Suspect,
-        Offline,
-        Standby,
-        Shutdown,
-        EmergencyMode,
-        AutoClosed,
-        Copying,
-        Creating,
-        Inaccessible,
-        OfflineSecondary,
-        Pausing,
-        Paused,
-        Resuming,
-        Scaling,
-        OfflineChangingDwPerformanceTiers,
-        OnlineChangingDwPerformanceTiers,
-        Disabled,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CatalogCollation {
-        #[serde(rename = "DATABASE_DEFAULT")]
-        DatabaseDefault,
-        #[serde(rename = "SQL_Latin1_General_CP1_CI_AS")]
-        SqlLatin1GeneralCp1CiAs,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LicenseType {
-        LicenseIncluded,
-        BasePrice,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ReadScale {
-        Enabled,
-        Disabled,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SecondaryType {
-        Geo,
-        Named,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CurrentBackupStorageRedundancy {
-        Geo,
-        Local,
-        Zone,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum RequestedBackupStorageRedundancy {
-        Geo,
-        Local,
-        Zone,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Database {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
-    #[serde(skip_serializing)]
-    pub kind: Option<String>,
-    #[serde(rename = "managedBy", skip_serializing)]
-    pub managed_by: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DatabaseProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseUpdate {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DatabaseProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceMoveDefinition {
-    pub id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImportExistingDatabaseDefinition {
-    #[serde(rename = "storageKeyType")]
-    pub storage_key_type: import_existing_database_definition::StorageKeyType,
-    #[serde(rename = "storageKey")]
-    pub storage_key: String,
-    #[serde(rename = "storageUri")]
-    pub storage_uri: String,
-    #[serde(rename = "administratorLogin")]
-    pub administrator_login: String,
-    #[serde(rename = "administratorLoginPassword")]
-    pub administrator_login_password: String,
-    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
-    pub authentication_type: Option<String>,
-    #[serde(rename = "networkIsolation", default, skip_serializing_if = "Option::is_none")]
-    pub network_isolation: Option<NetworkIsolationSettings>,
-}
-pub mod import_existing_database_definition {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StorageKeyType {
-        SharedAccessKey,
-        StorageAccessKey,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkIsolationSettings {
-    #[serde(rename = "storageAccountResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_resource_id: Option<String>,
-    #[serde(rename = "sqlServerResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub sql_server_resource_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImportExportOperationResultProperties {
-    #[serde(rename = "requestId", skip_serializing)]
-    pub request_id: Option<String>,
-    #[serde(rename = "requestType", skip_serializing)]
-    pub request_type: Option<String>,
-    #[serde(rename = "queuedTime", skip_serializing)]
-    pub queued_time: Option<String>,
-    #[serde(rename = "lastModifiedTime", skip_serializing)]
-    pub last_modified_time: Option<String>,
-    #[serde(rename = "blobUri", skip_serializing)]
-    pub blob_uri: Option<String>,
-    #[serde(rename = "serverName", skip_serializing)]
-    pub server_name: Option<String>,
-    #[serde(rename = "databaseName", skip_serializing)]
-    pub database_name: Option<String>,
-    #[serde(skip_serializing)]
-    pub status: Option<String>,
-    #[serde(rename = "errorMessage", skip_serializing)]
-    pub error_message: Option<String>,
-    #[serde(rename = "privateEndpointConnections", skip_serializing)]
-    pub private_endpoint_connections: Vec<PrivateEndpointConnectionRequestStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateEndpointConnectionRequestStatus {
-    #[serde(rename = "privateLinkServiceId", skip_serializing)]
-    pub private_link_service_id: Option<String>,
-    #[serde(rename = "privateEndpointConnectionName", skip_serializing)]
-    pub private_endpoint_connection_name: Option<String>,
-    #[serde(skip_serializing)]
-    pub status: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImportExportOperationResult {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ImportExportOperationResultProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExportDatabaseDefinition {
-    #[serde(rename = "storageKeyType")]
-    pub storage_key_type: export_database_definition::StorageKeyType,
-    #[serde(rename = "storageKey")]
-    pub storage_key: String,
-    #[serde(rename = "storageUri")]
-    pub storage_uri: String,
-    #[serde(rename = "administratorLogin")]
-    pub administrator_login: String,
-    #[serde(rename = "administratorLoginPassword")]
-    pub administrator_login_password: String,
-    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
-    pub authentication_type: Option<String>,
-    #[serde(rename = "networkIsolation", default, skip_serializing_if = "Option::is_none")]
-    pub network_isolation: Option<NetworkIsolationSettings>,
-}
-pub mod export_database_definition {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StorageKeyType {
-        SharedAccessKey,
-        StorageAccessKey,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseSchema {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -1647,31 +1293,6 @@ pub struct DatabaseTableListResult {
     pub value: Vec<DatabaseTable>,
     #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseUsageListResult {
-    #[serde(skip_serializing)]
-    pub value: Vec<DatabaseUsage>,
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseUsageProperties {
-    #[serde(rename = "displayName", skip_serializing)]
-    pub display_name: Option<String>,
-    #[serde(rename = "currentValue", skip_serializing)]
-    pub current_value: Option<f64>,
-    #[serde(skip_serializing)]
-    pub limit: Option<f64>,
-    #[serde(skip_serializing)]
-    pub unit: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseUsage {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DatabaseUsageProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseVulnerabilityAssessmentRuleBaselineProperties {
@@ -4757,66 +4378,6 @@ pub struct ReplicationLink {
     pub properties: Option<ReplicationLinkProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestorableDroppedDatabaseListResult {
-    #[serde(skip_serializing)]
-    pub value: Vec<RestorableDroppedDatabase>,
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestorableDroppedDatabaseProperties {
-    #[serde(rename = "databaseName", skip_serializing)]
-    pub database_name: Option<String>,
-    #[serde(rename = "maxSizeBytes", skip_serializing)]
-    pub max_size_bytes: Option<i64>,
-    #[serde(rename = "elasticPoolId", skip_serializing)]
-    pub elastic_pool_id: Option<String>,
-    #[serde(rename = "creationDate", skip_serializing)]
-    pub creation_date: Option<String>,
-    #[serde(rename = "deletionDate", skip_serializing)]
-    pub deletion_date: Option<String>,
-    #[serde(rename = "earliestRestoreDate", skip_serializing)]
-    pub earliest_restore_date: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestorableDroppedDatabase {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RestorableDroppedDatabaseProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestorableDroppedManagedDatabaseListResult {
-    #[serde(skip_serializing)]
-    pub value: Vec<RestorableDroppedManagedDatabase>,
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestorableDroppedManagedDatabaseProperties {
-    #[serde(rename = "databaseName", skip_serializing)]
-    pub database_name: Option<String>,
-    #[serde(rename = "creationDate", skip_serializing)]
-    pub creation_date: Option<String>,
-    #[serde(rename = "deletionDate", skip_serializing)]
-    pub deletion_date: Option<String>,
-    #[serde(rename = "earliestRestoreDate", skip_serializing)]
-    pub earliest_restore_date: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestorableDroppedManagedDatabase {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RestorableDroppedManagedDatabaseProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorePointListResult {
     #[serde(skip_serializing)]
     pub value: Vec<RestorePoint>,
@@ -5261,6 +4822,52 @@ pub mod import_new_database_definition {
         SharedAccessKey,
         StorageAccessKey,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkIsolationSettings {
+    #[serde(rename = "storageAccountResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_resource_id: Option<String>,
+    #[serde(rename = "sqlServerResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub sql_server_resource_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImportExportOperationResultProperties {
+    #[serde(rename = "requestId", skip_serializing)]
+    pub request_id: Option<String>,
+    #[serde(rename = "requestType", skip_serializing)]
+    pub request_type: Option<String>,
+    #[serde(rename = "queuedTime", skip_serializing)]
+    pub queued_time: Option<String>,
+    #[serde(rename = "lastModifiedTime", skip_serializing)]
+    pub last_modified_time: Option<String>,
+    #[serde(rename = "blobUri", skip_serializing)]
+    pub blob_uri: Option<String>,
+    #[serde(rename = "serverName", skip_serializing)]
+    pub server_name: Option<String>,
+    #[serde(rename = "databaseName", skip_serializing)]
+    pub database_name: Option<String>,
+    #[serde(skip_serializing)]
+    pub status: Option<String>,
+    #[serde(rename = "errorMessage", skip_serializing)]
+    pub error_message: Option<String>,
+    #[serde(rename = "privateEndpointConnections", skip_serializing)]
+    pub private_endpoint_connections: Vec<PrivateEndpointConnectionRequestStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionRequestStatus {
+    #[serde(rename = "privateLinkServiceId", skip_serializing)]
+    pub private_link_service_id: Option<String>,
+    #[serde(rename = "privateEndpointConnectionName", skip_serializing)]
+    pub private_endpoint_connection_name: Option<String>,
+    #[serde(skip_serializing)]
+    pub status: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImportExportOperationResult {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ImportExportOperationResultProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityRequest {
@@ -5757,32 +5364,6 @@ pub struct TimeZone {
     pub properties: Option<TimeZoneProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransparentDataEncryptionProperties {
-    pub state: transparent_data_encryption_properties::State,
-}
-pub mod transparent_data_encryption_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum State {
-        Enabled,
-        Disabled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogicalDatabaseTransparentDataEncryption {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TransparentDataEncryptionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogicalDatabaseTransparentDataEncryptionListResult {
-    #[serde(skip_serializing)]
-    pub value: Vec<LogicalDatabaseTransparentDataEncryption>,
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DnsRefreshConfigurationProperties {
     #[serde(skip_serializing)]
     pub status: Option<dns_refresh_configuration_properties::Status>,
@@ -5928,6 +5509,540 @@ pub struct WorkloadGroupListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<Database>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseProperties {
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    pub create_mode: Option<database_properties::CreateMode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub collation: Option<String>,
+    #[serde(rename = "maxSizeBytes", default, skip_serializing_if = "Option::is_none")]
+    pub max_size_bytes: Option<i64>,
+    #[serde(rename = "sampleName", default, skip_serializing_if = "Option::is_none")]
+    pub sample_name: Option<database_properties::SampleName>,
+    #[serde(rename = "elasticPoolId", default, skip_serializing_if = "Option::is_none")]
+    pub elastic_pool_id: Option<String>,
+    #[serde(rename = "sourceDatabaseId", default, skip_serializing_if = "Option::is_none")]
+    pub source_database_id: Option<String>,
+    #[serde(skip_serializing)]
+    pub status: Option<database_properties::Status>,
+    #[serde(rename = "databaseId", skip_serializing)]
+    pub database_id: Option<String>,
+    #[serde(rename = "creationDate", skip_serializing)]
+    pub creation_date: Option<String>,
+    #[serde(rename = "currentServiceObjectiveName", skip_serializing)]
+    pub current_service_objective_name: Option<String>,
+    #[serde(rename = "requestedServiceObjectiveName", skip_serializing)]
+    pub requested_service_objective_name: Option<String>,
+    #[serde(rename = "defaultSecondaryLocation", skip_serializing)]
+    pub default_secondary_location: Option<String>,
+    #[serde(rename = "failoverGroupId", skip_serializing)]
+    pub failover_group_id: Option<String>,
+    #[serde(rename = "restorePointInTime", default, skip_serializing_if = "Option::is_none")]
+    pub restore_point_in_time: Option<String>,
+    #[serde(rename = "sourceDatabaseDeletionDate", default, skip_serializing_if = "Option::is_none")]
+    pub source_database_deletion_date: Option<String>,
+    #[serde(rename = "recoveryServicesRecoveryPointId", default, skip_serializing_if = "Option::is_none")]
+    pub recovery_services_recovery_point_id: Option<String>,
+    #[serde(rename = "longTermRetentionBackupResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub long_term_retention_backup_resource_id: Option<String>,
+    #[serde(rename = "recoverableDatabaseId", default, skip_serializing_if = "Option::is_none")]
+    pub recoverable_database_id: Option<String>,
+    #[serde(rename = "restorableDroppedDatabaseId", default, skip_serializing_if = "Option::is_none")]
+    pub restorable_dropped_database_id: Option<String>,
+    #[serde(rename = "catalogCollation", default, skip_serializing_if = "Option::is_none")]
+    pub catalog_collation: Option<database_properties::CatalogCollation>,
+    #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
+    pub zone_redundant: Option<bool>,
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
+    pub license_type: Option<database_properties::LicenseType>,
+    #[serde(rename = "maxLogSizeBytes", skip_serializing)]
+    pub max_log_size_bytes: Option<i64>,
+    #[serde(rename = "earliestRestoreDate", skip_serializing)]
+    pub earliest_restore_date: Option<String>,
+    #[serde(rename = "readScale", default, skip_serializing_if = "Option::is_none")]
+    pub read_scale: Option<database_properties::ReadScale>,
+    #[serde(rename = "highAvailabilityReplicaCount", default, skip_serializing_if = "Option::is_none")]
+    pub high_availability_replica_count: Option<i32>,
+    #[serde(rename = "secondaryType", default, skip_serializing_if = "Option::is_none")]
+    pub secondary_type: Option<database_properties::SecondaryType>,
+    #[serde(rename = "currentSku", default, skip_serializing_if = "Option::is_none")]
+    pub current_sku: Option<Sku>,
+    #[serde(rename = "autoPauseDelay", default, skip_serializing_if = "Option::is_none")]
+    pub auto_pause_delay: Option<i32>,
+    #[serde(rename = "currentBackupStorageRedundancy", skip_serializing)]
+    pub current_backup_storage_redundancy: Option<database_properties::CurrentBackupStorageRedundancy>,
+    #[serde(rename = "requestedBackupStorageRedundancy", default, skip_serializing_if = "Option::is_none")]
+    pub requested_backup_storage_redundancy: Option<database_properties::RequestedBackupStorageRedundancy>,
+    #[serde(rename = "minCapacity", default, skip_serializing_if = "Option::is_none")]
+    pub min_capacity: Option<f64>,
+    #[serde(rename = "pausedDate", skip_serializing)]
+    pub paused_date: Option<String>,
+    #[serde(rename = "resumedDate", skip_serializing)]
+    pub resumed_date: Option<String>,
+    #[serde(rename = "maintenanceConfigurationId", default, skip_serializing_if = "Option::is_none")]
+    pub maintenance_configuration_id: Option<String>,
+    #[serde(rename = "isLedgerOn", default, skip_serializing_if = "Option::is_none")]
+    pub is_ledger_on: Option<bool>,
+    #[serde(rename = "isInfraEncryptionEnabled", skip_serializing)]
+    pub is_infra_encryption_enabled: Option<bool>,
+}
+pub mod database_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreateMode {
+        Default,
+        Copy,
+        Secondary,
+        PointInTimeRestore,
+        Restore,
+        Recovery,
+        RestoreExternalBackup,
+        RestoreExternalBackupSecondary,
+        RestoreLongTermRetentionBackup,
+        OnlineSecondary,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SampleName {
+        #[serde(rename = "AdventureWorksLT")]
+        AdventureWorksLt,
+        WideWorldImportersStd,
+        WideWorldImportersFull,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Online,
+        Restoring,
+        RecoveryPending,
+        Recovering,
+        Suspect,
+        Offline,
+        Standby,
+        Shutdown,
+        EmergencyMode,
+        AutoClosed,
+        Copying,
+        Creating,
+        Inaccessible,
+        OfflineSecondary,
+        Pausing,
+        Paused,
+        Resuming,
+        Scaling,
+        OfflineChangingDwPerformanceTiers,
+        OnlineChangingDwPerformanceTiers,
+        Disabled,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CatalogCollation {
+        #[serde(rename = "DATABASE_DEFAULT")]
+        DatabaseDefault,
+        #[serde(rename = "SQL_Latin1_General_CP1_CI_AS")]
+        SqlLatin1GeneralCp1CiAs,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LicenseType {
+        LicenseIncluded,
+        BasePrice,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ReadScale {
+        Enabled,
+        Disabled,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SecondaryType {
+        Geo,
+        Named,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CurrentBackupStorageRedundancy {
+        Geo,
+        Local,
+        Zone,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RequestedBackupStorageRedundancy {
+        Geo,
+        Local,
+        Zone,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Database {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+    #[serde(skip_serializing)]
+    pub kind: Option<String>,
+    #[serde(rename = "managedBy", skip_serializing)]
+    pub managed_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DatabaseProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DatabaseProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceMoveDefinition {
+    pub id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImportExistingDatabaseDefinition {
+    #[serde(rename = "storageKeyType")]
+    pub storage_key_type: import_existing_database_definition::StorageKeyType,
+    #[serde(rename = "storageKey")]
+    pub storage_key: String,
+    #[serde(rename = "storageUri")]
+    pub storage_uri: String,
+    #[serde(rename = "administratorLogin")]
+    pub administrator_login: String,
+    #[serde(rename = "administratorLoginPassword")]
+    pub administrator_login_password: String,
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<String>,
+    #[serde(rename = "networkIsolation", default, skip_serializing_if = "Option::is_none")]
+    pub network_isolation: Option<NetworkIsolationSettings>,
+}
+pub mod import_existing_database_definition {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StorageKeyType {
+        SharedAccessKey,
+        StorageAccessKey,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExportDatabaseDefinition {
+    #[serde(rename = "storageKeyType")]
+    pub storage_key_type: export_database_definition::StorageKeyType,
+    #[serde(rename = "storageKey")]
+    pub storage_key: String,
+    #[serde(rename = "storageUri")]
+    pub storage_uri: String,
+    #[serde(rename = "administratorLogin")]
+    pub administrator_login: String,
+    #[serde(rename = "administratorLoginPassword")]
+    pub administrator_login_password: String,
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<String>,
+    #[serde(rename = "networkIsolation", default, skip_serializing_if = "Option::is_none")]
+    pub network_isolation: Option<NetworkIsolationSettings>,
+}
+pub mod export_database_definition {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StorageKeyType {
+        SharedAccessKey,
+        StorageAccessKey,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseExtensionsProperties {
+    #[serde(rename = "operationMode")]
+    pub operation_mode: database_extensions_properties::OperationMode,
+    #[serde(rename = "storageKeyType")]
+    pub storage_key_type: database_extensions_properties::StorageKeyType,
+    #[serde(rename = "storageKey")]
+    pub storage_key: String,
+    #[serde(rename = "storageUri")]
+    pub storage_uri: String,
+}
+pub mod database_extensions_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OperationMode {
+        PolybaseImport,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StorageKeyType {
+        SharedAccessKey,
+        StorageAccessKey,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseExtensions {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DatabaseExtensionsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImportExportExtensionsOperationResultProperties {
+    #[serde(rename = "requestId", skip_serializing)]
+    pub request_id: Option<String>,
+    #[serde(rename = "requestType", skip_serializing)]
+    pub request_type: Option<String>,
+    #[serde(rename = "lastModifiedTime", skip_serializing)]
+    pub last_modified_time: Option<String>,
+    #[serde(rename = "serverName", skip_serializing)]
+    pub server_name: Option<String>,
+    #[serde(rename = "databaseName", skip_serializing)]
+    pub database_name: Option<String>,
+    #[serde(skip_serializing)]
+    pub status: Option<String>,
+    #[serde(rename = "errorMessage", skip_serializing)]
+    pub error_message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImportExportExtensionsOperationResult {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ImportExportExtensionsOperationResultProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImportExportExtensionsOperationListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<ImportExportExtensionsOperationResult>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseOperationListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<DatabaseOperation>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseOperationProperties {
+    #[serde(rename = "databaseName", skip_serializing)]
+    pub database_name: Option<String>,
+    #[serde(skip_serializing)]
+    pub operation: Option<String>,
+    #[serde(rename = "operationFriendlyName", skip_serializing)]
+    pub operation_friendly_name: Option<String>,
+    #[serde(rename = "percentComplete", skip_serializing)]
+    pub percent_complete: Option<i32>,
+    #[serde(rename = "serverName", skip_serializing)]
+    pub server_name: Option<String>,
+    #[serde(rename = "startTime", skip_serializing)]
+    pub start_time: Option<String>,
+    #[serde(skip_serializing)]
+    pub state: Option<database_operation_properties::State>,
+    #[serde(rename = "errorCode", skip_serializing)]
+    pub error_code: Option<i32>,
+    #[serde(rename = "errorDescription", skip_serializing)]
+    pub error_description: Option<String>,
+    #[serde(rename = "errorSeverity", skip_serializing)]
+    pub error_severity: Option<i32>,
+    #[serde(rename = "isUserError", skip_serializing)]
+    pub is_user_error: Option<bool>,
+    #[serde(rename = "estimatedCompletionTime", skip_serializing)]
+    pub estimated_completion_time: Option<String>,
+    #[serde(skip_serializing)]
+    pub description: Option<String>,
+    #[serde(rename = "isCancellable", skip_serializing)]
+    pub is_cancellable: Option<bool>,
+}
+pub mod database_operation_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        Pending,
+        InProgress,
+        Succeeded,
+        Failed,
+        CancelInProgress,
+        Cancelled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseOperation {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DatabaseOperationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseUsageListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<DatabaseUsage>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseUsageProperties {
+    #[serde(rename = "displayName", skip_serializing)]
+    pub display_name: Option<String>,
+    #[serde(rename = "currentValue", skip_serializing)]
+    pub current_value: Option<f64>,
+    #[serde(skip_serializing)]
+    pub limit: Option<f64>,
+    #[serde(skip_serializing)]
+    pub unit: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseUsage {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DatabaseUsageProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LedgerDigestUploadsProperties {
+    #[serde(rename = "digestStorageEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub digest_storage_endpoint: Option<String>,
+    #[serde(skip_serializing)]
+    pub state: Option<ledger_digest_uploads_properties::State>,
+}
+pub mod ledger_digest_uploads_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        Enabled,
+        Disabled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LedgerDigestUploads {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<LedgerDigestUploadsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LedgerDigestUploadsListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<LedgerDigestUploads>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OutboundFirewallRuleProperties {
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OutboundFirewallRule {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OutboundFirewallRuleProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OutboundFirewallRuleListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<OutboundFirewallRule>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableDroppedDatabaseListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<RestorableDroppedDatabase>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableDroppedDatabaseProperties {
+    #[serde(rename = "databaseName", skip_serializing)]
+    pub database_name: Option<String>,
+    #[serde(rename = "maxSizeBytes", skip_serializing)]
+    pub max_size_bytes: Option<i64>,
+    #[serde(rename = "elasticPoolId", skip_serializing)]
+    pub elastic_pool_id: Option<String>,
+    #[serde(rename = "creationDate", skip_serializing)]
+    pub creation_date: Option<String>,
+    #[serde(rename = "deletionDate", skip_serializing)]
+    pub deletion_date: Option<String>,
+    #[serde(rename = "earliestRestoreDate", skip_serializing)]
+    pub earliest_restore_date: Option<String>,
+    #[serde(rename = "backupStorageRedundancy", skip_serializing)]
+    pub backup_storage_redundancy: Option<restorable_dropped_database_properties::BackupStorageRedundancy>,
+}
+pub mod restorable_dropped_database_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupStorageRedundancy {
+        Geo,
+        Local,
+        Zone,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableDroppedDatabase {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RestorableDroppedDatabaseProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableDroppedManagedDatabaseListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<RestorableDroppedManagedDatabase>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableDroppedManagedDatabaseProperties {
+    #[serde(rename = "databaseName", skip_serializing)]
+    pub database_name: Option<String>,
+    #[serde(rename = "creationDate", skip_serializing)]
+    pub creation_date: Option<String>,
+    #[serde(rename = "deletionDate", skip_serializing)]
+    pub deletion_date: Option<String>,
+    #[serde(rename = "earliestRestoreDate", skip_serializing)]
+    pub earliest_restore_date: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableDroppedManagedDatabase {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RestorableDroppedManagedDatabaseProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UsageListResult {
+    #[serde(skip_serializing)]
+    pub value: Vec<Usage>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Usage {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<Name>,
+    #[serde(rename = "type", skip_serializing)]
+    pub type_: Option<String>,
+    #[serde(skip_serializing)]
+    pub unit: Option<String>,
+    #[serde(rename = "currentValue", skip_serializing)]
+    pub current_value: Option<i32>,
+    #[serde(skip_serializing)]
+    pub limit: Option<i32>,
+    #[serde(rename = "requestedLimit", skip_serializing)]
+    pub requested_limit: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Name {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
+    pub localized_value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
@@ -5940,26 +6055,6 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", skip_serializing)]
     pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub size: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub family: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackedResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
@@ -5992,4 +6087,24 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub family: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TrackedResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }

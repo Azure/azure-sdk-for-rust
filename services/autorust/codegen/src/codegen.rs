@@ -544,10 +544,10 @@ fn get_type_name_for_schema(schema: &SchemaCommon, as_ref: AsReference) -> Resul
         };
         Ok(ts)
     } else {
-        eprintln!(
-            "WARN unknown type in get_type_name_for_schema, description {:?}",
-            schema.description
-        );
+        // eprintln!(
+        //     "WARN unknown type in get_type_name_for_schema, description {:?}",
+        //     schema.description
+        // );
         match as_ref {
             AsReference::True => Ok(quote! { &serde_json::Value }),
             AsReference::False => Ok(quote! { serde_json::Value }),
@@ -1008,9 +1008,9 @@ fn create_function(
                 #[error("Failed to build request: {}", source)]
                 BuildRequestError { source: http::Error },
                 #[error("Failed to execute request: {}", source)]
-                ExecuteRequestError { source: Box<dyn std::error::Error + Sync + Send> },
+                ExecuteRequestError { source: azure_core::errors::HttpError },
                 #[error("Failed to serialize request body: {}", source)]
-                SerializeError { source: Box<dyn std::error::Error + Sync + Send> },
+                SerializeError { source: serde_json::Error },
                 #[error("Failed to deserialize response body: {}", source)]
                 DeserializeError { source: serde_json::Error, body: bytes::Bytes },
                 #[error("Failed to get access token: {}", source)]

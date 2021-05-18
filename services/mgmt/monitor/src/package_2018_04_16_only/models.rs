@@ -122,6 +122,8 @@ pub struct LogSearchRule {
     pub description: Option<String>,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[serde(rename = "autoMitigate", default, skip_serializing_if = "Option::is_none")]
+    pub auto_mitigate: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<log_search_rule::Enabled>,
     #[serde(rename = "lastUpdatedTime", skip_serializing)]

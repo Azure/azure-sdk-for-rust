@@ -152,8 +152,6 @@ pub struct ManagementGroupProperties {
     pub details: Option<ManagementGroupDetails>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<ManagementGroupChildInfo>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub path: Vec<ManagementGroupPathElement>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementGroupDetails {
@@ -165,6 +163,8 @@ pub struct ManagementGroupDetails {
     pub updated_by: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<ParentGroupInfo>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub path: Vec<ManagementGroupPathElement>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementGroupChildInfo {

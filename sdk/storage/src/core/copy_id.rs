@@ -1,8 +1,10 @@
-use crate::{core::COPY_ID, AzureStorageError};
+use crate::AzureStorageError;
 use http::HeaderMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::TryFrom;
 use std::fmt;
+
+use super::headers::COPY_ID;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopyId(uuid::Uuid);

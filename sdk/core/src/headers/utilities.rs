@@ -2,7 +2,7 @@ use super::*;
 use crate::errors::*;
 use crate::request_options::LeaseId;
 use crate::util::HeaderMapExt;
-use crate::{Consistency, RequestId, SessionToken};
+use crate::{RequestId, SessionToken};
 use chrono::{DateTime, Utc};
 use http::header::{HeaderName, DATE, ETAG, LAST_MODIFIED};
 #[cfg(feature = "enable_hyper")]
@@ -10,10 +10,9 @@ use http::status::StatusCode;
 use http::HeaderMap;
 #[cfg(feature = "enable_hyper")]
 use hyper::{Body, Client, Request};
+use std::convert::TryFrom;
 use std::str::FromStr;
 use uuid::Uuid;
-
-use std::convert::TryFrom;
 
 pub fn lease_id_from_headers(headers: &HeaderMap) -> Result<LeaseId, AzureError> {
     let lease_id = headers
@@ -31,16 +30,6 @@ pub fn request_id_from_headers(headers: &HeaderMap) -> Result<RequestId, AzureEr
 
 pub fn client_request_id_from_headers_optional(headers: &HeaderMap) -> Option<String> {
     headers.get_as_str(CLIENT_REQUEST_ID).map(|s| s.to_owned())
-}
-
-pub fn content_md5_from_headers_optional(
-    headers: &HeaderMap,
-) -> Result<Option<[u8; 16]>, AzureError> {
-    if headers.contains_key(CONTENT_MD5) {
-        Ok(Some(content_md5_from_headers(headers)?))
-    } else {
-        Ok(None)
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -64,69 +53,6 @@ impl TryFrom<&HeaderMap> for CommonStorageResponseHeaders {
             server: server_from_headers(headers)?.to_owned(),
         })
     }
-}
-
-pub fn content_md5_from_headers(headers: &HeaderMap) -> Result<[u8; 16], AzureError> {
-    let content_md5 = headers
-        .get(CONTENT_MD5)
-        .ok_or_else(|| AzureError::HeaderNotFound(CONTENT_MD5.to_owned()))?
-        .to_str()?;
-
-    let content_md5_vec = base64::decode(&content_md5)?;
-
-    if content_md5_vec.len() != 16 {
-        return Err(AzureError::DigestNot16BytesLong(
-            content_md5_vec.len() as u64
-        ));
-    }
-    let mut content_md5 = [0; 16];
-    content_md5.copy_from_slice(&content_md5_vec[0..16]);
-
-    trace!("content_md5 == {:?}", content_md5);
-    Ok(content_md5)
-}
-
-pub fn content_crc64_from_headers_optional(
-    headers: &HeaderMap,
-) -> Result<Option<[u8; 8]>, AzureError> {
-    if headers.contains_key(CONTENT_CRC64) {
-        Ok(Some(content_crc64_from_headers(headers)?))
-    } else {
-        Ok(None)
-    }
-}
-
-pub fn content_crc64_from_headers(headers: &HeaderMap) -> Result<[u8; 8], AzureError> {
-    let content_crc64 = headers
-        .get(CONTENT_CRC64)
-        .ok_or_else(|| AzureError::HeaderNotFound(CONTENT_CRC64.to_owned()))?
-        .to_str()?;
-
-    let content_crc64_vec = base64::decode(&content_crc64)?;
-
-    if content_crc64_vec.len() != 8 {
-        return Err(AzureError::CRC64Not8BytesLong(
-            content_crc64_vec.len() as u64
-        ));
-    }
-    let mut content_crc64 = [0; 8];
-    content_crc64.copy_from_slice(&content_crc64_vec[0..8]);
-
-    trace!("content_crc64 == {:?}", content_crc64);
-    Ok(content_crc64)
-}
-
-pub fn consistency_from_headers(headers: &HeaderMap) -> Result<Consistency, AzureError> {
-    if let Some(content_crc64) = content_crc64_from_headers_optional(headers)? {
-        return Ok(Consistency::Crc64(content_crc64));
-    } else if let Some(content_md5) = content_md5_from_headers_optional(headers)? {
-        return Ok(Consistency::Md5(content_md5));
-    }
-
-    Err(AzureError::HeadersNotFound(vec![
-        CONTENT_CRC64.to_owned(),
-        CONTENT_MD5.to_owned(),
-    ]))
 }
 
 pub fn last_modified_from_headers_optional(
@@ -340,6 +266,9 @@ pub async fn perform_http_request(
     expected_status: StatusCode,
 ) -> Result<String, AzureError> {
     debug!("req == {:?}", req);
-    let res = client.request(req).await?;
+    let res = client
+        .request(req)
+        .await
+        .map_err(HttpError::ExecuteRequestError)?;
     check_status_extract_body_2(res, expected_status).await
 }

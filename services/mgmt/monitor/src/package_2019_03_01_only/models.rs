@@ -63,8 +63,8 @@ pub struct EmailReceiver {
     pub name: String,
     #[serde(rename = "emailAddress")]
     pub email_address: String,
-    #[serde(rename = "useCommonAlertSchema")]
-    pub use_common_alert_schema: bool,
+    #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
+    pub use_common_alert_schema: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
@@ -83,8 +83,8 @@ pub struct WebhookReceiver {
     pub name: String,
     #[serde(rename = "serviceUri")]
     pub service_uri: String,
-    #[serde(rename = "useCommonAlertSchema")]
-    pub use_common_alert_schema: bool,
+    #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
+    pub use_common_alert_schema: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ItsmReceiver {
@@ -117,8 +117,8 @@ pub struct AutomationRunbookReceiver {
     pub name: Option<String>,
     #[serde(rename = "serviceUri", default, skip_serializing_if = "Option::is_none")]
     pub service_uri: Option<String>,
-    #[serde(rename = "useCommonAlertSchema")]
-    pub use_common_alert_schema: bool,
+    #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
+    pub use_common_alert_schema: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VoiceReceiver {
@@ -135,8 +135,8 @@ pub struct LogicAppReceiver {
     pub resource_id: String,
     #[serde(rename = "callbackUrl")]
     pub callback_url: String,
-    #[serde(rename = "useCommonAlertSchema")]
-    pub use_common_alert_schema: bool,
+    #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
+    pub use_common_alert_schema: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionReceiver {
@@ -147,16 +147,16 @@ pub struct AzureFunctionReceiver {
     pub function_name: String,
     #[serde(rename = "httpTriggerUrl")]
     pub http_trigger_url: String,
-    #[serde(rename = "useCommonAlertSchema")]
-    pub use_common_alert_schema: bool,
+    #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
+    pub use_common_alert_schema: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ArmRoleReceiver {
     pub name: String,
     #[serde(rename = "roleId")]
     pub role_id: String,
-    #[serde(rename = "useCommonAlertSchema")]
-    pub use_common_alert_schema: bool,
+    #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
+    pub use_common_alert_schema: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReceiverStatus {

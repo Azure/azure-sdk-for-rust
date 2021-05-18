@@ -91,6 +91,10 @@ pub struct BotProperties {
     pub is_cmek_enabled: Option<bool>,
     #[serde(rename = "cmekKeyVaultUrl", default, skip_serializing_if = "Option::is_none")]
     pub cmek_key_vault_url: Option<String>,
+    #[serde(rename = "isIsolated", default, skip_serializing_if = "Option::is_none")]
+    pub is_isolated: Option<bool>,
+    #[serde(rename = "schemaTransformationVersion", default, skip_serializing_if = "Option::is_none")]
+    pub schema_transformation_version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BotResponseList {
@@ -360,8 +364,10 @@ pub struct DirectLineSpeechChannel {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectLineSpeechChannelProperties {
-    #[serde(rename = "cognitiveServicesSubscriptionId")]
-    pub cognitive_services_subscription_id: String,
+    #[serde(rename = "cognitiveServiceRegion")]
+    pub cognitive_service_region: String,
+    #[serde(rename = "cognitiveServiceSubscriptionKey")]
+    pub cognitive_service_subscription_key: String,
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
     #[serde(rename = "customVoiceDeploymentId", default, skip_serializing_if = "Option::is_none")]

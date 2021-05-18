@@ -1,6 +1,4 @@
 use crate::event_grid_response::EventGridResponse;
-use hyper::{client::HttpConnector, Body, Client, Request};
-use hyper_rustls::HttpsConnector;
 
 pub struct EventGridRequest {
     request: Request<Body>,

@@ -10,7 +10,7 @@ pub mod shared_access_signature;
 pub use self::connection_string::{ConnectionString, EndpointProtocol};
 pub use self::connection_string_builder::ConnectionStringBuilder;
 pub use self::into_azure_path::IntoAzurePath;
-use azure_core::headers::*;
+pub(crate) mod headers;
 pub use copy_id::{copy_id_from_headers, CopyId};
 pub use copy_progress::CopyProgress;
 pub(crate) mod parsing_xml;
@@ -39,3 +39,9 @@ pub struct IPRange {
 }
 
 pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Consistency {
+    Md5([u8; 16]),
+    Crc64([u8; 8]),
+}

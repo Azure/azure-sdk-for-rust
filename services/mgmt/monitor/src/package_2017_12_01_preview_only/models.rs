@@ -8,6 +8,12 @@ pub struct MetricNamespaceName {
     pub metric_namespace_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum NamespaceClassification {
+    Platform,
+    Custom,
+    Qos,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricNamespace {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -15,6 +21,8 @@ pub struct MetricNamespace {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub classification: Option<NamespaceClassification>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetricNamespaceName>,
 }

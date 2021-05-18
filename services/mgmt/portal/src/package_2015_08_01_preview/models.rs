@@ -10,10 +10,12 @@ pub struct DashboardListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DashboardPartMetadata {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DashboardParts {
     pub position: dashboard_parts::Position,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: Option<DashboardPartMetadata>,
 }
 pub mod dashboard_parts {
     use super::*;

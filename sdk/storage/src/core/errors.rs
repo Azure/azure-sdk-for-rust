@@ -5,7 +5,7 @@ pub enum AzureStorageError {
     #[error("Parse error: {}", 0)]
     ParseError(#[from] azure_core::errors::ParseError),
     #[error("Parsing error: {}", 0)]
-    ParsingError(azure_core::errors::ParsingError),
+    ParsingError(#[from] azure_core::errors::ParsingError),
     #[error("Permission error: {}", 0)]
     PermissionError(#[from] azure_core::errors::PermissionError),
     #[error("Parse bool error: {}", 0)]
@@ -61,10 +61,10 @@ pub enum AzureStorageError {
     OperationNotSupported(String, String),
     #[error("UnexpectedXMLError: {}", 0)]
     UnexpectedXMLError(String),
-}
-
-impl From<azure_core::errors::ParsingError> for AzureStorageError {
-    fn from(err: azure_core::errors::ParsingError) -> AzureStorageError {
-        AzureStorageError::ParsingError(err)
-    }
+    #[error("digest length {} bytes instead of 16", 0)]
+    DigestNot16BytesLong(u64),
+    #[error("CRC64 length {} bytes instead of 8", 0)]
+    CRC64Not8BytesLong(u64),
+    #[error("At least one of these headers must be present: {:?}", 0)]
+    HeadersNotFound(Vec<String>),
 }
