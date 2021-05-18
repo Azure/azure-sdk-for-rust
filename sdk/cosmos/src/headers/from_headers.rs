@@ -66,8 +66,7 @@ pub(crate) fn resource_quota_from_headers(
         .get(HEADER_RESOURCE_QUOTA)
         .ok_or_else(|| CosmosError::HeaderNotFound(HEADER_RESOURCE_QUOTA.to_owned()))?
         .to_str()?;
-    Ok(resource_quotas_from_str(s)
-        .map_err(|err| CosmosError::GenericErrorWithText(err.to_string()))?)
+    Ok(resource_quotas_from_str(s)?)
 }
 
 pub(crate) fn resource_usage_from_headers(
@@ -77,8 +76,7 @@ pub(crate) fn resource_usage_from_headers(
         .get(HEADER_RESOURCE_USAGE)
         .ok_or_else(|| CosmosError::HeaderNotFound(HEADER_RESOURCE_USAGE.to_owned()))?
         .to_str()?;
-    Ok(resource_quotas_from_str(s)
-        .map_err(|err| CosmosError::GenericErrorWithText(err.to_string()))?)
+    Ok(resource_quotas_from_str(s)?)
 }
 
 pub(crate) fn quorum_acked_lsn_from_headers(headers: &HeaderMap) -> Result<u64, CosmosError> {

@@ -17,6 +17,8 @@ pub enum ResourceQuota {
     Triggers(u64),
     Functions(u64),
     ClientEncryptionKeys(u64),
+    InteropUsers(u64),
+    AuthPolicyElements(u64),
 }
 
 const DATABASES: &str = "databases=";
@@ -31,6 +33,8 @@ const PERMISSIONS: &str = "permissions=";
 const TRIGGERS: &str = "triggers=";
 const FUNCTIONS: &str = "functions=";
 const CLIENT_ENCRYPTION_KEYS: &str = "clientEncryptionKeys=";
+const INTEROP_USERS: &str = "interopUsers=";
+const AUTH_POLICY_ELEMENTS: &str = "authPolicyElements=";
 
 /// Parse a collection of [`ResourceQuota`] from a string
 pub(crate) fn resource_quotas_from_str(
@@ -80,6 +84,10 @@ pub(crate) fn resource_quotas_from_str(
             v.push(ResourceQuota::Functions(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(CLIENT_ENCRYPTION_KEYS) {
             v.push(ResourceQuota::ClientEncryptionKeys(parseu64(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(INTEROP_USERS) {
+            v.push(ResourceQuota::InteropUsers(parseu64(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(AUTH_POLICY_ELEMENTS) {
+            v.push(ResourceQuota::AuthPolicyElements(parseu64(stripped)?));
         } else {
             return Err(ResourceQuotaParsingError::UnrecognizedPart {
                 part: token.to_string(),

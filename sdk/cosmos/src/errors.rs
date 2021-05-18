@@ -4,12 +4,12 @@
 pub enum CosmosError {
     #[error(transparent)]
     AzureCoreError(#[from] azure_core::errors::AzureError),
+    #[error("Resource quota parsing error: {}", 0)]
+    ResourceQuotaParsingError(#[from] crate::resource_quota::ResourceQuotaParsingError),
     #[error("Policy error: {}", 0)]
     PolicyError(Box<dyn std::error::Error + Send + Sync>),
     #[error("Header not found: {}", 0)]
     HeaderNotFound(String),
-    #[error("Generic error: {}", 0)]
-    GenericErrorWithText(String),
     #[error("To str error: {}", 0)]
     ToStrError(#[from] http::header::ToStrError),
     #[error("Parsing error: {}", 0)]
