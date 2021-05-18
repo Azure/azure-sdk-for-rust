@@ -1,7 +1,6 @@
 //! Refresh token utilties
 
 use crate::traits::{BearerToken, ExtExpiresIn, RefreshToken};
-use azure_core::errors::AzureError;
 use log::debug;
 use oauth2::{AccessToken, ClientId, ClientSecret};
 use serde::Deserialize;
@@ -15,7 +14,7 @@ pub async fn exchange(
     client_id: &ClientId,
     client_secret: Option<&ClientSecret>,
     refresh_token: &AccessToken,
-) -> Result<RefreshTokenResponse, AzureError> {
+) -> Result<RefreshTokenResponse, azure_core::Error> {
     let mut encoded = form_urlencoded::Serializer::new(String::new());
     let encoded = encoded.append_pair("grant_type", "refresh_token");
     let encoded = encoded.append_pair("client_id", client_id.as_str());
@@ -41,10 +40,10 @@ pub async fn exchange(
         .body(encoded)
         .send()
         .await
-        .map_err(|e| AzureError::GenericErrorWithText(e.to_string()))?
+        .map_err(|e| azure_core::Error::GenericErrorWithText(e.to_string()))?
         .text()
         .await
-        .map_err(|e| AzureError::GenericErrorWithText(e.to_string()))?;
+        .map_err(|e| azure_core::Error::GenericErrorWithText(e.to_string()))?;
     debug!("{}", ret);
 
     Ok(ret.try_into()?)

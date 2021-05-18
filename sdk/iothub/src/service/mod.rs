@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use azure_core::{errors::AzureError, HttpClient};
+use azure_core::HttpClient;
 use base64::{decode, encode_config};
 use hmac::{Hmac, Mac, NewMac};
 use http::request::Builder as RequestBuilder;
@@ -82,7 +82,7 @@ impl ServiceClient {
         key_name: &str,
         private_key: &str,
         expires_in_seconds: i64,
-    ) -> Result<String, AzureError> {
+    ) -> Result<String, azure_core::Error> {
         type HmacSHA256 = Hmac<Sha256>;
         let expiry_date = chrono::Utc::now() + chrono::Duration::seconds(expires_in_seconds);
         let expiry_date_seconds = expiry_date.timestamp();
@@ -92,14 +92,14 @@ impl ServiceClient {
         );
 
         let key = decode(private_key).map_err(|err| {
-            AzureError::GenericErrorWithText(format!(
+            azure_core::Error::GenericErrorWithText(format!(
                 "Failed to decode the given private key: {}",
                 err.to_string()
             ))
         })?;
 
         let mut hmac = HmacSHA256::new_varkey(key.as_ref()).map_err(|err| {
-            AzureError::GenericErrorWithText(format!(
+            azure_core::Error::GenericErrorWithText(format!(
                 "Failed to use the given private key for the hashing algorithm: {}",
                 err.to_string()
             ))
@@ -182,7 +182,7 @@ impl ServiceClient {
         http_client: Arc<Box<dyn HttpClient>>,
         connection_string: S,
         expires_in_seconds: i64,
-    ) -> Result<Self, AzureError>
+    ) -> Result<Self, azure_core::Error>
     where
         S: AsRef<str>,
     {
@@ -193,7 +193,7 @@ impl ServiceClient {
         let mut primary_key: Option<&str> = None;
 
         if parts.len() != 3 {
-            return Err(AzureError::GenericErrorWithText(
+            return Err(azure_core::Error::GenericErrorWithText(
                 "Given connection string is invalid".to_string(),
             ));
         }
@@ -222,20 +222,20 @@ impl ServiceClient {
         }
 
         let iothub_name = iothub_name.ok_or_else(|| {
-            AzureError::GenericErrorWithText(
+            azure_core::Error::GenericErrorWithText(
                 "Failed to get the hostname from the given connection string".to_string(),
             )
         })?;
 
         let key_name = key_name.ok_or_else(|| {
-            AzureError::GenericErrorWithText(
+            azure_core::Error::GenericErrorWithText(
                 "Failed to get the shared access key name from the given connection string"
                     .to_string(),
             )
         })?;
 
         let primary_key = primary_key.ok_or_else(|| {
-            AzureError::GenericErrorWithText(
+            azure_core::Error::GenericErrorWithText(
                 "Failed to get the primary key from the given connection string".to_string(),
             )
         })?;

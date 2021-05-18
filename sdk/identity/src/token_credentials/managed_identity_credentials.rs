@@ -1,4 +1,3 @@
-use azure_core::errors::AzureError;
 use azure_core::{TokenCredential, TokenResponse};
 use chrono::{DateTime, Utc};
 use oauth2::AccessToken;
@@ -20,17 +19,17 @@ pub struct ManagedIdentityCredential;
 
 #[async_trait::async_trait]
 impl TokenCredential for ManagedIdentityCredential {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError> {
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, azure_core::Error> {
         let msi_endpoint = std::env::var(MSI_ENDPOINT_ENV_KEY)
             .unwrap_or_else(|_| "http://169.254.169.254/metadata/identity/oauth2/token".to_owned());
 
         let query_items = vec![("api-version", MSI_API_VERSION), ("resource", resource)];
 
         let msi_endpoint_url = Url::parse_with_params(&msi_endpoint, &query_items)
-            .map_err(|error| AzureError::GenericErrorWithText(error.to_string()))?;
+            .map_err(|error| azure_core::Error::GenericErrorWithText(error.to_string()))?;
 
         let msi_secret = std::env::var(MSI_SECRET_ENV_KEY).map_err(|_| {
-            AzureError::GenericErrorWithText(format!(
+            azure_core::Error::GenericErrorWithText(format!(
                 "Missing environment variable {}",
                 MSI_SECRET_ENV_KEY
             ))
@@ -43,13 +42,13 @@ impl TokenCredential for ManagedIdentityCredential {
             .header("X-IDENTITY-HEADER", msi_secret)
             .send()
             .await
-            .map_err(|e| AzureError::GenericErrorWithText(e.to_string()))?
+            .map_err(|e| azure_core::Error::GenericErrorWithText(e.to_string()))?
             .text()
             .await
-            .map_err(|e| AzureError::GenericErrorWithText(e.to_string()))?;
+            .map_err(|e| azure_core::Error::GenericErrorWithText(e.to_string()))?;
 
         let token_response = serde_json::from_str::<MsiTokenResponse>(&res_body)
-            .map_err(|_| AzureError::GenericError)?;
+            .map_err(|_| azure_core::Error::GenericError)?;
 
         Ok(TokenResponse::new(
             token_response.access_token,

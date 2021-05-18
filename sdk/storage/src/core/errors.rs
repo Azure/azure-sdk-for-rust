@@ -1,13 +1,13 @@
 #[derive(Debug, thiserror::Error)]
 pub enum AzureStorageError {
     #[error(transparent)]
-    CoreError(#[from] azure_core::errors::AzureError),
+    CoreError(#[from] azure_core::Error),
     #[error("Parse error: {}", 0)]
-    ParseError(#[from] azure_core::errors::ParseError),
+    ParseError(#[from] azure_core::ParseError),
     #[error("Parsing error: {}", 0)]
-    ParsingError(#[from] azure_core::errors::ParsingError),
+    ParsingError(#[from] azure_core::ParsingError),
     #[error("Permission error: {}", 0)]
-    PermissionError(#[from] azure_core::errors::PermissionError),
+    PermissionError(#[from] azure_core::PermissionError),
     #[error("Parse bool error: {}", 0)]
     ParseBoolError(#[from] std::str::ParseBoolError),
     #[error("Connection string error: {}", 0)]
@@ -23,7 +23,7 @@ pub enum AzureStorageError {
     #[error("HTTP error: {}", 0)]
     HttpError(#[from] http::Error),
     #[error("Traversing error: {}", 0)]
-    TraversingError(#[from] azure_core::errors::TraversingError),
+    TraversingError(#[from] azure_core::TraversingError),
     #[error("XML builder error: {}", 0)]
     XmlBuilderError(#[from] xml::BuilderError),
     #[error("From UTF-8 error: {}", 0)]

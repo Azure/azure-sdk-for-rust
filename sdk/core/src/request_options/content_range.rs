@@ -1,4 +1,4 @@
-use crate::errors::ParseError;
+use crate::ParseError;
 use std::fmt;
 use std::str::FromStr;
 

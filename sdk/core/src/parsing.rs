@@ -1,4 +1,4 @@
-use crate::errors::TraversingError;
+use crate::TraversingError;
 
 pub trait FromStringOptional<T> {
     fn from_str_optional(s: &str) -> Result<T, TraversingError>;

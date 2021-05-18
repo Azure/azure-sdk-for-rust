@@ -6,12 +6,14 @@ type HttpClientError = hyper::Error;
 #[cfg(feature = "enable_reqwest")]
 type HttpClientError = reqwest::Error;
 
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum ParsingError {
     #[error("Element not found: {}", 0)]
     ElementNotFound(String),
 }
 
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum ParseError {
     #[error("Expected token \"{}\" not found", 0)]
@@ -22,6 +24,7 @@ pub enum ParseError {
     ParseIntError(std::num::ParseIntError),
 }
 
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum AzurePathParseError {
     #[error("Path separator not found")]
@@ -63,12 +66,7 @@ pub struct UnexpectedHTTPResult {
     body: String,
 }
 
-impl From<UnexpectedHTTPResult> for AzureError {
-    fn from(result: UnexpectedHTTPResult) -> AzureError {
-        AzureError::UnexpectedHTTPResult(result)
-    }
-}
-
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum StreamError {
     #[error("Stream poll error: {}", 0)]
@@ -77,6 +75,7 @@ pub enum StreamError {
     ReadError(HttpClientError),
 }
 
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum HttpError {
     #[error("Failed to serialize request body as json: {}", 0)]
@@ -168,8 +167,9 @@ pub enum Parse512AlignedError {
     Not512ByteAlignedError(#[from] Not512ByteAlignedError),
 }
 
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
-pub enum AzureError {
+pub enum Error {
     #[error("http error: {}", 0)]
     HttpError(#[from] HttpError),
     #[error("{}-{} is not 512 byte aligned", start, end)]
@@ -254,6 +254,7 @@ pub enum AzureError {
     TransactionResponseParseError(String),
 }
 
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum TraversingError {
     #[error("Path not found: {}", 0)]
@@ -278,17 +279,11 @@ pub enum TraversingError {
     ParsingError(#[from] ParsingError),
 }
 
-impl From<()> for AzureError {
-    fn from(_: ()) -> AzureError {
-        AzureError::GenericError
-    }
-}
-
 #[cfg(feature = "enable_hyper")]
 #[inline]
 pub async fn extract_status_headers_and_body(
     resp: hyper::client::ResponseFuture,
-) -> Result<(hyper::StatusCode, hyper::HeaderMap, body::Bytes), AzureError> {
+) -> Result<(hyper::StatusCode, hyper::HeaderMap, body::Bytes), Error> {
     let res = resp.await.map_err(HttpError::ExecuteRequestError)?;
     let (head, body) = res.into_parts();
     let status = head.status;
@@ -334,7 +329,7 @@ pub async fn extract_location_status_and_body(
 pub async fn check_status_extract_body(
     resp: hyper::client::ResponseFuture,
     expected_status_code: hyper::StatusCode,
-) -> Result<String, AzureError> {
+) -> Result<String, Error> {
     let (status, body) = extract_status_and_body(resp).await?;
     if status == expected_status_code {
         Ok(body)
@@ -347,7 +342,7 @@ pub async fn check_status_extract_body(
 pub async fn check_status_extract_body_2(
     resp: hyper::Response<Body>,
     expected_status: StatusCode,
-) -> Result<String, AzureError> {
+) -> Result<String, Error> {
     let received_status = resp.status();
     let body = body::to_bytes(resp.into_body())
         .await
@@ -377,7 +372,7 @@ mod test {
     {
     }
 
-    fn error_generator() -> Result<(), AzureError> {
+    fn error_generator() -> Result<(), Error> {
         Ok(())
     }
 

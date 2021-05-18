@@ -1,4 +1,4 @@
-use azure_core::errors::AzurePathParseError;
+use azure_core::AzurePathParseError;
 use std::borrow::Borrow;
 
 pub trait IntoAzurePath {

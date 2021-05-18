@@ -1,5 +1,4 @@
 use super::{AzureCliCredential, EnvironmentCredential, ManagedIdentityCredential};
-use azure_core::errors::AzureError;
 use azure_core::{TokenCredential, TokenResponse};
 use log::debug;
 
@@ -54,7 +53,7 @@ impl DefaultCredentialBuilder {
     }
 }
 
-/// Provides a default `TokenCredential` authentication flow for applications that will be deployed to Azure.  
+/// Provides a default `TokenCredential` authentication flow for applications that will be deployed to Azure.
 ///
 /// The following credential types if enabled will be tried, in order:
 /// - EnvironmentCredential
@@ -86,7 +85,7 @@ impl Default for DefaultCredential {
 #[async_trait::async_trait]
 impl TokenCredential for DefaultCredential {
     /// Try to fetch a token using each of the credential sources until one succeeds
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError> {
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, azure_core::Error> {
         for source in &self.sources {
             let token_res = source.get_token(resource).await;
 
@@ -97,7 +96,7 @@ impl TokenCredential for DefaultCredential {
             }
         }
 
-        Err(AzureError::GenericErrorWithText(
+        Err(azure_core::Error::GenericErrorWithText(
             "End of default list".to_owned(),
         ))
     }

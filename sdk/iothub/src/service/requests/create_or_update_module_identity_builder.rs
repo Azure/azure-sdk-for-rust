@@ -1,14 +1,9 @@
-use std::convert::TryInto;
-
-use azure_core::errors::AzureError;
-
-use http::Method;
-use serde::Serialize;
-
 use crate::service::resources::{identity::IdentityOperation, AuthenticationMechanism};
-
 use crate::service::responses::ModuleIdentityResponse;
 use crate::service::{IoTHubError, ServiceClient, API_VERSION};
+use http::Method;
+use serde::Serialize;
+use std::convert::TryInto;
 
 /// The CreateOrUpdateModuleIdentityBuilder is used to construct a new module identity
 /// or the update an existing one.
@@ -60,7 +55,7 @@ impl<'a> CreateOrUpdateModuleIdentityBuilder<'a> {
                     request = request.header(http::header::IF_MATCH, format!("\"{}\"", etag));
                 }
                 None => {
-                    return Err(Box::new(AzureError::GenericErrorWithText(
+                    return Err(Box::new(azure_core::Error::GenericErrorWithText(
                         "etag is not set".to_string(),
                     )))
                 }

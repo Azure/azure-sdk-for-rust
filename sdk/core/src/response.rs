@@ -1,4 +1,4 @@
-use crate::errors::StreamError;
+use crate::StreamError;
 use bytes::Bytes;
 use futures::Stream;
 use futures::StreamExt;

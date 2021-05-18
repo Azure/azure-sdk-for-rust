@@ -3,7 +3,7 @@
 #[derive(Debug, thiserror::Error)]
 pub enum CosmosError {
     #[error(transparent)]
-    AzureCoreError(#[from] azure_core::errors::AzureError),
+    AzureCoreError(#[from] azure_core::Error),
     #[error("Resource quota parsing error: {}", 0)]
     ResourceQuotaParsingError(#[from] crate::resource_quota::ResourceQuotaParsingError),
     #[error("Policy error: {}", 0)]
@@ -13,11 +13,11 @@ pub enum CosmosError {
     #[error("To str error: {}", 0)]
     ToStrError(#[from] http::header::ToStrError),
     #[error("Parsing error: {}", 0)]
-    ParsingError(#[from] azure_core::errors::ParsingError),
+    ParsingError(#[from] azure_core::ParsingError),
     #[error("http error: {}", 0)]
-    AzureHttpError(#[from] azure_core::errors::HttpError),
+    AzureHttpError(#[from] azure_core::HttpError),
     #[error("stream error: {}", 0)]
-    StreamError(#[from] azure_core::errors::StreamError),
+    StreamError(#[from] azure_core::StreamError),
     #[error("http error: {}", 0)]
     HttpError(#[from] http::Error),
     #[error("Parse int error: {}", 0)]

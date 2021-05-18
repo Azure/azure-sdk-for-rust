@@ -2,7 +2,6 @@ use crate::event_hub::{
     delete_message, peek_lock, peek_lock_full, receive_and_delete, renew_lock, send_event,
     unlock_message, PeekLockResponse,
 };
-use azure_core::errors::AzureError;
 use chrono::Duration;
 use hyper_rustls::HttpsConnector;
 use ring::hmac::Key;
@@ -23,7 +22,7 @@ impl Client {
         event_hub: E,
         policy_name: P,
         key: K,
-    ) -> Result<Client, AzureError>
+    ) -> Result<Client, azure_core::Error>
     where
         N: Into<String>,
         E: Into<String>,
@@ -46,7 +45,7 @@ impl Client {
         &mut self,
         event_body: &str,
         duration: Duration,
-    ) -> Result<(), AzureError> {
+    ) -> Result<(), azure_core::Error> {
         send_event(
             &self.http_client,
             &self.namespace,
@@ -63,7 +62,7 @@ impl Client {
         &mut self,
         duration: Duration,
         timeout: Option<Duration>,
-    ) -> Result<String, AzureError> {
+    ) -> Result<String, azure_core::Error> {
         peek_lock(
             &self.http_client,
             &self.namespace,
@@ -80,7 +79,7 @@ impl Client {
         &mut self,
         duration: Duration,
         timeout: Option<Duration>,
-    ) -> Result<PeekLockResponse, AzureError> {
+    ) -> Result<PeekLockResponse, azure_core::Error> {
         peek_lock_full(
             &self.http_client,
             &self.namespace,
@@ -93,7 +92,7 @@ impl Client {
         .await
     }
 
-    pub async fn receive_and_delete(&mut self, duration: Duration) -> Result<String, AzureError> {
+    pub async fn receive_and_delete(&mut self, duration: Duration) -> Result<String, azure_core::Error> {
         receive_and_delete(
             &self.http_client,
             &self.namespace,
@@ -110,7 +109,7 @@ impl Client {
         message_id: &str,
         lock_token: &str,
         duration: Duration,
-    ) -> Result<(), AzureError> {
+    ) -> Result<(), azure_core::Error> {
         unlock_message(
             &self.http_client,
             &self.namespace,
@@ -129,7 +128,7 @@ impl Client {
         message_id: &str,
         lock_token: &str,
         duration: Duration,
-    ) -> Result<(), AzureError> {
+    ) -> Result<(), azure_core::Error> {
         delete_message(
             &self.http_client,
             &self.namespace,
@@ -148,7 +147,7 @@ impl Client {
         message_id: &str,
         lock_token: &str,
         duration: Duration,
-    ) -> Result<(), AzureError> {
+    ) -> Result<(), azure_core::Error> {
         renew_lock(
             &self.http_client,
             &self.namespace,

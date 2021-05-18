@@ -1,8 +1,6 @@
-use std::convert::TryInto;
-
-use azure_core::errors::AzureError;
 use http::Method;
 use serde::Serialize;
+use std::convert::TryInto;
 
 use crate::service::resources::{
     identity::DesiredCapability, identity::IdentityOperation, AuthenticationMechanism,
@@ -67,7 +65,7 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
                     request = request.header(http::header::IF_MATCH, format!("\"{}\"", etag));
                 }
                 None => {
-                    return Err(Box::new(AzureError::GenericErrorWithText(
+                    return Err(Box::new(azure_core::Error::GenericErrorWithText(
                         "etag is not set".to_string(),
                     )))
                 }

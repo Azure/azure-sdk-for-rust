@@ -8,7 +8,6 @@ mod device_code_responses;
 pub use device_code_responses::*;
 
 use async_timer::timer::new_timer;
-use azure_core::errors::AzureError;
 use futures::stream::unfold;
 use log::debug;
 use oauth2::ClientId;
@@ -24,7 +23,7 @@ pub async fn start<'a, 'b, T>(
     tenant_id: T,
     client_id: &'a ClientId,
     scopes: &'b [&'b str],
-) -> Result<DeviceCodePhaseOneResponse<'a>, AzureError>
+) -> Result<DeviceCodePhaseOneResponse<'a>, azure_core::Error>
 where
     T: Into<Cow<'a, str>>,
 {
@@ -48,10 +47,10 @@ where
         .body(encoded)
         .send()
         .await
-        .map_err(|e| AzureError::GenericErrorWithText(e.to_string()))?
+        .map_err(|e| azure_core::Error::GenericErrorWithText(e.to_string()))?
         .text()
         .await
-        .map_err(|e| AzureError::GenericErrorWithText(e.to_string()))
+        .map_err(|e| azure_core::Error::GenericErrorWithText(e.to_string()))
         .and_then(|s| {
             serde_json::from_str::<DeviceCodePhaseOneResponse>(&s)
                 // we need to capture some variables that will be useful in
@@ -69,9 +68,9 @@ where
                 })
                 .map_err(|e| {
                     serde_json::from_str::<crate::errors::ErrorResponse>(&s)
-                        .map(|er| AzureError::GenericErrorWithText(er.to_string()))
+                        .map(|er| azure_core::Error::GenericErrorWithText(er.to_string()))
                         .unwrap_or_else(|_| {
-                            AzureError::GenericErrorWithText(format!(
+                            azure_core::Error::GenericErrorWithText(format!(
                                 "Failed to parse Azure response: {}",
                                 e.to_string()
                             ))

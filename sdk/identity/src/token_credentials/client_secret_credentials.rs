@@ -1,4 +1,3 @@
-use azure_core::errors::AzureError;
 use azure_core::{TokenCredential, TokenResponse};
 use chrono::Utc;
 use oauth2::{
@@ -93,7 +92,7 @@ impl ClientSecretCredential {
 
 #[async_trait::async_trait]
 impl TokenCredential for ClientSecretCredential {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError> {
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, azure_core::Error> {
         let options = self.options();
         let authority_host = options.authority_host();
 
@@ -103,7 +102,7 @@ impl TokenCredential for ClientSecretCredential {
                 authority_host, self.tenant_id
             ))
             .map_err(|_| {
-                AzureError::GenericErrorWithText(format!(
+                azure_core::Error::GenericErrorWithText(format!(
                     "Failed to construct token endpoint with tenant id {}",
                     self.tenant_id,
                 ))
@@ -116,7 +115,7 @@ impl TokenCredential for ClientSecretCredential {
                 authority_host, self.tenant_id
             ))
             .map_err(|_| {
-                AzureError::GenericErrorWithText(format!(
+                azure_core::Error::GenericErrorWithText(format!(
                     "Failed to construct authorize endpoint with tenant id {}",
                     self.tenant_id,
                 ))
@@ -148,12 +147,14 @@ impl TokenCredential for ClientSecretCredential {
                 )
             })
             .map_err(|e| match e {
-                oauth2::RequestTokenError::ServerResponse(s) => AzureError::GenericErrorWithText(
-                    s.error_description()
-                        .unwrap_or(&"Server error without description".to_string())
-                        .to_owned(),
-                ),
-                _ => AzureError::GenericErrorWithText("OAuth2 error".to_string()),
+                oauth2::RequestTokenError::ServerResponse(s) => {
+                    azure_core::Error::GenericErrorWithText(
+                        s.error_description()
+                            .unwrap_or(&"Server error without description".to_string())
+                            .to_owned(),
+                    )
+                }
+                _ => azure_core::Error::GenericErrorWithText("OAuth2 error".to_string()),
             })?;
 
         Ok(token_result)
