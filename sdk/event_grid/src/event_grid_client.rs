@@ -1,6 +1,5 @@
 use crate::event_grid_request_builder::EventGridRequestBuilder;
 use crate::Event;
-use azure_core::errors::AzureError;
 use serde::ser::Serialize;
 use url::Url;
 
