@@ -420,7 +420,7 @@ pub struct VirtualMachineExtensionUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineExtension {
     #[serde(flatten)]
-    pub resource: SubResource,
+    pub sub_resource_read_only: SubResourceReadOnly,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineExtensionProperties>,
 }
