@@ -39,7 +39,7 @@ impl DefaultCredentialBuilder {
             + self.include_cli_credential as usize
             + self.include_managed_identity_credential as usize;
         let mut sources =
-            Vec::<Box<dyn TokenCredential + Send + Sync>>::with_capacity(source_count);
+            Vec::<Box<dyn TokenCredential<Error=DefaultCredentialError> + Send + Sync>>::with_capacity(source_count);
         if self.include_environment_credential {
             sources.push(Box::new(EnvironmentCredential::default()));
         }
@@ -53,6 +53,16 @@ impl DefaultCredentialBuilder {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum DefaultCredentialError {
+    #[error("Error getting token credentials from Azure CLI: {}", 0)]
+    AzureCliError(#[from] crate::token_credentials::AzureCliError),
+
+    #[error("End of default list")]
+    EndOfDefaultList,
+}
+
 /// Provides a default `TokenCredential` authentication flow for applications that will be deployed to Azure.
 ///
 /// The following credential types if enabled will be tried, in order:
@@ -61,11 +71,11 @@ impl DefaultCredentialBuilder {
 /// - AzureCliCredential
 /// Consult the documentation of these credential types for more information on how they attempt authentication.
 pub struct DefaultCredential {
-    sources: Vec<Box<dyn TokenCredential + Send + Sync>>,
+    sources: Vec<Box<dyn TokenCredential<Error=DefaultCredentialError> + Send + Sync>>,
 }
 
 impl DefaultCredential {
-    pub fn with_sources(sources: Vec<Box<dyn TokenCredential + Send + Sync>>) -> Self {
+    pub fn with_sources(sources: Vec<Box<dyn TokenCredential<Error=DefaultCredentialError> + Send + Sync>>) -> Self {
         DefaultCredential { sources }
     }
 }
@@ -84,8 +94,9 @@ impl Default for DefaultCredential {
 
 #[async_trait::async_trait]
 impl TokenCredential for DefaultCredential {
+    type Error = DefaultCredentialError;
     /// Try to fetch a token using each of the credential sources until one succeeds
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, azure_core::Error> {
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
         for source in &self.sources {
             let token_res = source.get_token(resource).await;
 
@@ -95,9 +106,6 @@ impl TokenCredential for DefaultCredential {
                 debug!("Failed to get credentials: {:?}", token_res.err().unwrap());
             }
         }
-
-        Err(azure_core::Error::GenericErrorWithText(
-            "End of default list".to_owned(),
-        ))
+        Err(Self::Error::EndOfDefaultList)
     }
 }

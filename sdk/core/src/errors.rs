@@ -217,10 +217,6 @@ pub enum Error {
     ParseFloatError(#[from] std::num::ParseFloatError),
     #[error("Parse error: {}", 0)]
     ParseError(#[from] ParseError),
-    #[error("Generic error")]
-    GenericError,
-    #[error("Generic error: {}", 0)]
-    GenericErrorWithText(String),
     #[error("Parsing error: {}", 0)]
     ParsingError(#[from] ParsingError),
     #[error("Input parameters error: {}", 0)]

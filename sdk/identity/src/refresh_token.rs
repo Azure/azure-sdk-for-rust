@@ -1,4 +1,4 @@
-//! Refresh token utilties
+//! Refresh token utilities
 
 use crate::traits::{BearerToken, ExtExpiresIn, RefreshToken};
 use log::debug;
@@ -7,6 +7,20 @@ use serde::Deserialize;
 use std::convert::TryInto;
 use url::form_urlencoded;
 
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+/// An unrecognized error response from an identity service.
+pub enum Error {
+    #[error("Refresh token send error: {}", 0)]
+    SendError(reqwest::Error),
+    #[error("Error getting text for refresh token: {}", 0)]
+    TextError(reqwest::Error),
+    #[error("Error deserializing refresh token: {}", 0)]
+    DeserializeError(serde_json::Error),
+    #[error("Error parsing url for refresh token: {}", 0)]
+    ParseUrlError(url::ParseError),
+}
+
 /// Exchange a refresh token for a new access token and refresh token
 pub async fn exchange(
     client: &reqwest::Client,
@@ -14,7 +28,7 @@ pub async fn exchange(
     client_id: &ClientId,
     client_secret: Option<&ClientSecret>,
     refresh_token: &AccessToken,
-) -> Result<RefreshTokenResponse, azure_core::Error> {
+) -> Result<RefreshTokenResponse, Error> {
     let mut encoded = form_urlencoded::Serializer::new(String::new());
     let encoded = encoded.append_pair("grant_type", "refresh_token");
     let encoded = encoded.append_pair("client_id", client_id.as_str());
@@ -32,7 +46,8 @@ pub async fn exchange(
     let url = url::Url::parse(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
-    ))?;
+    ))
+    .map_err(Error::ParseUrlError)?;
 
     let ret = client
         .post(url)
@@ -40,13 +55,13 @@ pub async fn exchange(
         .body(encoded)
         .send()
         .await
-        .map_err(|e| azure_core::Error::GenericErrorWithText(e.to_string()))?
+        .map_err(Error::SendError)?
         .text()
         .await
-        .map_err(|e| azure_core::Error::GenericErrorWithText(e.to_string()))?;
+        .map_err(Error::TextError)?;
     debug!("{}", ret);
 
-    Ok(ret.try_into()?)
+    Ok(ret.try_into().map_err(Error::DeserializeError)?)
 }
 
 /// A refresh token

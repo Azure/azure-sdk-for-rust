@@ -92,7 +92,7 @@ impl ClientSecretCredential {
 
 #[async_trait::async_trait]
 impl TokenCredential for ClientSecretCredential {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, azure_core::Error> {
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Error> {
         let options = self.options();
         let authority_host = options.authority_host();
 
@@ -102,7 +102,7 @@ impl TokenCredential for ClientSecretCredential {
                 authority_host, self.tenant_id
             ))
             .map_err(|_| {
-                azure_core::Error::GenericErrorWithText(format!(
+                Error::GenericErrorWithText(format!(
                     "Failed to construct token endpoint with tenant id {}",
                     self.tenant_id,
                 ))
@@ -115,7 +115,7 @@ impl TokenCredential for ClientSecretCredential {
                 authority_host, self.tenant_id
             ))
             .map_err(|_| {
-                azure_core::Error::GenericErrorWithText(format!(
+                Error::GenericErrorWithText(format!(
                     "Failed to construct authorize endpoint with tenant id {}",
                     self.tenant_id,
                 ))
@@ -148,13 +148,13 @@ impl TokenCredential for ClientSecretCredential {
             })
             .map_err(|e| match e {
                 oauth2::RequestTokenError::ServerResponse(s) => {
-                    azure_core::Error::GenericErrorWithText(
+                    Error::GenericErrorWithText(
                         s.error_description()
                             .unwrap_or(&"Server error without description".to_string())
                             .to_owned(),
                     )
                 }
-                _ => azure_core::Error::GenericErrorWithText("OAuth2 error".to_string()),
+                _ => Error::GenericErrorWithText("OAuth2 error".to_string()),
             })?;
 
         Ok(token_result)

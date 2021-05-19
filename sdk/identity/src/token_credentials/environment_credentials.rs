@@ -41,15 +41,15 @@ impl Default for EnvironmentCredential {
 
 #[async_trait::async_trait]
 impl TokenCredential for EnvironmentCredential {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, azure_core::Error> {
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Error> {
         let tenant_id = std::env::var(AZURE_TENANT_ID_ENV_KEY).map_err(|_| {
-            azure_core::Error::GenericErrorWithText(format!(
+            Error::GenericErrorWithText(format!(
                 "Missing tenant id set in {} environment variable",
                 AZURE_TENANT_ID_ENV_KEY
             ))
         })?;
         let client_id = std::env::var(AZURE_CLIENT_ID_ENV_KEY).map_err(|_| {
-            azure_core::Error::GenericErrorWithText(format!(
+            Error::GenericErrorWithText(format!(
                 "Missing client id set in {} environment variable",
                 AZURE_CLIENT_ID_ENV_KEY
             ))
@@ -76,7 +76,7 @@ impl TokenCredential for EnvironmentCredential {
             todo!()
         }
 
-        Err(azure_core::Error::GenericErrorWithText(
+        Err(Error::GenericErrorWithText(
             "No valid environment credential providers".to_string(),
         ))
     }

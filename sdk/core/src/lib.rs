@@ -66,8 +66,9 @@ impl TokenResponse {
 /// Represents a credential capable of providing an OAuth token.
 #[async_trait::async_trait]
 pub trait TokenCredential: Send + Sync {
+    type Error;
     /// Gets a `TokenResponse` for the specified resource
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Error>;
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error>;
 }
 
 pub trait AppendToUrlQuery {
