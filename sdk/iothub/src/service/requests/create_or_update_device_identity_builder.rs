@@ -7,7 +7,7 @@ use crate::service::resources::{
     DeviceCapabilities, Status,
 };
 use crate::service::responses::DeviceIdentityResponse;
-use crate::service::{IoTHubError, ServiceClient, API_VERSION};
+use crate::service::{ServiceClient, API_VERSION};
 
 /// The CreateOrUpdateDeviceIdentityBuilder is used to construct a new device identity
 /// or the update an existing one.
@@ -46,7 +46,7 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
         device_id: S,
         status: Status,
         authentication: AuthenticationMechanism,
-    ) -> Result<DeviceIdentityResponse, IoTHubError>
+    ) -> Result<DeviceIdentityResponse, crate::Error>
     where
         S: AsRef<str>,
     {
@@ -64,11 +64,7 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
                 Some(etag) => {
                     request = request.header(http::header::IF_MATCH, format!("\"{}\"", etag));
                 }
-                None => {
-                    return Err(Box::new(azure_core::Error::GenericErrorWithText(
-                        "etag is not set".to_string(),
-                    )))
-                }
+                None => return Err(crate::Error::EtagNotSet),
             }
         }
 

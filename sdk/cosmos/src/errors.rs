@@ -1,5 +1,6 @@
 /// A general error having to do with Cosmos.
 #[allow(missing_docs)]
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum CosmosError {
     #[error(transparent)]

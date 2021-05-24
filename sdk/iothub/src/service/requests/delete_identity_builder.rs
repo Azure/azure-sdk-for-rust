@@ -1,6 +1,6 @@
 use http::{Method, StatusCode};
 
-use crate::service::{IoTHubError, ServiceClient, API_VERSION};
+use crate::service::{ServiceClient, API_VERSION};
 
 /// The DeleteIdentityBuilder is used to construct a request to delete a module or device identity.
 pub struct DeleteIdentityBuilder<'a> {
@@ -26,7 +26,7 @@ impl<'a> DeleteIdentityBuilder<'a> {
     }
 
     /// Execute the request to delete the module or device identity.
-    pub async fn execute(&self) -> Result<(), IoTHubError> {
+    pub async fn execute(&self) -> Result<(), crate::Error> {
         let uri = match &self.module_id {
             Some(module_id) => format!(
                 "https://{}.azure-devices.net/devices/{}/modules/{}?api-version={}",

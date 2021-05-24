@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use crate::service::resources::{
     AuthenticationMechanism, ConnectionState, DeviceCapabilities, Status,
 };
-use crate::service::IoTHubError;
 
 /// The representation of a device identity.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -40,7 +39,7 @@ pub struct DeviceIdentityResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for DeviceIdentityResponse {
-    type Error = IoTHubError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let body = response.body();

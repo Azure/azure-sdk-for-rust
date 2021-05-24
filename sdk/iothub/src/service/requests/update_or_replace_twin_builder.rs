@@ -8,13 +8,13 @@ use bytes::Bytes;
 use http::{Method, Response, StatusCode};
 use serde::Serialize;
 
-use crate::service::{IoTHubError, ServiceClient, API_VERSION};
+use crate::service::{ServiceClient, API_VERSION};
 
 /// The UpdateOrReplaceTwinBuilder is used to construct a request for
 /// updating or replacing a device or module twin.
 pub struct UpdateOrReplaceTwinBuilder<'a, R>
 where
-    R: TryFrom<Response<Bytes>, Error = IoTHubError>,
+    R: TryFrom<Response<Bytes>, Error = crate::Error>,
 {
     service_client: &'a ServiceClient,
     pub(crate) device_id: String,
@@ -28,7 +28,7 @@ where
 
 impl<'a, R> UpdateOrReplaceTwinBuilder<'a, R>
 where
-    R: TryFrom<Response<Bytes>, Error = IoTHubError>,
+    R: TryFrom<Response<Bytes>, Error = crate::Error>,
 {
     pub(crate) fn new(
         service_client: &'a ServiceClient,
@@ -135,7 +135,7 @@ where
     ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
     ///              .execute();
     /// ```
-    pub async fn execute(self) -> Result<R, IoTHubError> {
+    pub async fn execute(self) -> Result<R, crate::Error> {
         let body = DesiredTwinBody {
             tags: self.desired_tags,
             properties: DesiredTwinProperties {

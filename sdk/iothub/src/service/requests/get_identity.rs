@@ -3,16 +3,16 @@ use std::convert::{TryFrom, TryInto};
 use bytes::Bytes;
 use http::{Method, Response, StatusCode};
 
-use crate::service::{IoTHubError, ServiceClient, API_VERSION};
+use crate::service::{ServiceClient, API_VERSION};
 
 /// Execute the request to create or update the module or device identity.
 pub(crate) async fn get_identity<T>(
     service_client: &ServiceClient,
     device_id: String,
     module_id: Option<String>,
-) -> Result<T, IoTHubError>
+) -> Result<T, crate::Error>
 where
-    T: TryFrom<Response<Bytes>, Error = IoTHubError>,
+    T: TryFrom<Response<Bytes>, Error = crate::Error>,
 {
     let uri = match module_id {
         Some(module_id) => format!(

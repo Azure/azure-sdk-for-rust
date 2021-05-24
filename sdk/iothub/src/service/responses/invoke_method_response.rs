@@ -1,4 +1,3 @@
-use crate::service::IoTHubError;
 use http::response::Response;
 use serde::Deserialize;
 
@@ -13,7 +12,7 @@ pub struct InvokeMethodResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for InvokeMethodResponse {
-    type Error = IoTHubError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let body = response.body();
