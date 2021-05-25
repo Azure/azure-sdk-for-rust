@@ -53,16 +53,16 @@ pub enum FromConnectionStringError {
     FailedToGetSharedAccessKey,
     #[error("Failed to get the primary key from the given connection string")]
     FailedToGetPrimaryKey,
-    #[error("Generate SAS token error: {}", 0)]
+    #[error("Generate SAS token error: {0}")]
     GenerateSasTokenError(GenerateSasTokenError),
 }
 
 #[allow(missing_docs)]
 #[derive(Debug, thiserror::Error)]
 pub enum GenerateSasTokenError {
-    #[error("Failed to decode the given private key: {}", 0)]
+    #[error("Failed to decode the given private key: {0}")]
     DecodePrivateKeyError(base64::DecodeError),
-    #[error("Failed to use the given private key for the hashing algorithm: {}", 0)]
+    #[error("Failed to use the given private key for the hashing algorithm: {0}")]
     HashingFailed(crypto_mac::InvalidKeyLength),
 }
 

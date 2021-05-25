@@ -11,13 +11,13 @@ use url::form_urlencoded;
 #[derive(Debug, thiserror::Error)]
 /// An unrecognized error response from an identity service.
 pub enum Error {
-    #[error("Refresh token send error: {}", 0)]
+    #[error("Refresh token send error: {0}")]
     SendError(reqwest::Error),
-    #[error("Error getting text for refresh token: {}", 0)]
+    #[error("Error getting text for refresh token: {0}")]
     TextError(reqwest::Error),
-    #[error("Error deserializing refresh token: {}", 0)]
+    #[error("Error deserializing refresh token: {0}")]
     DeserializeError(serde_json::Error),
-    #[error("Error parsing url for refresh token: {}", 0)]
+    #[error("Error parsing url for refresh token: {0}")]
     ParseUrlError(url::ParseError),
 }
 

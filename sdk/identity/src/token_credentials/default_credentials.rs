@@ -56,7 +56,7 @@ impl DefaultCredentialBuilder {
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum DefaultCredentialError {
-    #[error("Error getting token credentials from Azure CLI: {}", 0)]
+    #[error("Error getting token credentials from Azure CLI: {0}")]
     AzureCliError(#[from] crate::token_credentials::AzureCliError),
 
     #[error("End of default list")]

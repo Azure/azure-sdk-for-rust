@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, thiserror::Error)]
 /// An unrecognized error response from an identity service.
 pub enum Error {
-    #[error("Error getting token credentials from Azure CLI: {}", 0)]
+    #[error("Error getting token credentials from Azure CLI: {0}")]
     AzureCliError(#[from] crate::token_credentials::AzureCliError),
-    #[error("Error refreshing token: {}", 0)]
+    #[error("Error refreshing token: {0}")]
     RefreshTokenError(#[from] crate::refresh_token::Error),
 }
 

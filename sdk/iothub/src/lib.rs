@@ -12,17 +12,17 @@ pub enum Error {
     #[error("etag is not set")]
     EtagNotSet,
 
-    #[error("From connection string error: {}", 0)]
+    #[error("From connection string error: {0}")]
     FromConnectionStringError(#[from] service::FromConnectionStringError),
-    #[error("Generate SAS token error: {}", 0)]
+    #[error("Generate SAS token error: {0}")]
     GenerateSasTokenError(#[from] service::GenerateSasTokenError),
 
-    #[error("core error: {}", 0)]
+    #[error("core error: {0}")]
     CoreError(#[from] azure_core::Error),
-    #[error("core http error: {}", 0)]
+    #[error("core http error: {0}")]
     CoreHttpError(#[from] azure_core::HttpError),
-    #[error("json error: {}", 0)]
+    #[error("json error: {0}")]
     JsonError(#[from] serde_json::Error),
-    #[error("http error: {}", 0)]
+    #[error("http error: {0}")]
     HttpError(#[from] http::Error),
 }

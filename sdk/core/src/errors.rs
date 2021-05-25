@@ -9,7 +9,7 @@ type HttpClientError = reqwest::Error;
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum ParsingError {
-    #[error("Element not found: {}", 0)]
+    #[error("Element not found: {0}")]
     ElementNotFound(String),
 }
 
@@ -20,7 +20,7 @@ pub enum ParseError {
     TokenNotFound(String),
     #[error("Expected split char \'{}\' not found", 0)]
     SplitNotFound(char),
-    #[error("Parse int error {}", 0)]
+    #[error("Parse int error {0}")]
     ParseIntError(std::num::ParseIntError),
 }
 
@@ -69,16 +69,16 @@ pub struct UnexpectedHTTPResult {
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum StreamError {
-    #[error("Stream poll error: {}", 0)]
+    #[error("Stream poll error: {0}")]
     PollError(std::io::Error),
-    #[error("Stream read error: {}", 0)]
+    #[error("Stream read error: {0}")]
     ReadError(HttpClientError),
 }
 
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum HttpError {
-    #[error("Failed to serialize request body as json: {}", 0)]
+    #[error("Failed to serialize request body as json: {0}")]
     BodySerializationError(serde_json::Error),
     #[error(
         "Unexpected HTTP result (expected: {:?}, received: {:?}, body: {:?})",
@@ -91,25 +91,25 @@ pub enum HttpError {
         received: StatusCode,
         body: String,
     },
-    #[error("UTF8 conversion error: {}", 0)]
+    #[error("UTF8 conversion error: {0}")]
     UTF8Error(#[from] std::str::Utf8Error),
-    #[error("From UTF8 conversion error: {}", 0)]
+    #[error("From UTF8 conversion error: {0}")]
     FromUtf8Error(#[from] std::string::FromUtf8Error),
-    #[error("Failed to build request: {}", 0)]
+    #[error("Failed to build request: {0}")]
     BuildRequestError(http::Error),
-    #[error("Failed to build request: {}", 0)]
+    #[error("Failed to build request: {0}")]
     BuildClientRequestError(HttpClientError),
-    #[error("Failed to execute request: {}", 0)]
+    #[error("Failed to execute request: {0}")]
     ExecuteRequestError(HttpClientError),
-    #[error("Failed to read response as bytes: {}", 0)]
+    #[error("Failed to read response as bytes: {0}")]
     ReadBytesError(HttpClientError),
-    #[error("Failed to read response as stream: {}", 0)]
+    #[error("Failed to read response as stream: {0}")]
     ReadStreamError(HttpClientError),
-    #[error("Failed to build response: {}", 0)]
+    #[error("Failed to build response: {0}")]
     BuildResponseError(http::Error),
-    #[error("to str error: {}", 0)]
+    #[error("to str error: {0}")]
     ToStrError(#[from] http::header::ToStrError),
-    #[error("Failed to reset stream: {}", 0)]
+    #[error("Failed to reset stream: {0}")]
     StreamResetError(StreamError),
 }
 
@@ -140,9 +140,9 @@ impl HttpError {
 }
 #[derive(Debug, thiserror::Error)]
 pub enum Not512ByteAlignedError {
-    #[error("start range not 512-byte aligned: {}", 0)]
+    #[error("start range not 512-byte aligned: {0}")]
     StartRange(u64),
-    #[error("end range not 512-byte aligned: {}", 0)]
+    #[error("end range not 512-byte aligned: {0}")]
     EndRange(u64),
 }
 
@@ -161,44 +161,44 @@ pub enum PermissionError {
 pub enum Parse512AlignedError {
     #[error("split not found")]
     SplitNotFound,
-    #[error("parse int error: {}", 0)]
+    #[error("parse int error: {0}")]
     ParseIntError(#[from] std::num::ParseIntError),
-    #[error("not 512 byte aligned error: {}", 0)]
+    #[error("not 512 byte aligned error: {0}")]
     Not512ByteAlignedError(#[from] Not512ByteAlignedError),
 }
 
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("http error: {}", 0)]
+    #[error("http error: {0}")]
     HttpError(#[from] HttpError),
     #[error("{}-{} is not 512 byte aligned", start, end)]
     PageNot512ByteAlignedError { start: u64, end: u64 },
     #[error("{} is not 512 byte aligned", size)]
     Not512ByteAlignedError { size: u64 },
-    #[error("Operation not supported. Operation == {}, reason == {}", 0, 1)]
+    #[error("Operation not supported. Operation == {0}, reason == {1}")]
     OperationNotSupported(String, String),
-    #[error("parse bool error: {}", 0)]
+    #[error("parse bool error: {0}")]
     ParseBoolError(#[from] std::str::ParseBoolError),
-    #[error("to str error: {}", 0)]
+    #[error("to str error: {0}")]
     ToStrError(#[from] http::header::ToStrError),
-    #[error("json error: {}", 0)]
+    #[error("json error: {0}")]
     JSONError(#[from] serde_json::Error),
-    #[error("Permission error: {}", 0)]
+    #[error("Permission error: {0}")]
     PermissionError(#[from] PermissionError),
-    #[error("IO error: {}", 0)]
+    #[error("IO error: {0}")]
     IOError(#[from] std::io::Error),
-    #[error("UnexpectedXMLError: {}", 0)]
+    #[error("UnexpectedXMLError: {0}")]
     UnexpectedXMLError(String),
-    #[error("Azure Path parse error: {}", 0)]
+    #[error("Azure Path parse error: {0}")]
     AzurePathParseError(#[from] AzurePathParseError),
-    #[error("UnexpectedHTTPResult error: {}", 0)]
+    #[error("UnexpectedHTTPResult error: {0:?}")]
     UnexpectedHTTPResult(UnexpectedHTTPResult),
-    #[error("UnexpectedValue error: {:?}", 0)]
+    #[error("UnexpectedValue error: {0:?}")]
     UnexpectedValue(UnexpectedValue),
-    #[error("Header not found: {}", 0)]
+    #[error("Header not found: {0}")]
     HeaderNotFound(String),
-    #[error("At least one of these headers must be present: {:?}", 0)]
+    #[error("At least one of these headers must be present: {0:?}")]
     HeadersNotFound(Vec<String>),
     #[error(
         "The expected query parameter {} was not found in the provided Url: {:?}",
@@ -209,31 +209,31 @@ pub enum Error {
         expected_parameter: String,
         url: url::Url,
     },
-    #[error("Traversing error: {}", 0)]
+    #[error("Traversing error: {0}")]
     ResponseParsingError(#[from] TraversingError),
-    #[error("Parse int error: {}", 0)]
+    #[error("Parse int error: {0}")]
     ParseIntError(#[from] std::num::ParseIntError),
-    #[error("Parse float error: {}", 0)]
+    #[error("Parse float error: {0}")]
     ParseFloatError(#[from] std::num::ParseFloatError),
-    #[error("Parse error: {}", 0)]
+    #[error("Parse error: {0}")]
     ParseError(#[from] ParseError),
-    #[error("Parsing error: {}", 0)]
+    #[error("Parsing error: {0}")]
     ParsingError(#[from] ParsingError),
-    #[error("Input parameters error: {}", 0)]
+    #[error("Input parameters error: {0}")]
     InputParametersError(String),
-    #[error("URL parse error: {}", 0)]
-    URLParseError(#[from] url::ParseError),
-    #[error("Error preparing HTTP request: {}", 0)]
+    #[error("URL parse error: {0}")]
+    UrlParseError(#[from] url::ParseError),
+    #[error("Error preparing HTTP request: {0}")]
     HttpPrepareError(#[from] http::Error),
-    #[error("uuid error: {}", 0)]
+    #[error("uuid error: {0}")]
     ParseUuidError(#[from] uuid::Error),
-    #[error("Chrono parser error: {}", 0)]
+    #[error("Chrono parser error: {0}")]
     ChronoParserError(#[from] chrono::ParseError),
-    #[error("UTF8 conversion error: {}", 0)]
-    UTF8Error(#[from] std::str::Utf8Error),
-    #[error("FromUTF8 error: {}", 0)]
+    #[error("UTF8 conversion error: {0}")]
+    Utf8Error(#[from] std::str::Utf8Error),
+    #[error("FromUTF8 error: {0}")]
     FromUtf8Error(#[from] std::string::FromUtf8Error),
-    #[error("A required header is missing: {}", 0)]
+    #[error("A required header is missing: {0}")]
     MissingHeaderError(String),
     #[error(
         "An expected JSON node is missing: {} of expected type {}",
@@ -253,23 +253,23 @@ pub enum Error {
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum TraversingError {
-    #[error("Path not found: {}", 0)]
+    #[error("Path not found: {0}")]
     PathNotFound(String),
-    #[error("Multiple node: {}", 0)]
+    #[error("Multiple node: {0}")]
     MultipleNode(String),
-    #[error("Enumeration not matched: {}", 0)]
+    #[error("Enumeration not matched: {0}")]
     EnumerationNotMatched(String),
-    #[error("Input string cannot be converted in boolean: {}", 0)]
+    #[error("Input string cannot be converted in boolean: {0}")]
     BooleanNotMatched(String),
-    #[error("Unexpected node type received: expected {}", 0)]
+    #[error("Unexpected node type received: expected {0}")]
     UnexpectedNodeTypeError(String),
-    #[error("DateTime parse error: {}", 0)]
+    #[error("DateTime parse error: {0}")]
     DateTimeParseError(#[from] chrono::format::ParseError),
     #[error("Text not found")]
     TextNotFound,
-    #[error("Parse int error: {}", 0)]
+    #[error("Parse int error: {0}")]
     ParseIntError(#[from] std::num::ParseIntError),
-    #[error("Generic parse error: {}", 0)]
+    #[error("Generic parse error: {0}")]
     GenericParseError(String),
     #[error("Parsing error: {:?}", 0)]
     ParsingError(#[from] ParsingError),

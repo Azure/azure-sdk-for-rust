@@ -43,11 +43,11 @@ pub enum AzureCliError {
     TokenNotUtf8(Utf8Error),
     #[error("Failed to deserialize token response")]
     TokenFailedToDeserialize(serde_json::Error),
-    #[error("az account get-access-token command failed: {}", 0)]
+    #[error("az account get-access-token command failed: {0}")]
     CommandFailed(String),
     #[error("Azure CLI not installed")]
     NotInstalled,
-    #[error("Unknown error of kind: {}", 0)]
+    #[error("Unknown error of kind: {0:?}")]
     UnknownError(ErrorKind),
 }
 
