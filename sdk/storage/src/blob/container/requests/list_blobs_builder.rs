@@ -64,14 +64,16 @@ impl<'a> ListBlobsBuilder<'a> {
     pub async fn execute(
         &self,
     ) -> Result<ListBlobsResponse, Box<dyn std::error::Error + Sync + Send>> {
-        // TODO: Check if join correctly encodes the container name
         let mut url = self
             .container_client
             .storage_client()
             .storage_account_client()
             .blob_storage_url()
-            .join(self.container_client.container_name())?;
+            .to_owned();
 
+        url.path_segments_mut()
+            .map_err(|_| "Invalid blob URL")?
+            .push(self.container_client.container_name());
         url.query_pairs_mut().append_pair("restype", "container");
         url.query_pairs_mut().append_pair("comp", "list");
 
