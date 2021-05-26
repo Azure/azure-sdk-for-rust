@@ -104,16 +104,20 @@ pub struct BlobProperties {
     #[serde(rename = "Content-Type")]
     pub content_type: String,
     #[serde(rename = "Content-Encoding")]
+    #[serde(default = "String::new")]
     pub content_encoding: String,
     #[serde(rename = "Content-Language")]
+    #[serde(default = "String::new")]
     pub content_language: String,
     #[serde(rename = "Content-Disposition")]
+    #[serde(default = "String::new")]
     pub content_disposition: String,
     #[serde(rename = "Content-MD5")]
     pub content_md5: Option<String>,
     #[serde(rename = "Content-CRC64")]
     pub content_crc64: Option<String>,
     #[serde(rename = "Cache-Control")]
+    #[serde(default = "String::new")]
     pub cache_control: String,
     #[serde(rename = "x-ms-blob-sequence-number")]
     pub blob_sequence_number: Option<u64>,
