@@ -43,6 +43,7 @@ pub struct ServiceClient {
 }
 
 #[allow(missing_docs)]
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum FromConnectionStringError {
     #[error("Given connection string is invalid")]
@@ -58,6 +59,7 @@ pub enum FromConnectionStringError {
 }
 
 #[allow(missing_docs)]
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum GenerateSasTokenError {
     #[error("Failed to decode the given private key: {0}")]

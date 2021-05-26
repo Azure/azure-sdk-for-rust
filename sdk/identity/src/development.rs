@@ -80,6 +80,7 @@ pub fn naive_redirect_server(
     unreachable!()
 }
 
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum ServerReceiveError {
     #[error("unexpected redirect url: {}", url)]

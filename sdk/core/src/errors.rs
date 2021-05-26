@@ -92,7 +92,7 @@ pub enum HttpError {
         body: String,
     },
     #[error("UTF8 conversion error: {0}")]
-    UTF8Error(#[from] std::str::Utf8Error),
+    Utf8Error(#[from] std::str::Utf8Error),
     #[error("From UTF8 conversion error: {0}")]
     FromUtf8Error(#[from] std::string::FromUtf8Error),
     #[error("Failed to build request: {0}")]
