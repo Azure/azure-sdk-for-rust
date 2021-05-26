@@ -2,8 +2,8 @@ use azure_core::{TokenCredential, TokenResponse};
 use chrono::{DateTime, Utc};
 use oauth2::AccessToken;
 use serde::Deserialize;
-use url::Url;
 use std::str;
+use url::Url;
 
 const MSI_ENDPOINT_ENV_KEY: &str = "IDENTITY_ENDPOINT";
 const MSI_SECRET_ENV_KEY: &str = "IDENTITY_HEADER";
@@ -16,23 +16,39 @@ const MSI_API_VERSION: &str = "2019-08-01";
 /// Built up from docs at [https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity#using-the-rest-protocol)
 pub struct ManagedIdentityCredential;
 
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum ManagedIdentityCredentialError {
+    #[error("Error parsing url for MSI endpoint: {0}")]
+    MsiEndpointParseUrlError(url::ParseError),
+    #[error(
+        "Missing MSI secret set in {} environment variable",
+        MSI_SECRET_ENV_KEY
+    )]
+    MissingMsiSecret(std::env::VarError),
+    #[error("Refresh token send error: {0}")]
+    SendError(reqwest::Error),
+    #[error("Error getting text for refresh token: {0}")]
+    TextError(reqwest::Error),
+    #[error("Error deserializing refresh token: {0}")]
+    DeserializeError(serde_json::Error),
+}
+
 #[async_trait::async_trait]
 impl TokenCredential for ManagedIdentityCredential {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Error> {
+    type Error = ManagedIdentityCredentialError;
+
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
         let msi_endpoint = std::env::var(MSI_ENDPOINT_ENV_KEY)
             .unwrap_or_else(|_| "http://169.254.169.254/metadata/identity/oauth2/token".to_owned());
 
         let query_items = vec![("api-version", MSI_API_VERSION), ("resource", resource)];
 
         let msi_endpoint_url = Url::parse_with_params(&msi_endpoint, &query_items)
-            .map_err(|error| Error::GenericErrorWithText(error.to_string()))?;
+            .map_err(Self::Error::MsiEndpointParseUrlError)?;
 
-        let msi_secret = std::env::var(MSI_SECRET_ENV_KEY).map_err(|_| {
-            Error::GenericErrorWithText(format!(
-                "Missing environment variable {}",
-                MSI_SECRET_ENV_KEY
-            ))
-        })?;
+        let msi_secret =
+            std::env::var(MSI_SECRET_ENV_KEY).map_err(Self::Error::MissingMsiSecret)?;
 
         let client = reqwest::Client::new();
         let res_body = client
@@ -41,13 +57,13 @@ impl TokenCredential for ManagedIdentityCredential {
             .header("X-IDENTITY-HEADER", msi_secret)
             .send()
             .await
-            .map_err(|e| Error::GenericErrorWithText(e.to_string()))?
+            .map_err(Self::Error::SendError)?
             .text()
             .await
-            .map_err(|e| Error::GenericErrorWithText(e.to_string()))?;
+            .map_err(Self::Error::TextError)?;
 
         let token_response = serde_json::from_str::<MsiTokenResponse>(&res_body)
-            .map_err(|_| Error::GenericError)?;
+            .map_err(Self::Error::DeserializeError)?;
 
         Ok(TokenResponse::new(
             token_response.access_token,

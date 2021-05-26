@@ -38,16 +38,19 @@ impl DefaultCredentialBuilder {
         let source_count = self.include_cli_credential as usize
             + self.include_cli_credential as usize
             + self.include_managed_identity_credential as usize;
-        let mut sources =
-            Vec::<Box<dyn TokenCredential<Error=DefaultCredentialError> + Send + Sync>>::with_capacity(source_count);
+        let mut sources = Vec::<DefaultCredentialEnum>::with_capacity(source_count);
         if self.include_environment_credential {
-            sources.push(Box::new(EnvironmentCredential::default()));
+            sources.push(DefaultCredentialEnum::Environment(
+                EnvironmentCredential::default(),
+            ));
         }
         if self.include_managed_identity_credential {
-            sources.push(Box::new(ManagedIdentityCredential {}))
+            sources.push(DefaultCredentialEnum::ManagedIdentity(
+                ManagedIdentityCredential {},
+            ))
         }
         if self.include_cli_credential {
-            sources.push(Box::new(AzureCliCredential {}));
+            sources.push(DefaultCredentialEnum::AzureCli(AzureCliCredential {}));
         }
         DefaultCredential::with_sources(sources)
     }
@@ -56,11 +59,43 @@ impl DefaultCredentialBuilder {
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum DefaultCredentialError {
-    #[error("Error getting token credentials from Azure CLI: {0}")]
-    AzureCliError(#[from] crate::token_credentials::AzureCliError),
-
+    #[error("Error getting token credential from Azure CLI: {0}")]
+    AzureCliCredentialError(#[from] super::AzureCliCredentialError),
+    #[error("Error getting environment credential: {0}")]
+    EnvironmentCredentialError(#[from] super::EnvironmentCredentialError),
+    #[error("Error getting managed identity credential: {0}")]
+    ManagedIdentityCredentialError(#[from] super::ManagedIdentityCredentialError),
     #[error("End of default list")]
     EndOfDefaultList,
+}
+
+/// Types of TokenCredential supported by DefaultCredential
+pub enum DefaultCredentialEnum {
+    Environment(EnvironmentCredential),
+    ManagedIdentity(ManagedIdentityCredential),
+    AzureCli(AzureCliCredential),
+}
+
+#[async_trait::async_trait]
+impl TokenCredential for DefaultCredentialEnum {
+    type Error = DefaultCredentialError;
+
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
+        match self {
+            DefaultCredentialEnum::Environment(credential) => credential
+                .get_token(resource)
+                .await
+                .map_err(Self::Error::EnvironmentCredentialError),
+            DefaultCredentialEnum::ManagedIdentity(credential) => credential
+                .get_token(resource)
+                .await
+                .map_err(Self::Error::ManagedIdentityCredentialError),
+            DefaultCredentialEnum::AzureCli(credential) => credential
+                .get_token(resource)
+                .await
+                .map_err(Self::Error::AzureCliCredentialError),
+        }
+    }
 }
 
 /// Provides a default `TokenCredential` authentication flow for applications that will be deployed to Azure.
@@ -71,11 +106,11 @@ pub enum DefaultCredentialError {
 /// - AzureCliCredential
 /// Consult the documentation of these credential types for more information on how they attempt authentication.
 pub struct DefaultCredential {
-    sources: Vec<Box<dyn TokenCredential<Error=DefaultCredentialError> + Send + Sync>>,
+    sources: Vec<DefaultCredentialEnum>,
 }
 
 impl DefaultCredential {
-    pub fn with_sources(sources: Vec<Box<dyn TokenCredential<Error=DefaultCredentialError> + Send + Sync>>) -> Self {
+    pub fn with_sources(sources: Vec<DefaultCredentialEnum>) -> Self {
         DefaultCredential { sources }
     }
 }
@@ -84,9 +119,9 @@ impl Default for DefaultCredential {
     fn default() -> Self {
         DefaultCredential {
             sources: vec![
-                Box::new(EnvironmentCredential::default()),
-                Box::new(ManagedIdentityCredential {}),
-                Box::new(AzureCliCredential {}),
+                DefaultCredentialEnum::Environment(EnvironmentCredential::default()),
+                DefaultCredentialEnum::ManagedIdentity(ManagedIdentityCredential {}),
+                DefaultCredentialEnum::AzureCli(AzureCliCredential {}),
             ],
         }
     }

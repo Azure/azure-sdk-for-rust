@@ -1,4 +1,3 @@
-use azure_core::*;
 use chrono::Duration;
 use hyper::{self, header, Body, StatusCode};
 use hyper_rustls::HttpsConnector;
