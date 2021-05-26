@@ -1,7 +1,9 @@
 use azure_core::{TokenCredential, TokenResponse};
 use chrono::Utc;
 use oauth2::{
-    basic::BasicClient, reqwest::async_http_client, AccessToken, AuthType, AuthUrl, Scope, TokenUrl,
+    basic::{BasicClient, BasicErrorResponseType},
+    reqwest::async_http_client,
+    AccessToken, AuthType, AuthUrl, Scope, StandardErrorResponse, TokenUrl,
 };
 use std::{str, time::Duration};
 use url::Url;
@@ -90,9 +92,27 @@ impl ClientSecretCredential {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum ClientSecretCredentialError {
+    #[error("Failed to construct token endpoint with tenant id {1}: {0}")]
+    FailedConstructTokenEndpoint(url::ParseError, String),
+    #[error("Failed to construct authorize endpoint with tenant id {1}: {0}")]
+    FailedConstructAuthorizeEndpoint(url::ParseError, String),
+    #[error("Request token error: {0}")]
+    RequestTokenError(
+        oauth2::RequestTokenError<
+            oauth2::reqwest::Error<reqwest::Error>,
+            StandardErrorResponse<BasicErrorResponseType>,
+        >,
+    ),
+}
+
 #[async_trait::async_trait]
 impl TokenCredential for ClientSecretCredential {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Error> {
+    type Error = ClientSecretCredentialError;
+
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
         let options = self.options();
         let authority_host = options.authority_host();
 
@@ -101,11 +121,8 @@ impl TokenCredential for ClientSecretCredential {
                 "{}/{}/oauth2/v2.0/token",
                 authority_host, self.tenant_id
             ))
-            .map_err(|_| {
-                Error::GenericErrorWithText(format!(
-                    "Failed to construct token endpoint with tenant id {}",
-                    self.tenant_id,
-                ))
+            .map_err(|error| {
+                Self::Error::FailedConstructTokenEndpoint(error, self.tenant_id.clone())
             })?,
         );
 
@@ -114,11 +131,8 @@ impl TokenCredential for ClientSecretCredential {
                 "{}/{}/oauth2/v2.0/authorize",
                 authority_host, self.tenant_id
             ))
-            .map_err(|_| {
-                Error::GenericErrorWithText(format!(
-                    "Failed to construct authorize endpoint with tenant id {}",
-                    self.tenant_id,
-                ))
+            .map_err(|error| {
+                Self::Error::FailedConstructAuthorizeEndpoint(error, self.tenant_id.clone())
             })?,
         );
 
@@ -146,16 +160,7 @@ impl TokenCredential for ClientSecretCredential {
                         .unwrap(),
                 )
             })
-            .map_err(|e| match e {
-                oauth2::RequestTokenError::ServerResponse(s) => {
-                    Error::GenericErrorWithText(
-                        s.error_description()
-                            .unwrap_or(&"Server error without description".to_string())
-                            .to_owned(),
-                    )
-                }
-                _ => Error::GenericErrorWithText("OAuth2 error".to_string()),
-            })?;
+            .map_err(Self::Error::RequestTokenError)?;
 
         Ok(token_result)
     }

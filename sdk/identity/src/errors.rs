@@ -6,9 +6,22 @@ use serde::{Deserialize, Serialize};
 /// An unrecognized error response from an identity service.
 pub enum Error {
     #[error("Error getting token credentials from Azure CLI: {0}")]
-    AzureCliError(#[from] crate::token_credentials::AzureCliError),
+    AzureCliCredentialError(#[from] crate::token_credentials::AzureCliCredentialError),
+    #[error("Client secret credentials error: {0}")]
+    ClientSecretCredentialError(#[from] crate::token_credentials::ClientSecretCredentialError),
     #[error("Error refreshing token: {0}")]
     RefreshTokenError(#[from] crate::refresh_token::Error),
+    #[error("Error response from service: {0}")]
+    ErrorResponse(String),
+
+    #[error("HTTP client error: {0}")]
+    HttpClientError(#[from] reqwest::Error),
+    #[error("JSON error: {0}")]
+    JsonError(#[from] serde_json::Error),
+    #[error("URL parse error: {0}")]
+    UrlParseError(#[from] url::ParseError),
+    #[error("Parse int error: {0}")]
+    ParseIntError(#[from] std::num::ParseIntError),
 }
 
 /// An HTTP error response from the identity service.

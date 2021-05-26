@@ -43,10 +43,10 @@
 //! This crate also includes utilities for handling refresh tokens and accessing token credentials from many different sources.
 
 pub mod authorization_code_flow;
-// pub mod client_credentials_flow;
+pub mod client_credentials_flow;
 #[cfg(feature = "development")]
 pub mod development;
-// pub mod device_code_flow;
+pub mod device_code_flow;
 mod errors;
 pub use errors::Error;
 pub mod refresh_token;

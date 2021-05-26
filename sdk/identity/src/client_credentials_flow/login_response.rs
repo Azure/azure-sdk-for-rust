@@ -1,8 +1,8 @@
+use crate::Error;
 use chrono::{DateTime, TimeZone, Utc};
 use oauth2::AccessToken;
 use serde::{de, Deserialize, Deserializer};
 use std::str::FromStr;
-use crate::Error;
 
 #[derive(Debug, Clone, Deserialize)]
 struct _LoginResponse {

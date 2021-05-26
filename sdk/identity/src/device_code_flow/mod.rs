@@ -4,19 +4,17 @@
 //!
 //! You can learn more about this authorization flow [here](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-device-code).
 mod device_code_responses;
-
-pub use device_code_responses::*;
-
+use crate::Error;
 use async_timer::timer::new_timer;
+pub use device_code_responses::*;
 use futures::stream::unfold;
 use log::debug;
 use oauth2::ClientId;
 use serde::Deserialize;
-use url::form_urlencoded;
-
 use std::borrow::Cow;
 use std::convert::TryInto;
 use std::time::Duration;
+use url::form_urlencoded;
 
 pub async fn start<'a, 'b, T>(
     client: &'a reqwest::Client,
@@ -46,37 +44,29 @@ where
         .header("ContentType", "application/x-www-form-urlencoded")
         .body(encoded)
         .send()
-        .await
-        .map_err(|e| Error::GenericErrorWithText(e.to_string()))?
+        .await?
         .text()
         .await
-        .map_err(|e| Error::GenericErrorWithText(e.to_string()))
-        .and_then(|s| {
+        .map(|s| -> Result<DeviceCodePhaseOneResponse, Error> {
             serde_json::from_str::<DeviceCodePhaseOneResponse>(&s)
                 // we need to capture some variables that will be useful in
                 // the second phase (the client, the tenant_id and the client_id)
-                .map(|device_code_reponse| DeviceCodePhaseOneResponse {
-                    device_code: device_code_reponse.device_code,
-                    user_code: device_code_reponse.user_code,
-                    verification_uri: device_code_reponse.verification_uri,
-                    expires_in: device_code_reponse.expires_in,
-                    interval: device_code_reponse.interval,
-                    message: device_code_reponse.message,
-                    client: Some(client),
-                    tenant_id,
-                    client_id: client_id.as_str().to_string(),
-                })
-                .map_err(|e| {
-                    serde_json::from_str::<crate::errors::ErrorResponse>(&s)
-                        .map(|er| Error::GenericErrorWithText(er.to_string()))
-                        .unwrap_or_else(|_| {
-                            Error::GenericErrorWithText(format!(
-                                "Failed to parse Azure response: {}",
-                                e.to_string()
-                            ))
-                        })
-                })
-        })
+                .map(|device_code_reponse| {
+                    Ok(DeviceCodePhaseOneResponse {
+                        device_code: device_code_reponse.device_code,
+                        user_code: device_code_reponse.user_code,
+                        verification_uri: device_code_reponse.verification_uri,
+                        expires_in: device_code_reponse.expires_in,
+                        interval: device_code_reponse.interval,
+                        message: device_code_reponse.message,
+                        client: Some(client),
+                        tenant_id,
+                        client_id: client_id.as_str().to_string(),
+                    })
+                })?
+            // TODO The HTTP status code should be checked to deserialize an error response.
+            // serde_json::from_str::<crate::errors::ErrorResponse>(&s).map(Error::ErrorResponse)
+        })?
 }
 
 #[derive(Debug, Clone, Deserialize)]

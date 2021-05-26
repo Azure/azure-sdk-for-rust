@@ -38,7 +38,7 @@ pub struct AzureCliCredential;
 
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
-pub enum AzureCliError {
+pub enum AzureCliCredentialError {
     #[error("Token response was not utf8 encoded")]
     TokenNotUtf8(Utf8Error),
     #[error("Failed to deserialize token response")]
@@ -53,7 +53,9 @@ pub enum AzureCliError {
 
 impl AzureCliCredential {
     /// Get an access token for an optional resource
-    fn get_access_token(resource: Option<&str>) -> Result<CliTokenResponse, AzureCliError> {
+    fn get_access_token(
+        resource: Option<&str>,
+    ) -> Result<CliTokenResponse, AzureCliCredentialError> {
         // on window az is a cmd and it should be called like this
         // see https://doc.rust-lang.org/nightly/std/process/struct.Command.html
         let program = if cfg!(target_os = "windows") {
@@ -77,32 +79,32 @@ impl AzureCliCredential {
 
         match Command::new(program).args(args).output() {
             Ok(az_output) if az_output.status.success() => {
-                let output =
-                    str::from_utf8(&az_output.stdout).map_err(AzureCliError::TokenNotUtf8)?;
+                let output = str::from_utf8(&az_output.stdout)
+                    .map_err(AzureCliCredentialError::TokenNotUtf8)?;
 
                 let token_response = serde_json::from_str::<CliTokenResponse>(output)
-                    .map_err(AzureCliError::TokenFailedToDeserialize)?;
+                    .map_err(AzureCliCredentialError::TokenFailedToDeserialize)?;
                 Ok(token_response)
             }
             Ok(az_output) => {
                 let output = String::from_utf8_lossy(&az_output.stderr);
-                Err(AzureCliError::CommandFailed(output.to_string()))
+                Err(AzureCliCredentialError::CommandFailed(output.to_string()))
             }
             Err(e) => match e.kind() {
-                ErrorKind::NotFound => Err(AzureCliError::NotInstalled),
-                error_kind => Err(AzureCliError::UnknownError(error_kind)),
+                ErrorKind::NotFound => Err(AzureCliCredentialError::NotInstalled),
+                error_kind => Err(AzureCliCredentialError::UnknownError(error_kind)),
             },
         }
     }
 
     /// Returns the current subscription ID from the Azure CLI.
-    pub fn get_subscription() -> Result<String, AzureCliError> {
+    pub fn get_subscription() -> Result<String, AzureCliCredentialError> {
         let tr = Self::get_access_token(None)?;
         Ok(tr.subscription)
     }
 
     /// Returns the current tenant ID from the Azure CLI.
-    pub fn get_tenant() -> Result<String, AzureCliError> {
+    pub fn get_tenant() -> Result<String, AzureCliCredentialError> {
         let tr = Self::get_access_token(None)?;
         Ok(tr.tenant)
     }
@@ -110,7 +112,7 @@ impl AzureCliCredential {
 
 #[async_trait::async_trait]
 impl TokenCredential for AzureCliCredential {
-    type Error = AzureCliError;
+    type Error = AzureCliCredentialError;
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
         let tr = Self::get_access_token(Some(resource))?;
         Ok(TokenResponse::new(tr.access_token, tr.expires_on))
