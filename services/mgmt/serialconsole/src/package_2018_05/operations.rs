@@ -59,7 +59,7 @@ pub mod list_operations {
         #[error("Failed to deserialize response: {0}, body: {1:?}")]
         DeserializeError(serde_json::Error, bytes::Bytes),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::TokenCredentialError),
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn get_console_status(
@@ -135,7 +135,7 @@ pub mod get_console_status {
         #[error("Failed to deserialize response: {0}, body: {1:?}")]
         DeserializeError(serde_json::Error, bytes::Bytes),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::TokenCredentialError),
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn disable_console(
@@ -212,7 +212,7 @@ pub mod disable_console {
         #[error("Failed to deserialize response: {0}, body: {1:?}")]
         DeserializeError(serde_json::Error, bytes::Bytes),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::TokenCredentialError),
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn enable_console(
@@ -289,7 +289,7 @@ pub mod enable_console {
         #[error("Failed to deserialize response: {0}, body: {1:?}")]
         DeserializeError(serde_json::Error, bytes::Bytes),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::TokenCredentialError),
+        GetTokenError(azure_core::Error),
     }
 }
 pub mod serial_ports {
@@ -365,7 +365,7 @@ pub mod serial_ports {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get(
@@ -441,7 +441,7 @@ pub mod serial_ports {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn create(
@@ -518,7 +518,7 @@ pub mod serial_ports {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn delete(
@@ -595,7 +595,7 @@ pub mod serial_ports {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list_by_subscriptions(
@@ -665,7 +665,7 @@ pub mod serial_ports {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn connect(
@@ -745,7 +745,7 @@ pub mod serial_ports {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }

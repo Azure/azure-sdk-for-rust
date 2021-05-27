@@ -74,7 +74,7 @@ pub mod reservation {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn split(
@@ -147,7 +147,7 @@ pub mod reservation {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn merge(
@@ -220,7 +220,7 @@ pub mod reservation {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list(
@@ -286,7 +286,7 @@ pub mod reservation {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get(
@@ -358,7 +358,7 @@ pub mod reservation {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn update(
@@ -433,7 +433,7 @@ pub mod reservation {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list_revisions(
@@ -504,7 +504,7 @@ pub mod reservation {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn archive(
@@ -571,7 +571,7 @@ pub mod reservation {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn unarchive(
@@ -638,7 +638,7 @@ pub mod reservation {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }
@@ -714,7 +714,7 @@ pub mod get_catalog {
         #[error("Failed to deserialize response: {0}, body: {1:?}")]
         DeserializeError(serde_json::Error, bytes::Bytes),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::TokenCredentialError),
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn get_applied_reservation_list(
@@ -785,7 +785,7 @@ pub mod get_applied_reservation_list {
         #[error("Failed to deserialize response: {0}, body: {1:?}")]
         DeserializeError(serde_json::Error, bytes::Bytes),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::TokenCredentialError),
+        GetTokenError(azure_core::Error),
     }
 }
 pub mod reservation_order {
@@ -852,7 +852,7 @@ pub mod reservation_order {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ReservationOrderList, list::Error> {
@@ -911,7 +911,7 @@ pub mod reservation_order {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get(
@@ -981,7 +981,7 @@ pub mod reservation_order {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn purchase(
@@ -1062,7 +1062,7 @@ pub mod reservation_order {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }
@@ -1124,7 +1124,7 @@ pub mod operation {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }

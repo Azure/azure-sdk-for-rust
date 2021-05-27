@@ -68,7 +68,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list_by_resource_group(
@@ -141,7 +141,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get(
@@ -211,7 +211,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn create_or_update(
@@ -298,7 +298,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn update(
@@ -382,7 +382,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn delete(
@@ -455,7 +455,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get_network_rule_set(
@@ -528,7 +528,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn create_or_update_network_rule_set(
@@ -604,7 +604,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list_network_rule_sets(
@@ -679,7 +679,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list_authorization_rules(
@@ -754,7 +754,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get_authorization_rule(
@@ -831,7 +831,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn create_or_update_authorization_rule(
@@ -909,7 +909,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn delete_authorization_rule(
@@ -987,7 +987,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list_keys(
@@ -1063,7 +1063,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn regenerate_keys(
@@ -1139,7 +1139,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn check_name_availability(
@@ -1211,7 +1211,7 @@ pub mod namespaces {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }
@@ -1284,7 +1284,7 @@ pub mod private_endpoint_connections {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get(
@@ -1356,7 +1356,7 @@ pub mod private_endpoint_connections {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn create_or_update(
@@ -1443,7 +1443,7 @@ pub mod private_endpoint_connections {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn delete(
@@ -1518,7 +1518,7 @@ pub mod private_endpoint_connections {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }
@@ -1591,7 +1591,7 @@ pub mod private_link_resources {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }
@@ -1653,7 +1653,7 @@ pub mod operations {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }
@@ -1726,7 +1726,7 @@ pub mod disaster_recovery_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list(
@@ -1796,7 +1796,7 @@ pub mod disaster_recovery_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get(
@@ -1868,7 +1868,7 @@ pub mod disaster_recovery_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn create_or_update(
@@ -1950,7 +1950,7 @@ pub mod disaster_recovery_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn delete(
@@ -2017,7 +2017,7 @@ pub mod disaster_recovery_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn break_pairing(
@@ -2088,7 +2088,7 @@ pub mod disaster_recovery_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn fail_over(
@@ -2163,7 +2163,7 @@ pub mod disaster_recovery_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list_authorization_rules(
@@ -2233,7 +2233,7 @@ pub mod disaster_recovery_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get_authorization_rule(
@@ -2304,7 +2304,7 @@ pub mod disaster_recovery_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list_keys(
@@ -2374,7 +2374,7 @@ pub mod disaster_recovery_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }
@@ -2447,7 +2447,7 @@ pub mod migration_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get(
@@ -2519,7 +2519,7 @@ pub mod migration_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn create_and_start_migration(
@@ -2603,7 +2603,7 @@ pub mod migration_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn delete(
@@ -2676,7 +2676,7 @@ pub mod migration_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn complete_migration(
@@ -2747,7 +2747,7 @@ pub mod migration_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn revert(
@@ -2815,7 +2815,7 @@ pub mod migration_configs {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }
@@ -2895,7 +2895,7 @@ pub mod queues {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get_authorization_rule(
@@ -2974,7 +2974,7 @@ pub mod queues {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn create_or_update_authorization_rule(
@@ -3054,7 +3054,7 @@ pub mod queues {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn delete_authorization_rule(
@@ -3134,7 +3134,7 @@ pub mod queues {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list_keys(
@@ -3212,7 +3212,7 @@ pub mod queues {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn regenerate_keys(
@@ -3282,7 +3282,7 @@ pub mod queues {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list_by_namespace(
@@ -3363,7 +3363,7 @@ pub mod queues {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get(
@@ -3435,7 +3435,7 @@ pub mod queues {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn create_or_update(
@@ -3511,7 +3511,7 @@ pub mod queues {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn delete(
@@ -3584,7 +3584,7 @@ pub mod queues {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }
@@ -3664,7 +3664,7 @@ pub mod topics {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get_authorization_rule(
@@ -3743,7 +3743,7 @@ pub mod topics {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn create_or_update_authorization_rule(
@@ -3823,7 +3823,7 @@ pub mod topics {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn delete_authorization_rule(
@@ -3903,7 +3903,7 @@ pub mod topics {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list_keys(
@@ -3981,7 +3981,7 @@ pub mod topics {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn regenerate_keys(
@@ -4051,7 +4051,7 @@ pub mod topics {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn list_by_namespace(
@@ -4132,7 +4132,7 @@ pub mod topics {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get(
@@ -4204,7 +4204,7 @@ pub mod topics {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn create_or_update(
@@ -4280,7 +4280,7 @@ pub mod topics {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn delete(
@@ -4353,7 +4353,7 @@ pub mod topics {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }
@@ -4443,7 +4443,7 @@ pub mod rules {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get(
@@ -4519,7 +4519,7 @@ pub mod rules {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn create_or_update(
@@ -4599,7 +4599,7 @@ pub mod rules {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn delete(
@@ -4676,7 +4676,7 @@ pub mod rules {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }
@@ -4762,7 +4762,7 @@ pub mod subscriptions {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn get(
@@ -4836,7 +4836,7 @@ pub mod subscriptions {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn create_or_update(
@@ -4914,7 +4914,7 @@ pub mod subscriptions {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
     pub async fn delete(
@@ -4989,7 +4989,7 @@ pub mod subscriptions {
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
             DeserializeError(serde_json::Error, bytes::Bytes),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::TokenCredentialError),
+            GetTokenError(azure_core::Error),
         }
     }
 }

@@ -170,8 +170,8 @@ pub enum Parse512AlignedError {
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error(transparent)]
-    TokenCredentialError(#[from] crate::TokenCredentialError),
+    #[error("Error getting token: {0}")]
+    GetTokenError(Box<dyn std::error::Error + Send + Sync>),
     #[error("http error: {0}")]
     HttpError(#[from] HttpError),
     #[error("{}-{} is not 512 byte aligned", start, end)]
