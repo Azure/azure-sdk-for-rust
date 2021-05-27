@@ -128,7 +128,9 @@ impl<'a> GetBlobBuilder<'a> {
             // have specified a smaller range.
             remaining.end = match response.content_range {
                 None => requested_range.end,
-                Some(content_range) => std::cmp::min(requested_range.end, content_range.total_length())
+                Some(content_range) => {
+                    std::cmp::min(requested_range.end, content_range.total_length())
+                }
             };
 
             let next_state = if remaining.end > range.end {
