@@ -1,5 +1,4 @@
 use crate::{blob::blob::Blob, AzureStorageError};
-use azure_core::errors::AzureError;
 use azure_core::headers::{date_from_headers, request_id_from_headers};
 use azure_core::prelude::ContentRange;
 use azure_core::RequestId;
