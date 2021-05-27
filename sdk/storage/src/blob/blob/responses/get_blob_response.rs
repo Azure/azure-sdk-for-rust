@@ -15,7 +15,7 @@ pub struct GetBlobResponse {
     pub blob: Blob,
     pub data: Bytes,
     pub date: DateTime<Utc>,
-    pub content_range: ContentRange,
+    pub content_range: Option<ContentRange>,
 }
 
 impl TryFrom<(&str, Response<Bytes>)> for GetBlobResponse {
@@ -25,14 +25,12 @@ impl TryFrom<(&str, Response<Bytes>)> for GetBlobResponse {
 
         let request_id = request_id_from_headers(response.headers())?;
         let date = date_from_headers(response.headers())?;
-
-        let content_range = ContentRange::from_str(
-            response
-                .headers()
-                .get(http::header::CONTENT_RANGE)
-                .ok_or_else(|| AzureError::HeaderNotFound(http::header::CONTENT_RANGE.to_string()))?
-                .to_str()?,
-        )?;
+        let content_range_header = response.headers()
+                .get(http::header::CONTENT_RANGE);
+        let content_range = match content_range_header {
+            Some(hv) => Some(ContentRange::from_str(hv.to_str()?)?),
+            None => None
+        };
 
         Ok(GetBlobResponse {
             request_id,
