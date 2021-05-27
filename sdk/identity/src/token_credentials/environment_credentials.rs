@@ -63,10 +63,10 @@ impl TokenCredential for EnvironmentCredential {
     type Error = EnvironmentCredentialError;
 
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
-        let tenant_id =
-            std::env::var(AZURE_TENANT_ID_ENV_KEY).map_err(Self::Error::MissingTenantId)?;
-        let client_id =
-            std::env::var(AZURE_CLIENT_ID_ENV_KEY).map_err(Self::Error::MissingClientId)?;
+        let tenant_id = std::env::var(AZURE_TENANT_ID_ENV_KEY)
+            .map_err(EnvironmentCredentialError::MissingTenantId)?;
+        let client_id = std::env::var(AZURE_CLIENT_ID_ENV_KEY)
+            .map_err(EnvironmentCredentialError::MissingClientId)?;
 
         let client_secret = std::env::var(AZURE_CLIENT_SECRET_ENV_KEY);
         let username = std::env::var(AZURE_USERNAME_ENV_KEY);
@@ -83,7 +83,7 @@ impl TokenCredential for EnvironmentCredential {
             return credential
                 .get_token(resource)
                 .await
-                .map_err(Self::Error::ClientSecretCredentialError);
+                .map_err(EnvironmentCredentialError::ClientSecretCredentialError);
         } else if username.is_ok() && password.is_ok() {
             // Could use multiple if-let with #![feature(let_chains)] once stabilised - see https://github.com/rust-lang/rust/issues/53667
             // TODO: username & password credential
@@ -92,6 +92,6 @@ impl TokenCredential for EnvironmentCredential {
             todo!()
         }
 
-        Err(Self::Error::NoValid)
+        Err(EnvironmentCredentialError::NoValid)
     }
 }

@@ -122,7 +122,10 @@ impl TokenCredential for ClientSecretCredential {
                 authority_host, self.tenant_id
             ))
             .map_err(|error| {
-                Self::Error::FailedConstructTokenEndpoint(error, self.tenant_id.clone())
+                ClientSecretCredentialError::FailedConstructTokenEndpoint(
+                    error,
+                    self.tenant_id.clone(),
+                )
             })?,
         );
 
@@ -132,7 +135,10 @@ impl TokenCredential for ClientSecretCredential {
                 authority_host, self.tenant_id
             ))
             .map_err(|error| {
-                Self::Error::FailedConstructAuthorizeEndpoint(error, self.tenant_id.clone())
+                ClientSecretCredentialError::FailedConstructAuthorizeEndpoint(
+                    error,
+                    self.tenant_id.clone(),
+                )
             })?,
         );
 
@@ -160,7 +166,7 @@ impl TokenCredential for ClientSecretCredential {
                         .unwrap(),
                 )
             })
-            .map_err(Self::Error::RequestTokenError)?;
+            .map_err(ClientSecretCredentialError::RequestTokenError)?;
 
         Ok(token_result)
     }

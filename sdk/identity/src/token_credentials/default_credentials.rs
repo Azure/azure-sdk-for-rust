@@ -85,15 +85,15 @@ impl TokenCredential for DefaultCredentialEnum {
             DefaultCredentialEnum::Environment(credential) => credential
                 .get_token(resource)
                 .await
-                .map_err(Self::Error::EnvironmentCredentialError),
+                .map_err(DefaultCredentialError::EnvironmentCredentialError),
             DefaultCredentialEnum::ManagedIdentity(credential) => credential
                 .get_token(resource)
                 .await
-                .map_err(Self::Error::ManagedIdentityCredentialError),
+                .map_err(DefaultCredentialError::ManagedIdentityCredentialError),
             DefaultCredentialEnum::AzureCli(credential) => credential
                 .get_token(resource)
                 .await
-                .map_err(Self::Error::AzureCliCredentialError),
+                .map_err(DefaultCredentialError::AzureCliCredentialError),
         }
     }
 }
@@ -141,6 +141,6 @@ impl TokenCredential for DefaultCredential {
                 debug!("Failed to get credentials: {:?}", token_res.err().unwrap());
             }
         }
-        Err(Self::Error::EndOfDefaultList)
+        Err(DefaultCredentialError::EndOfDefaultList)
     }
 }

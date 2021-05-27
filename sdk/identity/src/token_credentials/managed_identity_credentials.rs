@@ -45,10 +45,10 @@ impl TokenCredential for ManagedIdentityCredential {
         let query_items = vec![("api-version", MSI_API_VERSION), ("resource", resource)];
 
         let msi_endpoint_url = Url::parse_with_params(&msi_endpoint, &query_items)
-            .map_err(Self::Error::MsiEndpointParseUrlError)?;
+            .map_err(ManagedIdentityCredentialError::MsiEndpointParseUrlError)?;
 
-        let msi_secret =
-            std::env::var(MSI_SECRET_ENV_KEY).map_err(Self::Error::MissingMsiSecret)?;
+        let msi_secret = std::env::var(MSI_SECRET_ENV_KEY)
+            .map_err(ManagedIdentityCredentialError::MissingMsiSecret)?;
 
         let client = reqwest::Client::new();
         let res_body = client
@@ -57,13 +57,13 @@ impl TokenCredential for ManagedIdentityCredential {
             .header("X-IDENTITY-HEADER", msi_secret)
             .send()
             .await
-            .map_err(Self::Error::SendError)?
+            .map_err(ManagedIdentityCredentialError::SendError)?
             .text()
             .await
-            .map_err(Self::Error::TextError)?;
+            .map_err(ManagedIdentityCredentialError::TextError)?;
 
         let token_response = serde_json::from_str::<MsiTokenResponse>(&res_body)
-            .map_err(Self::Error::DeserializeError)?;
+            .map_err(ManagedIdentityCredentialError::DeserializeError)?;
 
         Ok(TokenResponse::new(
             token_response.access_token,
