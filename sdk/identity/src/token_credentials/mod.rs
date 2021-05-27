@@ -16,3 +16,27 @@ pub use client_secret_credentials::*;
 pub use default_credentials::*;
 pub use environment_credentials::*;
 pub use managed_identity_credentials::*;
+
+/// Represents a credential capable of providing an OAuth token.
+/// Same as [azure_core::TokenCredential](azure_core::TokenCredential), except a more specific error is returned.
+#[async_trait::async_trait]
+pub trait TokenCredential: Send + Sync {
+    type Error;
+    /// Gets a `TokenResponse` for the specified resource
+    async fn get_token(&self, resource: &str) -> Result<azure_core::TokenResponse, Self::Error>;
+}
+
+#[async_trait::async_trait]
+impl<Error> azure_core::TokenCredential for dyn TokenCredential<Error = Error>
+where
+    Error: std::error::Error + Send + Sync + 'static,
+{
+    async fn get_token(
+        &self,
+        resource: &str,
+    ) -> Result<azure_core::TokenResponse, azure_core::TokenCredentialError> {
+        TokenCredential::get_token(self, resource)
+            .await
+            .map_err(|error| azure_core::TokenCredentialError::GetTokenError(Box::new(error)))
+    }
+}

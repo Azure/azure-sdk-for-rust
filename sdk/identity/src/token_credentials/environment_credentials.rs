@@ -1,5 +1,5 @@
-use super::{ClientSecretCredential, TokenCredentialOptions};
-use azure_core::{TokenCredential, TokenResponse};
+use super::{ClientSecretCredential, TokenCredential, TokenCredentialOptions};
+use azure_core::TokenResponse;
 
 const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
 const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";
@@ -93,5 +93,17 @@ impl TokenCredential for EnvironmentCredential {
         }
 
         Err(EnvironmentCredentialError::NoValid)
+    }
+}
+
+#[async_trait::async_trait]
+impl azure_core::TokenCredential for EnvironmentCredential {
+    async fn get_token(
+        &self,
+        resource: &str,
+    ) -> Result<azure_core::TokenResponse, azure_core::TokenCredentialError> {
+        TokenCredential::get_token(self, resource)
+            .await
+            .map_err(|error| azure_core::TokenCredentialError::GetTokenError(Box::new(error)))
     }
 }

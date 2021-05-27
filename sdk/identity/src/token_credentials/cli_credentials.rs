@@ -1,4 +1,5 @@
-use azure_core::{TokenCredential, TokenResponse};
+use super::TokenCredential;
+use azure_core::TokenResponse;
 use chrono::{DateTime, Utc};
 use oauth2::AccessToken;
 use serde::Deserialize;
@@ -116,6 +117,18 @@ impl TokenCredential for AzureCliCredential {
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
         let tr = Self::get_access_token(Some(resource))?;
         Ok(TokenResponse::new(tr.access_token, tr.expires_on))
+    }
+}
+
+#[async_trait::async_trait]
+impl azure_core::TokenCredential for AzureCliCredential {
+    async fn get_token(
+        &self,
+        resource: &str,
+    ) -> Result<azure_core::TokenResponse, azure_core::TokenCredentialError> {
+        TokenCredential::get_token(self, resource)
+            .await
+            .map_err(|error| azure_core::TokenCredentialError::GetTokenError(Box::new(error)))
     }
 }
 

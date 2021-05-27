@@ -63,12 +63,17 @@ impl TokenResponse {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum TokenCredentialError {
+    #[error("Error getting token: {0}")]
+    GetTokenError(Box<dyn std::error::Error + Send + Sync>),
+}
+
 /// Represents a credential capable of providing an OAuth token.
 #[async_trait::async_trait]
 pub trait TokenCredential: Send + Sync {
-    type Error;
     /// Gets a `TokenResponse` for the specified resource
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error>;
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, TokenCredentialError>;
 }
 
 pub trait AppendToUrlQuery {

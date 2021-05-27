@@ -1,4 +1,5 @@
-use azure_core::{TokenCredential, TokenResponse};
+use super::TokenCredential;
+use azure_core::TokenResponse;
 use chrono::Utc;
 use oauth2::{
     basic::{BasicClient, BasicErrorResponseType},
@@ -169,5 +170,17 @@ impl TokenCredential for ClientSecretCredential {
             .map_err(ClientSecretCredentialError::RequestTokenError)?;
 
         Ok(token_result)
+    }
+}
+
+#[async_trait::async_trait]
+impl azure_core::TokenCredential for ClientSecretCredential {
+    async fn get_token(
+        &self,
+        resource: &str,
+    ) -> Result<azure_core::TokenResponse, azure_core::TokenCredentialError> {
+        TokenCredential::get_token(self, resource)
+            .await
+            .map_err(|error| azure_core::TokenCredentialError::GetTokenError(Box::new(error)))
     }
 }

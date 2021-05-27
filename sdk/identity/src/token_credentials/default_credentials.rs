@@ -1,5 +1,7 @@
-use super::{AzureCliCredential, EnvironmentCredential, ManagedIdentityCredential};
-use azure_core::{TokenCredential, TokenResponse};
+use super::{
+    AzureCliCredential, EnvironmentCredential, ManagedIdentityCredential, TokenCredential,
+};
+use azure_core::TokenResponse;
 use log::debug;
 
 #[derive(Debug, Default)]
@@ -142,5 +144,17 @@ impl TokenCredential for DefaultCredential {
             }
         }
         Err(DefaultCredentialError::EndOfDefaultList)
+    }
+}
+
+#[async_trait::async_trait]
+impl azure_core::TokenCredential for DefaultCredential {
+    async fn get_token(
+        &self,
+        resource: &str,
+    ) -> Result<azure_core::TokenResponse, azure_core::TokenCredentialError> {
+        TokenCredential::get_token(self, resource)
+            .await
+            .map_err(|error| azure_core::TokenCredentialError::GetTokenError(Box::new(error)))
     }
 }

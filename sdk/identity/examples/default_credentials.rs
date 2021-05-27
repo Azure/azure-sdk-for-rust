@@ -1,5 +1,4 @@
-use azure_core::TokenCredential;
-use azure_identity::token_credentials::DefaultCredential;
+use azure_identity::token_credentials::*;
 use url::Url;
 
 #[tokio::main]
