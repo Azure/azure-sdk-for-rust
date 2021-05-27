@@ -759,6 +759,178 @@ pub struct UserInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Label {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataList {
+    pub value: Vec<MetadataModel>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataModel {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MetadataProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataPatch {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MetadataPropertiesPatch>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataContentId {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataParentId {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataVersion {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MetadataKind {
+    #[serde(rename = "dataConnector")]
+    DataConnector,
+    #[serde(rename = "dataType")]
+    DataType,
+    #[serde(rename = "workbook")]
+    Workbook,
+    #[serde(rename = "workbookTemplate")]
+    WorkbookTemplate,
+    #[serde(rename = "playbook")]
+    Playbook,
+    #[serde(rename = "playbookTemplate")]
+    PlaybookTemplate,
+    #[serde(rename = "analyticRuleTemplate")]
+    AnalyticRuleTemplate,
+    #[serde(rename = "analyticRule")]
+    AnalyticRule,
+    #[serde(rename = "huntingQuery")]
+    HuntingQuery,
+    #[serde(rename = "investigationQuery")]
+    InvestigationQuery,
+    #[serde(rename = "parser")]
+    Parser,
+    #[serde(rename = "watchlist")]
+    Watchlist,
+    #[serde(rename = "watchlistTemplate")]
+    WatchlistTemplate,
+    #[serde(rename = "solution")]
+    Solution,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataSource {
+    pub kind: metadata_source::Kind,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "sourceId", default, skip_serializing_if = "Option::is_none")]
+    pub source_id: Option<String>,
+}
+pub mod metadata_source {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        #[serde(rename = "localWorkspace")]
+        LocalWorkspace,
+        #[serde(rename = "community")]
+        Community,
+        #[serde(rename = "solution")]
+        Solution,
+        #[serde(rename = "sourceRepository")]
+        SourceRepository,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataAuthor {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataSupport {
+    pub tier: metadata_support::Tier,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub link: Option<String>,
+}
+pub mod metadata_support {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Tier {
+        #[serde(rename = "microsoft")]
+        Microsoft,
+        #[serde(rename = "developer")]
+        Developer,
+        #[serde(rename = "community")]
+        Community,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataDependencies {
+    #[serde(rename = "contentId", default, skip_serializing_if = "Option::is_none")]
+    pub content_id: Option<MetadataContentId>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<MetadataKind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<MetadataVersion>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operator: Option<metadata_dependencies::Operator>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub criteria: Vec<MetadataDependencies>,
+}
+pub mod metadata_dependencies {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Operator {
+        #[serde(rename = "AND")]
+        And,
+        #[serde(rename = "OR")]
+        Or,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataProperties {
+    #[serde(rename = "contentId")]
+    pub content_id: MetadataContentId,
+    #[serde(rename = "parentId")]
+    pub parent_id: MetadataParentId,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<MetadataVersion>,
+    pub kind: MetadataKind,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<MetadataSource>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub author: Option<MetadataAuthor>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub support: Option<MetadataSupport>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dependencies: Option<MetadataDependencies>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataPropertiesPatch {
+    #[serde(rename = "contentId", default, skip_serializing_if = "Option::is_none")]
+    pub content_id: Option<MetadataContentId>,
+    #[serde(rename = "parentId", default, skip_serializing_if = "Option::is_none")]
+    pub parent_id: Option<MetadataParentId>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<MetadataVersion>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<MetadataKind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<MetadataSource>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub author: Option<MetadataAuthor>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub support: Option<MetadataSupport>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dependencies: Option<MetadataDependencies>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,

@@ -19,41 +19,32 @@ pub mod iot_hub_resource {
             resource_group_name,
             resource_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| get::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| get::Error::GetTokenError { source })?;
+                .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| get::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| get::Error::ExecuteRequestError { source })?;
+        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescription = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                let rsp_value: IotHubDescription =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                let rsp_value: ErrorDetails =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -70,18 +61,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn create_or_update(
@@ -99,52 +90,41 @@ pub mod iot_hub_resource {
             resource_group_name,
             resource_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| create_or_update::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PUT);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| create_or_update::Error::GetTokenError { source })?;
+                .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(iot_hub_description).map_err(|source| create_or_update::Error::SerializeError { source })?;
+        let req_body = azure_core::to_json(iot_hub_description).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| create_or_update::Error::BuildRequestError { source })?;
+        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| create_or_update::Error::ExecuteRequestError { source })?;
+            .map_err(create_or_update::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescription =
-                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: IotHubDescription = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescription =
-                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: IotHubDescription = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
-                    serde_json::from_slice(rsp_body).map_err(|source| create_or_update::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -166,18 +146,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn delete(
@@ -194,58 +174,45 @@ pub mod iot_hub_resource {
             resource_group_name,
             resource_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| delete::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::DELETE);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| delete::Error::GetTokenError { source })?;
+                .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| delete::Error::BuildRequestError { source })?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(|source| delete::Error::ExecuteRequestError { source })?;
+        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescription = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                let rsp_value: IotHubDescription =
+                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Accepted202(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescription = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                let rsp_value: IotHubDescription =
+                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             http::StatusCode::NOT_FOUND => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                let rsp_value: ErrorDetails =
+                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::NotFound404 { value: rsp_value })
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                let rsp_value: ErrorDetails =
+                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -270,18 +237,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn list_by_subscription(
@@ -294,43 +261,35 @@ pub mod iot_hub_resource {
             operation_config.base_path(),
             subscription_id
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| list_by_subscription::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(list_by_subscription::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| list_by_subscription::Error::GetTokenError { source })?;
+                .map_err(list_by_subscription::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list_by_subscription::Error::BuildRequestError { source })?;
+        let req = req_builder.body(req_body).map_err(list_by_subscription::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| list_by_subscription::Error::ExecuteRequestError { source })?;
+            .map_err(list_by_subscription::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescriptionListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_subscription::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: IotHubDescriptionListResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_subscription::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -347,18 +306,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn list_by_resource_group(
@@ -373,14 +332,14 @@ pub mod iot_hub_resource {
             subscription_id,
             resource_group_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| list_by_resource_group::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(list_by_resource_group::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| list_by_resource_group::Error::GetTokenError { source })?;
+                .map_err(list_by_resource_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -388,28 +347,22 @@ pub mod iot_hub_resource {
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| list_by_resource_group::Error::BuildRequestError { source })?;
+            .map_err(list_by_resource_group::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| list_by_resource_group::Error::ExecuteRequestError { source })?;
+            .map_err(list_by_resource_group::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescriptionListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: IotHubDescriptionListResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_resource_group::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -426,18 +379,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn get_stats(
@@ -454,42 +407,35 @@ pub mod iot_hub_resource {
             resource_group_name,
             resource_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| get_stats::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(get_stats::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| get_stats::Error::GetTokenError { source })?;
+                .map_err(get_stats::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| get_stats::Error::BuildRequestError { source })?;
+        let req = req_builder.body(req_body).map_err(get_stats::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| get_stats::Error::ExecuteRequestError { source })?;
+            .map_err(get_stats::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: RegistryStatistics =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_stats::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| get_stats::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body).map_err(|source| get_stats::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                let rsp_value: ErrorDetails =
+                    serde_json::from_slice(rsp_body).map_err(|source| get_stats::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_stats::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -506,18 +452,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn get_valid_skus(
@@ -534,43 +480,35 @@ pub mod iot_hub_resource {
             resource_group_name,
             resource_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| get_valid_skus::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(get_valid_skus::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| get_valid_skus::Error::GetTokenError { source })?;
+                .map_err(get_valid_skus::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| get_valid_skus::Error::BuildRequestError { source })?;
+        let req = req_builder.body(req_body).map_err(get_valid_skus::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| get_valid_skus::Error::ExecuteRequestError { source })?;
+            .map_err(get_valid_skus::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: IotHubSkuDescriptionListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_valid_skus::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| get_valid_skus::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorDetails =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_valid_skus::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| get_valid_skus::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_valid_skus::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -587,18 +525,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn list_event_hub_consumer_groups(
@@ -617,14 +555,14 @@ pub mod iot_hub_resource {
             resource_name,
             event_hub_endpoint_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| list_event_hub_consumer_groups::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(list_event_hub_consumer_groups::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| list_event_hub_consumer_groups::Error::GetTokenError { source })?;
+                .map_err(list_event_hub_consumer_groups::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -632,28 +570,22 @@ pub mod iot_hub_resource {
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| list_event_hub_consumer_groups::Error::BuildRequestError { source })?;
+            .map_err(list_event_hub_consumer_groups::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| list_event_hub_consumer_groups::Error::ExecuteRequestError { source })?;
+            .map_err(list_event_hub_consumer_groups::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubConsumerGroupsListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_event_hub_consumer_groups::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: EventHubConsumerGroupsListResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_event_hub_consumer_groups::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_event_hub_consumer_groups::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_event_hub_consumer_groups::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_event_hub_consumer_groups::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -670,18 +602,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn get_event_hub_consumer_group(
@@ -702,14 +634,14 @@ pub mod iot_hub_resource {
             event_hub_endpoint_name,
             name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| get_event_hub_consumer_group::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(get_event_hub_consumer_group::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| get_event_hub_consumer_group::Error::GetTokenError { source })?;
+                .map_err(get_event_hub_consumer_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -717,28 +649,22 @@ pub mod iot_hub_resource {
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| get_event_hub_consumer_group::Error::BuildRequestError { source })?;
+            .map_err(get_event_hub_consumer_group::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| get_event_hub_consumer_group::Error::ExecuteRequestError { source })?;
+            .map_err(get_event_hub_consumer_group::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubConsumerGroupInfo =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_event_hub_consumer_group::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: EventHubConsumerGroupInfo = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_event_hub_consumer_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_event_hub_consumer_group::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_event_hub_consumer_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_event_hub_consumer_group::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -755,18 +681,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn create_event_hub_consumer_group(
@@ -787,14 +713,14 @@ pub mod iot_hub_resource {
             event_hub_endpoint_name,
             name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| create_event_hub_consumer_group::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(create_event_hub_consumer_group::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PUT);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| create_event_hub_consumer_group::Error::GetTokenError { source })?;
+                .map_err(create_event_hub_consumer_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -802,28 +728,22 @@ pub mod iot_hub_resource {
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| create_event_hub_consumer_group::Error::BuildRequestError { source })?;
+            .map_err(create_event_hub_consumer_group::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| create_event_hub_consumer_group::Error::ExecuteRequestError { source })?;
+            .map_err(create_event_hub_consumer_group::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubConsumerGroupInfo =
-                    serde_json::from_slice(rsp_body).map_err(|source| create_event_hub_consumer_group::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: EventHubConsumerGroupInfo = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_event_hub_consumer_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
-                    serde_json::from_slice(rsp_body).map_err(|source| create_event_hub_consumer_group::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_event_hub_consumer_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_event_hub_consumer_group::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -840,18 +760,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn delete_event_hub_consumer_group(
@@ -872,14 +792,14 @@ pub mod iot_hub_resource {
             event_hub_endpoint_name,
             name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| delete_event_hub_consumer_group::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(delete_event_hub_consumer_group::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::DELETE);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| delete_event_hub_consumer_group::Error::GetTokenError { source })?;
+                .map_err(delete_event_hub_consumer_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -887,20 +807,17 @@ pub mod iot_hub_resource {
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| delete_event_hub_consumer_group::Error::BuildRequestError { source })?;
+            .map_err(delete_event_hub_consumer_group::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| delete_event_hub_consumer_group::Error::ExecuteRequestError { source })?;
+            .map_err(delete_event_hub_consumer_group::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete_event_hub_consumer_group::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                    .map_err(|source| delete_event_hub_consumer_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_event_hub_consumer_group::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -917,18 +834,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn list_jobs(
@@ -945,42 +862,35 @@ pub mod iot_hub_resource {
             resource_group_name,
             resource_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| list_jobs::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(list_jobs::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| list_jobs::Error::GetTokenError { source })?;
+                .map_err(list_jobs::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list_jobs::Error::BuildRequestError { source })?;
+        let req = req_builder.body(req_body).map_err(list_jobs::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| list_jobs::Error::ExecuteRequestError { source })?;
+            .map_err(list_jobs::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: JobResponseListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_jobs::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| list_jobs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body).map_err(|source| list_jobs::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                let rsp_value: ErrorDetails =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_jobs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_jobs::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -997,18 +907,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn get_job(
@@ -1027,41 +937,35 @@ pub mod iot_hub_resource {
             resource_name,
             job_id
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| get_job::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(get_job::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| get_job::Error::GetTokenError { source })?;
+                .map_err(get_job::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| get_job::Error::BuildRequestError { source })?;
+        let req = req_builder.body(req_body).map_err(get_job::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| get_job::Error::ExecuteRequestError { source })?;
+            .map_err(get_job::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobResponse = serde_json::from_slice(rsp_body).map_err(|source| get_job::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                let rsp_value: JobResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| get_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body).map_err(|source| get_job::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                let rsp_value: ErrorDetails =
+                    serde_json::from_slice(rsp_body).map_err(|source| get_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_job::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1078,18 +982,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn get_quota_metrics(
@@ -1106,43 +1010,35 @@ pub mod iot_hub_resource {
             resource_group_name,
             resource_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| get_quota_metrics::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(get_quota_metrics::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| get_quota_metrics::Error::GetTokenError { source })?;
+                .map_err(get_quota_metrics::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| get_quota_metrics::Error::BuildRequestError { source })?;
+        let req = req_builder.body(req_body).map_err(get_quota_metrics::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| get_quota_metrics::Error::ExecuteRequestError { source })?;
+            .map_err(get_quota_metrics::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubQuotaMetricInfoListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_quota_metrics::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: IotHubQuotaMetricInfoListResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_quota_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_quota_metrics::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_quota_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_quota_metrics::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1159,18 +1055,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn check_name_availability(
@@ -1184,43 +1080,37 @@ pub mod iot_hub_resource {
             operation_config.base_path(),
             subscription_id
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| check_name_availability::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(check_name_availability::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| check_name_availability::Error::GetTokenError { source })?;
+                .map_err(check_name_availability::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(operation_inputs).map_err(|source| check_name_availability::Error::SerializeError { source })?;
+        let req_body = azure_core::to_json(operation_inputs).map_err(check_name_availability::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| check_name_availability::Error::BuildRequestError { source })?;
+            .map_err(check_name_availability::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| check_name_availability::Error::ExecuteRequestError { source })?;
+            .map_err(check_name_availability::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubNameAvailabilityInfo =
-                    serde_json::from_slice(rsp_body).map_err(|source| check_name_availability::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: IotHubNameAvailabilityInfo = serde_json::from_slice(rsp_body)
+                    .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
-                    serde_json::from_slice(rsp_body).map_err(|source| check_name_availability::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                    .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1237,18 +1127,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn list_keys(
@@ -1265,43 +1155,36 @@ pub mod iot_hub_resource {
             resource_group_name,
             resource_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| list_keys::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(list_keys::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| list_keys::Error::GetTokenError { source })?;
+                .map_err(list_keys::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| list_keys::Error::BuildRequestError { source })?;
+        let req = req_builder.body(req_body).map_err(list_keys::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| list_keys::Error::ExecuteRequestError { source })?;
+            .map_err(list_keys::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: SharedAccessSignatureAuthorizationRuleListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                let rsp_value: ErrorDetails =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_keys::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1318,18 +1201,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn get_keys_for_key_name(
@@ -1348,14 +1231,14 @@ pub mod iot_hub_resource {
             resource_name,
             key_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| get_keys_for_key_name::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(get_keys_for_key_name::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| get_keys_for_key_name::Error::GetTokenError { source })?;
+                .map_err(get_keys_for_key_name::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -1364,28 +1247,22 @@ pub mod iot_hub_resource {
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(|source| get_keys_for_key_name::Error::BuildRequestError { source })?;
+            .map_err(get_keys_for_key_name::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| get_keys_for_key_name::Error::ExecuteRequestError { source })?;
+            .map_err(get_keys_for_key_name::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessSignatureAuthorizationRule =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_keys_for_key_name::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: SharedAccessSignatureAuthorizationRule = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_keys_for_key_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_keys_for_key_name::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_keys_for_key_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_keys_for_key_name::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1402,18 +1279,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn export_devices(
@@ -1431,43 +1308,35 @@ pub mod iot_hub_resource {
             resource_group_name,
             resource_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| export_devices::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(export_devices::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| export_devices::Error::GetTokenError { source })?;
+                .map_err(export_devices::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(export_devices_parameters).map_err(|source| export_devices::Error::SerializeError { source })?;
+        let req_body = azure_core::to_json(export_devices_parameters).map_err(export_devices::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| export_devices::Error::BuildRequestError { source })?;
+        let req = req_builder.body(req_body).map_err(export_devices::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| export_devices::Error::ExecuteRequestError { source })?;
+            .map_err(export_devices::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: JobResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| export_devices::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| export_devices::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorDetails =
-                    serde_json::from_slice(rsp_body).map_err(|source| export_devices::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| export_devices::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(export_devices::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1484,18 +1353,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
     pub async fn import_devices(
@@ -1513,43 +1382,35 @@ pub mod iot_hub_resource {
             resource_group_name,
             resource_name
         );
-        let mut url = url::Url::parse(url_str).map_err(|source| import_devices::Error::ParseUrlError { source })?;
+        let mut url = url::Url::parse(url_str).map_err(import_devices::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(|source| import_devices::Error::GetTokenError { source })?;
+                .map_err(import_devices::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(import_devices_parameters).map_err(|source| import_devices::Error::SerializeError { source })?;
+        let req_body = azure_core::to_json(import_devices_parameters).map_err(import_devices::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(|source| import_devices::Error::BuildRequestError { source })?;
+        let req = req_builder.body(req_body).map_err(import_devices::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(|source| import_devices::Error::ExecuteRequestError { source })?;
+            .map_err(import_devices::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: JobResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| import_devices::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| import_devices::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorDetails =
-                    serde_json::from_slice(rsp_body).map_err(|source| import_devices::Error::DeserializeError {
-                        source,
-                        body: rsp_body.clone(),
-                    })?;
+                    serde_json::from_slice(rsp_body).map_err(|source| import_devices::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(import_devices::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
@@ -1566,18 +1427,18 @@ pub mod iot_hub_resource {
                 status_code: http::StatusCode,
                 value: models::ErrorDetails,
             },
-            #[error("Failed to parse request URL: {}", source)]
-            ParseUrlError { source: url::ParseError },
-            #[error("Failed to build request: {}", source)]
-            BuildRequestError { source: http::Error },
-            #[error("Failed to execute request: {}", source)]
-            ExecuteRequestError { source: azure_core::errors::HttpError },
-            #[error("Failed to serialize request body: {}", source)]
-            SerializeError { source: serde_json::Error },
-            #[error("Failed to deserialize response body: {}", source)]
-            DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-            #[error("Failed to get access token: {}", source)]
-            GetTokenError { source: azure_core::errors::AzureError },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::TokenCredentialError),
         }
     }
 }

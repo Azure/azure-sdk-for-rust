@@ -3483,6 +3483,59 @@ pub struct WorkloadProtectableItemResourceList {
     pub value: Vec<WorkloadProtectableItemResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupManagementUsage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<backup_management_usage::Unit>,
+    #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
+    pub quota_period: Option<String>,
+    #[serde(rename = "nextResetTime", default, skip_serializing_if = "Option::is_none")]
+    pub next_reset_time: Option<String>,
+    #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
+    pub current_value: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<NameInfo>,
+}
+pub mod backup_management_usage {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Unit {
+        Count,
+        Bytes,
+        Seconds,
+        Percent,
+        CountPerSecond,
+        BytesPerSecond,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NameInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
+    pub localized_value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupManagementUsageList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<BackupManagementUsage>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BmsBackupSummariesQueryObject {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<bms_backup_summaries_query_object::Type>,
+}
+pub mod bms_backup_summaries_query_object {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Invalid,
+        BackupProtectedItemCountSummary,
+        BackupProtectionContainerCountSummary,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AadProperties {
     #[serde(rename = "servicePrincipalClientId", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_client_id: Option<String>,
@@ -3777,38 +3830,6 @@ pub mod azure_workload_sql_auto_protection_intent {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupManagementUsage {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<backup_management_usage::Unit>,
-    #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
-    pub quota_period: Option<String>,
-    #[serde(rename = "nextResetTime", default, skip_serializing_if = "Option::is_none")]
-    pub next_reset_time: Option<String>,
-    #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
-    pub current_value: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<NameInfo>,
-}
-pub mod backup_management_usage {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Unit {
-        Count,
-        Bytes,
-        Seconds,
-        Percent,
-        CountPerSecond,
-        BytesPerSecond,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupManagementUsageList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<BackupManagementUsage>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupStatusRequest {
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<backup_status_request::ResourceType>,
@@ -3882,30 +3903,9 @@ pub mod backup_status_response {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BmsBackupSummariesQueryObject {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<bms_backup_summaries_query_object::Type>,
-}
-pub mod bms_backup_summaries_query_object {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        Invalid,
-        BackupProtectedItemCountSummary,
-        BackupProtectionContainerCountSummary,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FeatureSupportRequest {
     #[serde(rename = "featureType", default, skip_serializing_if = "Option::is_none")]
     pub feature_type: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NameInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
-    pub localized_value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PreValidateEnableBackupRequest {

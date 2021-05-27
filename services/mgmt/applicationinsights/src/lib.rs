@@ -7,6 +7,10 @@ pub use package_2021_03_only::{models, operations, API_VERSION};
 mod package_preview_2021_03_only;
 #[cfg(feature = "package-preview-2021-03-only")]
 pub use package_preview_2021_03_only::{models, operations, API_VERSION};
+#[cfg(feature = "package-2020-11-only")]
+mod package_2020_11_only;
+#[cfg(feature = "package-2020-11-only")]
+pub use package_2020_11_only::{models, operations, API_VERSION};
 #[cfg(feature = "package-2020-10-only")]
 mod package_2020_10_only;
 #[cfg(feature = "package-2020-10-only")]

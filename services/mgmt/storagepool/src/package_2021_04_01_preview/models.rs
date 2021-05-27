@@ -221,6 +221,8 @@ pub struct IscsiLun {
     pub name: String,
     #[serde(rename = "managedDiskAzureResourceId")]
     pub managed_disk_azure_resource_id: String,
+    #[serde(skip_serializing)]
+    pub lun: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {

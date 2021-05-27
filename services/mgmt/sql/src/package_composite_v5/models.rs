@@ -4068,7 +4068,7 @@ pub struct ManagedInstance {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ResourceIdentityWithUserAssignedIdentities>,
+    pub identity: Option<ResourceIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4079,7 +4079,7 @@ pub struct ManagedInstanceUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ResourceIdentityWithUserAssignedIdentities>,
+    pub identity: Option<ResourceIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4775,7 +4775,7 @@ pub struct Server {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ResourceIdentityWithUserAssignedIdentities>,
+    pub identity: Option<ResourceIdentity>,
     #[serde(skip_serializing)]
     pub kind: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4784,7 +4784,7 @@ pub struct Server {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ResourceIdentityWithUserAssignedIdentities>,
+    pub identity: Option<ResourceIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6107,4 +6107,24 @@ pub struct TrackedResource {
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceIdentity {
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+    #[serde(rename = "principalId", skip_serializing)]
+    pub principal_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<resource_identity::Type>,
+    #[serde(rename = "tenantId", skip_serializing)]
+    pub tenant_id: Option<String>,
+}
+pub mod resource_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        None,
+        SystemAssigned,
+        UserAssigned,
+    }
 }

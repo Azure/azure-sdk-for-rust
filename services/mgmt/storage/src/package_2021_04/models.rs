@@ -1866,10 +1866,10 @@ pub struct SignedIdentifier {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessPolicy {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub start: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub expiry: Option<String>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
+    pub expiry_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub permission: Option<String>,
 }

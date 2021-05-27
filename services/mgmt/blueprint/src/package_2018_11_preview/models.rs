@@ -108,7 +108,7 @@ pub struct BlueprintProperties {
     pub shared_blueprint_properties: SharedBlueprintProperties,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub versions: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing)]
     pub layout: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

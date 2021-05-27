@@ -46,6 +46,8 @@ pub struct SbNamespaceUpdateParameters {
 pub struct SbNamespaceProperties {
     #[serde(rename = "provisioningState", skip_serializing)]
     pub provisioning_state: Option<String>,
+    #[serde(skip_serializing)]
+    pub status: Option<String>,
     #[serde(rename = "createdAt", skip_serializing)]
     pub created_at: Option<String>,
     #[serde(rename = "updatedAt", skip_serializing)]
