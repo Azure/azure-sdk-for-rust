@@ -25,11 +25,11 @@ impl TryFrom<(&str, Response<Bytes>)> for GetBlobResponse {
 
         let request_id = request_id_from_headers(response.headers())?;
         let date = date_from_headers(response.headers())?;
-        let content_range_header = response.headers()
-                .get(http::header::CONTENT_RANGE);
+
+        let content_range_header = response.headers().get(http::header::CONTENT_RANGE);
         let content_range = match content_range_header {
             Some(hv) => Some(ContentRange::from_str(hv.to_str()?)?),
-            None => None
+            None => None,
         };
 
         Ok(GetBlobResponse {
