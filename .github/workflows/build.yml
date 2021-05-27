@@ -40,8 +40,8 @@ jobs:
     - name: sdk tests
       run: cargo test --all
 
-    - name: services tests
-      run: cargo build --manifest-path services/Cargo.toml --all
+    - name: services check
+      run: cargo check --manifest-path services/Cargo.toml --all
 
     - name: e2e tests build
       run: |
