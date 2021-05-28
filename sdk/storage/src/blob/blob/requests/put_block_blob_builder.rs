@@ -33,7 +33,7 @@ impl<'a> PutBlockBlobBuilder<'a> {
             content_language: None,
             content_disposition: None,
             metadata: None,
-            access_tier: Some(AccessTier::Hot),
+            access_tier: None,
             lease_id: None,
             client_request_id: None,
             timeout: None,
