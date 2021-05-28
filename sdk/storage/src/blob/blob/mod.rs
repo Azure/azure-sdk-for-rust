@@ -104,21 +104,17 @@ pub struct BlobProperties {
     #[serde(rename = "Content-Type")]
     pub content_type: String,
     #[serde(rename = "Content-Encoding")]
-    #[serde(default = "String::new")]
-    pub content_encoding: String,
+    pub content_encoding: Option<String>,
     #[serde(rename = "Content-Language")]
-    #[serde(default = "String::new")]
-    pub content_language: String,
+    pub content_language: Option<String>,
     #[serde(rename = "Content-Disposition")]
-    #[serde(default = "String::new")]
-    pub content_disposition: String,
+    pub content_disposition: Option<String>,
     #[serde(rename = "Content-MD5")]
     pub content_md5: Option<String>,
     #[serde(rename = "Content-CRC64")]
     pub content_crc64: Option<String>,
     #[serde(rename = "Cache-Control")]
-    #[serde(default = "String::new")]
-    pub cache_control: String,
+    pub cache_control: Option<String>,
     #[serde(rename = "x-ms-blob-sequence-number")]
     pub blob_sequence_number: Option<u64>,
     pub blob_type: BlobType,
@@ -213,25 +209,21 @@ impl Blob {
         trace!("blob_type == {:?}", blob_type);
 
         let content_encoding = h
-            .get_as_string(header::CONTENT_ENCODING)
-            .unwrap_or_else(String::new);
+            .get_as_string(header::CONTENT_ENCODING);
         trace!("content_encoding == {:?}", content_encoding);
 
         let content_language = h
-            .get_as_string(header::CONTENT_LANGUAGE)
-            .unwrap_or_else(String::new);
+            .get_as_string(header::CONTENT_LANGUAGE);
         trace!("content_language == {:?}", content_language);
 
         let content_md5 = h.get_as_string(CONTENT_MD5).unwrap_or_else(String::new);
         trace!("content_md5 == {:?}", content_md5);
 
         let cache_control = h
-            .get_as_string(header::CACHE_CONTROL)
-            .unwrap_or_else(String::new);
+            .get_as_string(header::CACHE_CONTROL);
 
         let content_disposition = h
-            .get_as_string(header::CONTENT_DISPOSITION)
-            .unwrap_or_else(String::new);
+            .get_as_string(header::CONTENT_DISPOSITION);
 
         let lease_status = h
             .get_as_enum(LEASE_STATUS)?
