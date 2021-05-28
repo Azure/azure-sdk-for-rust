@@ -173,7 +173,7 @@ fn extract_endpoint(url: &Url) -> Result<String, Error> {
         .splitn(2, '.') // FIXME: replace with split_once() when it is in stable
         .last()
         .ok_or(Error::DomainParse)?;
-    Ok(format!("{}://{}/", url.scheme(), endpoint))
+    Ok(format!("{}://{}", url.scheme(), endpoint))
 }
 
 #[cfg(test)]
@@ -184,19 +184,19 @@ mod tests {
     fn can_extract_endpoint() {
         let suffix =
             extract_endpoint(&Url::parse("https://myvault.vault.azure.net").unwrap()).unwrap();
-        assert_eq!(suffix, "https://vault.azure.net/");
+        assert_eq!(suffix, "https://vault.azure.net");
 
         let suffix =
             extract_endpoint(&Url::parse("https://myvault.mycustom.vault.server.net").unwrap())
                 .unwrap();
-        assert_eq!(suffix, "https://mycustom.vault.server.net/");
+        assert_eq!(suffix, "https://mycustom.vault.server.net");
 
         let suffix = extract_endpoint(&Url::parse("https://myvault.internal").unwrap()).unwrap();
-        assert_eq!(suffix, "https://internal/");
+        assert_eq!(suffix, "https://internal");
 
         let suffix =
             extract_endpoint(&Url::parse("some-scheme://myvault.vault.azure.net").unwrap())
                 .unwrap();
-        assert_eq!(suffix, "some-scheme://vault.azure.net/");
+        assert_eq!(suffix, "some-scheme://vault.azure.net");
     }
 }
