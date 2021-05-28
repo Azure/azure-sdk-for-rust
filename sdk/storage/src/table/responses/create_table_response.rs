@@ -1,5 +1,5 @@
-use crate::table::prelude::*;
-use azure_core::{errors::AzureError, headers::CommonStorageResponseHeaders};
+use crate::{table::prelude::*, AzureStorageError};
+use azure_core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::Response;
 use std::convert::{TryFrom, TryInto};
@@ -11,7 +11,7 @@ pub struct CreateTableResponse {
 }
 
 impl TryFrom<&Response<Bytes>> for CreateTableResponse {
-    type Error = AzureError;
+    type Error = AzureStorageError;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         debug!("{}", std::str::from_utf8(response.body())?);

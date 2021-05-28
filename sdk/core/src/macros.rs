@@ -77,20 +77,20 @@ macro_rules! create_enum {
         }
 
         impl $crate::parsing::FromStringOptional<$name> for $name {
-            fn from_str_optional(s : &str) -> ::std::result::Result<$name, $crate::errors::TraversingError> {
-                s.parse::<$name>().map_err(|e| { $crate::errors::TraversingError::ParsingError(e) })
+            fn from_str_optional(s : &str) -> ::std::result::Result<$name, $crate::TraversingError> {
+                s.parse::<$name>().map_err(|e| { $crate::TraversingError::ParsingError(e) })
             }
         }
 
         impl ::std::str::FromStr for $name {
-            type Err = $crate::errors::ParsingError;
+            type Err = $crate::ParsingError;
 
-            fn from_str(s: &str) -> ::std::result::Result<$name, $crate::errors::ParsingError> {
+            fn from_str(s: &str) -> ::std::result::Result<$name, $crate::ParsingError> {
                 match s {
                     $(
                         $value => Ok($name::$variant),
                     )*
-                    _ => Err($crate::errors::ParsingError::ElementNotFound(s.to_owned())),
+                    _ => Err($crate::ParsingError::ElementNotFound(s.to_owned())),
                 }
             }
         }
@@ -151,7 +151,7 @@ macro_rules! response_from_headers {
         }
 
         impl $cn {
-            pub(crate) fn from_headers(headers: &HeaderMap) -> Result<$cn, $crate::errors::AzureError> {
+            pub(crate) fn from_headers(headers: &HeaderMap) -> Result<$cn, $crate::Error> {
                $(
                     let $na = $fh(headers)?;
                 )+

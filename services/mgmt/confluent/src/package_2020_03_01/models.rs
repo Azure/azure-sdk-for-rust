@@ -63,7 +63,7 @@ pub struct OperationResult {
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationResult>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nextLink", skip_serializing)]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

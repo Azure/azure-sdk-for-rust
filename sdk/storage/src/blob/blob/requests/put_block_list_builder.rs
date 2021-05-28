@@ -32,7 +32,7 @@ impl<'a> PutBlockListBuilder<'a> {
             content_disposition: None,
             content_md5: None,
             metadata: None,
-            access_tier: Some(AccessTier::Hot),
+            access_tier: None,
             lease_id: None,
             client_request_id: None,
             timeout: None,

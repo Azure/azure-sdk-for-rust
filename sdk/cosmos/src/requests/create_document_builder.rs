@@ -4,8 +4,8 @@ use crate::cosmos_entity::{
 use crate::prelude::*;
 use crate::resources::ResourceType;
 use crate::responses::CreateDocumentResponse;
-use azure_core::errors::UnexpectedHTTPResult;
 use azure_core::prelude::*;
+use azure_core::HttpError;
 use chrono::{DateTime, Utc};
 use http::StatusCode;
 use serde::Serialize;
@@ -98,14 +98,14 @@ impl<'a, 'b, 'c> CreateDocumentBuilder<'a, 'b> {
         debug!("whole body == {:#?}", response.body());
 
         if self.is_upsert == IsUpsert::No && response.status() != StatusCode::CREATED {
-            return Err(UnexpectedHTTPResult::new(
+            return Err(HttpError::new_unexpected_status_code(
                 StatusCode::CREATED,
                 response.status(),
                 std::str::from_utf8(response.body())?,
             )
             .into());
         } else if response.status() != StatusCode::CREATED && response.status() != StatusCode::OK {
-            return Err(UnexpectedHTTPResult::new_multiple(
+            return Err(HttpError::new_multiple_unexpected_status_code(
                 vec![StatusCode::CREATED, StatusCode::OK],
                 response.status(),
                 std::str::from_utf8(response.body())?,

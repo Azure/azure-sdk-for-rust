@@ -291,8 +291,8 @@ pub struct BackupCriteria {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupInstance {
-    #[serde(rename = "friendlyName")]
-    pub friendly_name: String,
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
     #[serde(rename = "dataSourceInfo")]
     pub data_source_info: Datasource,
     #[serde(rename = "dataSourceSetInfo", default, skip_serializing_if = "Option::is_none")]

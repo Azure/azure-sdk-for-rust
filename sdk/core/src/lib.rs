@@ -4,37 +4,44 @@
 #[macro_use]
 extern crate log;
 #[macro_use]
-extern crate quick_error;
-#[macro_use]
 extern crate serde_derive;
 
 #[macro_use]
 mod macros;
 
-pub mod errors;
+mod bytes_stream;
+mod context;
+mod errors;
 pub mod headers;
-mod http;
 mod http_client;
 pub mod incompletevector;
 mod models;
 pub mod parsing;
-mod policy;
+pub mod pipeline;
+pub mod policies;
 pub mod prelude;
+mod request;
 mod request_options;
+mod response;
+mod seekable_stream;
+mod sleep;
 pub mod util;
 
 use chrono::{DateTime, Utc};
-use errors::AzureError;
 use headers::*;
 use oauth2::AccessToken;
 use std::fmt::Debug;
 use uuid::Uuid;
 
-pub use self::http::{Request, Response};
+pub use bytes_stream::*;
+pub use context::Context;
+pub use errors::*;
 pub use headers::AddAsHeader;
 pub use http_client::{to_json, HttpClient};
 pub use models::*;
-pub use policy::*;
+pub use request::*;
+pub use response::*;
+pub use seekable_stream::*;
 
 pub type RequestId = Uuid;
 pub type SessionToken = String;
@@ -60,13 +67,7 @@ impl TokenResponse {
 #[async_trait::async_trait]
 pub trait TokenCredential: Send + Sync {
     /// Gets a `TokenResponse` for the specified resource
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError>;
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Consistency {
-    Md5([u8; 16]),
-    Crc64([u8; 8]),
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Error>;
 }
 
 pub trait AppendToUrlQuery {

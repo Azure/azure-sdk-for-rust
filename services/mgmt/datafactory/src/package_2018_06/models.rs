@@ -1219,6 +1219,8 @@ pub struct IntegrationRuntimeSsisProperties {
     pub express_custom_setup_properties: Vec<CustomSetupBase>,
     #[serde(rename = "packageStores", default, skip_serializing_if = "Vec::is_empty")]
     pub package_stores: Vec<PackageStore>,
+    #[serde(rename = "managedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub managed_credential: Option<EntityReference>,
 }
 pub mod integration_runtime_ssis_properties {
     use super::*;
@@ -1351,6 +1353,7 @@ pub mod entity_reference {
     pub enum Type {
         IntegrationRuntimeReference,
         LinkedServiceReference,
+        CredentialReference,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1878,6 +1881,8 @@ pub struct StoreReadSettings {
     pub type_: String,
     #[serde(rename = "maxConcurrentConnections", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_connections: Option<serde_json::Value>,
+    #[serde(rename = "disableMetricsCollection", default, skip_serializing_if = "Option::is_none")]
+    pub disable_metrics_collection: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBlobStorageReadSettings {
@@ -2205,6 +2210,8 @@ pub struct StoreWriteSettings {
     pub type_: String,
     #[serde(rename = "maxConcurrentConnections", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_connections: Option<serde_json::Value>,
+    #[serde(rename = "disableMetricsCollection", default, skip_serializing_if = "Option::is_none")]
+    pub disable_metrics_collection: Option<serde_json::Value>,
     #[serde(rename = "copyBehavior", default, skip_serializing_if = "Option::is_none")]
     pub copy_behavior: Option<serde_json::Value>,
 }
@@ -2362,17 +2369,14 @@ pub struct JsonWriteSettings {
     #[serde(flatten)]
     pub format_write_settings: FormatWriteSettings,
     #[serde(rename = "filePattern", default, skip_serializing_if = "Option::is_none")]
-    pub file_pattern: Option<json_write_settings::FilePattern>,
+    pub file_pattern: Option<serde_json::Value>,
 }
-pub mod json_write_settings {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum FilePattern {
-        #[serde(rename = "setOfObjects")]
-        SetOfObjects,
-        #[serde(rename = "arrayOfObjects")]
-        ArrayOfObjects,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum JsonWriteFilePattern {
+    #[serde(rename = "setOfObjects")]
+    SetOfObjects,
+    #[serde(rename = "arrayOfObjects")]
+    ArrayOfObjects,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvroSource {
@@ -2522,6 +2526,8 @@ pub struct CopySource {
     pub source_retry_wait: Option<serde_json::Value>,
     #[serde(rename = "maxConcurrentConnections", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_connections: Option<serde_json::Value>,
+    #[serde(rename = "disableMetricsCollection", default, skip_serializing_if = "Option::is_none")]
+    pub disable_metrics_collection: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BinarySource {
@@ -3553,6 +3559,8 @@ pub struct CopySink {
     pub sink_retry_wait: Option<serde_json::Value>,
     #[serde(rename = "maxConcurrentConnections", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_connections: Option<serde_json::Value>,
+    #[serde(rename = "disableMetricsCollection", default, skip_serializing_if = "Option::is_none")]
+    pub disable_metrics_collection: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapCloudForCustomerSink {
@@ -3632,6 +3640,8 @@ pub struct BlobSink {
     pub blob_writer_add_header: Option<serde_json::Value>,
     #[serde(rename = "copyBehavior", default, skip_serializing_if = "Option::is_none")]
     pub copy_behavior: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub metadata: Vec<MetadataItem>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileSystemSink {
@@ -3882,6 +3892,8 @@ pub struct AzureBlobFsSink {
     pub copy_sink: CopySink,
     #[serde(rename = "copyBehavior", default, skip_serializing_if = "Option::is_none")]
     pub copy_behavior: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub metadata: Vec<MetadataItem>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSearchIndexSink {
@@ -4004,6 +4016,20 @@ pub mod salesforce_service_cloud_sink {
         Insert,
         Upsert,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MongoDbAtlasSink {
+    #[serde(flatten)]
+    pub copy_sink: CopySink,
+    #[serde(rename = "writeBehavior", default, skip_serializing_if = "Option::is_none")]
+    pub write_behavior: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MongoDbV2Sink {
+    #[serde(flatten)]
+    pub copy_sink: CopySink,
+    #[serde(rename = "writeBehavior", default, skip_serializing_if = "Option::is_none")]
+    pub write_behavior: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CosmosDbMongoDbApiSink {
@@ -4917,6 +4943,13 @@ pub enum NetezzaPartitionOption {
     DynamicRange,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataItem {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Trigger {
     #[serde(rename = "type")]
     pub type_: String,
@@ -5366,7 +5399,7 @@ pub struct JsonFormat {
     #[serde(flatten)]
     pub dataset_storage_format: DatasetStorageFormat,
     #[serde(rename = "filePattern", default, skip_serializing_if = "Option::is_none")]
-    pub file_pattern: Option<JsonFormatFilePattern>,
+    pub file_pattern: Option<serde_json::Value>,
     #[serde(rename = "nestingSeparator", default, skip_serializing_if = "Option::is_none")]
     pub nesting_separator: Option<serde_json::Value>,
     #[serde(rename = "encodingName", default, skip_serializing_if = "Option::is_none")]
@@ -5413,21 +5446,21 @@ pub struct DatasetGZipCompression {
     #[serde(flatten)]
     pub dataset_compression: DatasetCompression,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<CompressionLevel>,
+    pub level: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetDeflateCompression {
     #[serde(flatten)]
     pub dataset_compression: DatasetCompression,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<CompressionLevel>,
+    pub level: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetZipDeflateCompression {
     #[serde(flatten)]
     pub dataset_compression: DatasetCompression,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<CompressionLevel>,
+    pub level: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetTarCompression {
@@ -5439,7 +5472,7 @@ pub struct DatasetTarGZipCompression {
     #[serde(flatten)]
     pub dataset_compression: DatasetCompression,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<CompressionLevel>,
+    pub level: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CompressionLevel {
@@ -5513,8 +5546,10 @@ pub struct ExcelDataset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExcelDatasetTypeProperties {
     pub location: DatasetLocation,
-    #[serde(rename = "sheetName")]
-    pub sheet_name: serde_json::Value,
+    #[serde(rename = "sheetName", default, skip_serializing_if = "Option::is_none")]
+    pub sheet_name: Option<serde_json::Value>,
+    #[serde(rename = "sheetIndex", default, skip_serializing_if = "Option::is_none")]
+    pub sheet_index: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub range: Option<serde_json::Value>,
     #[serde(rename = "firstRowAsHeader", default, skip_serializing_if = "Option::is_none")]
@@ -5535,21 +5570,7 @@ pub struct ParquetDataset {
 pub struct ParquetDatasetTypeProperties {
     pub location: DatasetLocation,
     #[serde(rename = "compressionCodec", default, skip_serializing_if = "Option::is_none")]
-    pub compression_codec: Option<parquet_dataset_type_properties::CompressionCodec>,
-}
-pub mod parquet_dataset_type_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CompressionCodec {
-        #[serde(rename = "none")]
-        None,
-        #[serde(rename = "gzip")]
-        Gzip,
-        #[serde(rename = "snappy")]
-        Snappy,
-        #[serde(rename = "lzo")]
-        Lzo,
-    }
+    pub compression_codec: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DelimitedTextDataset {
@@ -5568,9 +5589,9 @@ pub struct DelimitedTextDatasetTypeProperties {
     #[serde(rename = "encodingName", default, skip_serializing_if = "Option::is_none")]
     pub encoding_name: Option<serde_json::Value>,
     #[serde(rename = "compressionCodec", default, skip_serializing_if = "Option::is_none")]
-    pub compression_codec: Option<delimited_text_dataset_type_properties::CompressionCodec>,
+    pub compression_codec: Option<serde_json::Value>,
     #[serde(rename = "compressionLevel", default, skip_serializing_if = "Option::is_none")]
-    pub compression_level: Option<CompressionLevel>,
+    pub compression_level: Option<serde_json::Value>,
     #[serde(rename = "quoteChar", default, skip_serializing_if = "Option::is_none")]
     pub quote_char: Option<serde_json::Value>,
     #[serde(rename = "escapeChar", default, skip_serializing_if = "Option::is_none")]
@@ -5580,27 +5601,28 @@ pub struct DelimitedTextDatasetTypeProperties {
     #[serde(rename = "nullValue", default, skip_serializing_if = "Option::is_none")]
     pub null_value: Option<serde_json::Value>,
 }
-pub mod delimited_text_dataset_type_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CompressionCodec {
-        #[serde(rename = "bzip2")]
-        Bzip2,
-        #[serde(rename = "gzip")]
-        Gzip,
-        #[serde(rename = "deflate")]
-        Deflate,
-        #[serde(rename = "zipDeflate")]
-        ZipDeflate,
-        #[serde(rename = "snappy")]
-        Snappy,
-        #[serde(rename = "lz4")]
-        Lz4,
-        #[serde(rename = "tar")]
-        Tar,
-        #[serde(rename = "tarGZip")]
-        TarGZip,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum CompressionCodec {
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "lzo")]
+    Lzo,
+    #[serde(rename = "bzip2")]
+    Bzip2,
+    #[serde(rename = "gzip")]
+    Gzip,
+    #[serde(rename = "deflate")]
+    Deflate,
+    #[serde(rename = "zipDeflate")]
+    ZipDeflate,
+    #[serde(rename = "snappy")]
+    Snappy,
+    #[serde(rename = "lz4")]
+    Lz4,
+    #[serde(rename = "tar")]
+    Tar,
+    #[serde(rename = "tarGZip")]
+    TarGZip,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonDataset {
@@ -6982,7 +7004,7 @@ pub struct DynamicsLinkedService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DynamicsLinkedServiceTypeProperties {
     #[serde(rename = "deploymentType")]
-    pub deployment_type: dynamics_linked_service_type_properties::DeploymentType,
+    pub deployment_type: serde_json::Value,
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6992,7 +7014,7 @@ pub struct DynamicsLinkedServiceTypeProperties {
     #[serde(rename = "organizationName", default, skip_serializing_if = "Option::is_none")]
     pub organization_name: Option<serde_json::Value>,
     #[serde(rename = "authenticationType")]
-    pub authentication_type: dynamics_linked_service_type_properties::AuthenticationType,
+    pub authentication_type: serde_json::Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7000,31 +7022,23 @@ pub struct DynamicsLinkedServiceTypeProperties {
     #[serde(rename = "servicePrincipalId", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_id: Option<serde_json::Value>,
     #[serde(rename = "servicePrincipalCredentialType", default, skip_serializing_if = "Option::is_none")]
-    pub service_principal_credential_type: Option<dynamics_linked_service_type_properties::ServicePrincipalCredentialType>,
+    pub service_principal_credential_type: Option<serde_json::Value>,
     #[serde(rename = "servicePrincipalCredential", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_credential: Option<SecretBase>,
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
 }
-pub mod dynamics_linked_service_type_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DeploymentType {
-        Online,
-        OnPremisesWithIfd,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AuthenticationType {
-        Office365,
-        Ifd,
-        #[serde(rename = "AADServicePrincipal")]
-        AadServicePrincipal,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ServicePrincipalCredentialType {
-        ServicePrincipalKey,
-        ServicePrincipalCert,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DynamicsDeploymentType {
+    Online,
+    OnPremisesWithIfd,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DynamicsAuthenticationType {
+    Office365,
+    Ifd,
+    #[serde(rename = "AADServicePrincipal")]
+    AadServicePrincipal,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DynamicsCrmLinkedService {
@@ -7036,7 +7050,7 @@ pub struct DynamicsCrmLinkedService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DynamicsCrmLinkedServiceTypeProperties {
     #[serde(rename = "deploymentType")]
-    pub deployment_type: dynamics_crm_linked_service_type_properties::DeploymentType,
+    pub deployment_type: serde_json::Value,
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7046,7 +7060,7 @@ pub struct DynamicsCrmLinkedServiceTypeProperties {
     #[serde(rename = "organizationName", default, skip_serializing_if = "Option::is_none")]
     pub organization_name: Option<serde_json::Value>,
     #[serde(rename = "authenticationType")]
-    pub authentication_type: dynamics_crm_linked_service_type_properties::AuthenticationType,
+    pub authentication_type: serde_json::Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7054,31 +7068,16 @@ pub struct DynamicsCrmLinkedServiceTypeProperties {
     #[serde(rename = "servicePrincipalId", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_id: Option<serde_json::Value>,
     #[serde(rename = "servicePrincipalCredentialType", default, skip_serializing_if = "Option::is_none")]
-    pub service_principal_credential_type: Option<dynamics_crm_linked_service_type_properties::ServicePrincipalCredentialType>,
+    pub service_principal_credential_type: Option<serde_json::Value>,
     #[serde(rename = "servicePrincipalCredential", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_credential: Option<SecretBase>,
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
 }
-pub mod dynamics_crm_linked_service_type_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DeploymentType {
-        Online,
-        OnPremisesWithIfd,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AuthenticationType {
-        Office365,
-        Ifd,
-        #[serde(rename = "AADServicePrincipal")]
-        AadServicePrincipal,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ServicePrincipalCredentialType {
-        ServicePrincipalKey,
-        ServicePrincipalCert,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ServicePrincipalCredentialType {
+    ServicePrincipalKey,
+    ServicePrincipalCert,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommonDataServiceForAppsLinkedService {
@@ -7090,7 +7089,7 @@ pub struct CommonDataServiceForAppsLinkedService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommonDataServiceForAppsLinkedServiceTypeProperties {
     #[serde(rename = "deploymentType")]
-    pub deployment_type: common_data_service_for_apps_linked_service_type_properties::DeploymentType,
+    pub deployment_type: serde_json::Value,
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7100,7 +7099,7 @@ pub struct CommonDataServiceForAppsLinkedServiceTypeProperties {
     #[serde(rename = "organizationName", default, skip_serializing_if = "Option::is_none")]
     pub organization_name: Option<serde_json::Value>,
     #[serde(rename = "authenticationType")]
-    pub authentication_type: common_data_service_for_apps_linked_service_type_properties::AuthenticationType,
+    pub authentication_type: serde_json::Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7108,32 +7107,11 @@ pub struct CommonDataServiceForAppsLinkedServiceTypeProperties {
     #[serde(rename = "servicePrincipalId", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_id: Option<serde_json::Value>,
     #[serde(rename = "servicePrincipalCredentialType", default, skip_serializing_if = "Option::is_none")]
-    pub service_principal_credential_type:
-        Option<common_data_service_for_apps_linked_service_type_properties::ServicePrincipalCredentialType>,
+    pub service_principal_credential_type: Option<serde_json::Value>,
     #[serde(rename = "servicePrincipalCredential", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_credential: Option<SecretBase>,
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
-}
-pub mod common_data_service_for_apps_linked_service_type_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DeploymentType {
-        Online,
-        OnPremisesWithIfd,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AuthenticationType {
-        Office365,
-        Ifd,
-        #[serde(rename = "AADServicePrincipal")]
-        AadServicePrincipal,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ServicePrincipalCredentialType {
-        ServicePrincipalKey,
-        ServicePrincipalCert,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HdInsightLinkedService {
@@ -9124,18 +9102,15 @@ pub struct HdInsightOnDemandLinkedServiceTypeProperties {
 pub struct ScriptAction {
     pub name: String,
     pub uri: String,
-    pub roles: script_action::Roles,
+    pub roles: serde_json::Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<String>,
 }
-pub mod script_action {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Roles {
-        Headnode,
-        Workernode,
-        Zookeeper,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum HdiNodeTypes {
+    Headnode,
+    Workernode,
+    Zookeeper,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureDataLakeAnalyticsLinkedService {

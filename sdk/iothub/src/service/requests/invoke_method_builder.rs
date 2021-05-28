@@ -4,7 +4,7 @@ use http::{Method, StatusCode};
 use serde::Serialize;
 
 use crate::service::responses::InvokeMethodResponse;
-use crate::service::{IoTHubError, ServiceClient, API_VERSION};
+use crate::service::{ServiceClient, API_VERSION};
 
 /// The InvokeMethodBuilder is used for constructing the request to
 /// invoke a module or device method.
@@ -64,7 +64,7 @@ impl<'a> InvokeMethodBuilder<'a> {
     pub async fn execute(
         &self,
         payload: serde_json::Value,
-    ) -> Result<InvokeMethodResponse, IoTHubError> {
+    ) -> Result<InvokeMethodResponse, crate::Error> {
         let uri = match &self.module_id {
             Some(module_id_value) => format!(
                 "https://{}.azure-devices.net/twins/{}/modules/{}/methods?api-version={}",

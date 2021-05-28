@@ -655,8 +655,8 @@ pub struct Resource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunRequest {
-    #[serde(rename = "type", skip_serializing)]
-    pub type_: Option<String>,
+    #[serde(rename = "type")]
+    pub type_: String,
     #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_archive_enabled: Option<bool>,
 }
@@ -968,8 +968,8 @@ pub struct UserIdentityProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskStepProperties {
-    #[serde(rename = "type", skip_serializing)]
-    pub type_: Option<task_step_properties::Type>,
+    #[serde(rename = "type")]
+    pub type_: task_step_properties::Type,
     #[serde(rename = "baseImageDependencies", skip_serializing)]
     pub base_image_dependencies: Vec<BaseImageDependency>,
     #[serde(rename = "contextPath", default, skip_serializing_if = "Option::is_none")]
@@ -1225,8 +1225,8 @@ pub mod platform_update_parameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskStepUpdateParameters {
-    #[serde(rename = "type", skip_serializing)]
-    pub type_: Option<task_step_update_parameters::Type>,
+    #[serde(rename = "type")]
+    pub type_: task_step_update_parameters::Type,
     #[serde(rename = "contextPath", default, skip_serializing_if = "Option::is_none")]
     pub context_path: Option<String>,
     #[serde(rename = "contextAccessToken", default, skip_serializing_if = "Option::is_none")]

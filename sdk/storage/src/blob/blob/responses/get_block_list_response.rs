@@ -1,5 +1,4 @@
-use crate::blob::blob::BlockWithSizeList;
-use azure_core::errors::AzureError;
+use crate::{blob::blob::BlockWithSizeList, AzureStorageError};
 use azure_core::headers::{
     date_from_headers, etag_from_headers_optional, last_modified_from_headers_optional,
     request_id_from_headers,
@@ -22,7 +21,7 @@ impl GetBlockListResponse {
     pub(crate) fn from_response(
         headers: &HeaderMap,
         body: &[u8],
-    ) -> Result<GetBlockListResponse, AzureError> {
+    ) -> Result<GetBlockListResponse, AzureStorageError> {
         let etag = etag_from_headers_optional(headers)?;
         let last_modified = last_modified_from_headers_optional(headers)?;
         let request_id = request_id_from_headers(headers)?;

@@ -9,7 +9,8 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Map, Value};
 
 use crate::client::API_VERSION_PARAM;
-use crate::{KeyClient, KeyVaultError};
+use crate::Error;
+use crate::KeyClient;
 
 /// A KeyBundle consisting of a WebKey plus its attributes.
 #[derive(Debug, Deserialize, Getters)]
@@ -249,7 +250,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         &mut self,
         key_name: &str,
         key_version: Option<&str>,
-    ) -> Result<KeyVaultKey, KeyVaultError> {
+    ) -> Result<KeyVaultKey, Error> {
         let mut uri = self.vault_url.clone();
         let path = if let Some(ver) = key_version {
             format!("keys/{}/{}", key_name, ver)
@@ -273,7 +274,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         key_name: &str,
         key_version: &str,
         digest: &str,
-    ) -> Result<SignResult, KeyVaultError> {
+    ) -> Result<SignResult, Error> {
         // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/sign?api-version=7.1
 
         let mut uri = self.vault_url.clone();

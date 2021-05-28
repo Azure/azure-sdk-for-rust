@@ -65,6 +65,8 @@ impl<'a> GetBlobBuilder<'a> {
             None,
         )?;
 
+        debug!("request == {:#?}", request);
+
         let expected_status_code = if self.range.is_some() {
             http::StatusCode::PARTIAL_CONTENT
         } else {
@@ -91,14 +93,20 @@ impl<'a> GetBlobBuilder<'a> {
             End,
         }
 
-        let complete_range = Range::new(0, u64::MAX);
+        // this can either be the range requested by the caller or the complete file.
+        let requested_range = self.range.unwrap_or(Range::new(0, u64::MAX));
 
         futures::stream::unfold(States::Init, move |state| async move {
-            let remaining = match state {
-                States::Init => self.range.unwrap_or(complete_range),
+            let mut remaining = match state {
+                States::Init => requested_range,
                 States::Progress(range) => range,
                 States::End => return None,
             };
+
+            debug!(
+                "remaining.start == {}, chunk_size == {}, remaining.end == {}",
+                remaining.start, chunk_size, remaining.end
+            );
 
             let range = if remaining.start + chunk_size > remaining.end {
                 Range::new(remaining.start, remaining.end)
@@ -113,41 +121,16 @@ impl<'a> GetBlobBuilder<'a> {
                 Err(err) => return Some((Err(err), States::End)),
             };
 
-            let next_state = if remaining.end > range.end {
-                if self.range.is_some() {
-                    States::Progress(Range::new(range.end, remaining.end))
-                } else {
-                    // if we are here it means the user have not specified a
-                    // range and we didn't get the whole blob in one passing.
-                    // We specified u64::MAX as the first range but now
-                    // we need to find the correct size to avoid requesting data
-                    // outside the valid range.
-                    debug!("content-range == {:?}", response.content_range);
-                    // this unwrap should always be safe since we did not
-                    // get the whole blob in the previous call.
-                    let content_range = response.content_range.clone().unwrap();
-                    let ridx = match content_range.find('/') {
-                        Some(ridx) => ridx,
-                        None => {
-                            return Some((
-                                Err("The returned content-range is invalid: / is not present"
-                                    .into()),
-                                States::End,
-                            ))
-                        }
-                    };
-                    let total =
-                            match str::parse(&content_range[ridx + 1..]) {
-                                Ok(total) => total,
-                                Err(_err) => return Some((
-                                    Err("The returned content-range is invalid: after / there is a non valid number"
-                                        .into()),
-                                    States::End,
-                                )),
-                            };
+            debug!("response.content_range == {:?}", response.content_range);
 
-                    States::Progress(Range::new(range.end, total))
-                }
+            // now that we know what the remote blob size is, let's update the
+            // boundary. We do this only if it's smaller than the requested size because the could
+            // have specified a smaller range.
+            remaining.end =
+                std::cmp::min(requested_range.end, response.content_range.total_length());
+
+            let next_state = if remaining.end > range.end {
+                States::Progress(Range::new(range.end, remaining.end))
             } else {
                 States::End
             };

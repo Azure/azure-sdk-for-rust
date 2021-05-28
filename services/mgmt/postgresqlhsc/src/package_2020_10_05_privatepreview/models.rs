@@ -215,6 +215,8 @@ pub struct ServerGroupProperties {
     pub standby_availability_zone: Option<String>,
     #[serde(rename = "delegatedSubnetArguments", default, skip_serializing_if = "Option::is_none")]
     pub delegated_subnet_arguments: Option<server_group_properties::DelegatedSubnetArguments>,
+    #[serde(rename = "privateDnsZoneArguments", default, skip_serializing_if = "Option::is_none")]
+    pub private_dns_zone_arguments: Option<server_group_properties::PrivateDnsZoneArguments>,
     #[serde(rename = "readReplicas", skip_serializing)]
     pub read_replicas: Vec<String>,
     #[serde(rename = "sourceServerGroup", skip_serializing)]
@@ -247,6 +249,11 @@ pub mod server_group_properties {
     pub struct DelegatedSubnetArguments {
         #[serde(rename = "subnetArmResourceId", default, skip_serializing_if = "Option::is_none")]
         pub subnet_arm_resource_id: Option<String>,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct PrivateDnsZoneArguments {
+        #[serde(rename = "privateDnsZoneArmResourceId", default, skip_serializing_if = "Option::is_none")]
+        pub private_dns_zone_arm_resource_id: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

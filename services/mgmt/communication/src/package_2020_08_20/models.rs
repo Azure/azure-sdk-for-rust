@@ -30,33 +30,6 @@ pub struct LinkedNotificationHub {
     pub resource_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationStatus {
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
-    #[serde(skip_serializing)]
-    pub status: Option<operation_status::Status>,
-    #[serde(rename = "startTime", skip_serializing)]
-    pub start_time: Option<String>,
-    #[serde(rename = "endTime", skip_serializing)]
-    pub end_time: Option<String>,
-    #[serde(rename = "percentComplete", skip_serializing)]
-    pub percent_complete: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorResponse>,
-}
-pub mod operation_status {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Succeeded,
-        Failed,
-        Canceled,
-        Creating,
-        Deleting,
-        Moving,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommunicationServiceResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CommunicationServiceResource>,

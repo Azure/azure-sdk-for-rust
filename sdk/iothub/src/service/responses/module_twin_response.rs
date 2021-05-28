@@ -4,7 +4,6 @@ use serde::Deserialize;
 use crate::service::resources::{
     AuthenticationType, ConnectionState, Status, TwinProperties, X509ThumbPrint,
 };
-use crate::service::IoTHubError;
 
 /// The representation of a response for a module twin request.
 #[derive(Deserialize, Debug)]
@@ -39,7 +38,7 @@ pub struct ModuleTwinResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for ModuleTwinResponse {
-    type Error = IoTHubError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let body = response.body();

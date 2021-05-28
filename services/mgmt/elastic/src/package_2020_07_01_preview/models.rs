@@ -282,6 +282,37 @@ pub struct DeploymentInfoResponse {
     pub disk_capacity: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmHostListResponse {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<VmResources>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmResources {
+    #[serde(rename = "vmResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub vm_resource_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmIngestionDetailsResponse {
+    #[serde(rename = "cloudId", default, skip_serializing_if = "Option::is_none")]
+    pub cloud_id: Option<String>,
+    #[serde(rename = "ingestionKey", default, skip_serializing_if = "Option::is_none")]
+    pub ingestion_key: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OperationName {
+    Add,
+    Delete,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmCollectionUpdate {
+    #[serde(rename = "vmResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub vm_resource_id: Option<String>,
+    #[serde(rename = "operationName", default, skip_serializing_if = "Option::is_none")]
+    pub operation_name: Option<OperationName>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,

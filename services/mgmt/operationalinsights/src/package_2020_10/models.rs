@@ -499,6 +499,23 @@ pub mod workspace_purge_status_response {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TableProperties {
+    #[serde(rename = "retentionInDays", default, skip_serializing_if = "Option::is_none")]
+    pub retention_in_days: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Table {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TableProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TablesListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Table>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterProperties {
     #[serde(rename = "clusterId", skip_serializing)]
     pub cluster_id: Option<String>,
@@ -674,35 +691,10 @@ pub mod operation {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TableProperties {
-    #[serde(rename = "retentionInDays", default, skip_serializing_if = "Option::is_none")]
-    pub retention_in_days: Option<i32>,
-    #[serde(rename = "isTroubleshootingAllowed", skip_serializing)]
-    pub is_troubleshooting_allowed: Option<bool>,
-    #[serde(rename = "isTroubleshootEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub is_troubleshoot_enabled: Option<bool>,
-    #[serde(rename = "lastTroubleshootDate", skip_serializing)]
-    pub last_troubleshoot_date: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Table {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TableProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TablesListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Table>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceSku {
     pub name: workspace_sku::Name,
     #[serde(rename = "capacityReservationLevel", default, skip_serializing_if = "Option::is_none")]
     pub capacity_reservation_level: Option<i32>,
-    #[serde(rename = "maxCapacityReservationLevel", skip_serializing)]
-    pub max_capacity_reservation_level: Option<i32>,
     #[serde(rename = "lastSkuUpdate", skip_serializing)]
     pub last_sku_update: Option<String>,
 }
@@ -784,7 +776,20 @@ pub mod workspace_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceFeatures {}
+pub struct WorkspaceFeatures {
+    #[serde(rename = "enableDataExport", default, skip_serializing_if = "Option::is_none")]
+    pub enable_data_export: Option<bool>,
+    #[serde(rename = "immediatePurgeDataOn30Days", default, skip_serializing_if = "Option::is_none")]
+    pub immediate_purge_data_on30_days: Option<bool>,
+    #[serde(
+        rename = "enableLogAccessUsingOnlyResourcePermissions",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub enable_log_access_using_only_resource_permissions: Option<bool>,
+    #[serde(rename = "clusterResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_resource_id: Option<String>,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkScopedResource {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]

@@ -237,6 +237,8 @@ pub struct ProviderResourceType {
     pub api_versions: Vec<String>,
     #[serde(rename = "defaultApiVersion", skip_serializing)]
     pub default_api_version: Option<String>,
+    #[serde(rename = "zoneMappings", default, skip_serializing_if = "Vec::is_empty")]
+    pub zone_mappings: Vec<ZoneMapping>,
     #[serde(rename = "apiProfiles", skip_serializing)]
     pub api_profiles: Vec<ApiProfile>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -843,6 +845,13 @@ pub mod expression_evaluation_options {
         Outer,
         Inner,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ZoneMapping {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {

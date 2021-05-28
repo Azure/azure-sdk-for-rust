@@ -1,5 +1,3 @@
-use crate::errors::TokenParsingError;
-
 /// A resource quota for the given resource kind
 ///
 /// A collection of this type is often returned in responses allowing you to
@@ -19,6 +17,8 @@ pub enum ResourceQuota {
     Triggers(u64),
     Functions(u64),
     ClientEncryptionKeys(u64),
+    InteropUsers(u64),
+    AuthPolicyElements(u64),
 }
 
 const DATABASES: &str = "databases=";
@@ -33,52 +33,92 @@ const PERMISSIONS: &str = "permissions=";
 const TRIGGERS: &str = "triggers=";
 const FUNCTIONS: &str = "functions=";
 const CLIENT_ENCRYPTION_KEYS: &str = "clientEncryptionKeys=";
+const INTEROP_USERS: &str = "interopUsers=";
+const AUTH_POLICY_ELEMENTS: &str = "authPolicyElements=";
 
 /// Parse a collection of [`ResourceQuota`] from a string
-pub(crate) fn resource_quotas_from_str(s: &str) -> Result<Vec<ResourceQuota>, failure::Error> {
+pub(crate) fn resource_quotas_from_str(
+    s: &str,
+) -> Result<Vec<ResourceQuota>, ResourceQuotaParsingError> {
     debug!("resource_quotas_from_str(\"{}\") called", s);
     let tokens: Vec<&str> = s.split(';').collect();
     let mut v = Vec::with_capacity(tokens.len());
+
+    let parseu64 = |s| {
+        str::parse(s).map_err(|e| ResourceQuotaParsingError::NumberParseError {
+            string: s.to_owned(),
+            error: e,
+        })
+    };
+    let parsei64 = |s| {
+        str::parse(s).map_err(|e| ResourceQuotaParsingError::NumberParseError {
+            string: s.to_owned(),
+            error: e,
+        })
+    };
 
     for token in tokens.into_iter().filter(|token| !token.is_empty()) {
         debug!("processing token == {}", token);
 
         if let Some(stripped) = token.strip_prefix(DATABASES) {
-            v.push(ResourceQuota::Databases(str::parse(stripped)?));
+            v.push(ResourceQuota::Databases(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(STORED_PROCEDURES) {
-            v.push(ResourceQuota::StoredProcedures(str::parse(stripped)?));
+            v.push(ResourceQuota::StoredProcedures(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(COLLECTIONS) {
-            v.push(ResourceQuota::Collections(str::parse(stripped)?));
+            v.push(ResourceQuota::Collections(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(DOCUMENT_SIZE) {
-            v.push(ResourceQuota::DocumentSize(str::parse(stripped)?));
+            v.push(ResourceQuota::DocumentSize(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(DOCUMENTS_SIZE) {
-            v.push(ResourceQuota::DocumentsSize(str::parse(stripped)?));
+            v.push(ResourceQuota::DocumentsSize(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(DOCUMENTS_COUNT) {
-            v.push(ResourceQuota::DocumentsCount(str::parse(stripped)?));
+            v.push(ResourceQuota::DocumentsCount(parsei64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(COLLECTION_SIZE) {
-            v.push(ResourceQuota::CollectionSize(str::parse(stripped)?));
+            v.push(ResourceQuota::CollectionSize(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(USERS) {
-            v.push(ResourceQuota::Users(str::parse(stripped)?));
+            v.push(ResourceQuota::Users(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(PERMISSIONS) {
-            v.push(ResourceQuota::Permissions(str::parse(stripped)?));
+            v.push(ResourceQuota::Permissions(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(TRIGGERS) {
-            v.push(ResourceQuota::Triggers(str::parse(stripped)?));
+            v.push(ResourceQuota::Triggers(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(FUNCTIONS) {
-            v.push(ResourceQuota::Functions(str::parse(stripped)?));
+            v.push(ResourceQuota::Functions(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(CLIENT_ENCRYPTION_KEYS) {
-            v.push(ResourceQuota::ClientEncryptionKeys(str::parse(stripped)?));
+            v.push(ResourceQuota::ClientEncryptionKeys(parseu64(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(INTEROP_USERS) {
+            v.push(ResourceQuota::InteropUsers(parseu64(stripped)?));
+        } else if let Some(stripped) = token.strip_prefix(AUTH_POLICY_ELEMENTS) {
+            v.push(ResourceQuota::AuthPolicyElements(parseu64(stripped)?));
         } else {
-            return Err(TokenParsingError::UnsupportedToken {
-                token: token.to_string(),
-                s: s.to_owned(),
-            }
-            .into());
+            return Err(ResourceQuotaParsingError::UnrecognizedPart {
+                part: token.to_string(),
+                full_string: s.to_owned(),
+            });
         }
 
         debug!("v == {:#?}", v);
     }
 
     Ok(v)
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ResourceQuotaParsingError {
+    #[error(
+        "String has an unrecognized part. Part: \"{}\", Full string: \"{}\"",
+        part,
+        full_string
+    )]
+    UnrecognizedPart { part: String, full_string: String },
+    #[error(
+        "Failed to parse resource quota string '{}' as number: {}",
+        string,
+        error
+    )]
+    NumberParseError {
+        string: String,
+        #[source]
+        error: std::num::ParseIntError,
+    },
 }
 
 #[cfg(test)]

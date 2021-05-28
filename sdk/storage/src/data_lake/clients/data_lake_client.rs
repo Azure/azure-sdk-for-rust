@@ -1,6 +1,5 @@
-use crate::core::prelude::*;
 use crate::data_lake::requests::*;
-use azure_core::errors::AzureError;
+use crate::{core::prelude::*, AzureStorageError};
 use azure_core::prelude::*;
 use bytes::Bytes;
 use http::method::Method;
@@ -96,7 +95,7 @@ impl DataLakeClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), AzureError> {
+    ) -> Result<(Request<Bytes>, url::Url), AzureStorageError> {
         self.storage_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

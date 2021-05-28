@@ -39,11 +39,8 @@
 
 mod login_response;
 
-use super::errors;
+use crate::Error;
 use login_response::LoginResponse;
-
-use azure_core::errors::AzureError;
-use futures::TryFutureExt;
 use url::form_urlencoded;
 
 /// Perform the client credentials flow
@@ -53,7 +50,7 @@ pub async fn perform(
     client_secret: &oauth2::ClientSecret,
     scope: &str,
     tenant_id: &str,
-) -> Result<LoginResponse, AzureError> {
+) -> Result<LoginResponse, Error> {
     let encoded: String = form_urlencoded::Serializer::new(String::new())
         .append_pair("client_id", client_id.as_str())
         .append_pair("scope", scope)
@@ -64,29 +61,19 @@ pub async fn perform(
     let url = url::Url::parse(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
-    ))
-    .map_err(|error| AzureError::GenericErrorWithText(error.to_string()))?;
+    ))?;
 
     client
         .post(url)
         .header("ContentType", "Application / WwwFormUrlEncoded")
         .body(encoded)
         .send()
-        .await
-        .map_err(|e| AzureError::GenericErrorWithText(e.to_string()))?
+        .await?
         .text()
-        .map_err(|e| AzureError::GenericErrorWithText(e.to_string()))
         .await
-        .and_then(|s| {
-            serde_json::from_str::<LoginResponse>(&s).map_err(|e| {
-                serde_json::from_str::<errors::ErrorResponse>(&s)
-                    .map(|er| AzureError::GenericErrorWithText(er.to_string()))
-                    .unwrap_or_else(|_| {
-                        AzureError::GenericErrorWithText(format!(
-                            "Failed to parse Azure response: {}",
-                            e.to_string()
-                        ))
-                    })
-            })
-        })
+        .map(|s| -> Result<LoginResponse, Error> {
+            Ok(serde_json::from_str::<LoginResponse>(&s)?)
+        })?
+    // TODO The HTTP status code should be checked to deserialize an error response.
+    // serde_json::from_str::<crate::errors::ErrorResponse>(&s).map(Error::ErrorResponse)
 }

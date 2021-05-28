@@ -1,9 +1,11 @@
 use super::DatabaseClient;
-use crate::headers::*;
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
+use crate::{headers::*, CosmosError};
 use crate::{requests, ReadonlyString};
 
+use azure_core::pipeline::Pipeline;
+use azure_core::policies::{LinearRetryPolicy, Policy, TransportOptions, TransportPolicy};
 use azure_core::HttpClient;
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};
@@ -11,7 +13,6 @@ use ring::hmac;
 use url::form_urlencoded;
 
 use std::borrow::Cow;
-use std::convert::TryInto;
 use std::fmt::Debug;
 use std::sync::Arc;
 
@@ -19,14 +20,14 @@ const AZURE_VERSION: &str = "2018-12-31";
 const VERSION: &str = "1.0";
 const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
 use azure_core::*;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 enum TransportStack {
     Client(Arc<Box<dyn HttpClient>>),
     Pipeline(Pipeline),
 }
+
 /// A plain Cosmos client.
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
@@ -36,20 +37,16 @@ pub struct CosmosClient {
 }
 /// TODO
 pub struct CosmosOptions {
-    retry: RetryOptions,
+    retry: Arc<dyn Policy>,
     transport: TransportOptions,
 }
 
 impl CosmosOptions {
     /// TODO
-    pub fn with_client(client: Arc<Box<dyn HttpClient>>) -> Self {
+    pub fn with_client(client: Arc<dyn HttpClient>) -> Self {
         Self {
-            retry: RetryOptions::new(3),
-            transport: TransportOptions::new(move |_ctx, req| {
-                let client = client.clone();
-                let req = req.take_inner();
-                Box::pin(async move { Ok(client.execute_request(req).await?.into()) })
-            }),
+            retry: Arc::new(LinearRetryPolicy::default()), // this defaults to linear backoff
+            transport: TransportOptions::new(client),
         }
     }
 }
@@ -123,13 +120,17 @@ impl CosmosClient {
         auth_token: AuthorizationToken,
         options: CosmosOptions,
     ) -> Self {
-        use azure_core::*;
-        let mut policies = Vec::new();
-        let retry_policy = RetryPolicy::new(options.retry);
-        policies.push(Arc::new(retry_policy) as Arc<dyn Policy>);
+        let per_call_policies = Vec::new();
+        let per_retry_policies = Vec::new();
+
         let transport_policy = TransportPolicy::new(options.transport);
-        policies.push(Arc::new(transport_policy) as Arc<dyn Policy>);
-        let pipeline = Pipeline::new(policies);
+
+        let pipeline = Pipeline::new(
+            per_call_policies,
+            options.retry,
+            per_retry_policies,
+            Arc::new(transport_policy),
+        );
         Self {
             transport: TransportStack::Pipeline(pipeline),
             auth_token,
@@ -148,14 +149,18 @@ impl CosmosClient {
         ctx: Context,
         database_name: S,
         options: crate::operations::create_database::Options,
-    ) -> Result<crate::operations::create_database::Response, Error> {
+    ) -> Result<crate::operations::create_database::Response, CosmosError> {
         let mut request = self.prepare_request2("dbs", http::Method::POST, ResourceType::Databases);
+        let mut ctx = ctx.clone();
         options.decorate_request(&mut request, database_name.as_ref())?;
-        self.pipeline()
+        let response = self
+            .pipeline()
             .unwrap()
-            .send(ctx, request)
-            .await?
-            .try_into()
+            .send(&mut ctx, &mut request)
+            .await
+            .map_err(CosmosError::PolicyError)?;
+
+        Ok(crate::operations::create_database::Response::try_from(response).await?)
     }
 
     fn pipeline(&self) -> Option<&Pipeline> {

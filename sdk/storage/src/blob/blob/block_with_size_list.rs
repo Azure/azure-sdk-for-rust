@@ -1,7 +1,5 @@
-use crate::blob::blob::BlobBlockType;
 use crate::blob::blob::BlobBlockWithSize;
-use azure_core::errors::AzureError;
-
+use crate::{blob::blob::BlobBlockType, AzureStorageError};
 #[derive(Debug, Deserialize)]
 struct Name {
     #[serde(rename = "$value")]
@@ -42,7 +40,7 @@ pub struct BlockWithSizeList {
 }
 
 impl BlockWithSizeList {
-    pub fn try_from_xml(xml: &str) -> Result<Self, AzureError> {
+    pub fn try_from_xml(xml: &str) -> Result<Self, AzureStorageError> {
         let bl: BlockList = serde_xml_rs::de::from_reader(xml.as_bytes())?;
         debug!("bl == {:?}", bl);
 
@@ -80,20 +78,20 @@ mod test {
 
     #[test]
     fn try_parse() {
-        let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?>  
-            <BlockList>  
-              <CommittedBlocks>  
-                   <Block>  
-                       <Name>YmFzZTY0LWVuY29kZWQtYmxvY2staWQ=</Name>  
-                       <Size>200</Size>  
-                    </Block>  
-               </CommittedBlocks>  
-               <UncommittedBlocks>  
-                    <Block>  
-                        <Name>YmFzZTY0LWVuY29kZWQtYmxvY2staWQtbnVtYmVyMg==</Name>  
-                        <Size>4096</Size>  
-                    </Block>  
-               </UncommittedBlocks>  
+        let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+            <BlockList>
+              <CommittedBlocks>
+                   <Block>
+                       <Name>YmFzZTY0LWVuY29kZWQtYmxvY2staWQ=</Name>
+                       <Size>200</Size>
+                    </Block>
+               </CommittedBlocks>
+               <UncommittedBlocks>
+                    <Block>
+                        <Name>YmFzZTY0LWVuY29kZWQtYmxvY2staWQtbnVtYmVyMg==</Name>
+                        <Size>4096</Size>
+                    </Block>
+               </UncommittedBlocks>
             </BlockList>  ";
 
         let bl = BlockWithSizeList::try_from_xml(range).unwrap();

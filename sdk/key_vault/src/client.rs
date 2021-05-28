@@ -1,5 +1,4 @@
-use crate::KeyVaultError;
-use anyhow::Result;
+use crate::Error;
 use azure_core::{TokenCredential, TokenResponse};
 use const_format::formatcp;
 use url::Url;
@@ -36,7 +35,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// let creds = DefaultCredential::default();
     /// let client = KeyClient::new("test-key-vault.vault.azure.net", &creds).unwrap();
     /// ```
-    pub fn new(vault_url: &str, token_credential: &'a T) -> Result<Self> {
+    pub fn new(vault_url: &str, token_credential: &'a T) -> Result<Self, Error> {
         let vault_url = Url::parse(vault_url)?;
         let endpoint = extract_endpoint(&vault_url)?;
         let client = KeyClient {
@@ -48,7 +47,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         Ok(client)
     }
 
-    pub(crate) async fn refresh_token(&mut self) -> Result<(), KeyVaultError> {
+    pub(crate) async fn refresh_token(&mut self) -> Result<(), Error> {
         if matches!(&self.token, Some(token) if token.expires_on > chrono::Utc::now()) {
             // Token is valid, return it.
             return Ok(());
@@ -58,12 +57,12 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             .token_credential
             .get_token(&self.endpoint)
             .await
-            .map_err(|_| KeyVaultError::Authorization)?;
+            .map_err(|_| Error::Authorization)?;
         self.token = Some(token);
         Ok(())
     }
 
-    pub(crate) async fn get_authed(&mut self, uri: String) -> Result<String, KeyVaultError> {
+    pub(crate) async fn get_authed(&mut self, uri: String) -> Result<String, Error> {
         self.refresh_token().await?;
 
         let resp = reqwest::Client::new()
@@ -76,11 +75,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         Ok(body)
     }
 
-    pub(crate) async fn put_authed(
-        &mut self,
-        uri: String,
-        body: String,
-    ) -> Result<String, KeyVaultError> {
+    pub(crate) async fn put_authed(&mut self, uri: String, body: String) -> Result<String, Error> {
         self.refresh_token().await?;
 
         let resp = reqwest::Client::new()
@@ -99,7 +94,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         &mut self,
         uri: String,
         json_body: Option<String>,
-    ) -> Result<String, KeyVaultError> {
+    ) -> Result<String, Error> {
         self.refresh_token().await?;
 
         let mut req = reqwest::Client::new()
@@ -119,8 +114,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         let body_serialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
 
         if let Some(err) = body_serialized.get("error") {
-            let msg = err.get("message").ok_or(KeyVaultError::UnparsableError)?;
-            Err(KeyVaultError::General(msg.to_string()))
+            let msg = err.get("message").ok_or(Error::UnparsableError)?;
+            Err(Error::General(msg.to_string()))
         } else {
             Ok(body)
         }
@@ -130,7 +125,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         &mut self,
         uri: String,
         body: String,
-    ) -> Result<String, KeyVaultError> {
+    ) -> Result<String, Error> {
         self.refresh_token().await?;
 
         let resp = reqwest::Client::new()
@@ -147,14 +142,14 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         let body_serialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
 
         if let Some(err) = body_serialized.get("error") {
-            let msg = err.get("message").ok_or(KeyVaultError::UnparsableError)?;
-            Err(KeyVaultError::General(msg.to_string()))
+            let msg = err.get("message").ok_or(Error::UnparsableError)?;
+            Err(Error::General(msg.to_string()))
         } else {
             Ok(body)
         }
     }
 
-    pub(crate) async fn delete_authed(&mut self, uri: String) -> Result<String, KeyVaultError> {
+    pub(crate) async fn delete_authed(&mut self, uri: String) -> Result<String, Error> {
         self.refresh_token().await?;
 
         let resp = reqwest::Client::new()
@@ -171,14 +166,14 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
 
 /// Helper to get vault endpoint with a scheme and a trailing slash
 /// ex. `https://vault.azure.net/` where the full client url is `https://myvault.vault.azure.net`
-fn extract_endpoint(url: &Url) -> Result<String, KeyVaultError> {
+fn extract_endpoint(url: &Url) -> Result<String, Error> {
     let endpoint = url
         .host_str()
-        .ok_or(KeyVaultError::DomainParse)?
+        .ok_or(Error::DomainParse)?
         .splitn(2, '.') // FIXME: replace with split_once() when it is in stable
         .last()
-        .ok_or(KeyVaultError::DomainParse)?;
-    Ok(format!("{}://{}", url.scheme(), endpoint))
+        .ok_or(Error::DomainParse)?;
+    Ok(format!("{}://{}/", url.scheme(), endpoint))
 }
 
 #[cfg(test)]
