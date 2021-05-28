@@ -1,8 +1,8 @@
-use crate::{Context, Request, Response};
 use crate::policies::{Policy, PolicyResult};
+use crate::{Context, Request, Response};
 
-use http::{HeaderValue, header::USER_AGENT};
-use rustc_version::{Version, version};
+use http::{header::USER_AGENT, HeaderValue};
+use rustc_version::{version, Version};
 use std::env::consts::{ARCH, OS};
 use std::sync::Arc;
 
@@ -35,11 +35,22 @@ impl TelemetryPolicy {
         let platform_info = format!("({}; {}; {})", version().unwrap_or(EMPTY_VERSION), OS, ARCH);
         if let Some(application_id) = options.application_id {
             TelemetryPolicy {
-                header: format!("{} azsdk-rust-{}/{} {}", application_id, clap::crate_name!(), clap::crate_version!(), platform_info),
+                header: format!(
+                    "{} azsdk-rust-{}/{} {}",
+                    application_id,
+                    clap::crate_name!(),
+                    clap::crate_version!(),
+                    platform_info
+                ),
             }
         } else {
             TelemetryPolicy {
-                header: format!("azsdk-rust-{}/{} {}", clap::crate_name!(), clap::crate_version!(), platform_info),
+                header: format!(
+                    "azsdk-rust-{}/{} {}",
+                    clap::crate_name!(),
+                    clap::crate_version!(),
+                    platform_info
+                ),
             }
         }
     }
@@ -59,8 +70,9 @@ impl Policy for TelemetryPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
-
-        request.headers_mut().insert(USER_AGENT, HeaderValue::from_str(&self.header).unwrap());
+        request
+            .headers_mut()
+            .insert(USER_AGENT, HeaderValue::from_str(&self.header).unwrap());
 
         next[0].send(ctx, request, &next[1..]).await
     }
