@@ -1,4 +1,4 @@
-use azure_core::{errors::TraversingError, parsing::FromStringOptional};
+use azure_core::{parsing::FromStringOptional, TraversingError};
 use xml::Element;
 use xml::Xml::{CharacterNode, ElementNode};
 

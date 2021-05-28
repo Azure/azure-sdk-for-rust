@@ -1,5 +1,5 @@
-use crate::errors::StreamError;
 use crate::SeekableStream;
+use crate::StreamError;
 use bytes::Bytes;
 use futures::io::AsyncRead;
 use futures::stream::Stream;

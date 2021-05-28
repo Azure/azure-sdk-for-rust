@@ -5,10 +5,9 @@ pub mod secret;
 pub use client::KeyClient;
 pub use secret::RecoveryLevel;
 
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum KeyVaultError {
+#[non_exhaustive]
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
     #[error("Key Vault does not exist, or is unreachable at '{keyvault_name:?}.vault.azure.net'")]
     KeyVaultDoesNotExist { keyvault_name: String },
 
@@ -30,13 +29,19 @@ pub enum KeyVaultError {
     #[error("Could not get vault domain")]
     DomainParse,
 
-    #[error(transparent)]
-    Error(#[from] anyhow::Error),
+    #[error("URL parse error: {0}")]
+    UrlParseError(#[from] url::ParseError),
+
+    #[error("Failed to parse response from Key Vault when backing up secret {}, response body: {}, error: {}", secret_name, response_body, error)]
+    BackupSecretParseError {
+        error: serde_json::Error,
+        secret_name: String,
+        response_body: String,
+    },
 }
 
 #[cfg(test)]
 mod tests {
-    use azure_core::errors::AzureError;
     use azure_core::{TokenCredential, TokenResponse};
     use chrono::{Duration, Utc};
     use oauth2::AccessToken;
@@ -57,7 +62,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl TokenCredential for MockCredential {
-        async fn get_token(&self, _resource: &str) -> Result<TokenResponse, AzureError> {
+        async fn get_token(&self, _resource: &str) -> Result<TokenResponse, azure_core::Error> {
             Ok(TokenResponse::new(
                 AccessToken::new("TOKEN".to_owned()),
                 Utc::now() + Duration::days(14),

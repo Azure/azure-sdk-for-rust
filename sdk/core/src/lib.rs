@@ -11,7 +11,7 @@ mod macros;
 
 mod bytes_stream;
 mod context;
-pub mod errors;
+mod errors;
 pub mod headers;
 mod http_client;
 pub mod incompletevector;
@@ -28,7 +28,6 @@ mod sleep;
 pub mod util;
 
 use chrono::{DateTime, Utc};
-use errors::AzureError;
 use headers::*;
 use oauth2::AccessToken;
 use std::fmt::Debug;
@@ -36,6 +35,7 @@ use uuid::Uuid;
 
 pub use bytes_stream::*;
 pub use context::Context;
+pub use errors::*;
 pub use headers::AddAsHeader;
 pub use http_client::{to_json, HttpClient};
 pub use models::*;
@@ -67,7 +67,7 @@ impl TokenResponse {
 #[async_trait::async_trait]
 pub trait TokenCredential: Send + Sync {
     /// Gets a `TokenResponse` for the specified resource
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError>;
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Error>;
 }
 
 pub trait AppendToUrlQuery {

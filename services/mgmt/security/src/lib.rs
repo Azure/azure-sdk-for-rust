@@ -49,9 +49,17 @@ mod package_2020_07_preview_only;
 pub use package_2020_07_preview_only::{models, operations, API_VERSION};
 #[cfg(feature = "package-2020-08-preview-only")]
 mod package_2020_08_preview_only;
-use azure_core::setters;
 #[cfg(feature = "package-2020-08-preview-only")]
 pub use package_2020_08_preview_only::{models, operations, API_VERSION};
+#[cfg(feature = "package-2021-01-preview-only")]
+mod package_2021_01_preview_only;
+#[cfg(feature = "package-2021-01-preview-only")]
+pub use package_2021_01_preview_only::{models, operations, API_VERSION};
+#[cfg(feature = "package-2021-05-preview-only")]
+mod package_2021_05_preview_only;
+use azure_core::setters;
+#[cfg(feature = "package-2021-05-preview-only")]
+pub use package_2021_05_preview_only::{models, operations, API_VERSION};
 pub fn config(
     http_client: std::sync::Arc<std::boxed::Box<dyn azure_core::HttpClient>>,
     token_credential: Box<dyn azure_core::TokenCredential>,

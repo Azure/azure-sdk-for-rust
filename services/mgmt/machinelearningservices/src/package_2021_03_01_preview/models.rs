@@ -1167,6 +1167,98 @@ pub mod synapse_spark_pool_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ComputeStartStopSchedule {
+    #[serde(skip_serializing)]
+    pub id: Option<String>,
+    #[serde(rename = "provisioningStatus", skip_serializing)]
+    pub provisioning_status: Option<compute_start_stop_schedule::ProvisioningStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<ScheduleStatus>,
+    #[serde(rename = "triggerType", default, skip_serializing_if = "Option::is_none")]
+    pub trigger_type: Option<TriggerType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<ComputePowerAction>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recurrence: Option<Recurrence>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cron: Option<Cron>,
+}
+pub mod compute_start_stop_schedule {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningStatus {
+        Completed,
+        Provisioning,
+        Failed,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ScheduleStatus {
+    Enabled,
+    Disabled,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ScheduleType {
+    ComputeStartStop,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ComputePowerAction {
+    Start,
+    Stop,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum TriggerType {
+    Recurrence,
+    Cron,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum RecurrenceFrequency {
+    NotSpecified,
+    Second,
+    Minute,
+    Hour,
+    Day,
+    Week,
+    Month,
+    Year,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecurrenceSchedule {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub minutes: Vec<i32>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hours: Vec<i32>,
+    #[serde(rename = "weekDays", default, skip_serializing_if = "Vec::is_empty")]
+    pub week_days: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Recurrence {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frequency: Option<RecurrenceFrequency>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interval: Option<i32>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
+    pub time_zone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedule: Option<RecurrenceSchedule>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Cron {
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
+    pub time_zone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expression: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ComputeSchedules {
+    #[serde(rename = "computeStartStop", default, skip_serializing_if = "Vec::is_empty")]
+    pub compute_start_stop: Vec<ComputeStartStopSchedule>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ResourceIdentityAssignment {
     SystemAssigned,
     UserAssigned,

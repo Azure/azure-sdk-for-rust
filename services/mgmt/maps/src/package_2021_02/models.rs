@@ -166,6 +166,14 @@ pub struct Dimension {
     pub name: Option<String>,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[serde(rename = "internalName", default, skip_serializing_if = "Option::is_none")]
+    pub internal_name: Option<String>,
+    #[serde(rename = "internalMetricName", default, skip_serializing_if = "Option::is_none")]
+    pub internal_metric_name: Option<String>,
+    #[serde(rename = "sourceMdmNamespace", default, skip_serializing_if = "Option::is_none")]
+    pub source_mdm_namespace: Option<String>,
+    #[serde(rename = "toBeExportedToShoebox", default, skip_serializing_if = "Option::is_none")]
+    pub to_be_exported_to_shoebox: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapsAccountProperties {

@@ -1077,6 +1077,38 @@ pub struct ClusterMonitoringRequest {
     pub primary_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureMonitorRequest {
+    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<String>,
+    #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
+    pub primary_key: Option<String>,
+    #[serde(rename = "selectedConfigurations", default, skip_serializing_if = "Option::is_none")]
+    pub selected_configurations: Option<AzureMonitorSelectedConfigurations>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureMonitorResponse {
+    #[serde(rename = "clusterMonitoringEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_monitoring_enabled: Option<bool>,
+    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<String>,
+    #[serde(rename = "selectedConfigurations", default, skip_serializing_if = "Option::is_none")]
+    pub selected_configurations: Option<AzureMonitorSelectedConfigurations>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureMonitorSelectedConfigurations {
+    #[serde(rename = "configurationVersion", default, skip_serializing_if = "Option::is_none")]
+    pub configuration_version: Option<String>,
+    #[serde(rename = "globalConfigurations", default, skip_serializing_if = "Option::is_none")]
+    pub global_configurations: Option<serde_json::Value>,
+    #[serde(rename = "tableList", default, skip_serializing_if = "Vec::is_empty")]
+    pub table_list: Vec<AzureMonitorTableConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureMonitorTableConfiguration {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HostInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

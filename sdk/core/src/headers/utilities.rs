@@ -1,7 +1,7 @@
 use super::*;
-use crate::errors::*;
 use crate::request_options::LeaseId;
 use crate::util::HeaderMapExt;
+use crate::*;
 use crate::{RequestId, SessionToken};
 use chrono::{DateTime, Utc};
 use http::header::{HeaderName, DATE, ETAG, LAST_MODIFIED};
@@ -14,17 +14,17 @@ use std::convert::TryFrom;
 use std::str::FromStr;
 use uuid::Uuid;
 
-pub fn lease_id_from_headers(headers: &HeaderMap) -> Result<LeaseId, AzureError> {
+pub fn lease_id_from_headers(headers: &HeaderMap) -> Result<LeaseId, Error> {
     let lease_id = headers
         .get_as_str(LEASE_ID)
-        .ok_or_else(|| AzureError::HeaderNotFound(LEASE_ID.to_owned()))?;
+        .ok_or_else(|| Error::HeaderNotFound(LEASE_ID.to_owned()))?;
     Ok(LeaseId::from_str(lease_id)?)
 }
 
-pub fn request_id_from_headers(headers: &HeaderMap) -> Result<RequestId, AzureError> {
+pub fn request_id_from_headers(headers: &HeaderMap) -> Result<RequestId, Error> {
     let request_id = headers
         .get_as_str(REQUEST_ID)
-        .ok_or_else(|| AzureError::HeaderNotFound(REQUEST_ID.to_owned()))?;
+        .ok_or_else(|| Error::HeaderNotFound(REQUEST_ID.to_owned()))?;
     Ok(Uuid::parse_str(request_id)?)
 }
 
@@ -42,7 +42,7 @@ pub struct CommonStorageResponseHeaders {
 }
 
 impl TryFrom<&HeaderMap> for CommonStorageResponseHeaders {
-    type Error = AzureError;
+    type Error = Error;
 
     fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
         Ok(Self {
@@ -57,7 +57,7 @@ impl TryFrom<&HeaderMap> for CommonStorageResponseHeaders {
 
 pub fn last_modified_from_headers_optional(
     headers: &HeaderMap,
-) -> Result<Option<DateTime<Utc>>, AzureError> {
+) -> Result<Option<DateTime<Utc>>, Error> {
     if headers.contains_key(LAST_MODIFIED) {
         Ok(Some(last_modified_from_headers(headers)?))
     } else {
@@ -68,10 +68,10 @@ pub fn last_modified_from_headers_optional(
 pub fn rfc2822_from_headers_mandatory(
     headers: &HeaderMap,
     header_name: &str,
-) -> Result<DateTime<Utc>, AzureError> {
+) -> Result<DateTime<Utc>, Error> {
     let val = headers
         .get(header_name)
-        .ok_or_else(|| AzureError::HeaderNotFound(header_name.to_owned()))?
+        .ok_or_else(|| Error::HeaderNotFound(header_name.to_owned()))?
         .to_str()?;
     let val = DateTime::parse_from_rfc2822(val)?;
     let val = DateTime::from_utc(val.naive_utc(), Utc);
@@ -83,20 +83,20 @@ pub fn rfc2822_from_headers_mandatory(
 pub fn string_from_headers_mandatory<'a>(
     headers: &'a HeaderMap,
     header_name: &str,
-) -> Result<&'a str, AzureError> {
+) -> Result<&'a str, Error> {
     Ok(headers
         .get(header_name)
-        .ok_or_else(|| AzureError::HeaderNotFound(header_name.to_owned()))?
+        .ok_or_else(|| Error::HeaderNotFound(header_name.to_owned()))?
         .to_str()?)
 }
 
-pub fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureError> {
+pub fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, Error> {
     rfc2822_from_headers_mandatory(headers, LAST_MODIFIED.as_str())
 }
 
 pub fn continuation_token_from_headers_optional(
     headers: &HeaderMap,
-) -> Result<Option<String>, AzureError> {
+) -> Result<Option<String>, Error> {
     if let Some(hc) = headers.get(CONTINUATION) {
         Ok(Some(hc.to_str()?.to_owned()))
     } else {
@@ -105,17 +105,17 @@ pub fn continuation_token_from_headers_optional(
 }
 
 #[inline]
-pub fn utc_date_from_rfc2822(date: &str) -> Result<DateTime<Utc>, AzureError> {
+pub fn utc_date_from_rfc2822(date: &str) -> Result<DateTime<Utc>, Error> {
     let date = DateTime::parse_from_rfc2822(date)?;
     Ok(DateTime::from_utc(date.naive_utc(), Utc))
 }
 
-pub fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureError> {
+pub fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, Error> {
     let date = headers
         .get(DATE)
         .ok_or_else(|| {
             static D: HeaderName = DATE;
-            AzureError::HeaderNotFound(D.as_str().to_owned())
+            Error::HeaderNotFound(D.as_str().to_owned())
         })?
         .to_str()?;
     let date = DateTime::parse_from_rfc2822(date)?;
@@ -125,25 +125,25 @@ pub fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, AzureErro
     Ok(date)
 }
 
-pub fn sku_name_from_headers(headers: &HeaderMap) -> Result<String, AzureError> {
+pub fn sku_name_from_headers(headers: &HeaderMap) -> Result<String, Error> {
     let sku_name = headers
         .get(SKU_NAME)
-        .ok_or_else(|| AzureError::HeaderNotFound(SKU_NAME.to_owned()))?
+        .ok_or_else(|| Error::HeaderNotFound(SKU_NAME.to_owned()))?
         .to_str()?;
     trace!("sku_name == {:?}", sku_name);
     Ok(sku_name.to_owned())
 }
 
-pub fn account_kind_from_headers(headers: &HeaderMap) -> Result<String, AzureError> {
+pub fn account_kind_from_headers(headers: &HeaderMap) -> Result<String, Error> {
     let account_kind = headers
         .get(ACCOUNT_KIND)
-        .ok_or_else(|| AzureError::HeaderNotFound(ACCOUNT_KIND.to_owned()))?
+        .ok_or_else(|| Error::HeaderNotFound(ACCOUNT_KIND.to_owned()))?
         .to_str()?;
     trace!("account_kind == {:?}", account_kind);
     Ok(account_kind.to_owned())
 }
 
-pub fn etag_from_headers_optional(headers: &HeaderMap) -> Result<Option<String>, AzureError> {
+pub fn etag_from_headers_optional(headers: &HeaderMap) -> Result<Option<String>, Error> {
     if headers.contains_key(ETAG) {
         Ok(Some(etag_from_headers(headers)?))
     } else {
@@ -151,12 +151,12 @@ pub fn etag_from_headers_optional(headers: &HeaderMap) -> Result<Option<String>,
     }
 }
 
-pub fn etag_from_headers(headers: &HeaderMap) -> Result<String, AzureError> {
+pub fn etag_from_headers(headers: &HeaderMap) -> Result<String, Error> {
     let etag = headers
         .get(ETAG)
         .ok_or_else(|| {
             static E: HeaderName = ETAG;
-            AzureError::HeaderNotFound(E.as_str().to_owned())
+            Error::HeaderNotFound(E.as_str().to_owned())
         })?
         .to_str()?
         .to_owned();
@@ -165,10 +165,10 @@ pub fn etag_from_headers(headers: &HeaderMap) -> Result<String, AzureError> {
     Ok(etag)
 }
 
-pub fn lease_time_from_headers(headers: &HeaderMap) -> Result<u8, AzureError> {
+pub fn lease_time_from_headers(headers: &HeaderMap) -> Result<u8, Error> {
     let lease_time = headers
         .get(LEASE_TIME)
-        .ok_or_else(|| AzureError::HeaderNotFound(LEASE_TIME.to_owned()))?
+        .ok_or_else(|| Error::HeaderNotFound(LEASE_TIME.to_owned()))?
         .to_str()?;
 
     let lease_time = lease_time.parse::<u8>()?;
@@ -178,10 +178,10 @@ pub fn lease_time_from_headers(headers: &HeaderMap) -> Result<u8, AzureError> {
 }
 
 #[cfg(not(feature = "azurite_workaround"))]
-pub fn delete_type_permanent_from_headers(headers: &HeaderMap) -> Result<bool, AzureError> {
+pub fn delete_type_permanent_from_headers(headers: &HeaderMap) -> Result<bool, Error> {
     let delete_type_permanent = headers
         .get(DELETE_TYPE_PERMANENT)
-        .ok_or_else(|| AzureError::HeaderNotFound(DELETE_TYPE_PERMANENT.to_owned()))?
+        .ok_or_else(|| Error::HeaderNotFound(DELETE_TYPE_PERMANENT.to_owned()))?
         .to_str()?;
 
     let delete_type_permanent = delete_type_permanent.parse::<bool>()?;
@@ -191,10 +191,10 @@ pub fn delete_type_permanent_from_headers(headers: &HeaderMap) -> Result<bool, A
 }
 
 #[cfg(feature = "azurite_workaround")]
-pub fn delete_type_permanent_from_headers(headers: &HeaderMap) -> Result<Option<bool>, AzureError> {
+pub fn delete_type_permanent_from_headers(headers: &HeaderMap) -> Result<Option<bool>, Error> {
     let delete_type_permanent = headers
         .get(DELETE_TYPE_PERMANENT)
-        .map(|delete_type_permanent| -> Result<_, AzureError> {
+        .map(|delete_type_permanent| -> Result<_, Error> {
             Ok(delete_type_permanent.to_str()?.parse::<bool>()?)
         })
         .transpose()?;
@@ -203,10 +203,10 @@ pub fn delete_type_permanent_from_headers(headers: &HeaderMap) -> Result<Option<
     Ok(delete_type_permanent)
 }
 
-pub fn sequence_number_from_headers(headers: &HeaderMap) -> Result<u64, AzureError> {
+pub fn sequence_number_from_headers(headers: &HeaderMap) -> Result<u64, Error> {
     let sequence_number = headers
         .get(BLOB_SEQUENCE_NUMBER)
-        .ok_or_else(|| AzureError::HeaderNotFound(BLOB_SEQUENCE_NUMBER.to_owned()))?
+        .ok_or_else(|| Error::HeaderNotFound(BLOB_SEQUENCE_NUMBER.to_owned()))?
         .to_str()?;
 
     let sequence_number = sequence_number.parse::<u64>()?;
@@ -215,32 +215,32 @@ pub fn sequence_number_from_headers(headers: &HeaderMap) -> Result<u64, AzureErr
     Ok(sequence_number)
 }
 
-pub fn session_token_from_headers(headers: &HeaderMap) -> Result<SessionToken, AzureError> {
+pub fn session_token_from_headers(headers: &HeaderMap) -> Result<SessionToken, Error> {
     Ok(headers
         .get(SESSION_TOKEN)
-        .ok_or_else(|| AzureError::HeaderNotFound(SESSION_TOKEN.to_owned()))?
+        .ok_or_else(|| Error::HeaderNotFound(SESSION_TOKEN.to_owned()))?
         .to_str()?
         .to_owned())
 }
 
-pub fn server_from_headers(headers: &HeaderMap) -> Result<&str, AzureError> {
+pub fn server_from_headers(headers: &HeaderMap) -> Result<&str, Error> {
     Ok(headers
         .get(SERVER)
-        .ok_or_else(|| AzureError::HeaderNotFound(SERVER.to_owned()))?
+        .ok_or_else(|| Error::HeaderNotFound(SERVER.to_owned()))?
         .to_str()?)
 }
 
-pub fn version_from_headers(headers: &HeaderMap) -> Result<&str, AzureError> {
+pub fn version_from_headers(headers: &HeaderMap) -> Result<&str, Error> {
     Ok(headers
         .get(VERSION)
-        .ok_or_else(|| AzureError::HeaderNotFound(VERSION.to_owned()))?
+        .ok_or_else(|| Error::HeaderNotFound(VERSION.to_owned()))?
         .to_str()?)
 }
 
-pub fn request_server_encrypted_from_headers(headers: &HeaderMap) -> Result<bool, AzureError> {
+pub fn request_server_encrypted_from_headers(headers: &HeaderMap) -> Result<bool, Error> {
     let request_server_encrypted = headers
         .get(REQUEST_SERVER_ENCRYPTED)
-        .ok_or_else(|| AzureError::HeaderNotFound(REQUEST_SERVER_ENCRYPTED.to_owned()))?
+        .ok_or_else(|| Error::HeaderNotFound(REQUEST_SERVER_ENCRYPTED.to_owned()))?
         .to_str()?;
 
     let request_server_encrypted = request_server_encrypted.parse::<bool>()?;
@@ -249,12 +249,12 @@ pub fn request_server_encrypted_from_headers(headers: &HeaderMap) -> Result<bool
     Ok(request_server_encrypted)
 }
 
-pub fn content_type_from_headers(headers: &HeaderMap) -> Result<&str, AzureError> {
+pub fn content_type_from_headers(headers: &HeaderMap) -> Result<&str, Error> {
     Ok(headers
         .get(http::header::CONTENT_TYPE)
         .ok_or_else(|| {
             let header = http::header::CONTENT_TYPE;
-            AzureError::HeaderNotFound(header.as_str().to_owned())
+            Error::HeaderNotFound(header.as_str().to_owned())
         })?
         .to_str()?)
 }
@@ -264,7 +264,7 @@ pub async fn perform_http_request(
     client: &Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>,
     req: Request<Body>,
     expected_status: StatusCode,
-) -> Result<String, AzureError> {
+) -> Result<String, Error> {
     debug!("req == {:?}", req);
     let res = client
         .request(req)

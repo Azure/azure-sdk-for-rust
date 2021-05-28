@@ -3,6 +3,22 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ProvisioningState {
+    NotSpecified,
+    Accepted,
+    Running,
+    Creating,
+    Created,
+    Deleting,
+    Deleted,
+    Canceled,
+    Failed,
+    Succeeded,
+    MovingResources,
+    TransientFailure,
+    RolloutInProgress,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrafficRegions {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub regions: Vec<String>,
@@ -51,29 +67,10 @@ pub struct RolloutStatusBase {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomRolloutProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<custom_rollout_properties::ProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
     pub specification: serde_json::Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<serde_json::Value>,
-}
-pub mod custom_rollout_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        NotSpecified,
-        Accepted,
-        Running,
-        Creating,
-        Created,
-        Deleting,
-        Deleted,
-        Canceled,
-        Failed,
-        Succeeded,
-        MovingResources,
-        TransientFailure,
-        RolloutInProgress,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomRollout {
@@ -181,30 +178,11 @@ pub mod default_rollout_status {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefaultRolloutProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<default_rollout_properties::ProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub specification: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<serde_json::Value>,
-}
-pub mod default_rollout_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        NotSpecified,
-        Accepted,
-        Running,
-        Creating,
-        Created,
-        Deleting,
-        Deleted,
-        Canceled,
-        Failed,
-        Succeeded,
-        MovingResources,
-        TransientFailure,
-        RolloutInProgress,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefaultRollout {
@@ -689,6 +667,8 @@ pub struct NotificationRegistrationProperties {
     pub included_events: Vec<String>,
     #[serde(rename = "notificationEndpoints", default, skip_serializing_if = "Vec::is_empty")]
     pub notification_endpoints: Vec<NotificationEndpoint>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
 }
 pub mod notification_registration_properties {
     use super::*;
@@ -864,8 +844,6 @@ pub struct ResourceProviderManifestProperties {
     pub capabilities: Vec<ResourceProviderCapabilities>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
-    #[serde(rename = "templateDeploymentOptions", default, skip_serializing_if = "Option::is_none")]
-    pub template_deployment_options: Option<serde_json::Value>,
 }
 pub mod resource_provider_manifest_properties {
     use super::*;
@@ -888,32 +866,7 @@ pub struct ProviderRegistrationProperties {
     #[serde(rename = "providerHubMetadata", default, skip_serializing_if = "Option::is_none")]
     pub provider_hub_metadata: Option<serde_json::Value>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<provider_registration_properties::ProvisioningState>,
-    #[serde(
-        rename = "subscriptionLifecycleNotificationSpecifications",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub subscription_lifecycle_notification_specifications: Option<serde_json::Value>,
-}
-pub mod provider_registration_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        NotSpecified,
-        Accepted,
-        Running,
-        Creating,
-        Created,
-        Deleting,
-        Deleted,
-        Canceled,
-        Failed,
-        Succeeded,
-        MovingResources,
-        TransientFailure,
-        RolloutInProgress,
-    }
+    pub provisioning_state: Option<ProvisioningState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProviderRegistration {
@@ -1043,7 +996,7 @@ pub struct ResourceTypeRegistrationProperties {
     #[serde(rename = "enableAsyncOperation", default, skip_serializing_if = "Option::is_none")]
     pub enable_async_operation: Option<bool>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<resource_type_registration_properties::ProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "enableThirdPartyS2S", default, skip_serializing_if = "Option::is_none")]
     pub enable_third_party_s2s: Option<bool>,
     #[serde(
@@ -1107,22 +1060,6 @@ pub mod resource_type_registration_properties {
         AddOn,
         Bypass,
         Store,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        NotSpecified,
-        Accepted,
-        Running,
-        Creating,
-        Created,
-        Deleting,
-        Deleted,
-        Canceled,
-        Failed,
-        Succeeded,
-        MovingResources,
-        TransientFailure,
-        RolloutInProgress,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceDeletionPolicy {
@@ -1236,6 +1173,8 @@ pub struct SkuSetting {
 pub struct ResourceTypeSku {
     #[serde(rename = "skuSettings")]
     pub sku_settings: Vec<SkuSetting>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuResource {

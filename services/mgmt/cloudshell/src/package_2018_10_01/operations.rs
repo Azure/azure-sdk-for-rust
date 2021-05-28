@@ -15,14 +15,14 @@ pub async fn get_user_settings_with_location(
         location,
         user_settings_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| get_user_settings_with_location::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(get_user_settings_with_location::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::GET);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| get_user_settings_with_location::Error::GetTokenError { source })?;
+            .map_err(get_user_settings_with_location::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -30,28 +30,22 @@ pub async fn get_user_settings_with_location(
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| get_user_settings_with_location::Error::BuildRequestError { source })?;
+        .map_err(get_user_settings_with_location::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| get_user_settings_with_location::Error::ExecuteRequestError { source })?;
+        .map_err(get_user_settings_with_location::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: UserSettingsResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| get_user_settings_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: UserSettingsResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| get_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| get_user_settings_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| get_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_user_settings_with_location::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -68,18 +62,18 @@ pub mod get_user_settings_with_location {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn put_user_settings_with_location(
@@ -95,43 +89,37 @@ pub async fn put_user_settings_with_location(
         location,
         user_settings_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| put_user_settings_with_location::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(put_user_settings_with_location::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::PUT);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| put_user_settings_with_location::Error::GetTokenError { source })?;
+            .map_err(put_user_settings_with_location::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = azure_core::to_json(parameters).map_err(|source| put_user_settings_with_location::Error::SerializeError { source })?;
+    let req_body = azure_core::to_json(parameters).map_err(put_user_settings_with_location::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| put_user_settings_with_location::Error::BuildRequestError { source })?;
+        .map_err(put_user_settings_with_location::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| put_user_settings_with_location::Error::ExecuteRequestError { source })?;
+        .map_err(put_user_settings_with_location::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: UserSettingsResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| put_user_settings_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: UserSettingsResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| put_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| put_user_settings_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| put_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(put_user_settings_with_location::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -148,18 +136,18 @@ pub mod put_user_settings_with_location {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn patch_user_settings_with_location(
@@ -175,43 +163,37 @@ pub async fn patch_user_settings_with_location(
         location,
         user_settings_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| patch_user_settings_with_location::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(patch_user_settings_with_location::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::PATCH);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| patch_user_settings_with_location::Error::GetTokenError { source })?;
+            .map_err(patch_user_settings_with_location::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = azure_core::to_json(parameters).map_err(|source| patch_user_settings_with_location::Error::SerializeError { source })?;
+    let req_body = azure_core::to_json(parameters).map_err(patch_user_settings_with_location::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| patch_user_settings_with_location::Error::BuildRequestError { source })?;
+        .map_err(patch_user_settings_with_location::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| patch_user_settings_with_location::Error::ExecuteRequestError { source })?;
+        .map_err(patch_user_settings_with_location::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: UserSettingsResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| patch_user_settings_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: UserSettingsResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| patch_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| patch_user_settings_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| patch_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(patch_user_settings_with_location::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -228,18 +210,18 @@ pub mod patch_user_settings_with_location {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn delete_user_settings_with_location(
@@ -254,14 +236,14 @@ pub async fn delete_user_settings_with_location(
         location,
         user_settings_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| delete_user_settings_with_location::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(delete_user_settings_with_location::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::DELETE);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| delete_user_settings_with_location::Error::GetTokenError { source })?;
+            .map_err(delete_user_settings_with_location::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -269,21 +251,18 @@ pub async fn delete_user_settings_with_location(
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| delete_user_settings_with_location::Error::BuildRequestError { source })?;
+        .map_err(delete_user_settings_with_location::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| delete_user_settings_with_location::Error::ExecuteRequestError { source })?;
+        .map_err(delete_user_settings_with_location::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => Ok(delete_user_settings_with_location::Response::Ok200),
         http::StatusCode::NO_CONTENT => Ok(delete_user_settings_with_location::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| delete_user_settings_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| delete_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_user_settings_with_location::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -305,18 +284,18 @@ pub mod delete_user_settings_with_location {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn get_console_with_location(
@@ -331,14 +310,14 @@ pub async fn get_console_with_location(
         location,
         console_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| get_console_with_location::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(get_console_with_location::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::GET);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| get_console_with_location::Error::GetTokenError { source })?;
+            .map_err(get_console_with_location::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -346,28 +325,22 @@ pub async fn get_console_with_location(
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| get_console_with_location::Error::BuildRequestError { source })?;
+        .map_err(get_console_with_location::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| get_console_with_location::Error::ExecuteRequestError { source })?;
+        .map_err(get_console_with_location::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CloudShellConsole =
-                serde_json::from_slice(rsp_body).map_err(|source| get_console_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: CloudShellConsole = serde_json::from_slice(rsp_body)
+                .map_err(|source| get_console_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| get_console_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| get_console_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_console_with_location::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -384,18 +357,18 @@ pub mod get_console_with_location {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn put_console_with_location(
@@ -410,14 +383,14 @@ pub async fn put_console_with_location(
         location,
         console_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| put_console_with_location::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(put_console_with_location::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::PUT);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| put_console_with_location::Error::GetTokenError { source })?;
+            .map_err(put_console_with_location::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -425,37 +398,28 @@ pub async fn put_console_with_location(
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| put_console_with_location::Error::BuildRequestError { source })?;
+        .map_err(put_console_with_location::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| put_console_with_location::Error::ExecuteRequestError { source })?;
+        .map_err(put_console_with_location::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CloudShellConsole =
-                serde_json::from_slice(rsp_body).map_err(|source| put_console_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: CloudShellConsole = serde_json::from_slice(rsp_body)
+                .map_err(|source| put_console_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(put_console_with_location::Response::Ok200(rsp_value))
         }
         http::StatusCode::CREATED => {
             let rsp_body = rsp.body();
-            let rsp_value: CloudShellConsole =
-                serde_json::from_slice(rsp_body).map_err(|source| put_console_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: CloudShellConsole = serde_json::from_slice(rsp_body)
+                .map_err(|source| put_console_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(put_console_with_location::Response::Created201(rsp_value))
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| put_console_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| put_console_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(put_console_with_location::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -477,18 +441,18 @@ pub mod put_console_with_location {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn delete_console_with_location(
@@ -503,14 +467,14 @@ pub async fn delete_console_with_location(
         location,
         console_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| delete_console_with_location::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(delete_console_with_location::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::DELETE);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| delete_console_with_location::Error::GetTokenError { source })?;
+            .map_err(delete_console_with_location::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
@@ -518,21 +482,18 @@ pub async fn delete_console_with_location(
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| delete_console_with_location::Error::BuildRequestError { source })?;
+        .map_err(delete_console_with_location::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| delete_console_with_location::Error::ExecuteRequestError { source })?;
+        .map_err(delete_console_with_location::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => Ok(delete_console_with_location::Response::Ok200),
         http::StatusCode::NO_CONTENT => Ok(delete_console_with_location::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| delete_console_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| delete_console_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_console_with_location::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -554,18 +515,18 @@ pub mod delete_console_with_location {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn keep_alive_with_location(
@@ -580,14 +541,14 @@ pub async fn keep_alive_with_location(
         location,
         console_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| keep_alive_with_location::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(keep_alive_with_location::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::POST);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| keep_alive_with_location::Error::GetTokenError { source })?;
+            .map_err(keep_alive_with_location::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
@@ -595,20 +556,17 @@ pub async fn keep_alive_with_location(
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
         .body(req_body)
-        .map_err(|source| keep_alive_with_location::Error::BuildRequestError { source })?;
+        .map_err(keep_alive_with_location::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| keep_alive_with_location::Error::ExecuteRequestError { source })?;
+        .map_err(keep_alive_with_location::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => Ok(()),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| keep_alive_with_location::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| keep_alive_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(keep_alive_with_location::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -625,18 +583,18 @@ pub mod keep_alive_with_location {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn get_user_settings(
@@ -649,43 +607,35 @@ pub async fn get_user_settings(
         operation_config.base_path(),
         user_settings_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| get_user_settings::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(get_user_settings::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::GET);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| get_user_settings::Error::GetTokenError { source })?;
+            .map_err(get_user_settings::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| get_user_settings::Error::BuildRequestError { source })?;
+    let req = req_builder.body(req_body).map_err(get_user_settings::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| get_user_settings::Error::ExecuteRequestError { source })?;
+        .map_err(get_user_settings::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
             let rsp_value: UserSettingsResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| get_user_settings::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                serde_json::from_slice(rsp_body).map_err(|source| get_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
             let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| get_user_settings::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                serde_json::from_slice(rsp_body).map_err(|source| get_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_user_settings::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -702,18 +652,18 @@ pub mod get_user_settings {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn put_user_settings(
@@ -727,43 +677,35 @@ pub async fn put_user_settings(
         operation_config.base_path(),
         user_settings_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| put_user_settings::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(put_user_settings::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::PUT);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| put_user_settings::Error::GetTokenError { source })?;
+            .map_err(put_user_settings::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = azure_core::to_json(parameters).map_err(|source| put_user_settings::Error::SerializeError { source })?;
+    let req_body = azure_core::to_json(parameters).map_err(put_user_settings::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| put_user_settings::Error::BuildRequestError { source })?;
+    let req = req_builder.body(req_body).map_err(put_user_settings::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| put_user_settings::Error::ExecuteRequestError { source })?;
+        .map_err(put_user_settings::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
             let rsp_value: UserSettingsResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| put_user_settings::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                serde_json::from_slice(rsp_body).map_err(|source| put_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
             let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| put_user_settings::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+                serde_json::from_slice(rsp_body).map_err(|source| put_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(put_user_settings::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -780,18 +722,18 @@ pub mod put_user_settings {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn patch_user_settings(
@@ -805,43 +747,35 @@ pub async fn patch_user_settings(
         operation_config.base_path(),
         user_settings_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| patch_user_settings::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(patch_user_settings::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::PATCH);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| patch_user_settings::Error::GetTokenError { source })?;
+            .map_err(patch_user_settings::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = azure_core::to_json(parameters).map_err(|source| patch_user_settings::Error::SerializeError { source })?;
+    let req_body = azure_core::to_json(parameters).map_err(patch_user_settings::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| patch_user_settings::Error::BuildRequestError { source })?;
+    let req = req_builder.body(req_body).map_err(patch_user_settings::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| patch_user_settings::Error::ExecuteRequestError { source })?;
+        .map_err(patch_user_settings::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: UserSettingsResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| patch_user_settings::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: UserSettingsResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| patch_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| patch_user_settings::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| patch_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(patch_user_settings::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -858,18 +792,18 @@ pub mod patch_user_settings {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn delete_user_settings(
@@ -882,36 +816,31 @@ pub async fn delete_user_settings(
         operation_config.base_path(),
         user_settings_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| delete_user_settings::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(delete_user_settings::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::DELETE);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| delete_user_settings::Error::GetTokenError { source })?;
+            .map_err(delete_user_settings::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| delete_user_settings::Error::BuildRequestError { source })?;
+    let req = req_builder.body(req_body).map_err(delete_user_settings::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| delete_user_settings::Error::ExecuteRequestError { source })?;
+        .map_err(delete_user_settings::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => Ok(delete_user_settings::Response::Ok200),
         http::StatusCode::NO_CONTENT => Ok(delete_user_settings::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
-                serde_json::from_slice(rsp_body).map_err(|source| delete_user_settings::Error::DeserializeError {
-                    source,
-                    body: rsp_body.clone(),
-                })?;
+            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                .map_err(|source| delete_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_user_settings::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -933,18 +862,18 @@ pub mod delete_user_settings {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn get_console(
@@ -957,41 +886,35 @@ pub async fn get_console(
         operation_config.base_path(),
         console_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| get_console::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(get_console::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::GET);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| get_console::Error::GetTokenError { source })?;
+            .map_err(get_console::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| get_console::Error::BuildRequestError { source })?;
+    let req = req_builder.body(req_body).map_err(get_console::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| get_console::Error::ExecuteRequestError { source })?;
+        .map_err(get_console::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CloudShellConsole = serde_json::from_slice(rsp_body).map_err(|source| get_console::Error::DeserializeError {
-                source,
-                body: rsp_body.clone(),
-            })?;
+            let rsp_value: CloudShellConsole =
+                serde_json::from_slice(rsp_body).map_err(|source| get_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| get_console::Error::DeserializeError {
-                source,
-                body: rsp_body.clone(),
-            })?;
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| get_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_console::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -1008,18 +931,18 @@ pub mod get_console {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn put_console(
@@ -1033,49 +956,41 @@ pub async fn put_console(
         operation_config.base_path(),
         console_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| put_console::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(put_console::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::PUT);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| put_console::Error::GetTokenError { source })?;
+            .map_err(put_console::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-    let req_body = azure_core::to_json(parameters).map_err(|source| put_console::Error::SerializeError { source })?;
+    let req_body = azure_core::to_json(parameters).map_err(put_console::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| put_console::Error::BuildRequestError { source })?;
+    let req = req_builder.body(req_body).map_err(put_console::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| put_console::Error::ExecuteRequestError { source })?;
+        .map_err(put_console::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CloudShellConsole = serde_json::from_slice(rsp_body).map_err(|source| put_console::Error::DeserializeError {
-                source,
-                body: rsp_body.clone(),
-            })?;
+            let rsp_value: CloudShellConsole =
+                serde_json::from_slice(rsp_body).map_err(|source| put_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(put_console::Response::Ok200(rsp_value))
         }
         http::StatusCode::CREATED => {
             let rsp_body = rsp.body();
-            let rsp_value: CloudShellConsole = serde_json::from_slice(rsp_body).map_err(|source| put_console::Error::DeserializeError {
-                source,
-                body: rsp_body.clone(),
-            })?;
+            let rsp_value: CloudShellConsole =
+                serde_json::from_slice(rsp_body).map_err(|source| put_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(put_console::Response::Created201(rsp_value))
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| put_console::Error::DeserializeError {
-                source,
-                body: rsp_body.clone(),
-            })?;
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| put_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(put_console::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -1097,18 +1012,18 @@ pub mod put_console {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn delete_console(
@@ -1121,35 +1036,31 @@ pub async fn delete_console(
         operation_config.base_path(),
         console_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| delete_console::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(delete_console::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::DELETE);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| delete_console::Error::GetTokenError { source })?;
+            .map_err(delete_console::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| delete_console::Error::BuildRequestError { source })?;
+    let req = req_builder.body(req_body).map_err(delete_console::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| delete_console::Error::ExecuteRequestError { source })?;
+        .map_err(delete_console::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => Ok(delete_console::Response::Ok200),
         http::StatusCode::NO_CONTENT => Ok(delete_console::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| delete_console::Error::DeserializeError {
-                source,
-                body: rsp_body.clone(),
-            })?;
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| delete_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_console::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -1171,18 +1082,18 @@ pub mod delete_console {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }
 pub async fn keep_alive(operation_config: &crate::OperationConfig, console_name: &str) -> std::result::Result<(), keep_alive::Error> {
@@ -1192,34 +1103,30 @@ pub async fn keep_alive(operation_config: &crate::OperationConfig, console_name:
         operation_config.base_path(),
         console_name
     );
-    let mut url = url::Url::parse(url_str).map_err(|source| keep_alive::Error::ParseUrlError { source })?;
+    let mut url = url::Url::parse(url_str).map_err(keep_alive::Error::ParseUrlError)?;
     let mut req_builder = http::request::Builder::new();
     req_builder = req_builder.method(http::Method::POST);
     if let Some(token_credential) = operation_config.token_credential() {
         let token_response = token_credential
             .get_token(operation_config.token_credential_resource())
             .await
-            .map_err(|source| keep_alive::Error::GetTokenError { source })?;
+            .map_err(keep_alive::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
     req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(|source| keep_alive::Error::BuildRequestError { source })?;
+    let req = req_builder.body(req_body).map_err(keep_alive::Error::BuildRequestError)?;
     let rsp = http_client
         .execute_request(req)
         .await
-        .map_err(|source| keep_alive::Error::ExecuteRequestError { source })?;
+        .map_err(keep_alive::Error::ExecuteRequestError)?;
     match rsp.status() {
         http::StatusCode::OK => Ok(()),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| keep_alive::Error::DeserializeError {
-                source,
-                body: rsp_body.clone(),
-            })?;
+            let rsp_value: ErrorResponse =
+                serde_json::from_slice(rsp_body).map_err(|source| keep_alive::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(keep_alive::Error::DefaultResponse {
                 status_code,
                 value: rsp_value,
@@ -1236,17 +1143,17 @@ pub mod keep_alive {
             status_code: http::StatusCode,
             value: models::ErrorResponse,
         },
-        #[error("Failed to parse request URL: {}", source)]
-        ParseUrlError { source: url::ParseError },
-        #[error("Failed to build request: {}", source)]
-        BuildRequestError { source: http::Error },
-        #[error("Failed to execute request: {}", source)]
-        ExecuteRequestError { source: azure_core::errors::HttpError },
-        #[error("Failed to serialize request body: {}", source)]
-        SerializeError { source: serde_json::Error },
-        #[error("Failed to deserialize response body: {}", source)]
-        DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-        #[error("Failed to get access token: {}", source)]
-        GetTokenError { source: azure_core::errors::AzureError },
+        #[error("Failed to parse request URL: {0}")]
+        ParseUrlError(url::ParseError),
+        #[error("Failed to build request: {0}")]
+        BuildRequestError(http::Error),
+        #[error("Failed to execute request: {0}")]
+        ExecuteRequestError(azure_core::HttpError),
+        #[error("Failed to serialize request body: {0}")]
+        SerializeError(serde_json::Error),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        DeserializeError(serde_json::Error, bytes::Bytes),
+        #[error("Failed to get access token: {0}")]
+        GetTokenError(azure_core::Error),
     }
 }

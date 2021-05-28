@@ -1,4 +1,4 @@
-use crate::errors::StreamError;
+use crate::StreamError;
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures::io::AsyncRead;

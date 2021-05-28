@@ -1,4 +1,4 @@
-use azure_core::errors::PermissionError;
+use azure_core::PermissionError;
 use chrono::{DateTime, FixedOffset};
 use std::convert::TryFrom;
 

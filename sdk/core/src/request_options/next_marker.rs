@@ -1,5 +1,4 @@
-use crate::errors::AzureError;
-use crate::AppendToUrlQuery;
+use crate::{AppendToUrlQuery, Error};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NextMarker(String);
@@ -29,7 +28,7 @@ impl NextMarker {
         url.query_pairs_mut().append_pair("continuation", &self.0);
     }
 
-    pub fn from_header_optional(headers: &http::HeaderMap) -> Result<Option<Self>, AzureError> {
+    pub fn from_header_optional(headers: &http::HeaderMap) -> Result<Option<Self>, Error> {
         let header_as_str = headers
             .get("x-ms-continuation")
             .map(|item| item.to_str())

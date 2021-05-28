@@ -1,5 +1,4 @@
 use crate::{blob::blob::Blob, AzureStorageError};
-use azure_core::errors::AzureError;
 use azure_core::headers::{date_from_headers, request_id_from_headers};
 use azure_core::prelude::ContentRange;
 use azure_core::RequestId;
@@ -30,7 +29,9 @@ impl TryFrom<(&str, Response<Bytes>)> for GetBlobResponse {
             response
                 .headers()
                 .get(http::header::CONTENT_RANGE)
-                .ok_or_else(|| AzureError::HeaderNotFound(http::header::CONTENT_RANGE.to_string()))?
+                .ok_or_else(|| {
+                    azure_core::Error::HeaderNotFound(http::header::CONTENT_RANGE.to_string())
+                })?
                 .to_str()?,
         )?;
 

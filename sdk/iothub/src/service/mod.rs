@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use azure_core::{errors::AzureError, HttpClient};
+use azure_core::HttpClient;
 use base64::{decode, encode_config};
 use hmac::{Hmac, Mac, NewMac};
 use http::request::Builder as RequestBuilder;
@@ -27,9 +27,6 @@ use crate::service::responses::{
 /// The API version to use for any requests
 pub const API_VERSION: &str = "2020-05-31-preview";
 
-/// A general error having to do with the IoTHub.
-pub type IoTHubError = Box<dyn std::error::Error + Sync + Send>;
-
 /// The ServiceClient is the main entry point for communicating with the IoT Hub.
 ///
 /// There are several ways to construct the IoTHub Service object. Either by:
@@ -43,6 +40,32 @@ pub struct ServiceClient {
     pub iothub_name: String,
     /// The SAS token that is used for authentication.
     pub(crate) sas_token: String,
+}
+
+#[allow(missing_docs)]
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum FromConnectionStringError {
+    #[error("Given connection string is invalid")]
+    InvalidError,
+    #[error("Failed to get the hostname from the given connection string")]
+    FailedToGetHostname,
+    #[error("Failed to get the shared access key name from the given connection string")]
+    FailedToGetSharedAccessKey,
+    #[error("Failed to get the primary key from the given connection string")]
+    FailedToGetPrimaryKey,
+    #[error("Generate SAS token error: {0}")]
+    GenerateSasTokenError(GenerateSasTokenError),
+}
+
+#[allow(missing_docs)]
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum GenerateSasTokenError {
+    #[error("Failed to decode the given private key: {0}")]
+    DecodePrivateKeyError(base64::DecodeError),
+    #[error("Failed to use the given private key for the hashing algorithm: {0}")]
+    HashingFailed(crypto_mac::InvalidKeyLength),
 }
 
 impl ServiceClient {
@@ -82,7 +105,7 @@ impl ServiceClient {
         key_name: &str,
         private_key: &str,
         expires_in_seconds: i64,
-    ) -> Result<String, AzureError> {
+    ) -> Result<String, GenerateSasTokenError> {
         type HmacSHA256 = Hmac<Sha256>;
         let expiry_date = chrono::Utc::now() + chrono::Duration::seconds(expires_in_seconds);
         let expiry_date_seconds = expiry_date.timestamp();
@@ -91,19 +114,10 @@ impl ServiceClient {
             iothub_name, &expiry_date_seconds
         );
 
-        let key = decode(private_key).map_err(|err| {
-            AzureError::GenericErrorWithText(format!(
-                "Failed to decode the given private key: {}",
-                err.to_string()
-            ))
-        })?;
+        let key = decode(private_key).map_err(GenerateSasTokenError::DecodePrivateKeyError)?;
 
-        let mut hmac = HmacSHA256::new_varkey(key.as_ref()).map_err(|err| {
-            AzureError::GenericErrorWithText(format!(
-                "Failed to use the given private key for the hashing algorithm: {}",
-                err.to_string()
-            ))
-        })?;
+        let mut hmac =
+            HmacSHA256::new_varkey(key.as_ref()).map_err(GenerateSasTokenError::HashingFailed)?;
 
         hmac.update(data.as_bytes());
         let result = hmac.finalize();
@@ -182,7 +196,7 @@ impl ServiceClient {
         http_client: Arc<Box<dyn HttpClient>>,
         connection_string: S,
         expires_in_seconds: i64,
-    ) -> Result<Self, AzureError>
+    ) -> Result<Self, FromConnectionStringError>
     where
         S: AsRef<str>,
     {
@@ -193,9 +207,7 @@ impl ServiceClient {
         let mut primary_key: Option<&str> = None;
 
         if parts.len() != 3 {
-            return Err(AzureError::GenericErrorWithText(
-                "Given connection string is invalid".to_string(),
-            ));
+            return Err(FromConnectionStringError::InvalidError);
         }
 
         for val in parts.iter() {
@@ -221,27 +233,18 @@ impl ServiceClient {
             }
         }
 
-        let iothub_name = iothub_name.ok_or_else(|| {
-            AzureError::GenericErrorWithText(
-                "Failed to get the hostname from the given connection string".to_string(),
-            )
-        })?;
+        let iothub_name =
+            iothub_name.ok_or_else(|| FromConnectionStringError::FailedToGetHostname)?;
 
-        let key_name = key_name.ok_or_else(|| {
-            AzureError::GenericErrorWithText(
-                "Failed to get the shared access key name from the given connection string"
-                    .to_string(),
-            )
-        })?;
+        let key_name =
+            key_name.ok_or_else(|| FromConnectionStringError::FailedToGetSharedAccessKey)?;
 
-        let primary_key = primary_key.ok_or_else(|| {
-            AzureError::GenericErrorWithText(
-                "Failed to get the primary key from the given connection string".to_string(),
-            )
-        })?;
+        let primary_key =
+            primary_key.ok_or_else(|| FromConnectionStringError::FailedToGetPrimaryKey)?;
 
         let sas_token =
-            Self::generate_sas_token(iothub_name, key_name, primary_key, expires_in_seconds)?;
+            Self::generate_sas_token(iothub_name, key_name, primary_key, expires_in_seconds)
+                .map_err(FromConnectionStringError::GenerateSasTokenError)?;
 
         Ok(Self {
             http_client,
@@ -334,7 +337,7 @@ impl ServiceClient {
         &self,
         device_id: S,
         module_id: T,
-    ) -> Result<ModuleTwinResponse, IoTHubError>
+    ) -> Result<ModuleTwinResponse, crate::Error>
     where
         S: Into<String>,
         T: Into<String>,
@@ -359,7 +362,7 @@ impl ServiceClient {
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iothub.get_device_twin("some-device");
     /// ```
-    pub async fn get_device_twin<S>(&self, device_id: S) -> Result<DeviceTwinResponse, IoTHubError>
+    pub async fn get_device_twin<S>(&self, device_id: S) -> Result<DeviceTwinResponse, crate::Error>
     where
         S: Into<String>,
     {
@@ -495,7 +498,7 @@ impl ServiceClient {
     pub async fn get_device_identity<S>(
         &self,
         device_id: S,
-    ) -> Result<DeviceIdentityResponse, IoTHubError>
+    ) -> Result<DeviceIdentityResponse, crate::Error>
     where
         S: Into<String>,
     {
@@ -588,7 +591,7 @@ impl ServiceClient {
         &self,
         device_id: S,
         module_id: T,
-    ) -> Result<ModuleIdentityResponse, IoTHubError>
+    ) -> Result<ModuleIdentityResponse, crate::Error>
     where
         S: Into<String>,
         T: Into<String>,

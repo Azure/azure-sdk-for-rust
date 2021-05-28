@@ -1,6 +1,6 @@
 use super::BA512Range;
-use crate::errors::ParseError;
 use crate::AddAsHeader;
+use crate::ParseError;
 use http::request::Builder;
 use std::convert::From;
 use std::fmt;

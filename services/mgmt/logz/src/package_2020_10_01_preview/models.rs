@@ -83,6 +83,8 @@ pub struct LogzOrganizationProperties {
     pub id: Option<String>,
     #[serde(rename = "enterpriseAppId", default, skip_serializing_if = "Option::is_none")]
     pub enterprise_app_id: Option<String>,
+    #[serde(rename = "singleSignOnUrl", default, skip_serializing_if = "Option::is_none")]
+    pub single_sign_on_url: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserInfo {
@@ -208,6 +210,8 @@ pub struct LogRules {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitoringTagRulesProperties {
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "logRules", default, skip_serializing_if = "Option::is_none")]
     pub log_rules: Option<LogRules>,
     #[serde(rename = "systemData", skip_serializing)]
@@ -268,6 +272,62 @@ pub struct LogzSingleSignOnResource {
 pub struct LogzSingleSignOnResourceListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LogzSingleSignOnResource>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmExtensionPayload {
+    #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub region: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum VmHostUpdateState {
+    Install,
+    Delete,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmResources {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
+    pub agent_version: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmHostUpdateRequest {
+    #[serde(rename = "vmResourceIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub vm_resource_ids: Vec<VmResources>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<VmHostUpdateState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmResourcesListResponse {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<VmResources>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserRoleRequest {
+    #[serde(rename = "emailAddress", default, skip_serializing_if = "Option::is_none")]
+    pub email_address: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum UserRole {
+    None,
+    User,
+    Admin,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserRoleResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<UserRole>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserRoleListResponse {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<UserRoleResponse>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
