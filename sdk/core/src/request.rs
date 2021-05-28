@@ -45,6 +45,10 @@ impl Request {
         &self.headers
     }
 
+    pub fn headers_mut(&mut self) -> &mut HeaderMap {
+        &mut self.headers
+    }
+
     pub fn body(&self) -> &Body {
         &self.body
     }

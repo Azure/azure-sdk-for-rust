@@ -1,10 +1,12 @@
 mod retry_policies;
+mod telemetry_policy;
 mod transport;
 
 use crate::{Context, Request, Response};
 pub use retry_policies::*;
 use std::error::Error;
 use std::sync::Arc;
+pub use telemetry_policy::*;
 pub use transport::*;
 
 pub type PolicyResult<T> = Result<T, Box<dyn Error + Send + Sync>>;

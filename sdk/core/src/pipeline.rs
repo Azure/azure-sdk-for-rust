@@ -1,4 +1,4 @@
-use crate::policies::{Policy, PolicyResult};
+use crate::policies::{Policy, PolicyResult, TelemetryPolicy};
 use crate::{Context, Request, Response};
 use std::sync::Arc;
 
@@ -8,10 +8,10 @@ use std::sync::Arc;
 ///
 /// 1. Per call policies are executed. Per call policies can fail and bail out of the pipeline
 ///    immediately.
-/// 2. Retry policy. It allows to reexecute the following policies.
-/// 3. Per retry policies. Per retry polices are always executed at least once but are reexecuted
+/// 2. Retry policy. It allows to re-execute the following policies.
+/// 3. Per retry policies. Per retry polices are always executed at least once but are re-executed
 ///    in case of retries.
-/// 4. Transport policy. Transtport policy is always the last policy and is the policy that
+/// 4. Transport policy. Transport policy is always the last policy and is the policy that
 ///    actually constructs the `Response` to be passed up the pipeline.
 ///
 /// A pipeline is immutable. In other words a policy can either succeed and call the following
@@ -31,7 +31,10 @@ impl Pipeline {
         transport_policy: Arc<dyn Policy>,
     ) -> Self {
         let mut pipeline =
-            Vec::with_capacity(per_call_policies.len() + per_retry_policies.len() + 2);
+            Vec::<Arc<dyn Policy>>::with_capacity(per_call_policies.len() + per_retry_policies.len() + 3);
+
+        // TODO: Create pipeline from ClientOptions which should contain user-specified policies + client-added policies.
+        pipeline.push(Arc::new(TelemetryPolicy::default()));
 
         pipeline.extend_from_slice(&per_call_policies);
         pipeline.push(retry);
