@@ -1,10 +1,8 @@
-use azure_core::TokenCredential;
 use azure_identity::token_credentials::*;
-use std::error::Error;
 use url::Url;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
     let sub_id = std::env::var("AZURE_SUBSCRIPTION_ID")?;

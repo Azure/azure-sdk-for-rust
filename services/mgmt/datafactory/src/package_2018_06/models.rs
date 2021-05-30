@@ -1881,6 +1881,8 @@ pub struct StoreReadSettings {
     pub type_: String,
     #[serde(rename = "maxConcurrentConnections", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_connections: Option<serde_json::Value>,
+    #[serde(rename = "disableMetricsCollection", default, skip_serializing_if = "Option::is_none")]
+    pub disable_metrics_collection: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBlobStorageReadSettings {
@@ -2208,6 +2210,8 @@ pub struct StoreWriteSettings {
     pub type_: String,
     #[serde(rename = "maxConcurrentConnections", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_connections: Option<serde_json::Value>,
+    #[serde(rename = "disableMetricsCollection", default, skip_serializing_if = "Option::is_none")]
+    pub disable_metrics_collection: Option<serde_json::Value>,
     #[serde(rename = "copyBehavior", default, skip_serializing_if = "Option::is_none")]
     pub copy_behavior: Option<serde_json::Value>,
 }
@@ -2522,6 +2526,8 @@ pub struct CopySource {
     pub source_retry_wait: Option<serde_json::Value>,
     #[serde(rename = "maxConcurrentConnections", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_connections: Option<serde_json::Value>,
+    #[serde(rename = "disableMetricsCollection", default, skip_serializing_if = "Option::is_none")]
+    pub disable_metrics_collection: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BinarySource {
@@ -3553,6 +3559,8 @@ pub struct CopySink {
     pub sink_retry_wait: Option<serde_json::Value>,
     #[serde(rename = "maxConcurrentConnections", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_connections: Option<serde_json::Value>,
+    #[serde(rename = "disableMetricsCollection", default, skip_serializing_if = "Option::is_none")]
+    pub disable_metrics_collection: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapCloudForCustomerSink {
@@ -3632,6 +3640,8 @@ pub struct BlobSink {
     pub blob_writer_add_header: Option<serde_json::Value>,
     #[serde(rename = "copyBehavior", default, skip_serializing_if = "Option::is_none")]
     pub copy_behavior: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub metadata: Vec<MetadataItem>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileSystemSink {
@@ -3882,6 +3892,8 @@ pub struct AzureBlobFsSink {
     pub copy_sink: CopySink,
     #[serde(rename = "copyBehavior", default, skip_serializing_if = "Option::is_none")]
     pub copy_behavior: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub metadata: Vec<MetadataItem>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSearchIndexSink {
@@ -4929,6 +4941,13 @@ pub enum NetezzaPartitionOption {
     None,
     DataSlice,
     DynamicRange,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataItem {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Trigger {

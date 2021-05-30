@@ -4,8 +4,8 @@ use crate::cosmos_entity::{
 use crate::prelude::*;
 use crate::resources::ResourceType;
 use crate::responses::CreateDocumentResponse;
-use azure_core::errors::HttpError;
 use azure_core::prelude::*;
+use azure_core::HttpError;
 use chrono::{DateTime, Utc};
 use http::StatusCode;
 use serde::Serialize;

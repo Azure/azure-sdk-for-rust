@@ -27,7 +27,7 @@ pub struct CodeGen {
 
 impl CodeGen {
     pub fn new(config: Config) -> Result<Self> {
-        let spec = Spec::read_files(&config.input_files).map_err(|source| Error::SpecError { source })?;
+        let spec = Spec::read_files(&config.input_files).map_err(Error::SpecError)?;
         Ok(Self { config, spec })
     }
 
@@ -55,10 +55,7 @@ impl CodeGen {
 
         // all definitions from input_files
         for (doc_file, doc) in self.spec.input_docs() {
-            let schemas = self
-                .spec
-                .resolve_schema_map(doc_file, &doc.definitions)
-                .map_err(|source| Error::SpecError { source })?;
+            let schemas = self.spec.resolve_schema_map(doc_file, &doc.definitions).map_err(Error::SpecError)?;
             for (name, schema) in schemas {
                 all_schemas.insert(
                     RefKey {
@@ -120,10 +117,7 @@ impl CodeGen {
             // only operations from listed input files
             // println!("doc_file {:?}", doc_file);
             if self.spec.is_input_file(&doc_file) {
-                let paths = self
-                    .spec
-                    .resolve_path_map(doc_file, &doc.paths)
-                    .map_err(|source| Error::SpecError { source })?;
+                let paths = self.spec.resolve_path_map(doc_file, &doc.paths).map_err(Error::SpecError)?;
                 for (path, item) in &paths {
                     for op in spec::path_item_operations(item) {
                         let (module_name, function_name) = op.function_name(path);
@@ -169,10 +163,7 @@ impl CodeGen {
 
     // For create_models. Recursively adds schema refs.
     fn add_schema_refs(&self, schemas: &mut IndexMap<RefKey, ResolvedSchema>, doc_file: &Path, schema_ref: Reference) -> Result<()> {
-        let schema = self
-            .spec
-            .resolve_schema_ref(doc_file, schema_ref)
-            .map_err(|source| Error::SpecError { source })?;
+        let schema = self.spec.resolve_schema_ref(doc_file, schema_ref).map_err(Error::SpecError)?;
         if let Some(ref_key) = schema.ref_key.clone() {
             if !schemas.contains_key(&ref_key) {
                 if !self.spec.is_input_file(&ref_key.file_path) {
@@ -231,7 +222,7 @@ impl CodeGen {
         let properties = self
             .spec
             .resolve_schema_map(doc_file, &schema.schema.properties)
-            .map_err(|source| Error::SpecError { source })?;
+            .map_err(Error::SpecError)?;
         for (property_name, property) in &properties {
             let nm = ident(&property_name.to_snake_case()).map_err(|source| Error::IdentError {
                 source,
@@ -346,8 +337,8 @@ impl CodeGen {
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("SpecError")]
-    SpecError { source: spec::Error },
+    #[error("SpecError: {0}")]
+    SpecError(spec::Error),
     #[error("ArrayExpectedToHaveItems")]
     ArrayExpectedToHaveItems,
     #[error("NoNameForRef")]
@@ -358,7 +349,7 @@ pub enum Error {
         file: &'static str,
         line: u32,
     },
-    #[error("CreateEnumIdentError {} {}", property_name, enum_value)]
+    #[error("CreateEnumIdentError {} {}: {}", property_name, enum_value, source)]
     CreateEnumIdentError {
         source: identifier::Error,
         property_name: String,
@@ -616,7 +607,7 @@ fn create_function(
     let parameters: Vec<Parameter> = cg
         .spec
         .resolve_parameters(doc_file, &operation_verb.operation().parameters)
-        .map_err(|source| Error::SpecError { source })?;
+        .map_err(Error::SpecError)?;
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
     let has_param_api_version = param_names.contains("api-version");
     let mut skip = HashSet::new();
@@ -652,7 +643,7 @@ fn create_function(
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource()).await
-                .map_err(|source| #fname::Error::GetTokenError{source})?;
+                .map_err(#fname::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
     });
@@ -739,13 +730,13 @@ fn create_function(
                 has_body_parameter = true;
                 if required {
                     ts_request_builder.extend(quote! {
-                        let req_body = azure_core::to_json(#param_name_var).map_err(|source| #fname::Error::SerializeError{source})?;
+                        let req_body = azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?;
                     });
                 } else {
                     ts_request_builder.extend(quote! {
                         let req_body =
                             if let Some(#param_name_var) = #param_name_var {
-                                azure_core::to_json(#param_name_var).map_err(|source| #fname::Error::SerializeError{source})?
+                                azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?
                             } else {
                                 bytes::Bytes::from_static(azure_core::EMPTY_BODY)
                             };
@@ -871,7 +862,7 @@ fn create_function(
                             match_status.extend(quote! {
                                 http::StatusCode::#status_code_name => {
                                     let rsp_body = rsp.body();
-                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError { source, body: rsp_body.clone() })?;
+                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
                                     Ok(rsp_value)
                                 }
                             });
@@ -890,7 +881,7 @@ fn create_function(
                             match_status.extend(quote! {
                                 http::StatusCode::#status_code_name => {
                                     let rsp_body = rsp.body();
-                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError { source, body: rsp_body.clone() })?;
+                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
                                     Ok(#fname::Response::#response_type_name(rsp_value))
                                 }
                             });
@@ -927,7 +918,7 @@ fn create_function(
                         match_status.extend(quote! {
                             http::StatusCode::#status_code_name => {
                                 let rsp_body = rsp.body();
-                                let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError { source, body: rsp_body.clone() })?;
+                                let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
                                 Err(#fname::Error::#response_type_name{value: rsp_value})
                             }
                         });
@@ -956,7 +947,7 @@ fn create_function(
                             match_status.extend(quote! {
                                 status_code => {
                                     let rsp_body = rsp.body();
-                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError { source, body: rsp_body.clone() })?;
+                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
                                     Err(#fname::Error::DefaultResponse{status_code, value: rsp_value})
                                 }
                             });
@@ -985,12 +976,12 @@ fn create_function(
         pub async fn #fname(#fparams) -> #fresponse {
             let http_client = operation_config.http_client();
             let url_str = &format!(#fpath, operation_config.base_path(), #url_str_args);
-            let mut url = url::Url::parse(url_str).map_err(|source| #fname::Error::ParseUrlError{source})?;
+            let mut url = url::Url::parse(url_str).map_err(#fname::Error::ParseUrlError)?;
             let mut req_builder = http::request::Builder::new();
             #ts_request_builder
             req_builder = req_builder.uri(url.as_str());
-            let req = req_builder.body(req_body).map_err(|source| #fname::Error::BuildRequestError{source})?;
-            let rsp = http_client.execute_request(req).await.map_err(|source| #fname::Error::ExecuteRequestError{source})?;
+            let req = req_builder.body(req_body).map_err(#fname::Error::BuildRequestError)?;
+            let rsp = http_client.execute_request(req).await.map_err(#fname::Error::ExecuteRequestError)?;
             match rsp.status() {
                 #match_status
             }
@@ -1003,18 +994,18 @@ fn create_function(
             #[derive(Debug, thiserror::Error)]
             pub enum Error {
                 #error_responses_ts
-                #[error("Failed to parse request URL: {}", source)]
-                ParseUrlError { source: url::ParseError },
-                #[error("Failed to build request: {}", source)]
-                BuildRequestError { source: http::Error },
-                #[error("Failed to execute request: {}", source)]
-                ExecuteRequestError { source: azure_core::errors::HttpError },
-                #[error("Failed to serialize request body: {}", source)]
-                SerializeError { source: serde_json::Error },
-                #[error("Failed to deserialize response body: {}", source)]
-                DeserializeError { source: serde_json::Error, body: bytes::Bytes },
-                #[error("Failed to get access token: {}", source)]
-                GetTokenError { source: azure_core::errors::AzureError },
+                #[error("Failed to parse request URL: {0}")]
+                ParseUrlError(url::ParseError),
+                #[error("Failed to build request: {0}")]
+                BuildRequestError(http::Error),
+                #[error("Failed to execute request: {0}")]
+                ExecuteRequestError(azure_core::HttpError),
+                #[error("Failed to serialize request body: {0}")]
+                SerializeError(serde_json::Error),
+                #[error("Failed to deserialize response: {0}, body: {1:?}")]
+                DeserializeError(serde_json::Error, bytes::Bytes),
+                #[error("Failed to get access token: {0}")]
+                GetTokenError(azure_core::Error),
             }
         }
     };

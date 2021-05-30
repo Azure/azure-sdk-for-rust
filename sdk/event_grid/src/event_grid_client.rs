@@ -1,6 +1,5 @@
 use crate::event_grid_request_builder::EventGridRequestBuilder;
 use crate::Event;
-use azure_core::errors::AzureError;
 use serde::ser::Serialize;
 use url::Url;
 
@@ -29,7 +28,7 @@ impl EventGridClient {
 
     /// Publishes events to a topic.
     /// REST API Spec: https://docs.microsoft.com/en-us/rest/api/eventgrid/dataplane/publishevents/publishevents
-    pub async fn publish_events<T>(&self, events: &[Event<T>]) -> Result<(), AzureError>
+    pub async fn publish_events<T>(&self, events: &[Event<T>]) -> Result<(), azure_core::Error>
     where
         T: Serialize,
     {
@@ -44,7 +43,7 @@ impl EventGridClient {
         Ok(())
     }
 
-    fn events_url(&self) -> Result<String, AzureError> {
+    fn events_url(&self) -> Result<String, azure_core::Error> {
         let mut url = Url::parse(&self.topic_host_name)?;
         url.set_path("/api/events");
         url.set_query(Some("api-version=2018-01-01"));

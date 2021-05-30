@@ -1,8 +1,7 @@
-use azure_core::errors::AzureError;
+use crate::Error;
 use chrono::{DateTime, TimeZone, Utc};
 use oauth2::AccessToken;
 use serde::{de, Deserialize, Deserializer};
-
 use std::str::FromStr;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -28,7 +27,7 @@ pub struct LoginResponse {
 }
 
 impl FromStr for LoginResponse {
-    type Err = AzureError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(serde_json::from_str(s)?)
@@ -50,7 +49,7 @@ impl LoginResponse {
         &self.access_token
     }
 
-    fn from_base_response(r: _LoginResponse) -> Result<LoginResponse, AzureError> {
+    fn from_base_response(r: _LoginResponse) -> Result<LoginResponse, Error> {
         let expires_on: Option<DateTime<Utc>> = match r.expires_on {
             Some(d) => Some(Utc.timestamp(d.parse()?, 0)),
             None => None,

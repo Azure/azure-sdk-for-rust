@@ -1,6 +1,5 @@
-use super::{ClientSecretCredential, TokenCredentialOptions};
-use azure_core::errors::AzureError;
-use azure_core::{TokenCredential, TokenResponse};
+use super::{ClientSecretCredential, TokenCredential, TokenCredentialOptions};
+use azure_core::TokenResponse;
 
 const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
 const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";
@@ -40,21 +39,34 @@ impl Default for EnvironmentCredential {
     }
 }
 
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum EnvironmentCredentialError {
+    #[error(
+        "Missing tenant id set in {} environment variable",
+        AZURE_TENANT_ID_ENV_KEY
+    )]
+    MissingTenantId(std::env::VarError),
+    #[error(
+        "Missing client id set in {} environment variable",
+        AZURE_CLIENT_ID_ENV_KEY
+    )]
+    MissingClientId(std::env::VarError),
+    #[error("No valid environment credential providers")]
+    NoValid,
+    #[error(transparent)]
+    ClientSecretCredentialError(super::ClientSecretCredentialError),
+}
+
 #[async_trait::async_trait]
 impl TokenCredential for EnvironmentCredential {
-    async fn get_token(&self, resource: &str) -> Result<TokenResponse, AzureError> {
-        let tenant_id = std::env::var(AZURE_TENANT_ID_ENV_KEY).map_err(|_| {
-            AzureError::GenericErrorWithText(format!(
-                "Missing tenant id set in {} environment variable",
-                AZURE_TENANT_ID_ENV_KEY
-            ))
-        })?;
-        let client_id = std::env::var(AZURE_CLIENT_ID_ENV_KEY).map_err(|_| {
-            AzureError::GenericErrorWithText(format!(
-                "Missing client id set in {} environment variable",
-                AZURE_CLIENT_ID_ENV_KEY
-            ))
-        })?;
+    type Error = EnvironmentCredentialError;
+
+    async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
+        let tenant_id = std::env::var(AZURE_TENANT_ID_ENV_KEY)
+            .map_err(EnvironmentCredentialError::MissingTenantId)?;
+        let client_id = std::env::var(AZURE_CLIENT_ID_ENV_KEY)
+            .map_err(EnvironmentCredentialError::MissingClientId)?;
 
         let client_secret = std::env::var(AZURE_CLIENT_SECRET_ENV_KEY);
         let username = std::env::var(AZURE_USERNAME_ENV_KEY);
@@ -68,7 +80,10 @@ impl TokenCredential for EnvironmentCredential {
                 client_secret,
                 self.options.clone(),
             );
-            return credential.get_token(resource).await;
+            return credential
+                .get_token(resource)
+                .await
+                .map_err(EnvironmentCredentialError::ClientSecretCredentialError);
         } else if username.is_ok() && password.is_ok() {
             // Could use multiple if-let with #![feature(let_chains)] once stabilised - see https://github.com/rust-lang/rust/issues/53667
             // TODO: username & password credential
@@ -77,8 +92,18 @@ impl TokenCredential for EnvironmentCredential {
             todo!()
         }
 
-        Err(AzureError::GenericErrorWithText(
-            "No valid environment credential providers".to_string(),
-        ))
+        Err(EnvironmentCredentialError::NoValid)
+    }
+}
+
+#[async_trait::async_trait]
+impl azure_core::TokenCredential for EnvironmentCredential {
+    async fn get_token(
+        &self,
+        resource: &str,
+    ) -> Result<azure_core::TokenResponse, azure_core::Error> {
+        TokenCredential::get_token(self, resource)
+            .await
+            .map_err(|error| azure_core::Error::GetTokenError(Box::new(error)))
     }
 }

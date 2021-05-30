@@ -246,11 +246,20 @@ pub struct EligibleAuthorization {
     pub just_in_time_access_policy: Option<JustInTimeAccessPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EligibleApprover {
+    #[serde(rename = "principalId")]
+    pub principal_id: String,
+    #[serde(rename = "principalIdDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id_display_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JustInTimeAccessPolicy {
     #[serde(rename = "multiFactorAuthProvider")]
     pub multi_factor_auth_provider: just_in_time_access_policy::MultiFactorAuthProvider,
     #[serde(rename = "maximumActivationDuration", default, skip_serializing_if = "Option::is_none")]
     pub maximum_activation_duration: Option<String>,
+    #[serde(rename = "managedByTenantApprovers", default, skip_serializing_if = "Vec::is_empty")]
+    pub managed_by_tenant_approvers: Vec<EligibleApprover>,
 }
 pub mod just_in_time_access_policy {
     use super::*;

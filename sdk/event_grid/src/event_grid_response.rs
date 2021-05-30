@@ -1,11 +1,11 @@
-use azure_core::errors::*;
+use azure_core::*;
 
 pub struct EventGridResponse {
     response: ResponseFuture,
 }
 
 impl EventGridResponse {
-    pub async fn accept(self) -> Result<(StatusCode, HeaderMap, Bytes), AzureError> {
+    pub async fn accept(self) -> Result<(StatusCode, HeaderMap, Bytes), azure_core::Error> {
         Ok({
             let (head, body) = self
                 .response
@@ -25,7 +25,7 @@ impl EventGridResponse {
     pub async fn expect(
         self,
         expected_status_code: StatusCode,
-    ) -> Result<(HeaderMap, Bytes), AzureError> {
+    ) -> Result<(HeaderMap, Bytes), azure_core::Error> {
         let (status, headers, body) = self.accept().await?;
 
         match status {

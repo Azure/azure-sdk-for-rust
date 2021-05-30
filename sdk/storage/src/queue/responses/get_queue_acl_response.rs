@@ -1,6 +1,6 @@
 use crate::{AzureStorageError, QueueStoredAccessPolicy, StoredAccessPolicyList};
-use azure_core::errors::PermissionError;
 use azure_core::headers::CommonStorageResponseHeaders;
+use azure_core::PermissionError;
 use bytes::Bytes;
 use http::response::Response;
 use std::convert::TryInto;

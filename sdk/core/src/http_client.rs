@@ -1,6 +1,6 @@
-use crate::errors::HttpError;
 #[allow(unused_imports)]
 use crate::Body;
+use crate::HttpError;
 use async_trait::async_trait;
 use bytes::Bytes;
 #[allow(unused_imports)]
@@ -197,7 +197,7 @@ impl HttpClient for reqwest::Client {
         let response = response.with_pinned_stream(Box::pin(
             reqwest_response
                 .bytes_stream()
-                .map_err(crate::errors::StreamError::ReadError),
+                .map_err(crate::StreamError::ReadError),
         ));
 
         Ok(response)

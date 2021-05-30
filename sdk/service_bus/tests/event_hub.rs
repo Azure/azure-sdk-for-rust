@@ -2,7 +2,6 @@
 // #[macro_use]
 // extern crate log;
 
-// use azure_core::errors::AzureError;
 // use azure_service_bus::event_hub::Client;
 // use chrono::Duration;
 
@@ -25,7 +24,7 @@
 //         .unwrap();
 // }
 
-// fn create_client() -> Result<Client, AzureError> {
+// fn create_client() -> Result<Client, azure_core::Error> {
 //     let policy_name = std::env::var("AZURE_POLICY_NAME")
 //         .expect("Please set AZURE_POLICY_NAME env variable first!");
 

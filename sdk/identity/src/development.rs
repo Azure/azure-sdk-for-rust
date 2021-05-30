@@ -4,7 +4,6 @@
 use crate::authorization_code_flow::AuthorizationCodeFlow;
 use log::debug;
 use oauth2::{AuthorizationCode, CsrfToken};
-use thiserror::Error;
 use url::Url;
 
 use std::io::{BufRead, BufReader, Write};
@@ -81,7 +80,8 @@ pub fn naive_redirect_server(
     unreachable!()
 }
 
-#[derive(Debug, Error)]
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
 pub enum ServerReceiveError {
     #[error("unexpected redirect url: {}", url)]
     UnexpectedRedirectUrl { url: String },
