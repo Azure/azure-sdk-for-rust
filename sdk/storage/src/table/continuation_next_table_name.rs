@@ -1,4 +1,4 @@
-use azure_core::errors::AzureError;
+use crate::AzureStorageError;
 use azure_core::AppendToUrlQuery;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -13,7 +13,9 @@ impl ContinuationNextTableName {
         &self.0
     }
 
-    pub fn from_header_optional(headers: &http::HeaderMap) -> Result<Option<Self>, AzureError> {
+    pub fn from_header_optional(
+        headers: &http::HeaderMap,
+    ) -> Result<Option<Self>, AzureStorageError> {
         let header_as_str = headers
             .get("x-ms-continuation-NextTableName")
             .map(|item| item.to_str())

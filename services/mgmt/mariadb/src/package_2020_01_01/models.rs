@@ -15,6 +15,17 @@ pub enum SslEnforcement {
     Disabled,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MinimalTlsVersion {
+    #[serde(rename = "TLS1_0")]
+    Tls10,
+    #[serde(rename = "TLS1_1")]
+    Tls11,
+    #[serde(rename = "TLS1_2")]
+    Tls12,
+    #[serde(rename = "TLSEnforcementDisabled")]
+    TlsEnforcementDisabled,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PublicNetworkAccess {
     Enabled,
     Disabled,
@@ -80,6 +91,8 @@ pub struct ServerProperties {
     pub version: Option<ServerVersion>,
     #[serde(rename = "sslEnforcement", default, skip_serializing_if = "Option::is_none")]
     pub ssl_enforcement: Option<SslEnforcement>,
+    #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    pub minimal_tls_version: Option<MinimalTlsVersion>,
     #[serde(rename = "userVisibleState", default, skip_serializing_if = "Option::is_none")]
     pub user_visible_state: Option<server_properties::UserVisibleState>,
     #[serde(rename = "fullyQualifiedDomainName", default, skip_serializing_if = "Option::is_none")]
@@ -138,6 +151,8 @@ pub struct ServerPropertiesForCreate {
     pub version: Option<ServerVersion>,
     #[serde(rename = "sslEnforcement", default, skip_serializing_if = "Option::is_none")]
     pub ssl_enforcement: Option<SslEnforcement>,
+    #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    pub minimal_tls_version: Option<MinimalTlsVersion>,
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<PublicNetworkAccess>,
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
@@ -247,6 +262,8 @@ pub mod server_update_parameters {
         pub version: Option<ServerVersion>,
         #[serde(rename = "sslEnforcement", default, skip_serializing_if = "Option::is_none")]
         pub ssl_enforcement: Option<SslEnforcement>,
+        #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
+        pub minimal_tls_version: Option<MinimalTlsVersion>,
         #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
         pub public_network_access: Option<PublicNetworkAccess>,
         #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]

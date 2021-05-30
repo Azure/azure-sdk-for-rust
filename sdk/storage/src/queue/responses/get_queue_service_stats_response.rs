@@ -1,4 +1,4 @@
-use azure_core::errors::AzureError;
+use crate::AzureStorageError;
 use azure_core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -34,7 +34,7 @@ struct GeoReplication {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for GetQueueServiceStatsResponse {
-    type Error = AzureError;
+    type Error = AzureStorageError;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

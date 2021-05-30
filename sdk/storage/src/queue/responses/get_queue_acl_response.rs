@@ -1,8 +1,6 @@
-use crate::QueueStoredAccessPolicy;
-use azure_core::errors::AzureError;
-use azure_core::errors::PermissionError;
+use crate::{AzureStorageError, QueueStoredAccessPolicy, StoredAccessPolicyList};
 use azure_core::headers::CommonStorageResponseHeaders;
-use azure_core::prelude::*;
+use azure_core::PermissionError;
 use bytes::Bytes;
 use http::response::Response;
 use std::convert::TryInto;
@@ -14,7 +12,7 @@ pub struct GetQueueACLResponse {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for GetQueueACLResponse {
-    type Error = AzureError;
+    type Error = AzureStorageError;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

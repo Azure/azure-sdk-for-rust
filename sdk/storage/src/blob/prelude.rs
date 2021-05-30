@@ -6,5 +6,6 @@ pub use crate::blob::clients::{
 };
 pub use crate::{
     AccessTier, BlobContentMD5, BlobVersioning, BlockId, ConditionAppendPosition, ConditionMaxSize,
-    DeleteSnapshotsMethod, Hash, RehydratePriority, Snapshot, VersionId,
+    DeleteSnapshotsMethod, Hash, RehydratePriority, Snapshot, StoredAccessPolicy,
+    StoredAccessPolicyList, VersionId,
 };

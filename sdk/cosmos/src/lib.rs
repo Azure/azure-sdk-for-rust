@@ -101,8 +101,6 @@ extern crate log;
 #[macro_use]
 extern crate serde;
 #[macro_use]
-extern crate failure;
-#[macro_use]
 extern crate azure_core;
 
 pub mod clients;
@@ -125,7 +123,6 @@ pub use cosmos_entity::CosmosEntity;
 pub use max_item_count::MaxItemCount;
 pub use resource_quota::ResourceQuota;
 
-/// A general error having to do with Cosmos.
-pub type CosmosError = Box<dyn std::error::Error + Sync + Send>;
+pub use errors::CosmosError;
 
 type ReadonlyString = std::borrow::Cow<'static, str>;

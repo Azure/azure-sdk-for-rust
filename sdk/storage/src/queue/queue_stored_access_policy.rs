@@ -1,7 +1,8 @@
-use azure_core::errors::PermissionError;
-use azure_core::StoredAccessPolicy;
+use azure_core::PermissionError;
 use chrono::{DateTime, FixedOffset};
 use std::convert::TryFrom;
+
+use crate::StoredAccessPolicy;
 
 #[derive(Debug, Clone)]
 pub struct QueueStoredAccessPolicy {
@@ -110,11 +111,11 @@ impl TryFrom<StoredAccessPolicy> for QueueStoredAccessPolicy {
                     queue_sap = queue_sap.enable_process();
                 }
                 c => {
-                    return Err(PermissionError::NonSupportedToken(
-                        "queue".to_owned(),
-                        c,
-                        vec!['r', 'a', 'u', 'p'],
-                    ))
+                    return Err(PermissionError::NonSupportedToken {
+                        service: "queue".to_owned(),
+                        received_token: c,
+                        supported_tokens: vec!['r', 'a', 'u', 'p'],
+                    })
                 }
             }
         }

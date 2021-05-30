@@ -115,6 +115,8 @@ pub struct ProviderResourceType {
     pub aliases: Vec<AliasType>,
     #[serde(rename = "apiVersions", default, skip_serializing_if = "Vec::is_empty")]
     pub api_versions: Vec<String>,
+    #[serde(rename = "zoneMappings", default, skip_serializing_if = "Vec::is_empty")]
+    pub zone_mappings: Vec<ZoneMapping>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -549,6 +551,13 @@ pub struct TemplateHashResult {
     pub minified_template: Option<String>,
     #[serde(rename = "templateHash", default, skip_serializing_if = "Option::is_none")]
     pub template_hash: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ZoneMapping {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {

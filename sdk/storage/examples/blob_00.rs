@@ -38,21 +38,28 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     trace!("Requesting blob");
 
+    // this is a single call that retrieves the first 1KB of the blob (or less if the blob is
+    // smaller). The range(...) call is optional.
     let response = blob_client
         .get()
-        .range(Range::new(0, 128000))
+        .range(Range::new(0, 1024))
         .execute()
         .await?;
 
     println!("{:#?}", response);
 
-    let mut stream = Box::pin(blob_client.get().stream(128));
+    let mut complete_response = Vec::new();
+
+    // this is how you stream a blob. You can specify the range(...) value as above if necessary.
+    // In this case we are retrieving the whole blob in 8KB chunks.
+    let mut stream = Box::pin(blob_client.get().stream(1024 * 8));
     while let Some(value) = stream.next().await {
-        println!("received {:?} bytes", value?.data.len());
+        let data = value?.data;
+        println!("received {:?} bytes", data.len());
+        complete_response.extend(&data as &[u8]);
     }
 
-    let s_content = String::from_utf8(response.data.to_vec())?;
-    println!("blob == {:?}", blob);
+    let s_content = String::from_utf8(complete_response)?;
     println!("s_content == {}", s_content);
 
     Ok(())

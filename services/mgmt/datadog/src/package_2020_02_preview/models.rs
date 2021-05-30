@@ -300,6 +300,8 @@ pub struct DatadogMonitorResourceUpdateParameters {
     pub properties: Option<MonitorUpdateProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<ResourceSku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatadogSetPasswordLink {

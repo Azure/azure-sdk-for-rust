@@ -92,6 +92,10 @@ async fn code() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         assert_eq!(expected_string, returned_string);
     }
 
+    // test streaming a blob smaller than the chunk size issue 239.
+    let mut stream = Box::pin(blob.get().stream(1024 * 8));
+    while let Some(_value) = stream.next().await {}
+
     blob.delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
         .execute()

@@ -1,6 +1,6 @@
 use super::BA512Range;
-use crate::errors::ParseError;
 use crate::AddAsHeader;
+use crate::ParseError;
 use http::request::Builder;
 use std::convert::From;
 use std::fmt;
@@ -74,7 +74,7 @@ impl FromStr for Range {
     fn from_str(s: &str) -> Result<Range, ParseError> {
         let v = s.split('/').collect::<Vec<&str>>();
         if v.len() != 2 {
-            return Err(ParseError::SplitNotFound);
+            return Err(ParseError::SplitNotFound('/'));
         }
 
         let cp_start = v[0].parse::<u64>()?;

@@ -1,17 +1,18 @@
-use crate::core::AzureError;
-use crate::core::COPY_ID;
+use crate::AzureStorageError;
 use http::HeaderMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::TryFrom;
 use std::fmt;
 
+use super::headers::COPY_ID;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopyId(uuid::Uuid);
 
-pub fn copy_id_from_headers(headers: &HeaderMap) -> Result<CopyId, AzureError> {
+pub fn copy_id_from_headers(headers: &HeaderMap) -> Result<CopyId, AzureStorageError> {
     let copy_id = headers
         .get(COPY_ID)
-        .ok_or_else(|| AzureError::HeaderNotFound(COPY_ID.to_owned()))?;
+        .ok_or_else(|| AzureStorageError::HeaderNotFound(COPY_ID.to_owned()))?;
     Ok(CopyId(uuid::Uuid::parse_str(copy_id.to_str()?)?))
 }
 

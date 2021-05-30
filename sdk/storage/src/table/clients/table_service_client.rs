@@ -1,6 +1,8 @@
-use crate::core::clients::{StorageAccountClient, StorageClient};
 use crate::table::requests::ListTablesBuilder;
-use azure_core::errors::AzureError;
+use crate::{
+    core::clients::{StorageAccountClient, StorageClient},
+    AzureStorageError,
+};
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
@@ -61,7 +63,7 @@ impl TableServiceClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), AzureError> {
+    ) -> Result<(Request<Bytes>, url::Url), AzureStorageError> {
         self.storage_client
             .storage_account_client()
             .prepare_request(

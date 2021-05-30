@@ -1,4 +1,3 @@
-use azure_core::errors::*;
 use chrono::Duration;
 use hyper::{self, header, Body, StatusCode};
 use hyper_rustls::HttpsConnector;
@@ -20,7 +19,7 @@ fn send_event_prepare<B: Into<String>>(
     signing_key: &hmac::Key,
     event_body: B,
     duration: Duration,
-) -> Result<hyper::client::ResponseFuture, AzureError> {
+) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
     // prepare the url to call
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages",
@@ -48,7 +47,7 @@ fn peek_lock_prepare(
     signing_key: &hmac::Key,
     duration: Duration,
     timeout: Option<Duration>,
-) -> Result<hyper::client::ResponseFuture, AzureError> {
+) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
     // prepare the url to call
     let mut url = Url::parse(&format!(
         "https://{}.servicebus.windows.net/{}/messages/head",
@@ -64,7 +63,7 @@ fn peek_lock_prepare(
     let sas = generate_signature(policy_name, signing_key, &url.as_str(), duration);
     debug!("sas == {}", sas);
 
-    let request = hyper::Request::post(url.into_string())
+    let request = hyper::Request::post(Into::<String>::into(url))
         .header(header::AUTHORIZATION, sas)
         .header(header::CONTENT_LENGTH, 0)
         .body(Body::empty())?;
@@ -80,7 +79,7 @@ async fn peek_lock(
     hmac: &hmac::Key,
     duration: Duration,
     timeout: Option<Duration>,
-) -> Result<String, AzureError> {
+) -> Result<String, azure_core::Error> {
     let req = peek_lock_prepare(
         http_client,
         namespace,
@@ -102,7 +101,7 @@ async fn peek_lock_full(
     hmac: &hmac::Key,
     duration: Duration,
     timeout: Option<Duration>,
-) -> Result<PeekLockResponse, AzureError> {
+) -> Result<PeekLockResponse, azure_core::Error> {
     let req = peek_lock_prepare(
         http_client,
         namespace,
@@ -143,7 +142,7 @@ impl PeekLockResponse {
     pub fn status(&self) -> StatusCode {
         self.status
     }
-    pub async fn delete_message(&self) -> Result<String, AzureError> {
+    pub async fn delete_message(&self) -> Result<String, azure_core::Error> {
         let req = delete_message_get_request(
             &self.http_client,
             &self.policy_name,
@@ -163,7 +162,7 @@ fn receive_and_delete_prepare(
     policy_name: &str,
     signing_key: &hmac::Key,
     duration: Duration,
-) -> Result<hyper::client::ResponseFuture, AzureError> {
+) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
     // prepare the url to call
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages/head",
@@ -189,7 +188,7 @@ async fn receive_and_delete(
     policy_name: &str,
     hmac: &hmac::Key,
     duration: Duration,
-) -> Result<String, AzureError> {
+) -> Result<String, azure_core::Error> {
     let req = receive_and_delete_prepare(
         http_client,
         namespace,
@@ -211,7 +210,7 @@ fn delete_message_prepare(
     duration: Duration,
     message_id: &str,
     lock_token: &str,
-) -> Result<hyper::client::ResponseFuture, AzureError> {
+) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
     // prepare the url to call
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages/{}/{}",
@@ -230,7 +229,7 @@ fn delete_message_get_request(
     signing_key: &hmac::Key,
     duration: Duration,
     url: String,
-) -> Result<hyper::client::ResponseFuture, AzureError> {
+) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
     let sas = generate_signature(policy_name, signing_key, &url, duration);
     debug!("sas == {}", sas);
 
@@ -250,7 +249,7 @@ async fn delete_message(
     duration: Duration,
     message_id: &str,
     lock_token: &str,
-) -> Result<(), AzureError> {
+) -> Result<(), azure_core::Error> {
     check_status_extract_body(
         delete_message_prepare(
             http_client,
@@ -277,7 +276,7 @@ fn unlock_message_prepare(
     duration: Duration,
     message_id: &str,
     lock_token: &str,
-) -> Result<hyper::client::ResponseFuture, AzureError> {
+) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
     // prepare the url to call
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages/{}/{}",
@@ -305,7 +304,7 @@ async fn unlock_message(
     duration: Duration,
     message_id: &str,
     lock_token: &str,
-) -> Result<(), AzureError> {
+) -> Result<(), azure_core::Error> {
     check_status_extract_body(
         unlock_message_prepare(
             http_client,
@@ -332,7 +331,7 @@ fn renew_lock_prepare(
     duration: Duration,
     message_id: &str,
     lock_token: &str,
-) -> Result<hyper::client::ResponseFuture, AzureError> {
+) -> Result<hyper::client::ResponseFuture, azure_core::Error> {
     // prepare the url to call
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages/{}/{}",
@@ -360,7 +359,7 @@ async fn renew_lock(
     duration: Duration,
     message_id: &str,
     lock_token: &str,
-) -> Result<(), AzureError> {
+) -> Result<(), azure_core::Error> {
     check_status_extract_body(
         renew_lock_prepare(
             http_client,
@@ -386,7 +385,7 @@ async fn send_event(
     hmac: &hmac::Key,
     event_body: &str,
     duration: Duration,
-) -> Result<(), AzureError> {
+) -> Result<(), azure_core::Error> {
     let req = send_event_prepare(
         http_client,
         namespace,

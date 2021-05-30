@@ -1,5 +1,5 @@
+use crate::AzureStorageError;
 use azure_core::{
-    errors::AzureError,
     headers::{etag_from_headers, CommonStorageResponseHeaders},
     prelude::Etag,
 };
@@ -14,7 +14,7 @@ pub struct OperationOnEntityResponse {
 }
 
 impl TryFrom<&Response<Bytes>> for OperationOnEntityResponse {
-    type Error = AzureError;
+    type Error = AzureStorageError;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         println!("{}", std::str::from_utf8(response.body())?);

@@ -4,16 +4,16 @@ use std::convert::TryInto;
 use bytes::Bytes;
 use http::{Method, Response, StatusCode};
 
-use crate::service::{IoTHubError, ServiceClient, API_VERSION};
+use crate::service::{ServiceClient, API_VERSION};
 
 /// Execute the request to get the twin of a module or device.
 pub(crate) async fn get_twin<'a, T>(
     service_client: &'a ServiceClient,
     device_id: String,
     module_id: Option<String>,
-) -> Result<T, IoTHubError>
+) -> Result<T, crate::Error>
 where
-    T: TryFrom<Response<Bytes>, Error = IoTHubError>,
+    T: TryFrom<Response<Bytes>, Error = crate::Error>,
 {
     let uri = match module_id {
         Some(val) => format!(

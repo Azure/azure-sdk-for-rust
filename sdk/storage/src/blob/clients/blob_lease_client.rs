@@ -1,7 +1,6 @@
-use crate::blob::blob::requests::*;
 use crate::blob::prelude::*;
 use crate::core::prelude::*;
-use azure_core::errors::AzureError;
+use crate::{blob::blob::requests::*, AzureStorageError};
 use azure_core::prelude::*;
 use azure_core::HttpClient;
 use bytes::Bytes;
@@ -84,7 +83,7 @@ impl BlobLeaseClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), AzureError> {
+    ) -> Result<(Request<Bytes>, url::Url), AzureStorageError> {
         self.blob_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

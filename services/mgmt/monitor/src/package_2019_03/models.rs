@@ -39,6 +39,8 @@ pub struct MetricTrigger {
     pub threshold: f64,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<ScaleRuleMetricDimension>,
+    #[serde(rename = "dividePerInstance", default, skip_serializing_if = "Option::is_none")]
+    pub divide_per_instance: Option<bool>,
 }
 pub mod metric_trigger {
     use super::*;
@@ -614,8 +616,8 @@ pub struct EmailReceiver {
     pub name: String,
     #[serde(rename = "emailAddress")]
     pub email_address: String,
-    #[serde(rename = "useCommonAlertSchema")]
-    pub use_common_alert_schema: bool,
+    #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
+    pub use_common_alert_schema: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
@@ -634,8 +636,8 @@ pub struct WebhookReceiver {
     pub name: String,
     #[serde(rename = "serviceUri")]
     pub service_uri: String,
-    #[serde(rename = "useCommonAlertSchema")]
-    pub use_common_alert_schema: bool,
+    #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
+    pub use_common_alert_schema: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ItsmReceiver {
@@ -668,8 +670,8 @@ pub struct AutomationRunbookReceiver {
     pub name: Option<String>,
     #[serde(rename = "serviceUri", default, skip_serializing_if = "Option::is_none")]
     pub service_uri: Option<String>,
-    #[serde(rename = "useCommonAlertSchema")]
-    pub use_common_alert_schema: bool,
+    #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
+    pub use_common_alert_schema: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VoiceReceiver {
@@ -686,8 +688,8 @@ pub struct LogicAppReceiver {
     pub resource_id: String,
     #[serde(rename = "callbackUrl")]
     pub callback_url: String,
-    #[serde(rename = "useCommonAlertSchema")]
-    pub use_common_alert_schema: bool,
+    #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
+    pub use_common_alert_schema: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionReceiver {
@@ -698,16 +700,16 @@ pub struct AzureFunctionReceiver {
     pub function_name: String,
     #[serde(rename = "httpTriggerUrl")]
     pub http_trigger_url: String,
-    #[serde(rename = "useCommonAlertSchema")]
-    pub use_common_alert_schema: bool,
+    #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
+    pub use_common_alert_schema: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ArmRoleReceiver {
     pub name: String,
     #[serde(rename = "roleId")]
     pub role_id: String,
-    #[serde(rename = "useCommonAlertSchema")]
-    pub use_common_alert_schema: bool,
+    #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
+    pub use_common_alert_schema: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReceiverStatus {
@@ -930,6 +932,10 @@ pub struct MetricDefinition {
     pub namespace: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
+    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<Unit>,
     #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
@@ -988,6 +994,10 @@ pub struct Metric {
     #[serde(rename = "type")]
     pub type_: String,
     pub name: LocalizableString,
+    #[serde(rename = "displayDescription")]
+    pub display_description: String,
+    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
     pub unit: Unit,
     pub timeseries: Vec<TimeSeriesElement>,
 }
@@ -997,73 +1007,6 @@ pub struct TimeSeriesElement {
     pub metadatavalues: Vec<MetadataValue>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub data: Vec<MetricValue>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BaselineMetadataValue {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<LocalizableString>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BaselineResponse {
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<LocalizableString>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BaselineProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BaselineProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timespan: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub interval: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub aggregation: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub timestamps: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub baseline: Vec<Baseline>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub metadata: Vec<BaselineMetadataValue>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Baseline {
-    pub sensitivity: baseline::Sensitivity,
-    #[serde(rename = "lowThresholds")]
-    pub low_thresholds: Vec<f64>,
-    #[serde(rename = "highThresholds")]
-    pub high_thresholds: Vec<f64>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub timestamps: Vec<String>,
-}
-pub mod baseline {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Sensitivity {
-        Low,
-        Medium,
-        High,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TimeSeriesInformation {
-    pub sensitivities: Vec<String>,
-    pub values: Vec<f64>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub timestamps: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CalculateBaselineResponse {
-    #[serde(rename = "type")]
-    pub type_: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub timestamps: Vec<String>,
-    pub baseline: Vec<Baseline>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricBaselinesResponse {
@@ -1464,6 +1407,8 @@ pub struct LogSearchRule {
     pub description: Option<String>,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[serde(rename = "autoMitigate", default, skip_serializing_if = "Option::is_none")]
+    pub auto_mitigate: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<log_search_rule::Enabled>,
     #[serde(rename = "lastUpdatedTime", skip_serializing)]
@@ -1560,6 +1505,12 @@ pub struct MetricNamespaceName {
     pub metric_namespace_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum NamespaceClassification {
+    Platform,
+    Custom,
+    Qos,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricNamespace {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -1567,6 +1518,8 @@ pub struct MetricNamespace {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub classification: Option<NamespaceClassification>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetricNamespaceName>,
 }

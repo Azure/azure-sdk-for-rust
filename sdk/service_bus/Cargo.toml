@@ -15,14 +15,12 @@ categories = ["api-bindings"]
 edition = "2018"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.1.0", features = ["enable_hyper"] }
+azure_core = { path = "../core", version = "0.1.0" }
 ring = "0.16"
 base64 = "0.13"
 chrono = "0.4"
-hyper = "0.14"
 log = "0.4"
 url = "2.2"
-hyper-rustls = "0.22"
 
 [dev-dependencies]
 futures = "0.3"

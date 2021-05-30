@@ -1,11 +1,7 @@
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
-//mod blob_stream_builder;
-//pub use self::blob_stream_builder::BlobStreamBuilder;
 mod blob_block_type;
 pub use self::blob_block_type::BlobBlockType;
-//mod list_blob_stream_builder;
-//pub use self::list_blob_stream_builder::ListBlobStreamBuilder;
 mod block_list_type;
 pub use self::block_list_type::BlockListType;
 mod blob_block_with_size;
@@ -16,14 +12,17 @@ mod block_list;
 pub use self::block_list::BlockList;
 pub mod requests;
 pub mod responses;
+use crate::{
+    headers::{CONTENT_MD5, COPY_ID},
+    AzureStorageError,
+};
 use crate::{AccessTier, CopyId, CopyProgress};
+use azure_core::headers::{
+    BLOB_SEQUENCE_NUMBER, BLOB_TYPE, COPY_COMPLETION_TIME, COPY_PROGRESS, COPY_SOURCE, COPY_STATUS,
+    COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE, LEASE_STATUS, META_PREFIX,
+    SERVER_ENCRYPTED,
+};
 use azure_core::{
-    errors::AzureError,
-    headers::{
-        BLOB_SEQUENCE_NUMBER, BLOB_TYPE, CONTENT_MD5, COPY_COMPLETION_TIME, COPY_ID, COPY_PROGRESS,
-        COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION,
-        LEASE_STATE, LEASE_STATUS, META_PREFIX, SERVER_ENCRYPTED,
-    },
     lease::{LeaseDuration, LeaseState, LeaseStatus},
     parsing::from_azure_time,
     prelude::*,
@@ -34,7 +33,7 @@ use http::header;
 use std::{collections::HashMap, convert::TryInto, str::FromStr};
 
 #[cfg(feature = "azurite_workaround")]
-fn get_creation_time(h: &header::HeaderMap) -> Result<Option<DateTime<Utc>>, AzureError> {
+fn get_creation_time(h: &header::HeaderMap) -> Result<Option<DateTime<Utc>>, AzureStorageError> {
     if let Some(creation_time) = h.get(CREATION_TIME) {
         // Check that the creation time is valid
         let creation_time = creation_time.to_str()?;
@@ -80,9 +79,14 @@ pub struct Blob {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct BlobProperties {
+    #[cfg(not(feature = "azurite_workaround"))]
     #[serde(rename = "Creation-Time")]
     #[serde(with = "azure_core::parsing::rfc2822_time_format")]
     pub creation_time: DateTime<Utc>,
+    #[cfg(feature = "azurite_workaround")]
+    #[serde(rename = "Creation-Time")]
+    #[serde(with = "azure_core::parsing::rfc2822_time_format_optional")]
+    pub creation_time: Option<DateTime<Utc>>,
     #[serde(rename = "Last-Modified")]
     #[serde(with = "azure_core::parsing::rfc2822_time_format")]
     pub last_modified: DateTime<Utc>,
@@ -95,17 +99,17 @@ pub struct BlobProperties {
     #[serde(rename = "Content-Type")]
     pub content_type: String,
     #[serde(rename = "Content-Encoding")]
-    pub content_encoding: String,
+    pub content_encoding: Option<String>,
     #[serde(rename = "Content-Language")]
-    pub content_language: String,
+    pub content_language: Option<String>,
     #[serde(rename = "Content-Disposition")]
-    pub content_disposition: String,
+    pub content_disposition: Option<String>,
     #[serde(rename = "Content-MD5")]
     pub content_md5: Option<String>,
     #[serde(rename = "Content-CRC64")]
     pub content_crc64: Option<String>,
     #[serde(rename = "Cache-Control")]
-    pub cache_control: String,
+    pub cache_control: Option<String>,
     #[serde(rename = "x-ms-blob-sequence-number")]
     pub blob_sequence_number: Option<u64>,
     pub blob_type: BlobType,
@@ -144,14 +148,14 @@ impl Blob {
     pub(crate) fn from_headers<BN: Into<String>>(
         blob_name: BN,
         h: &header::HeaderMap,
-    ) -> Result<Blob, AzureError> {
+    ) -> Result<Blob, AzureStorageError> {
         trace!("\n{:?}", h);
 
         #[cfg(not(feature = "azurite_workaround"))]
         let creation_time = {
             let creation_time = h
                 .get(CREATION_TIME)
-                .ok_or_else(|| AzureError::HeaderNotFound(CREATION_TIME.to_owned()))?
+                .ok_or_else(|| AzureStorageError::HeaderNotFound(CREATION_TIME.to_owned()))?
                 .to_str()?;
             let creation_time = DateTime::parse_from_rfc2822(creation_time)?;
             let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
@@ -170,7 +174,7 @@ impl Blob {
             .get(header::CONTENT_LENGTH)
             .ok_or_else(|| {
                 static CL: header::HeaderName = header::CONTENT_LENGTH;
-                AzureError::HeaderNotFound(CL.as_str().to_owned())
+                AzureStorageError::HeaderNotFound(CL.as_str().to_owned())
             })?
             .to_str()?
             .parse::<u64>()?;
@@ -178,14 +182,14 @@ impl Blob {
 
         let last_modified = h.get_as_str(header::LAST_MODIFIED).ok_or_else(|| {
             static LM: header::HeaderName = header::LAST_MODIFIED;
-            AzureError::HeaderNotFound(LM.as_str().to_owned())
+            AzureStorageError::HeaderNotFound(LM.as_str().to_owned())
         })?;
         let last_modified = from_azure_time(last_modified)?;
         trace!("last_modified == {:?}", last_modified);
 
         let etag = h.get_as_string(header::ETAG).ok_or_else(|| {
             static E: header::HeaderName = header::ETAG;
-            AzureError::HeaderNotFound(E.as_str().to_owned())
+            AzureStorageError::HeaderNotFound(E.as_str().to_owned())
         })?;
         let etag = etag.into();
         trace!("etag == {:?}", etag);
@@ -195,39 +199,31 @@ impl Blob {
 
         let blob_type = h
             .get_as_str(BLOB_TYPE)
-            .ok_or_else(|| AzureError::HeaderNotFound(BLOB_TYPE.to_owned()))?
+            .ok_or_else(|| AzureStorageError::HeaderNotFound(BLOB_TYPE.to_owned()))?
             .parse::<BlobType>()?;
         trace!("blob_type == {:?}", blob_type);
 
-        let content_encoding = h
-            .get_as_string(header::CONTENT_ENCODING)
-            .unwrap_or_else(String::new);
+        let content_encoding = h.get_as_string(header::CONTENT_ENCODING);
         trace!("content_encoding == {:?}", content_encoding);
 
-        let content_language = h
-            .get_as_string(header::CONTENT_LANGUAGE)
-            .unwrap_or_else(String::new);
+        let content_language = h.get_as_string(header::CONTENT_LANGUAGE);
         trace!("content_language == {:?}", content_language);
 
         let content_md5 = h.get_as_string(CONTENT_MD5).unwrap_or_else(String::new);
         trace!("content_md5 == {:?}", content_md5);
 
-        let cache_control = h
-            .get_as_string(header::CACHE_CONTROL)
-            .unwrap_or_else(String::new);
+        let cache_control = h.get_as_string(header::CACHE_CONTROL);
 
-        let content_disposition = h
-            .get_as_string(header::CONTENT_DISPOSITION)
-            .unwrap_or_else(String::new);
+        let content_disposition = h.get_as_string(header::CONTENT_DISPOSITION);
 
         let lease_status = h
             .get_as_enum(LEASE_STATUS)?
-            .ok_or_else(|| AzureError::HeaderNotFound(LEASE_STATUS.to_owned()))?;
+            .ok_or_else(|| AzureStorageError::HeaderNotFound(LEASE_STATUS.to_owned()))?;
         trace!("lease_status == {:?}", lease_status);
 
         let lease_state = h
             .get_as_enum(LEASE_STATE)?
-            .ok_or_else(|| AzureError::HeaderNotFound(LEASE_STATE.to_owned()))?;
+            .ok_or_else(|| AzureStorageError::HeaderNotFound(LEASE_STATE.to_owned()))?;
         trace!("lease_state == {:?}", lease_state);
 
         let lease_duration = h.get_as_enum(LEASE_DURATION)?;
@@ -264,7 +260,7 @@ impl Blob {
 
         let server_encrypted = h
             .get_as_str(SERVER_ENCRYPTED)
-            .ok_or_else(|| AzureError::HeaderNotFound(SERVER_ENCRYPTED.to_owned()))?
+            .ok_or_else(|| AzureStorageError::HeaderNotFound(SERVER_ENCRYPTED.to_owned()))?
             .parse::<bool>()?;
 
         let mut metadata = HashMap::new();
@@ -339,9 +335,11 @@ impl Blob {
 
 pub(crate) fn copy_status_from_headers(
     headers: &http::HeaderMap,
-) -> Result<CopyStatus, AzureError> {
+) -> Result<CopyStatus, AzureStorageError> {
     let val = headers
         .get_as_str(azure_core::headers::COPY_STATUS)
-        .ok_or_else(|| AzureError::HeaderNotFound(azure_core::headers::COPY_STATUS.to_owned()))?;
+        .ok_or_else(|| {
+            AzureStorageError::HeaderNotFound(azure_core::headers::COPY_STATUS.to_owned())
+        })?;
     Ok(CopyStatus::from_str(val)?)
 }

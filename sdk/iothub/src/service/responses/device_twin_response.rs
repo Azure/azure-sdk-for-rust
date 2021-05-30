@@ -1,12 +1,9 @@
-use std::collections::HashMap;
-
-use http::Response;
-use serde::Deserialize;
-
 use crate::service::resources::{
     AuthenticationType, ConnectionState, DeviceCapabilities, Status, TwinProperties, X509ThumbPrint,
 };
-use crate::service::IoTHubError;
+use http::Response;
+use serde::Deserialize;
+use std::collections::HashMap;
 
 /// The representation of a response for a device twin request.
 #[derive(Deserialize, Debug)]
@@ -49,7 +46,7 @@ pub struct DeviceTwinResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for DeviceTwinResponse {
-    type Error = IoTHubError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let body = response.body();

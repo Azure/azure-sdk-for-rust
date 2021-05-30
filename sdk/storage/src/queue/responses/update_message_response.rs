@@ -1,4 +1,4 @@
-use azure_core::errors::AzureError;
+use crate::AzureStorageError;
 use azure_core::headers::{
     rfc2822_from_headers_mandatory, string_from_headers_mandatory, CommonStorageResponseHeaders,
 };
@@ -15,7 +15,7 @@ pub struct UpdateMessageResponse {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for UpdateMessageResponse {
-    type Error = AzureError;
+    type Error = AzureStorageError;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         debug!("response == {:?}", response);

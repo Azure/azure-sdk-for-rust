@@ -1,8 +1,6 @@
+use crate::service::resources::{AuthenticationMechanism, ConnectionState};
 use http::Response;
 use serde::Deserialize;
-
-use crate::service::resources::{AuthenticationMechanism, ConnectionState};
-use crate::service::IoTHubError;
 
 /// The representation of a module identity
 #[derive(Deserialize, Debug, PartialEq)]
@@ -32,7 +30,7 @@ pub struct ModuleIdentityResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for ModuleIdentityResponse {
-    type Error = IoTHubError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let body = response.body();

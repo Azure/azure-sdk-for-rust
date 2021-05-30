@@ -3,6 +3,55 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SoftwaresList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Software>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Software {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub properties: SoftwareProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SoftwareProperties {
+    #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
+    pub device_id: Option<String>,
+    #[serde(rename = "osPlatform", default, skip_serializing_if = "Option::is_none")]
+    pub os_platform: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vendor: Option<String>,
+    #[serde(rename = "softwareName", default, skip_serializing_if = "Option::is_none")]
+    pub software_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[serde(rename = "endOfSupportStatus", default, skip_serializing_if = "Option::is_none")]
+    pub end_of_support_status: Option<software_properties::EndOfSupportStatus>,
+    #[serde(rename = "endOfSupportDate", default, skip_serializing_if = "Option::is_none")]
+    pub end_of_support_date: Option<String>,
+    #[serde(rename = "numberOfKnownVulnerabilities", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_known_vulnerabilities: Option<i32>,
+    #[serde(rename = "firstSeenAt", default, skip_serializing_if = "Option::is_none")]
+    pub first_seen_at: Option<String>,
+}
+pub mod software_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum EndOfSupportStatus {
+        None,
+        #[serde(rename = "noLongerSupported")]
+        NoLongerSupported,
+        #[serde(rename = "versionNoLongerSupported")]
+        VersionNoLongerSupported,
+        #[serde(rename = "upcomingNoLongerSupported")]
+        UpcomingNoLongerSupported,
+        #[serde(rename = "upcomingVersionNoLongerSupported")]
+        UpcomingVersionNoLongerSupported,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ScanTriggerType {
     OnDemand,
     Recurring,
@@ -2100,6 +2149,38 @@ pub struct ScopeElement {
 pub struct SuppressionAlertsScope {
     #[serde(rename = "allOf")]
     pub all_of: Vec<ScopeElement>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IngestionSettingList {
+    #[serde(skip_serializing)]
+    pub value: Vec<IngestionSetting>,
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IngestionSetting {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<IngestionSettingProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IngestionSettingToken {
+    #[serde(skip_serializing)]
+    pub token: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IngestionSettingProperties {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IngestionConnectionString {
+    #[serde(skip_serializing)]
+    pub location: Option<String>,
+    #[serde(skip_serializing)]
+    pub value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConnectionStrings {
+    pub value: Vec<IngestionConnectionString>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
