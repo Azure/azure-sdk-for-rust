@@ -11,3 +11,4 @@ sample/
 *.swp
 *.swo
 *.vim
+__azurite*.json
