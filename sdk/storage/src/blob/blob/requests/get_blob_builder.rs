@@ -126,8 +126,12 @@ impl<'a> GetBlobBuilder<'a> {
             // now that we know what the remote blob size is, let's update the
             // boundary. We do this only if it's smaller than the requested size because the could
             // have specified a smaller range.
-            remaining.end =
-                std::cmp::min(requested_range.end, response.content_range.total_length());
+            remaining.end = match response.content_range {
+                None => requested_range.end,
+                Some(content_range) => {
+                    std::cmp::min(requested_range.end, content_range.total_length())
+                }
+            };
 
             let next_state = if remaining.end > range.end {
                 States::Progress(Range::new(range.end, remaining.end))
