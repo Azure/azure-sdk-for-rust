@@ -37,7 +37,7 @@ pub use bytes_stream::*;
 pub use context::Context;
 pub use errors::*;
 pub use headers::AddAsHeader;
-pub use http_client::{to_json, HttpClient};
+pub use http_client::{new_http_client, to_json, HttpClient};
 pub use models::*;
 pub use request::*;
 pub use response::*;

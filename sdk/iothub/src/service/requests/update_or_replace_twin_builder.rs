@@ -57,9 +57,7 @@ where
     /// ```
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// use iothub::service::ServiceClient;
-    /// # use azure_core::HttpClient;
-    /// # use std::sync::Arc;
-    /// # let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    /// # let http_client = azure_core::new_http_client();
     ///
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iothub.update_device_twin("some-device")
@@ -80,9 +78,7 @@ where
     /// # Example
     /// ```
     /// use iothub::service::ServiceClient;
-    /// # use azure_core::HttpClient;
-    /// # use std::sync::Arc;
-    /// # let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    /// # let http_client = azure_core::new_http_client();
     ///
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
@@ -101,12 +97,10 @@ where
     /// Set the ETag for the twin
     ///
     /// ```
-    /// # use azure_core::HttpClient;
-    /// # use std::sync::Arc;
     /// use iothub::service::ServiceClient;
     ///
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// # let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    /// # let http_client = azure_core::new_http_client();
     ///
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iothub.update_device_twin("some-device")
@@ -123,12 +117,10 @@ where
     /// Updates the twin with the desired settings
     ///
     /// ```
-    /// # use azure_core::HttpClient;
-    /// # use std::sync::Arc;
     /// use iothub::service::ServiceClient;
     ///
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// # let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    /// # let http_client = azure_core::new_http_client();
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iothub.update_device_twin("some-device")
     ///              .tag("TagName", "TagValue")

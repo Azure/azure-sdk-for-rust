@@ -4,7 +4,6 @@ use azure_storage::core::prelude::*;
 use azure_storage::queue::prelude::*;
 use chrono::Utc;
 use std::error::Error;
-use std::sync::Arc;
 use std::time::Duration;
 
 #[tokio::test]
@@ -15,7 +14,7 @@ async fn queue_create_put_and_get() -> Result<(), Box<dyn Error + Send + Sync>> 
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
     let queue_name = "rustazuree2e";
-    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    let http_client = new_http_client();
 
     let storage_account_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);

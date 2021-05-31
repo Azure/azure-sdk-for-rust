@@ -251,7 +251,7 @@ impl StorageAccountClient {
     }
 
     pub fn http_client(&self) -> &dyn HttpClient {
-        self.http_client.as_ref().as_ref()
+        self.http_client.as_ref()
     }
 
     pub fn blob_storage_url(&self) -> &Url {

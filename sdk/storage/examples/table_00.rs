@@ -1,10 +1,8 @@
-use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage::table::prelude::*;
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MyEntity {
@@ -27,7 +25,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("please specify the table name as first command line parameter");
 
-    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    let http_client = azure_core::new_http_client();
 
     let storage_account_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);

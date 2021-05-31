@@ -3,7 +3,6 @@ use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use chrono::{Duration, Utc};
 use std::error::Error;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -31,7 +30,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(4)
         .expect("please specify destination blob name as fourth command line parameter");
 
-    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    let http_client = new_http_client();
 
     let source_storage_account_client = StorageAccountClient::new_access_key(
         http_client.clone(),

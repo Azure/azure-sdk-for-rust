@@ -4,7 +4,6 @@ use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage::queue::prelude::*;
 use std::error::Error;
-use std::sync::Arc;
 use std::time::Duration;
 
 #[tokio::main]
@@ -19,7 +18,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("Please pass the queue name as first parameter");
 
-    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    let http_client = new_http_client();
 
     let queue = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
         .as_storage_client()

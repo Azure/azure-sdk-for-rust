@@ -10,12 +10,8 @@ should also be possible with this crate.
 ```no_run
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos DB.
 use azure_cosmos::prelude::*;
-use azure_core::HttpClient;
-
 use serde::{Deserialize, Serialize};
-
 use std::error::Error;
-use std::sync::Arc;
 
 // This is the stuct we want to use in our sample.
 // Make sure to have a collection with partition key "a_number" for this example to
@@ -59,7 +55,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     // Next we will create a Cosmos client.
-    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    let http_client = azure_core::new_http_client();
     let client = CosmosClient::new(http_client, account.clone(), authorization_token);
 
     // We know the database so we can obtain a database client.

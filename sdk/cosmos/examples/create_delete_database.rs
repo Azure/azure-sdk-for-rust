@@ -1,4 +1,3 @@
-use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use collection::*;
 use futures::stream::StreamExt;
@@ -30,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
-    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    let http_client = azure_core::new_http_client();
     let client = CosmosClient::new(
         http_client.clone(),
         account.clone(),

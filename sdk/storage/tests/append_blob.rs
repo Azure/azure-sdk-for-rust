@@ -7,7 +7,6 @@ use azure_storage::blob::container::PublicAccess;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
-use std::sync::Arc;
 
 #[tokio::test]
 async fn put_append_blob() {
@@ -20,7 +19,7 @@ async fn put_append_blob() {
     let container_name: &'static str = "rust-upload-test";
     let _data = b"abcdef";
 
-    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    let http_client = new_http_client();
 
     let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
         .as_storage_client();

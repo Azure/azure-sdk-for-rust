@@ -6,7 +6,6 @@ use futures::stream::StreamExt;
 use oauth2::ClientId;
 use std::env;
 use std::error::Error;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -78,7 +77,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // this example we are creating an Azure Storage client
     // using the access token.
 
-    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    let http_client = new_http_client();
     let storage_client = StorageAccountClient::new_bearer_token(
         http_client.clone(),
         &storage_account_name,

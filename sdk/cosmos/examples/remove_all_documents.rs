@@ -1,9 +1,7 @@
-use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use serde_json::Value;
 use std::error::Error;
-use std::sync::Arc;
 
 // This example expects you to have created a collection
 // with partitionKey on "id".
@@ -26,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     // Next we will create a Cosmos client.
-    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    let http_client = azure_core::new_http_client();
     let client = CosmosClient::new(http_client, account.clone(), authorization_token);
 
     let client = client.into_database_client(database_name);

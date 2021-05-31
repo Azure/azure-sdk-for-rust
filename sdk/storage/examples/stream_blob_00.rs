@@ -4,7 +4,6 @@ use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::Arc;
 
 // This example shows how to stream data from a blob. We will create a simple blob first, the we
 // ask it back using streaming features of the future crate. In this simple example we just
@@ -26,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .nth(1)
         .expect("please specify container name as first command line parameter");
 
-    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    let http_client = new_http_client();
 
     let storage_account_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);

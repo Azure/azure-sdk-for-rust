@@ -1,9 +1,7 @@
-use azure_core::HttpClient;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use serde::Serialize;
 use std::error::Error;
-use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -19,7 +17,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+    let http_client = azure_core::new_http_client();
 
     let storage_account_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);

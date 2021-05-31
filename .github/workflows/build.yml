@@ -34,8 +34,8 @@ jobs:
     - name: check core for wasm
       run: cargo check -p azure_core --target=wasm32-unknown-unknown
 
-    - name: check core for hyper
-      run: cargo check -p azure_core --no-default-features --features enable_hyper
+    # - name: check core for hyper
+    #   run: cargo check -p azure_core --no-default-features --features enable_hyper
 
     - name: sdk tests
       run: cargo test --all
