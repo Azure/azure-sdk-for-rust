@@ -15,7 +15,7 @@
 //! let database_name: String = todo!("Think of some database name");
 //!
 //! // Create an http client, then a `CosmosClient`, and then a `DatabaseClient`
-//! let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+//! let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
 //! let client = CosmosClient::new(http_client, account, authorization_token);
 //! let client = client.into_database_client(database_name);
 //! ```

@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
     let client = CosmosClient::new(
         http_client.clone(),
         account.clone(),
@@ -45,6 +45,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("list_databases_response = {:#?}", list_databases_response);
 
     let cosmos_client = CosmosClient::with_pipeline(
+        http_client,
         account,
         authorization_token,
         CosmosOptions::with_client(Arc::new(reqwest::Client::new())),

@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
     let client = CosmosClient::new(http_client, account, authorization_token);
     let client = client.into_database_client(database_name);
     let client = client.into_collection_client(collection_name);
