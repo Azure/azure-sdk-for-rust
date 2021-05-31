@@ -17,7 +17,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 
     let file_system_name = "azuresdke2etest";
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
 
     let storage_account_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);

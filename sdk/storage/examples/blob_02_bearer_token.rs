@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(4)
         .expect("please specify the bearer token as fourth command line parameter");
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
 
     let storage_account_client =
         StorageAccountClient::new_bearer_token(http_client.clone(), &account, bearer_token);

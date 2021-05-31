@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(4)
         .expect("please specify destination blob name as fourth command line parameter");
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
 
     let source_storage_account_client = StorageAccountClient::new_access_key(
         http_client.clone(),

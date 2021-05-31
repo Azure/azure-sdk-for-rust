@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(4)
         .expect("Please pass the payload as the fourth parameter");
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
     let service_client =
         ServiceClient::from_connection_string(http_client, iothub_connection_string, 3600)?;
     println!(

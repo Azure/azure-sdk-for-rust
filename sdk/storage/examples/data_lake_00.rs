@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("please specify the file system name as first parameter");
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
 
     let storage_account_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);

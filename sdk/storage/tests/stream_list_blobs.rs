@@ -16,7 +16,7 @@ async fn stream_list_blobs() {
 
     let container_name = "streamlistblobs235xx752zdve";
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
 
     let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
         .as_storage_client();

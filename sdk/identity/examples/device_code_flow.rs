@@ -78,7 +78,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // this example we are creating an Azure Storage client
     // using the access token.
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
     let storage_client = StorageAccountClient::new_bearer_token(
         http_client.clone(),
         &storage_account_name,

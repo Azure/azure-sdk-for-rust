@@ -49,7 +49,7 @@ impl<'a> InvokeMethodBuilder<'a> {
     /// # use std::sync::Arc;
     /// # use azure_core::HttpClient;
     /// use iothub::service::ServiceClient;
-    /// # let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    /// # let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
     ///
     /// let service = ServiceClient::from_sas_token(http_client, "some-iot-hub", "sas_token");
     /// let great_method = service.create_device_method(
@@ -117,7 +117,7 @@ mod tests {
         use azure_core::HttpClient;
         use std::sync::Arc;
 
-        let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+        let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
         let service: ServiceClient = ServiceClient::from_sas_token(http_client, "test", "test");
         let direct_method = InvokeMethodBuilder::new(
             &service,
