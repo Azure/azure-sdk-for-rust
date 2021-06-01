@@ -60,6 +60,8 @@ pub mod instance {
         pub account_name: Option<String>,
         #[serde(rename = "iotHubs", default, skip_serializing_if = "Vec::is_empty")]
         pub iot_hubs: Vec<IotHubSettings>,
+        #[serde(rename = "enableDiagnostics", default, skip_serializing_if = "Option::is_none")]
+        pub enable_diagnostics: Option<bool>,
     }
     pub mod properties {
         use super::*;

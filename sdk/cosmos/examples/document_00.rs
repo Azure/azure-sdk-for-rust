@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
 use azure_core::prelude::*;
-use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use azure_cosmos::resources::collection::*;
 use azure_cosmos::responses::GetDocumentResponse;
@@ -50,7 +49,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // Next we will create a Cosmos client. You need an authorization_token but you can later
     // change it if needed.
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client = new_http_client();
     let client = CosmosClient::new(
         http_client.clone(),
         account.clone(),
@@ -70,6 +69,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .find(|db| db.id == DATABASE);
 
     let database_client = CosmosClient::with_pipeline(
+        http_client,
         account,
         authorization_token,
         CosmosOptions::with_client(Arc::new(reqwest::Client::new())),

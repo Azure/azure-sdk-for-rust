@@ -7,7 +7,6 @@ use azure_identity::token_credentials::TokenCredential;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use std::error::Error;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -28,7 +27,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .get_token("https://storage.azure.com/")
         .await?;
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client = new_http_client();
 
     let storage_account_client = StorageAccountClient::new_bearer_token(
         http_client.clone(),

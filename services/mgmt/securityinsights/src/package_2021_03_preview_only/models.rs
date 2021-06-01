@@ -144,6 +144,74 @@ pub mod operation {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RepoList {
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+    pub value: Vec<Repo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Repo {
+    #[serde(rename = "repoUrl", default, skip_serializing_if = "Option::is_none")]
+    pub repo_url: Option<String>,
+    #[serde(rename = "fullName", default, skip_serializing_if = "Option::is_none")]
+    pub full_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub branches: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SourceControlList {
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+    pub value: Vec<SourceControl>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SourceControl {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SourceControlProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SourceControlProperties {
+    #[serde(rename = "sourceControlId", default, skip_serializing_if = "Option::is_none")]
+    pub source_control_id: Option<String>,
+    #[serde(rename = "displayName")]
+    pub display_name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "repoType")]
+    pub repo_type: RepoType,
+    #[serde(rename = "contentTypes")]
+    pub content_types: Vec<ContentType>,
+    pub repository: Repository,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Repository {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub branch: Option<String>,
+    #[serde(rename = "pathMapping", default, skip_serializing_if = "Vec::is_empty")]
+    pub path_mapping: Vec<ContentPathMap>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContentPathMap {
+    #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
+    pub content_type: Option<ContentType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ContentType {
+    AnalyticRule,
+    Workbook,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum RepoType {
+    Github,
+    DevOps,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AadDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
@@ -758,6 +826,130 @@ pub struct UserInfo {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Label {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EntityInnerType {
+    Account,
+    Host,
+    File,
+    AzureResource,
+    CloudApplication,
+    #[serde(rename = "DNS")]
+    Dns,
+    FileHash,
+    #[serde(rename = "IP")]
+    Ip,
+    Malware,
+    Process,
+    RegistryKey,
+    RegistryValue,
+    SecurityGroup,
+    #[serde(rename = "URL")]
+    Url,
+    IoTDevice,
+    SecurityAlert,
+    HuntingBookmark,
+    MailCluster,
+    MailMessage,
+    Mailbox,
+    SubmissionMail,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EntityQueryKind {
+    Expansion,
+    Insight,
+    Activity,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum CustomEntityQueryKind {
+    Activity,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQueryList {
+    #[serde(rename = "nextLink", skip_serializing)]
+    pub next_link: Option<String>,
+    pub value: Vec<EntityQuery>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQuery {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    pub kind: EntityQueryKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomEntityQuery {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    pub kind: CustomEntityQueryKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExpansionEntityQuery {
+    #[serde(flatten)]
+    pub entity_query: EntityQuery,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ExpansionEntityQueriesProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExpansionEntityQueriesProperties {
+    #[serde(rename = "dataSources", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_sources: Vec<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "inputEntityType", default, skip_serializing_if = "Option::is_none")]
+    pub input_entity_type: Option<EntityInnerType>,
+    #[serde(rename = "inputFields", default, skip_serializing_if = "Vec::is_empty")]
+    pub input_fields: Vec<String>,
+    #[serde(rename = "outputEntityTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub output_entity_types: Vec<EntityInnerType>,
+    #[serde(rename = "queryTemplate", default, skip_serializing_if = "Option::is_none")]
+    pub query_template: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActivityEntityQuery {
+    #[serde(flatten)]
+    pub entity_query: EntityQuery,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ActivityEntityQueriesProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActivityCustomEntityQuery {
+    #[serde(flatten)]
+    pub custom_entity_query: CustomEntityQuery,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ActivityEntityQueriesProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActivityEntityQueriesProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "queryDefinitions", default, skip_serializing_if = "Option::is_none")]
+    pub query_definitions: Option<activity_entity_queries_properties::QueryDefinitions>,
+    #[serde(rename = "inputEntityType", default, skip_serializing_if = "Option::is_none")]
+    pub input_entity_type: Option<EntityInnerType>,
+    #[serde(rename = "requiredInputFieldsSets", default, skip_serializing_if = "Vec::is_empty")]
+    pub required_input_fields_sets: Vec<Vec<String>>,
+    #[serde(rename = "entitiesFilter", default, skip_serializing_if = "Option::is_none")]
+    pub entities_filter: Option<serde_json::Value>,
+    #[serde(rename = "templateName", default, skip_serializing_if = "Option::is_none")]
+    pub template_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(rename = "createdTimeUtc", skip_serializing)]
+    pub created_time_utc: Option<String>,
+    #[serde(rename = "lastModifiedTimeUtc", skip_serializing)]
+    pub last_modified_time_utc: Option<String>,
+}
+pub mod activity_entity_queries_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct QueryDefinitions {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub query: Option<String>,
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataList {
     pub value: Vec<MetadataModel>,

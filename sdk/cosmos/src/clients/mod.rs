@@ -7,15 +7,13 @@
 //!
 //! ```no_run
 //! use azure_cosmos::prelude::*;
-//! use azure_core::HttpClient;
-//! use std::sync::Arc;
 //!
 //! let account = todo!("Get Cosmos account name from the Azure Portal");
 //! let authorization_token = todo!("Get Cosmos authorization token from the Azure Portal");
 //! let database_name: String = todo!("Think of some database name");
 //!
 //! // Create an http client, then a `CosmosClient`, and then a `DatabaseClient`
-//! let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+//! let http_client = azure_core::new_http_client();
 //! let client = CosmosClient::new(http_client, account, authorization_token);
 //! let client = client.into_database_client(database_name);
 //! ```

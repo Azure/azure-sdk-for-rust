@@ -285,8 +285,6 @@ pub struct PrivateCloudProperties {
     pub endpoints: Option<Endpoints>,
     #[serde(rename = "networkBlock")]
     pub network_block: String,
-    #[serde(rename = "externalCloudLinks", skip_serializing)]
-    pub external_cloud_links: Vec<String>,
     #[serde(rename = "managementNetwork", skip_serializing)]
     pub management_network: Option<String>,
     #[serde(rename = "provisioningNetwork", skip_serializing)]
@@ -301,6 +299,8 @@ pub struct PrivateCloudProperties {
     pub vcenter_certificate_thumbprint: Option<String>,
     #[serde(rename = "nsxtCertificateThumbprint", skip_serializing)]
     pub nsxt_certificate_thumbprint: Option<String>,
+    #[serde(rename = "externalCloudLinks", skip_serializing)]
+    pub external_cloud_links: Vec<String>,
 }
 pub mod private_cloud_properties {
     use super::*;
@@ -343,10 +343,10 @@ pub enum ClusterProvisioningState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommonClusterProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
-    pub provisioning_state: Option<ClusterProvisioningState>,
     #[serde(rename = "clusterSize", default, skip_serializing_if = "Option::is_none")]
     pub cluster_size: Option<i32>,
+    #[serde(rename = "provisioningState", skip_serializing)]
+    pub provisioning_state: Option<ClusterProvisioningState>,
     #[serde(rename = "clusterId", skip_serializing)]
     pub cluster_id: Option<i32>,
     #[serde(skip_serializing)]

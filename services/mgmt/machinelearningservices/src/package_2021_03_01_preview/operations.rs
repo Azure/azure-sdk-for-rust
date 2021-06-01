@@ -2732,307 +2732,23 @@ pub mod workspace_connections {
         }
     }
 }
-pub mod batch_deployments {
+pub mod batch_endpoints {
     use crate::models::*;
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        endpoint_name: &str,
-        deployment_name: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-    ) -> std::result::Result<BatchDeploymentTrackedResource, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/batchEndpoints/{}/deployments/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , endpoint_name , deployment_name) ;
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchDeploymentTrackedResource =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod get {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        endpoint_name: &str,
-        deployment_name: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-        body: &BatchDeploymentTrackedResource,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/batchEndpoints/{}/deployments/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , endpoint_name , deployment_name) ;
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(body).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchDeploymentTrackedResource = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchDeploymentTrackedResource = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod create_or_update {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(BatchDeploymentTrackedResource),
-            Created201(BatchDeploymentTrackedResource),
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn update(
-        operation_config: &crate::OperationConfig,
-        endpoint_name: &str,
-        deployment_name: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-        body: &PartialBatchDeploymentPartialTrackedResource,
-    ) -> std::result::Result<BatchDeploymentTrackedResource, update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/batchEndpoints/{}/deployments/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , endpoint_name , deployment_name) ;
-        let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(body).map_err(update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchDeploymentTrackedResource =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod update {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        endpoint_name: &str,
-        deployment_name: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/batchEndpoints/{}/deployments/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , endpoint_name , deployment_name) ;
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod delete {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        endpoint_name: &str,
-        order_by: Option<&str>,
-        top: Option<i32>,
+        count: Option<i32>,
         skip: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<BatchDeploymentTrackedResourceArmPaginatedResult, list::Error> {
+    ) -> std::result::Result<BatchEndpointTrackedResourceArmPaginatedResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/batchEndpoints/{}/deployments",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/batchEndpoints",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
-            workspace_name,
-            endpoint_name
+            workspace_name
         );
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
@@ -3045,11 +2761,8 @@ pub mod batch_deployments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(order_by) = order_by {
-            url.query_pairs_mut().append_pair("$orderBy", order_by);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(count) = count {
+            url.query_pairs_mut().append_pair("count", count.to_string().as_str());
         }
         if let Some(skip) = skip {
             url.query_pairs_mut().append_pair("$skip", skip);
@@ -3061,7 +2774,7 @@ pub mod batch_deployments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchDeploymentTrackedResourceArmPaginatedResult =
+                let rsp_value: BatchEndpointTrackedResourceArmPaginatedResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3099,9 +2812,6 @@ pub mod batch_deployments {
             GetTokenError(azure_core::Error),
         }
     }
-}
-pub mod batch_endpoints {
-    use crate::models::*;
     pub async fn get(
         operation_config: &crate::OperationConfig,
         endpoint_name: &str,
@@ -3407,84 +3117,6 @@ pub mod batch_endpoints {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        count: Option<i32>,
-        skip: Option<&str>,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-    ) -> std::result::Result<BatchEndpointTrackedResourceArmPaginatedResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/batchEndpoints",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            workspace_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("count", count.to_string().as_str());
-        }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchEndpointTrackedResourceArmPaginatedResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod list {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
     pub async fn list_keys(
         operation_config: &crate::OperationConfig,
         endpoint_name: &str,
@@ -3562,8 +3194,450 @@ pub mod batch_endpoints {
         }
     }
 }
+pub mod batch_deployments {
+    use crate::models::*;
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        endpoint_name: &str,
+        order_by: Option<&str>,
+        top: Option<i32>,
+        skip: Option<&str>,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+    ) -> std::result::Result<BatchDeploymentTrackedResourceArmPaginatedResult, list::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/batchEndpoints/{}/deployments",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            endpoint_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(list::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(order_by) = order_by {
+            url.query_pairs_mut().append_pair("$orderBy", order_by);
+        }
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
+        if let Some(skip) = skip {
+            url.query_pairs_mut().append_pair("$skip", skip);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: BatchDeploymentTrackedResourceArmPaginatedResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        endpoint_name: &str,
+        deployment_name: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+    ) -> std::result::Result<BatchDeploymentTrackedResource, get::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/batchEndpoints/{}/deployments/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , endpoint_name , deployment_name) ;
+        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(get::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: BatchDeploymentTrackedResource =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn create_or_update(
+        operation_config: &crate::OperationConfig,
+        endpoint_name: &str,
+        deployment_name: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+        body: &BatchDeploymentTrackedResource,
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/batchEndpoints/{}/deployments/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , endpoint_name , deployment_name) ;
+        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(create_or_update::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(body).map_err(create_or_update::Error::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(create_or_update::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: BatchDeploymentTrackedResource = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: BatchDeploymentTrackedResource = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(create_or_update::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(BatchDeploymentTrackedResource),
+            Created201(BatchDeploymentTrackedResource),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn update(
+        operation_config: &crate::OperationConfig,
+        endpoint_name: &str,
+        deployment_name: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+        body: &PartialBatchDeploymentPartialTrackedResource,
+    ) -> std::result::Result<BatchDeploymentTrackedResource, update::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/batchEndpoints/{}/deployments/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , endpoint_name , deployment_name) ;
+        let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PATCH);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(update::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(body).map_err(update::Error::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(update::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: BatchDeploymentTrackedResource =
+                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(update::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        endpoint_name: &str,
+        deployment_name: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/batchEndpoints/{}/deployments/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , endpoint_name , deployment_name) ;
+        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(delete::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(delete::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+}
 pub mod code_containers {
     use crate::models::*;
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        skip: Option<&str>,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+    ) -> std::result::Result<CodeContainerResourceArmPaginatedResult, list::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/codes",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            workspace_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(list::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(skip) = skip {
+            url.query_pairs_mut().append_pair("$skip", skip);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: CodeContainerResourceArmPaginatedResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
     pub async fn get(
         operation_config: &crate::OperationConfig,
         name: &str,
@@ -3796,20 +3870,27 @@ pub mod code_containers {
             GetTokenError(azure_core::Error),
         }
     }
+}
+pub mod code_versions {
+    use crate::models::*;
     pub async fn list(
         operation_config: &crate::OperationConfig,
+        name: &str,
+        order_by: Option<&str>,
+        top: Option<i32>,
         skip: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<CodeContainerResourceArmPaginatedResult, list::Error> {
+    ) -> std::result::Result<CodeVersionResourceArmPaginatedResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/codes",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/codes/{}/versions",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
-            workspace_name
+            workspace_name,
+            name
         );
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
@@ -3822,6 +3903,12 @@ pub mod code_containers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(order_by) = order_by {
+            url.query_pairs_mut().append_pair("$orderBy", order_by);
+        }
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
         if let Some(skip) = skip {
             url.query_pairs_mut().append_pair("$skip", skip);
         }
@@ -3832,7 +3919,7 @@ pub mod code_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CodeContainerResourceArmPaginatedResult =
+                let rsp_value: CodeVersionResourceArmPaginatedResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3870,9 +3957,6 @@ pub mod code_containers {
             GetTokenError(azure_core::Error),
         }
     }
-}
-pub mod code_versions {
-    use crate::models::*;
     pub async fn get(
         operation_config: &crate::OperationConfig,
         name: &str,
@@ -4111,24 +4195,23 @@ pub mod code_versions {
             GetTokenError(azure_core::Error),
         }
     }
+}
+pub mod data_containers {
+    use crate::models::*;
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        name: &str,
-        order_by: Option<&str>,
-        top: Option<i32>,
         skip: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<CodeVersionResourceArmPaginatedResult, list::Error> {
+    ) -> std::result::Result<DataContainerResourceArmPaginatedResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/codes/{}/versions",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/data",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
-            workspace_name,
-            name
+            workspace_name
         );
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
@@ -4141,12 +4224,6 @@ pub mod code_versions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(order_by) = order_by {
-            url.query_pairs_mut().append_pair("$orderBy", order_by);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
         if let Some(skip) = skip {
             url.query_pairs_mut().append_pair("$skip", skip);
         }
@@ -4157,7 +4234,7 @@ pub mod code_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CodeVersionResourceArmPaginatedResult =
+                let rsp_value: DataContainerResourceArmPaginatedResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4195,9 +4272,6 @@ pub mod code_versions {
             GetTokenError(azure_core::Error),
         }
     }
-}
-pub mod data_containers {
-    use crate::models::*;
     pub async fn get(
         operation_config: &crate::OperationConfig,
         name: &str,
@@ -4430,20 +4504,28 @@ pub mod data_containers {
             GetTokenError(azure_core::Error),
         }
     }
+}
+pub mod data_versions {
+    use crate::models::*;
     pub async fn list(
         operation_config: &crate::OperationConfig,
+        name: &str,
+        order_by: Option<&str>,
+        top: Option<i32>,
         skip: Option<&str>,
+        tags: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<DataContainerResourceArmPaginatedResult, list::Error> {
+    ) -> std::result::Result<DataVersionResourceArmPaginatedResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/data",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/data/{}/versions",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
-            workspace_name
+            workspace_name,
+            name
         );
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
@@ -4456,8 +4538,17 @@ pub mod data_containers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(order_by) = order_by {
+            url.query_pairs_mut().append_pair("$orderBy", order_by);
+        }
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
         if let Some(skip) = skip {
             url.query_pairs_mut().append_pair("$skip", skip);
+        }
+        if let Some(tags) = tags {
+            url.query_pairs_mut().append_pair("$tags", tags);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4466,7 +4557,7 @@ pub mod data_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataContainerResourceArmPaginatedResult =
+                let rsp_value: DataVersionResourceArmPaginatedResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4483,6 +4574,244 @@ pub mod data_containers {
     }
     pub mod list {
         use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        name: &str,
+        version: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+    ) -> std::result::Result<DataVersionResource, get::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/data/{}/versions/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            name,
+            version
+        );
+        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(get::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: DataVersionResource =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn create_or_update(
+        operation_config: &crate::OperationConfig,
+        name: &str,
+        version: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+        body: &DataVersionResource,
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/data/{}/versions/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            name,
+            version
+        );
+        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(create_or_update::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(body).map_err(create_or_update::Error::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(create_or_update::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: DataVersionResource = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: DataVersionResource = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(create_or_update::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(DataVersionResource),
+            Created201(DataVersionResource),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        name: &str,
+        version: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/data/{}/versions/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            name,
+            version
+        );
+        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(delete::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(delete::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4916,27 +5245,22 @@ pub mod datastores {
         }
     }
 }
-pub mod data_versions {
+pub mod environment_containers {
     use crate::models::*;
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        name: &str,
-        order_by: Option<&str>,
-        top: Option<i32>,
         skip: Option<&str>,
-        tags: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<DataVersionResourceArmPaginatedResult, list::Error> {
+    ) -> std::result::Result<EnvironmentContainerResourceArmPaginatedResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/data/{}/versions",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/environments",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
-            workspace_name,
-            name
+            workspace_name
         );
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
@@ -4949,17 +5273,8 @@ pub mod data_versions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(order_by) = order_by {
-            url.query_pairs_mut().append_pair("$orderBy", order_by);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
         if let Some(skip) = skip {
             url.query_pairs_mut().append_pair("$skip", skip);
-        }
-        if let Some(tags) = tags {
-            url.query_pairs_mut().append_pair("$tags", tags);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4968,7 +5283,7 @@ pub mod data_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataVersionResourceArmPaginatedResult =
+                let rsp_value: EnvironmentContainerResourceArmPaginatedResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5006,247 +5321,6 @@ pub mod data_versions {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        name: &str,
-        version: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-    ) -> std::result::Result<DataVersionResource, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/data/{}/versions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            workspace_name,
-            name,
-            version
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: DataVersionResource =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod get {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        name: &str,
-        version: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-        body: &DataVersionResource,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/data/{}/versions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            workspace_name,
-            name,
-            version
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(body).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: DataVersionResource = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: DataVersionResource = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod create_or_update {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(DataVersionResource),
-            Created201(DataVersionResource),
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        name: &str,
-        version: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/data/{}/versions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            workspace_name,
-            name,
-            version
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod delete {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-}
-pub mod environment_containers {
-    use crate::models::*;
     pub async fn get(
         operation_config: &crate::OperationConfig,
         name: &str,
@@ -5479,20 +5553,27 @@ pub mod environment_containers {
             GetTokenError(azure_core::Error),
         }
     }
+}
+pub mod environment_specification_versions {
+    use crate::models::*;
     pub async fn list(
         operation_config: &crate::OperationConfig,
+        name: &str,
+        order_by: Option<&str>,
+        top: Option<i32>,
         skip: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<EnvironmentContainerResourceArmPaginatedResult, list::Error> {
+    ) -> std::result::Result<EnvironmentSpecificationVersionResourceArmPaginatedResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/environments",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/environments/{}/versions",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
-            workspace_name
+            workspace_name,
+            name
         );
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
@@ -5505,6 +5586,12 @@ pub mod environment_containers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(order_by) = order_by {
+            url.query_pairs_mut().append_pair("$orderBy", order_by);
+        }
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
         if let Some(skip) = skip {
             url.query_pairs_mut().append_pair("$skip", skip);
         }
@@ -5515,7 +5602,7 @@ pub mod environment_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EnvironmentContainerResourceArmPaginatedResult =
+                let rsp_value: EnvironmentSpecificationVersionResourceArmPaginatedResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5553,9 +5640,6 @@ pub mod environment_containers {
             GetTokenError(azure_core::Error),
         }
     }
-}
-pub mod environment_specification_versions {
-    use crate::models::*;
     pub async fn get(
         operation_config: &crate::OperationConfig,
         name: &str,
@@ -5794,24 +5878,26 @@ pub mod environment_specification_versions {
             GetTokenError(azure_core::Error),
         }
     }
+}
+pub mod jobs {
+    use crate::models::*;
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        name: &str,
-        order_by: Option<&str>,
-        top: Option<i32>,
         skip: Option<&str>,
+        job_type: Option<&str>,
+        tags: Option<&str>,
+        tag: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<EnvironmentSpecificationVersionResourceArmPaginatedResult, list::Error> {
+    ) -> std::result::Result<JobBaseResourceArmPaginatedResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/environments/{}/versions",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/jobs",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
-            workspace_name,
-            name
+            workspace_name
         );
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
@@ -5824,14 +5910,17 @@ pub mod environment_specification_versions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(order_by) = order_by {
-            url.query_pairs_mut().append_pair("$orderBy", order_by);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
         if let Some(skip) = skip {
             url.query_pairs_mut().append_pair("$skip", skip);
+        }
+        if let Some(job_type) = job_type {
+            url.query_pairs_mut().append_pair("jobType", job_type);
+        }
+        if let Some(tags) = tags {
+            url.query_pairs_mut().append_pair("tags", tags);
+        }
+        if let Some(tag) = tag {
+            url.query_pairs_mut().append_pair("tag", tag);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5840,7 +5929,7 @@ pub mod environment_specification_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EnvironmentSpecificationVersionResourceArmPaginatedResult =
+                let rsp_value: JobBaseResourceArmPaginatedResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5878,9 +5967,6 @@ pub mod environment_specification_versions {
             GetTokenError(azure_core::Error),
         }
     }
-}
-pub mod jobs {
-    use crate::models::*;
     pub async fn get(
         operation_config: &crate::OperationConfig,
         id: &str,
@@ -6115,92 +6201,6 @@ pub mod jobs {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        skip: Option<&str>,
-        job_type: Option<&str>,
-        tags: Option<&str>,
-        tag: Option<&str>,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-    ) -> std::result::Result<JobBaseResourceArmPaginatedResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/jobs",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            workspace_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
-        }
-        if let Some(job_type) = job_type {
-            url.query_pairs_mut().append_pair("jobType", job_type);
-        }
-        if let Some(tags) = tags {
-            url.query_pairs_mut().append_pair("tags", tags);
-        }
-        if let Some(tag) = tag {
-            url.query_pairs_mut().append_pair("tag", tag);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: JobBaseResourceArmPaginatedResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod list {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
     pub async fn cancel(
         operation_config: &crate::OperationConfig,
         id: &str,
@@ -6272,6 +6272,84 @@ pub mod jobs {
 }
 pub mod labeling_jobs {
     use crate::models::*;
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        skip: Option<&str>,
+        count: Option<i32>,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+    ) -> std::result::Result<LabelingJobResourceArmPaginatedResult, list::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/labelingJobs",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            workspace_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(list::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(skip) = skip {
+            url.query_pairs_mut().append_pair("$skip", skip);
+        }
+        if let Some(count) = count {
+            url.query_pairs_mut().append_pair("count", count.to_string().as_str());
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: LabelingJobResourceArmPaginatedResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
     pub async fn get(
         operation_config: &crate::OperationConfig,
         id: &str,
@@ -6514,63 +6592,67 @@ pub mod labeling_jobs {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list(
+    pub async fn export_labels(
         operation_config: &crate::OperationConfig,
-        skip: Option<&str>,
-        count: Option<i32>,
+        id: &str,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<LabelingJobResourceArmPaginatedResult, list::Error> {
+        body: &ExportSummary,
+    ) -> std::result::Result<export_labels::Response, export_labels::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/labelingJobs",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/labelingJobs/{}/exportLabels",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
-            workspace_name
+            workspace_name,
+            id
         );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(export_labels::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
+        req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(list::Error::GetTokenError)?;
+                .map_err(export_labels::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
-        }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("count", count.to_string().as_str());
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(body).map_err(export_labels::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
+        let req = req_builder.body(req_body).map_err(export_labels::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(export_labels::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LabelingJobResourceArmPaginatedResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+                let rsp_value: ExportSummary =
+                    serde_json::from_slice(rsp_body).map_err(|source| export_labels::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(export_labels::Response::Ok200(rsp_value))
             }
+            http::StatusCode::ACCEPTED => Ok(export_labels::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| export_labels::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(export_labels::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod list {
+    pub mod export_labels {
         use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(ExportSummary),
+            Accepted202,
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6711,88 +6793,6 @@ pub mod labeling_jobs {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
-            Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn export_labels(
-        operation_config: &crate::OperationConfig,
-        id: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-        body: &ExportSummary,
-    ) -> std::result::Result<export_labels::Response, export_labels::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/labelingJobs/{}/exportLabels",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            workspace_name,
-            id
-        );
-        let mut url = url::Url::parse(url_str).map_err(export_labels::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(export_labels::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(body).map_err(export_labels::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(export_labels::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(export_labels::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: ExportSummary =
-                    serde_json::from_slice(rsp_body).map_err(|source| export_labels::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(export_labels::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => Ok(export_labels::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| export_labels::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(export_labels::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod export_labels {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(ExportSummary),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -7475,6 +7475,642 @@ pub mod model_versions {
         }
     }
 }
+pub mod online_endpoints {
+    use crate::models::*;
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        name: Option<&str>,
+        count: Option<i32>,
+        compute_type: Option<&str>,
+        skip: Option<&str>,
+        tags: Option<&str>,
+        properties: Option<&str>,
+        order_by: Option<&str>,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+    ) -> std::result::Result<OnlineEndpointTrackedResourceArmPaginatedResult, list::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            workspace_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(list::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(name) = name {
+            url.query_pairs_mut().append_pair("name", name);
+        }
+        if let Some(count) = count {
+            url.query_pairs_mut().append_pair("count", count.to_string().as_str());
+        }
+        if let Some(compute_type) = compute_type {
+            url.query_pairs_mut().append_pair("computeType", compute_type);
+        }
+        if let Some(skip) = skip {
+            url.query_pairs_mut().append_pair("$skip", skip);
+        }
+        if let Some(tags) = tags {
+            url.query_pairs_mut().append_pair("tags", tags);
+        }
+        if let Some(properties) = properties {
+            url.query_pairs_mut().append_pair("properties", properties);
+        }
+        if let Some(order_by) = order_by {
+            url.query_pairs_mut().append_pair("orderBy", order_by);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: OnlineEndpointTrackedResourceArmPaginatedResult =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        endpoint_name: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+    ) -> std::result::Result<OnlineEndpointTrackedResource, get::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            endpoint_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(get::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: OnlineEndpointTrackedResource =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod get {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn create_or_update(
+        operation_config: &crate::OperationConfig,
+        endpoint_name: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+        body: &OnlineEndpointTrackedResource,
+    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            endpoint_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(create_or_update::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(body).map_err(create_or_update::Error::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(create_or_update::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: OnlineEndpointTrackedResource = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: OnlineEndpointTrackedResource = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(create_or_update::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(OnlineEndpointTrackedResource),
+            Created201(OnlineEndpointTrackedResource),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn update(
+        operation_config: &crate::OperationConfig,
+        endpoint_name: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+        body: &PartialOnlineEndpointPartialTrackedResource,
+    ) -> std::result::Result<update::Response, update::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            endpoint_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PATCH);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(update::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(body).map_err(update::Error::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(update::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: OnlineEndpointTrackedResource =
+                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(update::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(update::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod update {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(OnlineEndpointTrackedResource),
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        endpoint_name: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            endpoint_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(delete::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(delete::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            NoContent204,
+            Accepted202,
+            Ok200,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn list_keys(
+        operation_config: &crate::OperationConfig,
+        endpoint_name: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+    ) -> std::result::Result<EndpointAuthKeys, list_keys::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}/listKeys",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            endpoint_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(list_keys::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(list_keys::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(list_keys::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(list_keys::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: EndpointAuthKeys =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list_keys::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list_keys {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn regenerate_keys(
+        operation_config: &crate::OperationConfig,
+        endpoint_name: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+        body: &RegenerateEndpointKeysRequest,
+    ) -> std::result::Result<regenerate_keys::Response, regenerate_keys::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}/regenerateKeys" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , endpoint_name) ;
+        let mut url = url::Url::parse(url_str).map_err(regenerate_keys::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(regenerate_keys::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = azure_core::to_json(body).map_err(regenerate_keys::Error::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(regenerate_keys::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(regenerate_keys::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => Ok(regenerate_keys::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(regenerate_keys::Response::Accepted202),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| regenerate_keys::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(regenerate_keys::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod regenerate_keys {
+        use crate::{models, models::*};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn get_token(
+        operation_config: &crate::OperationConfig,
+        endpoint_name: &str,
+        subscription_id: &str,
+        resource_group_name: &str,
+        workspace_name: &str,
+    ) -> std::result::Result<EndpointAuthToken, get_token::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}/token",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            endpoint_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(get_token::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(get_token::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(get_token::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(get_token::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: EndpointAuthToken =
+                    serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get_token::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod get_token {
+        use crate::{models, models::*};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+}
 pub mod online_deployments {
     use crate::models::*;
     pub async fn list(
@@ -7891,642 +8527,6 @@ pub mod online_deployments {
         }
     }
     pub mod get_logs {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-}
-pub mod online_endpoints {
-    use crate::models::*;
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        name: Option<&str>,
-        count: Option<i32>,
-        compute_type: Option<&str>,
-        skip: Option<&str>,
-        tags: Option<&str>,
-        properties: Option<&str>,
-        order_by: Option<&str>,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-    ) -> std::result::Result<OnlineEndpointTrackedResourceArmPaginatedResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            workspace_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        if let Some(name) = name {
-            url.query_pairs_mut().append_pair("name", name);
-        }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("count", count.to_string().as_str());
-        }
-        if let Some(compute_type) = compute_type {
-            url.query_pairs_mut().append_pair("computeType", compute_type);
-        }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
-        }
-        if let Some(tags) = tags {
-            url.query_pairs_mut().append_pair("tags", tags);
-        }
-        if let Some(properties) = properties {
-            url.query_pairs_mut().append_pair("properties", properties);
-        }
-        if let Some(order_by) = order_by {
-            url.query_pairs_mut().append_pair("orderBy", order_by);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: OnlineEndpointTrackedResourceArmPaginatedResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod list {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        endpoint_name: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-    ) -> std::result::Result<OnlineEndpointTrackedResource, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            workspace_name,
-            endpoint_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: OnlineEndpointTrackedResource =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod get {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        endpoint_name: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-        body: &OnlineEndpointTrackedResource,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            workspace_name,
-            endpoint_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(body).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: OnlineEndpointTrackedResource = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: OnlineEndpointTrackedResource = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod create_or_update {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(OnlineEndpointTrackedResource),
-            Created201(OnlineEndpointTrackedResource),
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn update(
-        operation_config: &crate::OperationConfig,
-        endpoint_name: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-        body: &PartialOnlineEndpointPartialTrackedResource,
-    ) -> std::result::Result<update::Response, update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            workspace_name,
-            endpoint_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(body).map_err(update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: OnlineEndpointTrackedResource =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod update {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(OnlineEndpointTrackedResource),
-            Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        endpoint_name: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            workspace_name,
-            endpoint_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod delete {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            NoContent204,
-            Accepted202,
-            Ok200,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn regenerate_keys(
-        operation_config: &crate::OperationConfig,
-        endpoint_name: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-        body: &RegenerateEndpointKeysRequest,
-    ) -> std::result::Result<regenerate_keys::Response, regenerate_keys::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}/regenerateKeys" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , endpoint_name) ;
-        let mut url = url::Url::parse(url_str).map_err(regenerate_keys::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(regenerate_keys::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = azure_core::to_json(body).map_err(regenerate_keys::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(regenerate_keys::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(regenerate_keys::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(regenerate_keys::Response::Ok200),
-            http::StatusCode::ACCEPTED => Ok(regenerate_keys::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| regenerate_keys::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(regenerate_keys::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod regenerate_keys {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn list_keys(
-        operation_config: &crate::OperationConfig,
-        endpoint_name: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-    ) -> std::result::Result<EndpointAuthKeys, list_keys::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}/listKeys",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            workspace_name,
-            endpoint_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_keys::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_keys::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_keys::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_keys::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: EndpointAuthKeys =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_keys::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod list_keys {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::ErrorResponse,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn get_token(
-        operation_config: &crate::OperationConfig,
-        endpoint_name: &str,
-        subscription_id: &str,
-        resource_group_name: &str,
-        workspace_name: &str,
-    ) -> std::result::Result<EndpointAuthToken, get_token::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/onlineEndpoints/{}/token",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            workspace_name,
-            endpoint_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_token::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_token::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_token::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_token::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: EndpointAuthToken =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_token::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod get_token {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {

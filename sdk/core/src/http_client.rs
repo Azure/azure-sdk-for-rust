@@ -10,6 +10,17 @@ use http::{Request, Response, StatusCode};
 #[allow(unused_imports)]
 use hyper_rustls::HttpsConnector;
 use serde::Serialize;
+use std::sync::Arc;
+
+#[cfg(feature = "enable_reqwest")]
+pub fn new_http_client() -> Arc<dyn HttpClient> {
+    Arc::new(reqwest::Client::new())
+}
+
+#[cfg(feature = "enable_hyper")]
+pub fn new_http_client() -> Arc<dyn HttpClient> {
+    Arc::new(hyper::Client::builder().build(hyper_rustls::HttpsConnector::with_native_roots()))
+}
 
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
