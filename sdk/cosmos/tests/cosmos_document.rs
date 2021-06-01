@@ -49,11 +49,11 @@ async fn create_and_delete_document() {
         excluded_paths: vec![],
     };
 
-    database_client
-        .create_collection("/id")
+    let options = create_collection::Options::new("/id")
         .offer(Offer::Throughput(400))
-        .indexing_policy(indexing_policy)
-        .execute(COLLECTION_NAME)
+        .indexing_policy(indexing_policy);
+    database_client
+        .create_collection(Context::new(), COLLECTION_NAME, options)
         .await
         .unwrap();
 
@@ -138,11 +138,11 @@ async fn query_documents() {
         excluded_paths: vec![],
     };
 
-    database_client
-        .create_collection("/id")
+    let options = create_collection::Options::new("/id")
         .indexing_policy(indexing_policy)
-        .offer(Offer::S2)
-        .execute(COLLECTION_NAME)
+        .offer(Offer::S2);
+    database_client
+        .create_collection(Context::new(), COLLECTION_NAME, options)
         .await
         .unwrap();
 
@@ -213,11 +213,11 @@ async fn replace_document() {
         excluded_paths: vec![],
     };
 
-    database_client
-        .create_collection("/id")
-        .offer(Offer::S2)
+    let options = create_collection::Options::new("/id")
         .indexing_policy(indexing_policy)
-        .execute(COLLECTION_NAME)
+        .offer(Offer::S2);
+    database_client
+        .create_collection(Context::new(), COLLECTION_NAME, options)
         .await
         .unwrap();
 

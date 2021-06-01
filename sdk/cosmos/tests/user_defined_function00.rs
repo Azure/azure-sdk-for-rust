@@ -1,7 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
+use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use azure_cosmos::responses::QueryDocumentsResponseRaw;
-use collection::*;
 use futures::stream::StreamExt;
 
 mod setup;
@@ -39,33 +39,14 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
     let database_client = client.into_database_client(DATABASE_NAME);
 
     // create a temp collection
-    let _create_collection_response = {
-        let indexes = IncludedPathIndex {
-            kind: KeyKind::Hash,
-            data_type: DataType::String,
-            precision: Some(3),
-        };
-
-        let ip = IncludedPath {
-            path: "/*".to_owned(),
-            indexes: Some(vec![indexes]),
-        };
-
-        let ip = IndexingPolicy {
-            automatic: true,
-            indexing_mode: IndexingMode::Consistent,
-            included_paths: vec![ip],
-            excluded_paths: vec![],
-        };
-
-        database_client
-            .create_collection("/id")
-            .offer(Offer::Throughput(400))
-            .indexing_policy(ip)
-            .execute(COLLECTION_NAME)
-            .await
-            .unwrap()
-    };
+    let _create_collection_response = database_client
+        .create_collection(
+            Context::new(),
+            COLLECTION_NAME,
+            create_collection::Options::new("/id"),
+        )
+        .await
+        .unwrap();
 
     let collection_client = database_client
         .clone()

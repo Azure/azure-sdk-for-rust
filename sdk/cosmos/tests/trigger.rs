@@ -1,4 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
+use azure_core::prelude::*;
+use azure_cosmos::operations::create_collection;
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
@@ -56,29 +58,12 @@ async fn trigger() -> Result<(), CosmosError> {
 
     // create a temp collection
     let _create_collection_response = {
-        let indexes = collection::IncludedPathIndex {
-            kind: collection::KeyKind::Hash,
-            data_type: collection::DataType::String,
-            precision: Some(3),
-        };
-
-        let ip = collection::IncludedPath {
-            path: "/*".to_owned(),
-            indexes: Some(vec![indexes]),
-        };
-
-        let ip = collection::IndexingPolicy {
-            automatic: true,
-            indexing_mode: collection::IndexingMode::Consistent,
-            included_paths: vec![ip],
-            excluded_paths: vec![],
-        };
-
         database_client
-            .create_collection("/id")
-            .offer(Offer::Throughput(400))
-            .indexing_policy(ip)
-            .execute(COLLECTION_NAME)
+            .create_collection(
+                Context::new(),
+                COLLECTION_NAME,
+                create_collection::Options::new("/id"),
+            )
             .await
             .unwrap()
     };
