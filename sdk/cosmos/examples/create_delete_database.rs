@@ -1,6 +1,9 @@
+use azure_core::prelude::*;
+use azure_cosmos::operations::create_collection;
 use azure_cosmos::prelude::*;
-use collection::*;
+
 use futures::stream::StreamExt;
+
 use std::error::Error;
 use std::sync::Arc;
 
@@ -62,29 +65,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     {
         let db_client = client.clone().into_database_client(database_name.clone());
 
-        let indexes = IncludedPathIndex {
-            kind: KeyKind::Hash,
-            data_type: DataType::String,
-            precision: Some(3),
-        };
-
-        let ip = IncludedPath {
-            path: "/*".to_owned(),
-            indexes: Some(vec![indexes]),
-        };
-
-        let ip = IndexingPolicy {
-            automatic: true,
-            indexing_mode: IndexingMode::Consistent,
-            included_paths: vec![ip],
-            excluded_paths: vec![],
-        };
-
         let create_collection_response = db_client
-            .create_collection("/id")
-            .indexing_policy(ip)
-            .offer(Offer::Throughput(400))
-            .execute("panzadoro")
+            .create_collection(
+                Context::new(),
+                "panzadoro",
+                create_collection::Options::new("/id"),
+            )
             .await?;
 
         println!(

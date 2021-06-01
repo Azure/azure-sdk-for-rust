@@ -2,8 +2,9 @@ use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
 use azure_core::prelude::*;
+use azure_cosmos::operations::create_collection;
+use azure_cosmos::operations::create_database;
 use azure_cosmos::prelude::*;
-use azure_cosmos::resources::collection::*;
 use azure_cosmos::responses::GetDocumentResponse;
 use std::borrow::Cow;
 use std::error::Error;
@@ -79,11 +80,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Some(db) => db,
         None => {
             database_client
-                .create_database(
-                    azure_core::Context::new(),
-                    DATABASE,
-                    azure_cosmos::operations::create_database::Options::new(),
-                )
+                .create_database(Context::new(), DATABASE, create_database::Options::new())
                 .await?
                 .database
         }
@@ -108,37 +105,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         {
             collection
         } else {
-            let indexes = IncludedPathIndex {
-                kind: KeyKind::Hash,
-                data_type: DataType::String,
-                precision: Some(3),
-            };
-
-            let ip = IncludedPath {
-                path: "/*".to_owned(),
-                indexes: Some(vec![indexes]),
-            };
-
-            let ip = IndexingPolicy {
-                automatic: true,
-                indexing_mode: IndexingMode::Consistent,
-                included_paths: vec![ip],
-                excluded_paths: vec![],
-            };
-
-            // Notice here we specify the expected performance level.
-            // Performance levels have price impact. Also, higher
-            // performance levels force you to specify an indexing
-            // strategy. Consult the documentation for more details.
-            // you can also use the predefined performance levels. For example:
-            // `Offer::S2`.
             client
                 .clone()
                 .into_database_client(database.id.clone())
-                .create_collection("/id")
-                .indexing_policy(ip)
-                .offer(Offer::Throughput(400))
-                .execute(COLLECTION)
+                .create_collection(
+                    Context::new(),
+                    COLLECTION,
+                    create_collection::Options::new("/id"),
+                )
                 .await?
                 .collection
         }

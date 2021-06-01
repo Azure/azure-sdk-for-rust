@@ -30,14 +30,14 @@ pub struct CosmosClient {
     auth_token: AuthorizationToken,
     cloud_location: CloudLocation,
 }
-/// TODO
+/// Options for specifying how a Cosmos client will behave
 pub struct CosmosOptions {
     retry: Arc<dyn Policy>,
     transport: TransportOptions,
 }
 
 impl CosmosOptions {
-    /// TODO
+    /// Create options based on the provided http client
     pub fn with_client(client: Arc<dyn HttpClient>) -> Self {
         Self {
             retry: Arc::new(LinearRetryPolicy::default()), // this defaults to linear backoff
@@ -135,7 +135,7 @@ impl CosmosClient {
         }
     }
 
-    /// TODO
+    /// Construct a pipeline with explicit options
     pub fn with_pipeline(
         http_client: Arc<dyn HttpClient>,
         account: String, // TODO: this will eventually be a URL
@@ -175,7 +175,7 @@ impl CosmosClient {
         Ok(crate::operations::create_database::Response::try_from(response).await?)
     }
 
-    fn pipeline(&self) -> &Pipeline {
+    pub(crate) fn pipeline(&self) -> &Pipeline {
         &self.pipeline
     }
 

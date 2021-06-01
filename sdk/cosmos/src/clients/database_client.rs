@@ -1,9 +1,11 @@
 use super::*;
+use crate::operations::create_collection;
 use crate::requests;
-use crate::resources::collection::PartitionKey;
 use crate::resources::ResourceType;
+use crate::CosmosError;
 use crate::ReadonlyString;
-use azure_core::HttpClient;
+use azure_core::pipeline::Pipeline;
+use azure_core::{Context, HttpClient, Request};
 
 /// A client for Cosmos database resources.
 #[derive(Debug, Clone)]
@@ -49,11 +51,28 @@ impl DatabaseClient {
     }
 
     /// Create a collection
-    pub fn create_collection<'a, P: Into<PartitionKey>>(
-        &'a self,
-        partition_key: P,
-    ) -> requests::CreateCollectionBuilder<'a> {
-        requests::CreateCollectionBuilder::new(self, partition_key.into())
+    pub async fn create_collection<S: AsRef<str>>(
+        &self,
+        ctx: Context,
+        collection_name: S,
+        options: create_collection::Options,
+    ) -> Result<create_collection::Response, CosmosError> {
+        let request = self.cosmos_client().prepare_request(
+            &format!("dbs/{}/colls", self.database_name()),
+            http::Method::POST,
+            ResourceType::Collections,
+        );
+        let mut request: Request = request.body(bytes::Bytes::new()).unwrap().into();
+
+        let mut ctx = ctx.clone();
+        options.decorate_request(&mut request, collection_name.as_ref())?;
+        let response = self
+            .pipeline()
+            .send(&mut ctx, &mut request)
+            .await
+            .map_err(CosmosError::PolicyError)?;
+
+        Ok(crate::operations::create_collection::Response::try_from(response).await?)
     }
 
     /// List users
@@ -87,5 +106,9 @@ impl DatabaseClient {
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
         self.cosmos_client().http_client()
+    }
+
+    fn pipeline(&self) -> &Pipeline {
+        self.cosmos_client.pipeline()
     }
 }
