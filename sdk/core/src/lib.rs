@@ -10,6 +10,7 @@ extern crate serde_derive;
 mod macros;
 
 mod bytes_stream;
+mod constants;
 mod context;
 mod errors;
 pub mod headers;
@@ -34,6 +35,7 @@ use std::fmt::Debug;
 use uuid::Uuid;
 
 pub use bytes_stream::*;
+pub use constants::*;
 pub use context::Context;
 pub use errors::*;
 pub use headers::AddAsHeader;
