@@ -25,31 +25,19 @@ impl TelemetryPolicy {
     pub fn new(options: TelemetryOptions) -> Self {
         let crate_name = env!("CARGO_PKG_NAME");
         let crate_version = env!("CARGO_PKG_VERSION");
-        let platform_info = format!(
-            "({}; {}; {})",
-            env!("AZSDK_RUSTC_VERSION"),
-            OS,
-            ARCH,
-        );
+        let platform_info = format!("({}; {}; {})", env!("AZSDK_RUSTC_VERSION"), OS, ARCH,);
         let header = match options.application_id {
             Some(application_id) => format!(
                 "{} azsdk-rust-{}/{} {}",
-                application_id,
-                crate_name,
-                crate_version,
-                platform_info
+                application_id, crate_name, crate_version, platform_info
             ),
             None => format!(
                 "azsdk-rust-{}/{} {}",
-                crate_name,
-                crate_version,
-                platform_info
+                crate_name, crate_version, platform_info
             ),
         };
 
-        TelemetryPolicy {
-            header: header,
-        }
+        TelemetryPolicy { header: header }
     }
 }
 
