@@ -1,5 +1,9 @@
 use rustc_version::version;
 
 fn main() {
-    println!("cargo:rustc-env=AZSDK_RUSTC_VERSION={}", version().unwrap());
+    let version = match version() {
+        Ok(version) => version.to_string(),
+        Err(_) => "unknown".to_string(),
+    };
+    println!("cargo:rustc-env=AZSDK_RUSTC_VERSION={}", version);
 }
