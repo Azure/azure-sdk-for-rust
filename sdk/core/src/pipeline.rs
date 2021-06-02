@@ -30,7 +30,7 @@ impl Pipeline {
         per_retry_policies: Vec<Arc<dyn Policy>>,
         transport_policy: Arc<dyn Policy>,
     ) -> Self {
-        let mut pipeline = Vec::<Arc<dyn Policy>>::with_capacity(
+        let mut pipeline: Vec<Arc<dyn Policy>> = Vec::with_capacity(
             per_call_policies.len() + per_retry_policies.len() + 3,
         );
 

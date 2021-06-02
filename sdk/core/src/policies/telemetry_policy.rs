@@ -2,7 +2,6 @@ use crate::policies::{Policy, PolicyResult};
 use crate::{Context, Request, Response};
 
 use http::{header::USER_AGENT, HeaderValue};
-use rustc_version::{version, Version};
 use std::env::consts::{ARCH, OS};
 use std::sync::Arc;
 
@@ -22,36 +21,34 @@ pub struct TelemetryPolicy {
     header: String,
 }
 
-const EMPTY_VERSION: Version = Version {
-    major: 0,
-    minor: 0,
-    patch: 0,
-    pre: Vec::new(),
-    build: Vec::new(),
-};
-
 impl TelemetryPolicy {
     pub fn new(options: TelemetryOptions) -> Self {
-        let platform_info = format!("({}; {}; {})", version().unwrap_or(EMPTY_VERSION), OS, ARCH);
-        if let Some(application_id) = options.application_id {
-            TelemetryPolicy {
-                header: format!(
-                    "{} azsdk-rust-{}/{} {}",
-                    application_id,
-                    clap::crate_name!(),
-                    clap::crate_version!(),
-                    platform_info
-                ),
-            }
-        } else {
-            TelemetryPolicy {
-                header: format!(
-                    "azsdk-rust-{}/{} {}",
-                    clap::crate_name!(),
-                    clap::crate_version!(),
-                    platform_info
-                ),
-            }
+        let crate_name = env!("CARGO_PKG_NAME");
+        let crate_version = env!("CARGO_PKG_VERSION");
+        let platform_info = format!(
+            "({}; {}; {})",
+            env!("AZSDK_RUSTC_VERSION"),
+            OS,
+            ARCH,
+        );
+        let header = match options.application_id {
+            Some(application_id) => format!(
+                "{} azsdk-rust-{}/{} {}",
+                application_id,
+                crate_name,
+                crate_version,
+                platform_info
+            ),
+            None => format!(
+                "azsdk-rust-{}/{} {}",
+                crate_name,
+                crate_version,
+                platform_info
+            ),
+        };
+
+        TelemetryPolicy {
+            header: header,
         }
     }
 }
