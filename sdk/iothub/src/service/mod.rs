@@ -683,7 +683,7 @@ impl ServiceClient {
     /// use azure_core::HttpClient;
     /// use iothub::service::ServiceClient;
     ///
-    /// # let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    /// # let http_client = azure_core::new_http_client();
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let query_builder = iothub.query();

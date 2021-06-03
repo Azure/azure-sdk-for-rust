@@ -7,7 +7,7 @@ use azure_core::setters;
 use http::{Method, StatusCode};
 use serde::Serialize;
 
-use crate::service::{responses::QueryResponse, IoTHubError, ServiceClient, API_VERSION};
+use crate::service::{responses::QueryResponse, ServiceClient, API_VERSION};
 
 /// Body for the Query request
 #[derive(Serialize, Debug)]
@@ -44,12 +44,12 @@ impl<'a, 'b> QueryBuilder<'a, 'b> {
     /// use azure_core::HttpClient;
     /// use iothub::service::ServiceClient;
     ///
-    /// # let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    /// # let http_client = azure_core::new_http_client();
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let query_builder = iothub.query().max_item_count(1).continuation("some_token").execute("SELECT * FROM devices");
     /// ```
-    pub async fn execute<S>(self, query: S) -> Result<QueryResponse, IoTHubError>
+    pub async fn execute<S>(self, query: S) -> Result<QueryResponse, crate::Error>
     where
         S: Into<String>,
     {

@@ -4,8 +4,6 @@ use azure_core::headers::{
 use http::response::Response;
 use serde_json::Value;
 
-use crate::service::IoTHubError;
-
 /// The response for a query invocation
 pub struct QueryResponse {
     /// The result of the query
@@ -17,7 +15,7 @@ pub struct QueryResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for QueryResponse {
-    type Error = IoTHubError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

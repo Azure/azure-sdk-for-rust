@@ -259,10 +259,10 @@ pub fn content_type_from_headers(headers: &HeaderMap) -> Result<&str, Error> {
         .to_str()?)
 }
 
-pub fn item_count_from_headers(headers: &HeaderMap) -> Result<u32, AzureError> {
+pub fn item_count_from_headers(headers: &HeaderMap) -> Result<u32, Error> {
     Ok(headers
         .get(crate::headers::MAX_ITEM_COUNT)
-        .ok_or_else(|| AzureError::HeaderNotFound(crate::MAX_ITEM_COUNT.to_owned()))?
+        .ok_or_else(|| Error::HeaderNotFound(crate::MAX_ITEM_COUNT.to_owned()))?
         .to_str()?
         .parse()?)
 }
