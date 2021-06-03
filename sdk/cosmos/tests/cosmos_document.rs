@@ -34,7 +34,7 @@ async fn create_and_delete_document() {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -49,7 +49,7 @@ async fn create_and_delete_document() {
         excluded_paths: vec![],
     };
 
-    let options = create_collection::Options::new("/id")
+    let options = CreateCollectionOptions::new("/id")
         .offer(Offer::Throughput(400))
         .indexing_policy(indexing_policy);
     database_client
@@ -124,7 +124,7 @@ async fn query_documents() {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -138,7 +138,7 @@ async fn query_documents() {
         excluded_paths: vec![],
     };
 
-    let options = create_collection::Options::new("/id")
+    let options = CreateCollectionOptions::new("/id")
         .indexing_policy(indexing_policy)
         .offer(Offer::S2);
     database_client
@@ -199,7 +199,7 @@ async fn replace_document() {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -213,7 +213,7 @@ async fn replace_document() {
         excluded_paths: vec![],
     };
 
-    let options = create_collection::Options::new("/id")
+    let options = CreateCollectionOptions::new("/id")
         .indexing_policy(indexing_policy)
         .offer(Offer::S2);
     database_client

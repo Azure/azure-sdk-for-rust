@@ -2,5 +2,8 @@
 
 #![allow(missing_docs)]
 
-pub mod create_collection;
-pub mod create_database;
+mod create_collection;
+mod create_database;
+
+pub use create_collection::*;
+pub use create_database::*;

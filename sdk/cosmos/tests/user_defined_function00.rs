@@ -31,7 +31,7 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -43,7 +43,7 @@ async fn user_defined_function00() -> Result<(), CosmosError> {
         .create_collection(
             Context::new(),
             COLLECTION_NAME,
-            create_collection::Options::new("/id"),
+            CreateCollectionOptions::new("/id"),
         )
         .await
         .unwrap();

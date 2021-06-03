@@ -1,5 +1,4 @@
 use azure_core::prelude::*;
-use azure_cosmos::operations::create_collection;
 use azure_cosmos::prelude::*;
 
 use futures::stream::StreamExt;
@@ -56,7 +55,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_database(
             azure_core::Context::new(),
             &database_name,
-            azure_cosmos::operations::create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await?;
     println!("created database = {:#?}", db);
@@ -69,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .create_collection(
                 Context::new(),
                 "panzadoro",
-                create_collection::Options::new("/id"),
+                CreateCollectionOptions::new("/id"),
             )
             .await?;
 

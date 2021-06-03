@@ -2,8 +2,6 @@ use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
 use azure_core::prelude::*;
-use azure_cosmos::operations::create_collection;
-use azure_cosmos::operations::create_database;
 use azure_cosmos::prelude::*;
 use azure_cosmos::responses::GetDocumentResponse;
 use std::borrow::Cow;
@@ -80,7 +78,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Some(db) => db,
         None => {
             database_client
-                .create_database(Context::new(), DATABASE, create_database::Options::new())
+                .create_database(Context::new(), DATABASE, CreateDatabaseOptions::new())
                 .await?
                 .database
         }
@@ -111,7 +109,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 .create_collection(
                     Context::new(),
                     COLLECTION,
-                    create_collection::Options::new("/id"),
+                    CreateCollectionOptions::new("/id"),
                 )
                 .await?
                 .collection

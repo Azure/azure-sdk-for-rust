@@ -2,7 +2,6 @@
 mod setup;
 
 use azure_core::prelude::*;
-use azure_cosmos::operations::create_collection;
 use azure_cosmos::prelude::*;
 use azure_cosmos::resources::collection::*;
 
@@ -17,7 +16,7 @@ async fn create_and_delete_collection() {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -29,7 +28,7 @@ async fn create_and_delete_collection() {
         .create_collection(
             Context::new(),
             COLLECTION_NAME,
-            create_collection::Options::new("/id"),
+            CreateCollectionOptions::new("/id"),
         )
         .await
         .unwrap();
@@ -73,7 +72,7 @@ async fn replace_collection() {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -87,7 +86,7 @@ async fn replace_collection() {
         included_paths: vec![],
         excluded_paths: vec![],
     };
-    let options = create_collection::Options::new("/id")
+    let options = CreateCollectionOptions::new("/id")
         .offer(Offer::S2)
         .indexing_policy(indexing_policy);
     let collection = database_client

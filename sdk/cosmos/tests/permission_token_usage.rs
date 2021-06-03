@@ -1,6 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::prelude::*;
-use azure_cosmos::operations::create_collection;
 use azure_cosmos::prelude::*;
 use collection::*;
 use serde::{Deserialize, Serialize};
@@ -37,7 +36,7 @@ async fn permission_token_usage() {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -52,7 +51,7 @@ async fn permission_token_usage() {
         excluded_paths: vec![],
     };
 
-    let create_collection_options = create_collection::Options::new("/id")
+    let create_collection_options = CreateCollectionOptions::new("/id")
         .offer(Offer::Throughput(400))
         .indexing_policy(indexing_policy);
     let create_collection_response = database_client

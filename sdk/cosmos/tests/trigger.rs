@@ -1,6 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::prelude::*;
-use azure_cosmos::operations::create_collection;
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
@@ -49,7 +48,7 @@ async fn trigger() -> Result<(), CosmosError> {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -62,7 +61,7 @@ async fn trigger() -> Result<(), CosmosError> {
             .create_collection(
                 Context::new(),
                 COLLECTION_NAME,
-                create_collection::Options::new("/id"),
+                CreateCollectionOptions::new("/id"),
             )
             .await
             .unwrap()

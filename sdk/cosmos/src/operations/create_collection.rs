@@ -6,14 +6,14 @@ use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as Http
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct Options {
+pub struct CreateCollectionOptions {
     partition_key: PartitionKey,
     consistency_level: Option<ConsistencyLevel>,
     indexing_policy: Option<IndexingPolicy>,
     offer: Option<Offer>,
 }
 
-impl Options {
+impl CreateCollectionOptions {
     pub fn new<P: Into<PartitionKey>>(partition_key: P) -> Self {
         Self {
             partition_key: partition_key.into(),
@@ -30,7 +30,7 @@ impl Options {
     }
 }
 
-impl Options {
+impl CreateCollectionOptions {
     pub(crate) fn decorate_request(
         &self,
         request: &mut HttpRequest,
@@ -61,7 +61,7 @@ struct CreateCollectionBody<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Response {
+pub struct CreateCollectionResponse {
     pub collection: Collection,
     pub charge: f64,
     pub activity_id: uuid::Uuid,
@@ -77,7 +77,7 @@ pub struct Response {
     pub current_replica_set_size: u64,
 }
 
-impl Response {
+impl CreateCollectionResponse {
     pub async fn try_from(response: HttpResponse) -> Result<Self, CosmosError> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
