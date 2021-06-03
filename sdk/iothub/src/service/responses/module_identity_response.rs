@@ -35,8 +35,6 @@ impl std::convert::TryFrom<Response<bytes::Bytes>> for ModuleIdentityResponse {
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let body = response.body();
 
-        debug!("body == {:#?}", std::str::from_utf8(body));
-
         let module_identity_response: ModuleIdentityResponse = serde_json::from_slice(body)?;
 
         Ok(module_identity_response)

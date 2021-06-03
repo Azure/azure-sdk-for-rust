@@ -23,9 +23,6 @@ impl std::convert::TryFrom<Response<bytes::Bytes>> for QueryResponse {
         let headers = response.headers();
         let body: &[u8] = response.body();
 
-        debug!("headers == {:#?}", headers);
-        debug!("body == {:#?}", std::str::from_utf8(body));
-
         Ok(QueryResponse {
             result: serde_json::from_slice(body)?,
             continuation_token: continuation_token_from_headers_optional(headers)?,
