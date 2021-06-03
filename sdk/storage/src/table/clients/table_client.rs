@@ -104,7 +104,7 @@ mod integration_tests {
         let table_storage_url =
             Url::parse("http://127.0.0.1:10002").expect("the default local storage emulator URL");
 
-        let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+        let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
         let storage_account =
             StorageAccountClient::new_emulator(http_client, &blob_storage_url, &table_storage_url)
                 .as_storage_client();
