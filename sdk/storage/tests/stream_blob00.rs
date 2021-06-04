@@ -3,7 +3,6 @@ use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
-use std::sync::Arc;
 
 #[tokio::test]
 async fn create_blob_and_stream_back() {
@@ -20,7 +19,7 @@ async fn code() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client = new_http_client();
 
     let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
         .as_storage_client();

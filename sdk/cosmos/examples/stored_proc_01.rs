@@ -1,4 +1,3 @@
-use azure_core::HttpClient;
 /// This sample showcases execution of stored procedure
 /// Create stored procedure called test_proc, like so:
 /// function f(personToGreet) {
@@ -8,7 +7,6 @@ use azure_core::HttpClient;
 /// }
 use azure_cosmos::prelude::*;
 use std::error::Error;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -36,7 +34,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client = azure_core::new_http_client();
     let client = CosmosClient::new(http_client, account.clone(), authorization_token);
 
     let database_client = client.into_database_client(database_name);

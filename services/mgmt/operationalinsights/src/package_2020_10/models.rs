@@ -526,7 +526,7 @@ pub struct ClusterProperties {
     #[serde(rename = "isAvailabilityZonesEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_availability_zones_enabled: Option<bool>,
     #[serde(rename = "billingType", default, skip_serializing_if = "Option::is_none")]
-    pub billing_type: Option<cluster_properties::BillingType>,
+    pub billing_type: Option<BillingType>,
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
     #[serde(rename = "lastModifiedDate", skip_serializing)]
@@ -550,16 +550,13 @@ pub mod cluster_properties {
         ProvisioningAccount,
         Updating,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BillingType {
-        Cluster,
-        Workspaces,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterPatchProperties {
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
+    #[serde(rename = "billingType", default, skip_serializing_if = "Option::is_none")]
+    pub billing_type: Option<BillingType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterPatch {
@@ -600,6 +597,11 @@ pub struct KeyVaultProperties {
     pub key_version: Option<String>,
     #[serde(rename = "keyRsaSize", default, skip_serializing_if = "Option::is_none")]
     pub key_rsa_size: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum BillingType {
+    Cluster,
+    Workspaces,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterSku {

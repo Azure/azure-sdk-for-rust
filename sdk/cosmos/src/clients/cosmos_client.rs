@@ -1,4 +1,5 @@
 use super::DatabaseClient;
+use crate::operations::*;
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::{headers::*, CosmosError};
@@ -6,7 +7,9 @@ use crate::{requests, ReadonlyString};
 
 use azure_core::pipeline::Pipeline;
 use azure_core::policies::{LinearRetryPolicy, Policy, TransportOptions, TransportPolicy};
+use azure_core::Context;
 use azure_core::HttpClient;
+use azure_core::Request;
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};
 use ring::hmac;
@@ -20,29 +23,22 @@ const AZURE_VERSION: &str = "2018-12-31";
 const VERSION: &str = "1.0";
 const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
-use azure_core::*;
-
-#[derive(Clone, Debug)]
-enum TransportStack {
-    Client(Arc<Box<dyn HttpClient>>),
-    Pipeline(Pipeline),
-}
-
 /// A plain Cosmos client.
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
-    transport: TransportStack,
+    http_client: Arc<dyn HttpClient>,
+    pipeline: Pipeline,
     auth_token: AuthorizationToken,
     cloud_location: CloudLocation,
 }
-/// TODO
+/// Options for specifying how a Cosmos client will behave
 pub struct CosmosOptions {
     retry: Arc<dyn Policy>,
     transport: TransportOptions,
 }
 
 impl CosmosOptions {
-    /// TODO
+    /// Create options based on the provided http client
     pub fn with_client(client: Arc<dyn HttpClient>) -> Self {
         Self {
             retry: Arc::new(LinearRetryPolicy::default()), // this defaults to linear backoff
@@ -51,16 +47,36 @@ impl CosmosOptions {
     }
 }
 
+/// Create a Pipeline from CosmosOptions
+fn new_pipeline_from_options(options: CosmosOptions) -> Pipeline {
+    let per_call_policies = Vec::new();
+    let per_retry_policies = Vec::new();
+    let transport_policy = TransportPolicy::new(options.transport);
+    Pipeline::new(
+        per_call_policies,
+        options.retry,
+        per_retry_policies,
+        Arc::new(transport_policy),
+    )
+}
+
+/// Create a Pipeline from an HttpClient
+fn new_pipeline_from_http_client(http_client: Arc<dyn HttpClient>) -> Pipeline {
+    new_pipeline_from_options(CosmosOptions::with_client(http_client))
+}
+
 impl CosmosClient {
     /// Create a new `CosmosClient` which connects to the account's instance in the public Azure cloud.
     pub fn new(
-        http_client: Arc<Box<dyn HttpClient>>,
+        http_client: Arc<dyn HttpClient>,
         account: String,
         auth_token: AuthorizationToken,
     ) -> Self {
         let cloud_location = CloudLocation::Public(account);
+        let pipeline = new_pipeline_from_http_client(http_client.clone());
         Self {
-            transport: TransportStack::Client(http_client),
+            http_client,
+            pipeline,
             auth_token,
             cloud_location,
         }
@@ -68,13 +84,15 @@ impl CosmosClient {
 
     /// Create a new `CosmosClient` which connects to the account's instance in the Chinese Azure cloud.
     pub fn new_china(
-        http_client: Arc<Box<dyn HttpClient>>,
+        http_client: Arc<dyn HttpClient>,
         account: String,
         auth_token: AuthorizationToken,
     ) -> Self {
         let cloud_location = CloudLocation::China(account);
+        let pipeline = new_pipeline_from_http_client(http_client.clone());
         Self {
-            transport: TransportStack::Client(http_client),
+            http_client,
+            pipeline,
             auth_token,
             cloud_location,
         }
@@ -82,21 +100,23 @@ impl CosmosClient {
 
     /// Create a new `CosmosClient` which connects to the account's instance in custom Azure cloud.
     pub fn new_custom(
-        http_client: Arc<Box<dyn HttpClient>>,
+        http_client: Arc<dyn HttpClient>,
         account: String,
         auth_token: AuthorizationToken,
         uri: String,
     ) -> Self {
         let cloud_location = CloudLocation::Custom { account, uri };
+        let pipeline = new_pipeline_from_http_client(http_client.clone());
         Self {
-            transport: TransportStack::Client(http_client),
+            http_client,
+            pipeline,
             auth_token,
             cloud_location,
         }
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in Azure emulator
-    pub fn new_emulator(http_client: Arc<Box<dyn HttpClient>>, address: &str, port: u16) -> Self {
+    pub fn new_emulator(http_client: Arc<dyn HttpClient>, address: &str, port: u16) -> Self {
         //Account name: localhost:<port>
         //Account key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
         let auth_token = AuthorizationToken::primary_from_base64(
@@ -107,32 +127,26 @@ impl CosmosClient {
             account: String::from("Custom"),
             uri,
         };
+        let pipeline = new_pipeline_from_http_client(http_client.clone());
         Self {
-            transport: TransportStack::Client(http_client),
+            http_client,
+            pipeline,
             auth_token,
             cloud_location,
         }
     }
 
-    /// TODO
+    /// Construct a pipeline with explicit options
     pub fn with_pipeline(
+        http_client: Arc<dyn HttpClient>,
         account: String, // TODO: this will eventually be a URL
         auth_token: AuthorizationToken,
         options: CosmosOptions,
     ) -> Self {
-        let per_call_policies = Vec::new();
-        let per_retry_policies = Vec::new();
-
-        let transport_policy = TransportPolicy::new(options.transport);
-
-        let pipeline = Pipeline::new(
-            per_call_policies,
-            options.retry,
-            per_retry_policies,
-            Arc::new(transport_policy),
-        );
+        let pipeline = new_pipeline_from_options(options);
         Self {
-            transport: TransportStack::Pipeline(pipeline),
+            http_client,
+            pipeline,
             auth_token,
             cloud_location: CloudLocation::Public(account),
         }
@@ -148,26 +162,22 @@ impl CosmosClient {
         &self,
         ctx: Context,
         database_name: S,
-        options: crate::operations::create_database::Options,
-    ) -> Result<crate::operations::create_database::Response, CosmosError> {
+        options: CreateDatabaseOptions,
+    ) -> Result<CreateDatabaseResponse, CosmosError> {
         let mut request = self.prepare_request2("dbs", http::Method::POST, ResourceType::Databases);
         let mut ctx = ctx.clone();
         options.decorate_request(&mut request, database_name.as_ref())?;
         let response = self
             .pipeline()
-            .unwrap()
             .send(&mut ctx, &mut request)
             .await
             .map_err(CosmosError::PolicyError)?;
 
-        Ok(crate::operations::create_database::Response::try_from(response).await?)
+        Ok(CreateDatabaseResponse::try_from(response).await?)
     }
 
-    fn pipeline(&self) -> Option<&Pipeline> {
-        match &self.transport {
-            TransportStack::Pipeline(p) => Some(p),
-            TransportStack::Client(_) => None,
-        }
+    pub(crate) fn pipeline(&self) -> &Pipeline {
+        &self.pipeline
     }
 
     /// List all databases
@@ -213,10 +223,7 @@ impl CosmosClient {
     }
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        match &self.transport {
-            TransportStack::Client(c) => c.as_ref().as_ref(),
-            TransportStack::Pipeline(_) => panic!("No client set"),
-        }
+        self.http_client.as_ref()
     }
 
     fn prepare_request_with_signature(

@@ -1,7 +1,5 @@
-use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use std::error::Error;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -25,7 +23,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
     // Here we are using reqwest but other clients are supported (check the documentation).
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client = azure_core::new_http_client();
     let client = CosmosClient::new(http_client, account.clone(), authorization_token);
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified

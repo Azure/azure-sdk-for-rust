@@ -39,7 +39,7 @@ pub enum ServiceType {
 #[derive(Debug, Clone)]
 pub struct StorageAccountClient {
     storage_credentials: StorageCredentials,
-    http_client: Arc<Box<dyn HttpClient>>,
+    http_client: Arc<dyn HttpClient>,
     blob_storage_url: Url,
     table_storage_url: Url,
     queue_storage_url: Url,
@@ -69,11 +69,7 @@ fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>, url::Pa
 }
 
 impl StorageAccountClient {
-    pub fn new_access_key<A, K>(
-        http_client: Arc<Box<dyn HttpClient>>,
-        account: A,
-        key: K,
-    ) -> Arc<Self>
+    pub fn new_access_key<A, K>(http_client: Arc<dyn HttpClient>, account: A, key: K) -> Arc<Self>
     where
         A: Into<String>,
         K: Into<String>,
@@ -100,7 +96,7 @@ impl StorageAccountClient {
     }
 
     pub fn new_emulator(
-        http_client: Arc<Box<dyn HttpClient>>,
+        http_client: Arc<dyn HttpClient>,
         blob_storage_url: &Url,
         table_storage_url: &Url,
         queue_storage_url: &Url,
@@ -118,7 +114,7 @@ impl StorageAccountClient {
     }
 
     pub fn new_emulator_with_account<A, K>(
-        http_client: Arc<Box<dyn HttpClient>>,
+        http_client: Arc<dyn HttpClient>,
         blob_storage_url: &Url,
         table_storage_url: &Url,
         queue_storage_url: &Url,
@@ -152,7 +148,7 @@ impl StorageAccountClient {
     }
 
     pub fn new_sas_token<A, S>(
-        http_client: Arc<Box<dyn HttpClient>>,
+        http_client: Arc<dyn HttpClient>,
         account: A,
         sas_token: S,
     ) -> Result<Arc<Self>, url::ParseError>
@@ -179,7 +175,7 @@ impl StorageAccountClient {
     }
 
     pub fn new_bearer_token<A, BT>(
-        http_client: Arc<Box<dyn HttpClient>>,
+        http_client: Arc<dyn HttpClient>,
         account: A,
         bearer_token: BT,
     ) -> Arc<Self>
@@ -210,7 +206,7 @@ impl StorageAccountClient {
     }
 
     pub fn new_connection_string(
-        http_client: Arc<Box<dyn HttpClient>>,
+        http_client: Arc<dyn HttpClient>,
         connection_string: &str,
     ) -> Result<Arc<Self>, AzureStorageError> {
         match ConnectionString::new(connection_string)? {
@@ -282,7 +278,7 @@ impl StorageAccountClient {
     }
 
     pub fn http_client(&self) -> &dyn HttpClient {
-        self.http_client.as_ref().as_ref()
+        self.http_client.as_ref()
     }
 
     pub fn blob_storage_url(&self) -> &Url {

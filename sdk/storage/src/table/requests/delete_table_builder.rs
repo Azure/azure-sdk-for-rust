@@ -6,6 +6,9 @@ use http::method::Method;
 use http::status::StatusCode;
 use std::convert::TryInto;
 
+#[cfg(test)]
+use std::println as debug;
+
 #[derive(Debug, Clone)]
 pub struct DeleteTableBuilder<'a> {
     table_client: &'a TableClient,

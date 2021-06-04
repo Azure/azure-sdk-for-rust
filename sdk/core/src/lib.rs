@@ -10,6 +10,7 @@ extern crate serde_derive;
 mod macros;
 
 mod bytes_stream;
+mod constants;
 mod context;
 mod errors;
 pub mod headers;
@@ -34,10 +35,11 @@ use std::fmt::Debug;
 use uuid::Uuid;
 
 pub use bytes_stream::*;
+pub use constants::*;
 pub use context::Context;
 pub use errors::*;
 pub use headers::AddAsHeader;
-pub use http_client::{to_json, HttpClient};
+pub use http_client::{new_http_client, to_json, HttpClient};
 pub use models::*;
 pub use request::*;
 pub use response::*;

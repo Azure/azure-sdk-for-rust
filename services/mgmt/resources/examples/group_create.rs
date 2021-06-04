@@ -11,11 +11,9 @@ use azure_identity::token_credentials::AzureCliCredential;
 use azure_mgmt_resources::{models::ResourceGroup, operations::resource_groups};
 use std::env;
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-
 #[tokio::main]
-async fn main() -> Result<()> {
-    let http_client: std::sync::Arc<Box<dyn azure_core::HttpClient>> = std::sync::Arc::new(Box::new(reqwest::Client::new()));
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let http_client = azure_core::new_http_client();
     let token_credential = AzureCliCredential {};
     let subscription_id = &AzureCliCredential::get_subscription()?;
     let resource_group_name = &env::var("RESOURCE_GROUP_NAME").map_err(|_| "RESOURCE_GROUP_NAME required")?;

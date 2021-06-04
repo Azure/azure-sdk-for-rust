@@ -4,7 +4,6 @@ use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
 use std::num::NonZeroU32;
-use std::sync::Arc;
 use std::time::Duration;
 
 #[tokio::main]
@@ -17,7 +16,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client = new_http_client();
     let storage_account =
         StorageAccountClient::new_connection_string(http_client.clone(), &connection_string)?
             .as_storage_client();

@@ -45,7 +45,7 @@ use azure_core::setters;
 #[cfg(feature = "package-2021-04-01-preview")]
 pub use package_2021_04_01_preview::{models, operations, API_VERSION};
 pub fn config(
-    http_client: std::sync::Arc<std::boxed::Box<dyn azure_core::HttpClient>>,
+    http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,
 ) -> OperationConfigBuilder {
     OperationConfigBuilder {
@@ -58,7 +58,7 @@ pub fn config(
 }
 pub struct OperationConfigBuilder {
     api_version: Option<String>,
-    http_client: std::sync::Arc<std::boxed::Box<dyn azure_core::HttpClient>>,
+    http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     base_path: Option<String>,
     token_credential: Box<dyn azure_core::TokenCredential>,
     token_credential_resource: Option<String>,
@@ -77,7 +77,7 @@ impl OperationConfigBuilder {
 }
 pub struct OperationConfig {
     api_version: String,
-    http_client: std::sync::Arc<std::boxed::Box<dyn azure_core::HttpClient>>,
+    http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     base_path: String,
     token_credential: Option<Box<dyn azure_core::TokenCredential>>,
     token_credential_resource: String,
@@ -87,7 +87,7 @@ impl OperationConfig {
         self.api_version.as_str()
     }
     pub fn http_client(&self) -> &dyn azure_core::HttpClient {
-        self.http_client.as_ref().as_ref()
+        self.http_client.as_ref()
     }
     pub fn base_path(&self) -> &str {
         self.base_path.as_str()

@@ -1,7 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
-use std::sync::Arc;
 
 #[tokio::test]
 async fn get_account_information() {
@@ -10,7 +9,7 @@ async fn get_account_information() {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client = new_http_client();
 
     let storage_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)

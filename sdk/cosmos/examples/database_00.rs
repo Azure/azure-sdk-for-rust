@@ -1,8 +1,6 @@
-use azure_core::HttpClient;
 use azure_cosmos::prelude::*;
 use serde_json::Value;
 use std::error::Error;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -14,7 +12,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let authorization_token = permission::AuthorizationToken::primary_from_base64(&master_key)?;
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client = azure_core::new_http_client();
     let client = CosmosClient::new(http_client, account, authorization_token);
 
     let dbs = client.list_databases().execute().await?;

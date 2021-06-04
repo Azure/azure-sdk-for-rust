@@ -2,7 +2,6 @@ use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use std::error::Error;
-use std::sync::Arc;
 use url::Url;
 
 #[tokio::main]
@@ -15,7 +14,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let table_storage_url = Url::parse("http://127.0.0.1:10002")?;
     let filesystem_url = Url::parse("http://127.0.0.1:10004")?;
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client = new_http_client();
     let storage_account = StorageAccountClient::new_emulator(
         http_client,
         &blob_storage_url,

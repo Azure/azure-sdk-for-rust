@@ -1,6 +1,6 @@
 use crate::headers::from_headers::*;
 use crate::CosmosError;
-use azure_core::headers::session_token_from_headers;
+use azure_core::headers::{item_count_from_headers, session_token_from_headers};
 use chrono::{DateTime, Utc};
 use http::response::Response;
 

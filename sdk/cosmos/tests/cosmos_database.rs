@@ -19,7 +19,7 @@ async fn create_and_delete_database() {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();

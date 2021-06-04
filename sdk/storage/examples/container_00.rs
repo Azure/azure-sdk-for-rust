@@ -3,7 +3,6 @@ use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use std::error::Error;
 use std::num::NonZeroU32;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -17,7 +16,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let http_client: Arc<Box<dyn HttpClient>> = Arc::new(Box::new(reqwest::Client::new()));
+    let http_client = new_http_client();
     let storage_account =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
             .as_storage_client();
