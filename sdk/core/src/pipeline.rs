@@ -41,12 +41,21 @@ impl Pipeline {
         per_retry_policies: Vec<Arc<dyn Policy>>,
         transport_policy: Arc<dyn Policy>,
     ) -> Self {
-        let mut pipeline: Vec<Arc<dyn Policy>> =
-            Vec::with_capacity(options.per_call_policies.len() + per_call_policies.len() + options.per_retry_policies.len() + per_retry_policies.len() + 3);
+        let mut pipeline: Vec<Arc<dyn Policy>> = Vec::with_capacity(
+            options.per_call_policies.len()
+                + per_call_policies.len()
+                + options.per_retry_policies.len()
+                + per_retry_policies.len()
+                + 3,
+        );
 
         pipeline.extend_from_slice(&per_call_policies);
         pipeline.extend_from_slice(&options.per_call_policies);
-        pipeline.push(Arc::new(TelemetryPolicy::new(crate_name, crate_version, &options.telemetry)));
+        pipeline.push(Arc::new(TelemetryPolicy::new(
+            crate_name,
+            crate_version,
+            &options.telemetry,
+        )));
         pipeline.push(retry);
         pipeline.extend_from_slice(&per_retry_policies);
         pipeline.extend_from_slice(&options.per_retry_policies);
