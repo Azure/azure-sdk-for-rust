@@ -33,6 +33,7 @@ impl<'a> DeleteTableBuilder<'a> {
         let mut url = self.table_client.url().to_owned();
         url.path_segments_mut()
             .map_err(|_| "Invalid table URL")?
+            .pop()
             .push(&format!("Tables('{}')", self.table_client.table_name()));
         debug!("url = {}", url);
 

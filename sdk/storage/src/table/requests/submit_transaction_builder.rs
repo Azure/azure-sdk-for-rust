@@ -33,6 +33,7 @@ impl<'a> SubmitTransactionBuilder<'a> {
         let mut url = self.partition_key_client.table_client().url().to_owned();
         url.path_segments_mut()
             .map_err(|_| "Invalid table URL")?
+            .pop()
             .push("$batch");
 
         self.timeout.append_to_url_query(&mut url);
