@@ -9,6 +9,28 @@ env:
   CARGO_INCREMENTAL: 0
 
 jobs:
+  fmt:
+    name: Code Style
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          components: rustfmt
+
+      - uses: Swatinem/rust-cache@v1
+
+      - name: cargo fmt sdk
+        run: cargo fmt --all -- --check
+
+      - name: cargo fmt services
+        run: |
+          ./eng/scripts/check_json_format.sh
+          cargo fmt --manifest-path services/Cargo.toml --all -- --check
+
   test-sdk:
     name: SDK Tests
     runs-on: ubuntu-20.04
