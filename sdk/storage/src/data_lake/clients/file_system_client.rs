@@ -29,7 +29,10 @@ impl FileSystemClient {
         data_lake_client: Arc<DataLakeClient>,
         name: String,
     ) -> Result<Arc<Self>, url::ParseError> {
-        let url = data_lake_client.url().join(&name)?;
+        let mut url = data_lake_client.url().to_owned();
+        url.path_segments_mut()
+            .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?
+            .push(&name);
 
         Ok(Arc::new(Self {
             data_lake_client,

@@ -47,6 +47,20 @@ impl ContainerClient {
         self.storage_client.storage_account_client()
     }
 
+    pub(crate) fn url_with_segments<'a, I>(
+        &'a self,
+        segments: I,
+    ) -> Result<url::Url, url::ParseError>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        self.storage_client.blob_url_with_segments(
+            Some(self.container_name.as_str())
+                .into_iter()
+                .chain(segments),
+        )
+    }
+
     pub fn create(&self) -> CreateBuilder {
         CreateBuilder::new(self)
     }

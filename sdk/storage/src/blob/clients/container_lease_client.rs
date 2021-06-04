@@ -40,12 +40,24 @@ impl ContainerLeaseClient {
         self.container_client.http_client()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
         self.container_client.storage_account_client()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn container_client(&self) -> &ContainerClient {
         self.container_client.as_ref()
+    }
+
+    pub(crate) fn url_with_segments<'a, I>(
+        &'a self,
+        segments: I,
+    ) -> Result<url::Url, url::ParseError>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        self.container_client.url_with_segments(segments)
     }
 
     pub fn release(&self) -> ReleaseLeaseBuilder {

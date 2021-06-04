@@ -35,7 +35,7 @@ impl<'a> GetMessagesBuilder<'a> {
     pub async fn execute(
         &self,
     ) -> Result<GetMessagesResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self.queue_client.queue_url()?.join("messages")?;
+        let mut url = self.queue_client.url_with_segments(Some("messages"))?;
 
         self.visibility_timeout.append_to_url_query(&mut url);
         self.number_of_messages.append_to_url_query(&mut url);

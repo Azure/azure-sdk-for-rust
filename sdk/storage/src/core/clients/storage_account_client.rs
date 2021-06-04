@@ -1,14 +1,17 @@
+use crate::headers::CONTENT_MD5;
 use crate::{
     core::{ConnectionString, No},
+    shared_access_signature::SharedAccessSignatureBuilder,
     AzureStorageError,
 };
-use crate::{headers::CONTENT_MD5, shared_access_signature::SharedAccessSignatureBuilder};
 use azure_core::headers::*;
 use azure_core::prelude::*;
 use bytes::Bytes;
-use http::header::*;
-use http::method::Method;
-use http::request::{Builder, Request};
+use http::{
+    header::*,
+    method::Method,
+    request::{Builder, Request},
+};
 use ring::hmac;
 use std::sync::Arc;
 use url::Url;
@@ -96,15 +99,42 @@ impl StorageAccountClient {
         http_client: Arc<dyn HttpClient>,
         blob_storage_url: &Url,
         table_storage_url: &Url,
+        queue_storage_url: &Url,
+        filesystem_url: &Url,
     ) -> Arc<Self> {
+        Self::new_emulator_with_account(
+            http_client,
+            blob_storage_url,
+            table_storage_url,
+            queue_storage_url,
+            filesystem_url,
+            "devstoreaccount1",
+            "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==",
+        )
+    }
+
+    pub fn new_emulator_with_account<A, K>(
+        http_client: Arc<dyn HttpClient>,
+        blob_storage_url: &Url,
+        table_storage_url: &Url,
+        queue_storage_url: &Url,
+        filesystem_url: &Url,
+        account: A,
+        key: K,
+    ) -> Arc<Self>
+    where
+        A: Into<String>,
+        K: Into<String>,
+    {
+        let account = account.into();
         let blob_storage_url =
-            Url::parse(&format!("{}devstoreaccount1/", blob_storage_url.as_str())).unwrap();
+            Url::parse(&format!("{}{}", blob_storage_url.as_str(), account)).unwrap();
         let table_storage_url =
-            Url::parse(&format!("{}devstoreaccount1/", table_storage_url.as_str())).unwrap();
+            Url::parse(&format!("{}{}", table_storage_url.as_str(), account)).unwrap();
         let queue_storage_url =
-            Url::parse(&format!("{}devstoreaccount1/", table_storage_url.as_str())).unwrap();
+            Url::parse(&format!("{}{}", queue_storage_url.as_str(), account)).unwrap();
         let filesystem_url =
-            Url::parse(&format!("{}devstoreaccount1/", blob_storage_url.as_str())).unwrap();
+            Url::parse(&format!("{}{}", filesystem_url.as_str(), account)).unwrap();
 
         Arc::new(Self {
             blob_storage_url,
@@ -112,10 +142,7 @@ impl StorageAccountClient {
             queue_storage_url: queue_storage_url.clone(),
             queue_storage_secondary_url: queue_storage_url,
             filesystem_url,
-            storage_credentials: StorageCredentials::Key(
-        "devstoreaccount1".to_owned(),
-        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
-            .to_owned()),
+            storage_credentials: StorageCredentials::Key(account, key.into()),
             http_client,
         })
     }

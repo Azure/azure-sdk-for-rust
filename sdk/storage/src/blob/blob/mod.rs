@@ -1,11 +1,7 @@
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
-//mod blob_stream_builder;
-//pub use self::blob_stream_builder::BlobStreamBuilder;
 mod blob_block_type;
 pub use self::blob_block_type::BlobBlockType;
-//mod list_blob_stream_builder;
-//pub use self::list_blob_stream_builder::ListBlobStreamBuilder;
 mod block_list_type;
 pub use self::block_list_type::BlockListType;
 mod blob_block_with_size;
@@ -18,9 +14,9 @@ pub mod requests;
 pub mod responses;
 use crate::{
     headers::{CONTENT_MD5, COPY_ID},
-    AccessTier, AzureStorageError,
+    AzureStorageError,
 };
-use crate::{CopyId, CopyProgress};
+use crate::{AccessTier, CopyId, CopyProgress};
 use azure_core::headers::{
     BLOB_SEQUENCE_NUMBER, BLOB_TYPE, COPY_COMPLETION_TIME, COPY_PROGRESS, COPY_SOURCE, COPY_STATUS,
     COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE, LEASE_STATUS, META_PREFIX,
@@ -34,8 +30,7 @@ use azure_core::{
 };
 use chrono::{DateTime, Utc};
 use http::header;
-use std::str::FromStr;
-use std::{collections::HashMap, convert::TryInto};
+use std::{collections::HashMap, convert::TryInto, str::FromStr};
 
 #[cfg(feature = "azurite_workaround")]
 fn get_creation_time(h: &header::HeaderMap) -> Result<Option<DateTime<Utc>>, AzureStorageError> {

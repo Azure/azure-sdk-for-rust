@@ -31,11 +31,15 @@ impl QueueClient {
         self.storage_client.as_ref()
     }
 
-    pub(crate) fn queue_url(&self) -> Result<url::Url, url::ParseError> {
-        self.storage_client()
-            .storage_account_client()
-            .queue_storage_url()
-            .join(&format!("{}/", &self.queue_name))
+    pub(crate) fn url_with_segments<'a, I>(
+        &'a self,
+        segments: I,
+    ) -> Result<url::Url, url::ParseError>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        self.storage_client
+            .queue_url_with_segments(Some(self.queue_name.as_str()).into_iter().chain(segments))
     }
 
     pub fn queue_name(&self) -> &str {

@@ -29,15 +29,18 @@ impl EntityClient {
         row_key: RK,
     ) -> Result<Arc<Self>, url::ParseError> {
         let row_key = row_key.into();
-        let url = partition_key_client
+        let mut url = partition_key_client
             .storage_account_client()
             .table_storage_url()
-            .join(&format!(
+            .to_owned();
+        url.path_segments_mut()
+            .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?
+            .push(&format!(
                 "{}(PartitionKey='{}',RowKey='{}')",
                 partition_key_client.table_client().table_name(),
                 partition_key_client.partition_key(),
                 &row_key
-            ))?;
+            ));
 
         Ok(Arc::new(Self {
             partition_key_client,
@@ -132,13 +135,22 @@ mod integration_tests {
     fn get_emulator_client() -> Arc<TableServiceClient> {
         let blob_storage_url =
             Url::parse("http://127.0.0.1:10000").expect("the default local storage emulator URL");
+        let queue_storage_url =
+            Url::parse("http://127.0.0.1:10001").expect("the default local storage emulator URL");
         let table_storage_url =
             Url::parse("http://127.0.0.1:10002").expect("the default local storage emulator URL");
+        let filesystem_url =
+            Url::parse("http://127.0.0.1:10004").expect("the default local storage emulator URL");
 
         let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
-        let storage_account =
-            StorageAccountClient::new_emulator(http_client, &blob_storage_url, &table_storage_url)
-                .as_storage_client();
+        let storage_account = StorageAccountClient::new_emulator(
+            http_client,
+            &blob_storage_url,
+            &table_storage_url,
+            &queue_storage_url,
+            &filesystem_url,
+        )
+        .as_storage_client();
 
         storage_account
             .as_table_service_client()

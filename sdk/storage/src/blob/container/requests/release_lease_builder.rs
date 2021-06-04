@@ -29,18 +29,7 @@ impl<'a> ReleaseLeaseBuilder<'a> {
     pub async fn execute(
         &self,
     ) -> Result<ReleaseLeaseResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self
-            .container_lease_client
-            .storage_account_client()
-            .blob_storage_url()
-            .to_owned();
-        url.path_segments_mut()
-            .map_err(|_| "Invalid blob URL")?
-            .push(
-                self.container_lease_client
-                    .container_client()
-                    .container_name(),
-            );
+        let mut url = self.container_lease_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");
         url.query_pairs_mut().append_pair("comp", "lease");

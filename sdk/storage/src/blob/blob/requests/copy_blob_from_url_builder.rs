@@ -56,15 +56,7 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
     pub async fn execute(
         &self,
     ) -> Result<CopyBlobFromUrlResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let mut url = self
-            .blob_client
-            .storage_account_client()
-            .blob_storage_url()
-            .to_owned();
-        url.path_segments_mut()
-            .map_err(|_| "Invalid blob URL")?
-            .push(self.blob_client.container_client().container_name())
-            .push(self.blob_client.blob_name());
+        let mut url = self.blob_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);
 

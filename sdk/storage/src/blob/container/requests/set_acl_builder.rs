@@ -36,12 +36,7 @@ impl<'a> SetACLBuilder<'a> {
     }
 
     pub async fn execute(&self) -> Result<PublicAccess, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self
-            .container_client
-            .storage_client()
-            .storage_account_client()
-            .blob_storage_url()
-            .join(self.container_client.container_name())?;
+        let mut url = self.container_client.url_with_segments(None)?;
 
         url.query_pairs_mut().append_pair("restype", "container");
         url.query_pairs_mut().append_pair("comp", "acl");

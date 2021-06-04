@@ -28,7 +28,7 @@ impl<'a> DeleteQueueBuilder<'a> {
     pub async fn execute(
         &self,
     ) -> Result<DeleteQueueResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self.queue_client.queue_url()?;
+        let mut url = self.queue_client.url_with_segments(None)?;
 
         self.timeout.append_to_url_query(&mut url);
 

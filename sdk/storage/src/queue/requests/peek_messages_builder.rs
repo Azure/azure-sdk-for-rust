@@ -32,7 +32,7 @@ impl<'a> PeekMessagesBuilder<'a> {
     pub async fn execute(
         &self,
     ) -> Result<PeekMessagesResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self.queue_client.queue_url()?.join("messages")?;
+        let mut url = self.queue_client.url_with_segments(Some("messages"))?;
 
         url.query_pairs_mut().append_pair("peekonly", "true");
         self.number_of_messages.append_to_url_query(&mut url);
