@@ -13,14 +13,6 @@ pub(crate) fn request_charge_from_headers(headers: &HeaderMap) -> Result<f64, Co
         .parse()?)
 }
 
-pub(crate) fn item_count_from_headers(headers: &HeaderMap) -> Result<u32, CosmosError> {
-    Ok(headers
-        .get(HEADER_ITEM_COUNT)
-        .ok_or_else(|| CosmosError::HeaderNotFound(HEADER_ITEM_COUNT.to_owned()))?
-        .to_str()?
-        .parse()?)
-}
-
 pub(crate) fn role_from_headers(headers: &HeaderMap) -> Result<u32, CosmosError> {
     Ok(headers
         .get(HEADER_ROLE)

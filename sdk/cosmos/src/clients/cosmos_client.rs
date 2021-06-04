@@ -1,4 +1,5 @@
 use super::DatabaseClient;
+use crate::operations::*;
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::{headers::*, CosmosError};
@@ -30,14 +31,14 @@ pub struct CosmosClient {
     auth_token: AuthorizationToken,
     cloud_location: CloudLocation,
 }
-/// TODO
+/// Options for specifying how a Cosmos client will behave
 pub struct CosmosOptions {
     retry: Arc<dyn Policy>,
     transport: TransportOptions,
 }
 
 impl CosmosOptions {
-    /// TODO
+    /// Create options based on the provided http client
     pub fn with_client(client: Arc<dyn HttpClient>) -> Self {
         Self {
             retry: Arc::new(LinearRetryPolicy::default()), // this defaults to linear backoff
@@ -135,7 +136,7 @@ impl CosmosClient {
         }
     }
 
-    /// TODO
+    /// Construct a pipeline with explicit options
     pub fn with_pipeline(
         http_client: Arc<dyn HttpClient>,
         account: String, // TODO: this will eventually be a URL
@@ -161,8 +162,8 @@ impl CosmosClient {
         &self,
         ctx: Context,
         database_name: S,
-        options: crate::operations::create_database::Options,
-    ) -> Result<crate::operations::create_database::Response, CosmosError> {
+        options: CreateDatabaseOptions,
+    ) -> Result<CreateDatabaseResponse, CosmosError> {
         let mut request = self.prepare_request2("dbs", http::Method::POST, ResourceType::Databases);
         let mut ctx = ctx.clone();
         options.decorate_request(&mut request, database_name.as_ref())?;
@@ -172,10 +173,10 @@ impl CosmosClient {
             .await
             .map_err(CosmosError::PolicyError)?;
 
-        Ok(crate::operations::create_database::Response::try_from(response).await?)
+        Ok(CreateDatabaseResponse::try_from(response).await?)
     }
 
-    fn pipeline(&self) -> &Pipeline {
+    pub(crate) fn pipeline(&self) -> &Pipeline {
         &self.pipeline
     }
 

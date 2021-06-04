@@ -7,11 +7,11 @@ use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as Http
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct Options {
+pub struct CreateDatabaseOptions {
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl Options {
+impl CreateDatabaseOptions {
     pub fn new() -> Self {
         Self {
             consistency_level: None,
@@ -23,7 +23,7 @@ impl Options {
     }
 }
 
-impl Options {
+impl CreateDatabaseOptions {
     pub(crate) fn decorate_request(
         &self,
         request: &mut HttpRequest,
@@ -42,7 +42,7 @@ impl Options {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Response {
+pub struct CreateDatabaseResponse {
     pub database: Database,
     pub charge: f64,
     pub etag: String,
@@ -59,7 +59,7 @@ pub struct Response {
     pub gateway_version: String,
 }
 
-impl Response {
+impl CreateDatabaseResponse {
     pub async fn try_from(response: HttpResponse) -> Result<Self, CosmosError> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;

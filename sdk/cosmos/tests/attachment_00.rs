@@ -1,4 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
+use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -39,7 +40,7 @@ async fn attachment() -> Result<(), CosmosError> {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -66,11 +67,11 @@ async fn attachment() -> Result<(), CosmosError> {
             excluded_paths: vec![],
         };
 
-        database_client
-            .create_collection("/id")
+        let options = CreateCollectionOptions::new("/id")
             .offer(Offer::Throughput(400))
-            .indexing_policy(ip)
-            .execute(COLLECTION_NAME)
+            .indexing_policy(ip);
+        database_client
+            .create_collection(Context::new(), COLLECTION_NAME, options)
             .await
             .unwrap()
     };

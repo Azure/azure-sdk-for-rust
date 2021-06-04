@@ -34,7 +34,7 @@ async fn create_and_delete_document() {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -49,11 +49,11 @@ async fn create_and_delete_document() {
         excluded_paths: vec![],
     };
 
-    database_client
-        .create_collection("/id")
+    let options = CreateCollectionOptions::new("/id")
         .offer(Offer::Throughput(400))
-        .indexing_policy(indexing_policy)
-        .execute(COLLECTION_NAME)
+        .indexing_policy(indexing_policy);
+    database_client
+        .create_collection(Context::new(), COLLECTION_NAME, options)
         .await
         .unwrap();
 
@@ -124,7 +124,7 @@ async fn query_documents() {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -138,11 +138,11 @@ async fn query_documents() {
         excluded_paths: vec![],
     };
 
-    database_client
-        .create_collection("/id")
+    let options = CreateCollectionOptions::new("/id")
         .indexing_policy(indexing_policy)
-        .offer(Offer::S2)
-        .execute(COLLECTION_NAME)
+        .offer(Offer::S2);
+    database_client
+        .create_collection(Context::new(), COLLECTION_NAME, options)
         .await
         .unwrap();
 
@@ -199,7 +199,7 @@ async fn replace_document() {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -213,11 +213,11 @@ async fn replace_document() {
         excluded_paths: vec![],
     };
 
-    database_client
-        .create_collection("/id")
-        .offer(Offer::S2)
+    let options = CreateCollectionOptions::new("/id")
         .indexing_policy(indexing_policy)
-        .execute(COLLECTION_NAME)
+        .offer(Offer::S2);
+    database_client
+        .create_collection(Context::new(), COLLECTION_NAME, options)
         .await
         .unwrap();
 
