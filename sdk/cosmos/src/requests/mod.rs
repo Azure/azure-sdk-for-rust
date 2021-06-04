@@ -6,7 +6,6 @@
 
 #![allow(missing_docs)]
 
-mod create_collection_builder;
 mod create_document_builder;
 mod create_or_replace_trigger_builder;
 mod create_or_replace_user_defined_function_builder;
@@ -50,7 +49,6 @@ mod replace_slug_attachment_builder;
 mod replace_stored_procedure_builder;
 mod replace_user_builder;
 
-pub use create_collection_builder::CreateCollectionBuilder;
 pub use create_document_builder::CreateDocumentBuilder;
 pub use create_or_replace_trigger_builder::CreateOrReplaceTriggerBuilder;
 pub use create_or_replace_user_defined_function_builder::CreateOrReplaceUserDefinedFunctionBuilder;

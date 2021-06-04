@@ -1,6 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
 mod setup;
 
+use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use azure_cosmos::resources::collection::*;
 
@@ -15,7 +16,7 @@ async fn create_and_delete_collection() {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -24,8 +25,11 @@ async fn create_and_delete_collection() {
 
     // create a new collection
     let collection = database_client
-        .create_collection("/id")
-        .execute(COLLECTION_NAME)
+        .create_collection(
+            Context::new(),
+            COLLECTION_NAME,
+            CreateCollectionOptions::new("/id"),
+        )
         .await
         .unwrap();
     let collections = database_client.list_collections().execute().await.unwrap();
@@ -68,7 +72,7 @@ async fn replace_collection() {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -82,11 +86,11 @@ async fn replace_collection() {
         included_paths: vec![],
         excluded_paths: vec![],
     };
-    let collection = database_client
-        .create_collection("/id")
+    let options = CreateCollectionOptions::new("/id")
         .offer(Offer::S2)
-        .indexing_policy(indexing_policy)
-        .execute(COLLECTION_NAME)
+        .indexing_policy(indexing_policy);
+    let collection = database_client
+        .create_collection(Context::new(), COLLECTION_NAME, options)
         .await
         .unwrap();
 

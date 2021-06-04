@@ -1,4 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
+use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 
 mod setup;
@@ -19,7 +20,7 @@ async fn permissions() {
         .create_database(
             azure_core::Context::new(),
             DATABASE_NAME,
-            create_database::Options::new(),
+            CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
@@ -34,8 +35,11 @@ async fn permissions() {
 
     // create a temp collection
     let create_collection_response = database_client
-        .create_collection("/id")
-        .execute(COLLECTION_NAME)
+        .create_collection(
+            Context::new(),
+            COLLECTION_NAME,
+            CreateCollectionOptions::new("/id"),
+        )
         .await
         .unwrap();
 
