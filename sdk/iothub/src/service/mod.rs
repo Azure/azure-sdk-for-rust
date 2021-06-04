@@ -16,7 +16,7 @@ pub mod responses;
 
 use crate::service::requests::{
     get_identity, get_twin, CreateOrUpdateDeviceIdentityBuilder,
-    CreateOrUpdateModuleIdentityBuilder, DeleteIdentityBuilder, InvokeMethodBuilder,
+    CreateOrUpdateModuleIdentityBuilder, DeleteIdentityBuilder, InvokeMethodBuilder, QueryBuilder,
     UpdateOrReplaceTwinBuilder,
 };
 use crate::service::resources::identity::IdentityOperation;
@@ -674,6 +674,22 @@ impl ServiceClient {
             device_id.into(),
             Some(module_id.into()),
         )
+    }
+
+    /// Invoke a query
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    /// use azure_core::HttpClient;
+    /// use iothub::service::ServiceClient;
+    ///
+    /// # let http_client = azure_core::new_http_client();
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let query_builder = iothub.query();
+    /// ```
+    pub fn query(&self) -> QueryBuilder<'_, '_> {
+        QueryBuilder::new(&self)
     }
 
     /// Prepares a request that can be used by any request builders.

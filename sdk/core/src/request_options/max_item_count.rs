@@ -1,5 +1,5 @@
 use crate::headers;
-use azure_core::AddAsHeader;
+use crate::AddAsHeader;
 use http::request::Builder;
 
 /// The max number of items in the collection
@@ -16,9 +16,9 @@ impl MaxItemCount {
 impl AddAsHeader for MaxItemCount {
     fn add_as_header(&self, builder: Builder) -> Builder {
         if self.0 <= 0 {
-            builder.header(headers::HEADER_MAX_ITEM_COUNT, -1)
+            builder.header(headers::MAX_ITEM_COUNT, -1)
         } else {
-            builder.header(headers::HEADER_MAX_ITEM_COUNT, self.0)
+            builder.header(headers::MAX_ITEM_COUNT, self.0)
         }
     }
 }

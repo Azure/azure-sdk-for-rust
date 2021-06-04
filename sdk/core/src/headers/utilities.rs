@@ -259,6 +259,14 @@ pub fn content_type_from_headers(headers: &HeaderMap) -> Result<&str, Error> {
         .to_str()?)
 }
 
+pub fn item_count_from_headers(headers: &HeaderMap) -> Result<u32, Error> {
+    Ok(headers
+        .get(crate::headers::MAX_ITEM_COUNT)
+        .ok_or_else(|| Error::HeaderNotFound(crate::MAX_ITEM_COUNT.to_owned()))?
+        .to_str()?
+        .parse()?)
+}
+
 #[cfg(feature = "enable_hyper")]
 pub async fn perform_http_request(
     client: &Client<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>,
