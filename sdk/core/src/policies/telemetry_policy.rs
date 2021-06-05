@@ -39,7 +39,7 @@ impl<'a> TelemetryPolicy {
     fn new_with_rustc_version(
         crate_name: Option<&'a str>,
         crate_version: Option<&'a str>,
-        rustc_version: Option<&'static str>,
+        rustc_version: Option<&'a str>,
         options: &TelemetryOptions,
     ) -> Self {
         const UNKNOWN: &'static str = "unknown";
@@ -77,7 +77,7 @@ impl Policy for TelemetryPolicy {
     ) -> PolicyResult<Response> {
         request
             .headers_mut()
-            .insert(USER_AGENT, HeaderValue::from_str(&self.header).unwrap());
+            .insert(USER_AGENT, HeaderValue::from_str(&self.header)?);
 
         next[0].send(ctx, request, &next[1..]).await
     }
