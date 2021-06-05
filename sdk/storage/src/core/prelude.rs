@@ -4,4 +4,4 @@ pub use crate::core::shared_access_signature::{
     SasPermissionsSupport, SasProtocol, SasProtocolSupport, SasResource, SasResourceSupport,
     SasResourceType, SasResourceTypeSupport, SasService, SasStartSupport, SasVersion,
 };
-pub use crate::core::{Consistency, CopyId, IPRange};
+pub use crate::core::{ConsistencyCRC64, ConsistencyMD5, CopyId, IPRange};

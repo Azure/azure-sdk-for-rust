@@ -41,7 +41,7 @@ pub struct IPRange {
 pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Consistency {
-    Md5([u8; 16]),
-    Crc64([u8; 8]),
-}
+pub struct ConsistencyCRC64(pub [u8; 8]);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ConsistencyMD5(pub [u8; 16]);
