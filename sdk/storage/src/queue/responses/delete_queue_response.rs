@@ -1,4 +1,3 @@
-use crate::AzureStorageError;
 use azure_core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::response::Response;
@@ -10,7 +9,7 @@ pub struct DeleteQueueResponse {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for DeleteQueueResponse {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         debug!("response == {:?}", response);

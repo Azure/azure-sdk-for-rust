@@ -1,4 +1,3 @@
-use crate::AzureStorageError;
 use azure_core::headers::{utc_date_from_rfc2822, CommonStorageResponseHeaders};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -41,7 +40,7 @@ struct QueueMessageInternal {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for PutMessageResponse {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
         let body = response.body();

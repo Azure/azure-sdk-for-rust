@@ -1,5 +1,5 @@
+use crate::table::prelude::*;
 use crate::table::requests::*;
-use crate::{table::prelude::*, AzureStorageError};
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
@@ -97,7 +97,7 @@ impl EntityClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), AzureStorageError> {
+    ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
         self.partition_key_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

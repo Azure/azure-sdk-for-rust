@@ -1,4 +1,4 @@
-use crate::{blob::blob::Blob, AzureStorageError};
+use crate::blob::blob::Blob;
 use azure_core::headers::{date_from_headers, request_id_from_headers};
 use azure_core::prelude::NextMarker;
 use azure_core::util::to_str_without_bom;
@@ -43,7 +43,7 @@ pub struct BlobPrefix {
 }
 
 impl TryFrom<&http::Response<Bytes>> for ListBlobsResponse {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(response: &http::Response<Bytes>) -> Result<Self, Self::Error> {
         let body = to_str_without_bom(response.body())?;

@@ -1,6 +1,4 @@
-use crate::{
-    headers::consistency_from_headers, AzureStorageError, ConsistencyCRC64, ConsistencyMD5,
-};
+use crate::{headers::consistency_from_headers, ConsistencyCRC64, ConsistencyMD5};
 use azure_core::headers::{
     date_from_headers, request_id_from_headers, request_server_encrypted_from_headers,
 };
@@ -18,7 +16,7 @@ pub struct PutBlockResponse {
 }
 
 impl PutBlockResponse {
-    pub(crate) fn from_headers(headers: &HeaderMap) -> Result<PutBlockResponse, AzureStorageError> {
+    pub(crate) fn from_headers(headers: &HeaderMap) -> Result<PutBlockResponse, crate::Error> {
         debug!("{:#?}", headers);
 
         let (content_md5, content_crc64) = consistency_from_headers(headers)?;

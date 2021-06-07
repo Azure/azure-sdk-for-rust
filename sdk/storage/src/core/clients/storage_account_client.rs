@@ -2,7 +2,6 @@ use crate::headers::CONTENT_MD5;
 use crate::{
     core::{ConnectionString, No},
     shared_access_signature::SharedAccessSignatureBuilder,
-    AzureStorageError,
 };
 use azure_core::headers::*;
 use azure_core::prelude::*;
@@ -208,7 +207,7 @@ impl StorageAccountClient {
     pub fn new_connection_string(
         http_client: Arc<dyn HttpClient>,
         connection_string: &str,
-    ) -> Result<Arc<Self>, AzureStorageError> {
+    ) -> Result<Arc<Self>, crate::Error> {
         match ConnectionString::new(connection_string)? {
             ConnectionString {
                 account_name: Some(account),
@@ -269,7 +268,7 @@ impl StorageAccountClient {
                 http_client,
             })),
            _ => {
-                Err(AzureStorageError::GenericErrorWithText(
+                Err(crate::Error::GenericErrorWithText(
                     "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
                         .to_owned(),
                 ).into())
@@ -303,12 +302,12 @@ impl StorageAccountClient {
 
     pub fn shared_access_signature(
         &self,
-    ) -> Result<SharedAccessSignatureBuilder<No, No, No, No>, AzureStorageError> {
+    ) -> Result<SharedAccessSignatureBuilder<No, No, No, No>, crate::Error> {
         match self.storage_credentials {
             StorageCredentials::Key(ref account, ref key) => {
                 Ok(SharedAccessSignatureBuilder::new(account, key))
             }
-            _ => Err(AzureStorageError::OperationNotSupported(
+            _ => Err(crate::Error::OperationNotSupported(
                 "Shared access signature generation".to_owned(),
                 "SAS can be generated only from key and account clients".to_owned(),
             )
@@ -323,7 +322,7 @@ impl StorageAccountClient {
         http_header_adder: &dyn Fn(Builder) -> Builder,
         service_type: ServiceType,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), AzureStorageError> {
+    ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
         let dt = chrono::Utc::now();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 

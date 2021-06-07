@@ -1,4 +1,4 @@
-use crate::{headers::content_md5_from_headers, AzureStorageError};
+use crate::headers::content_md5_from_headers;
 use azure_core::headers::{
     date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
     request_server_encrypted_from_headers,
@@ -18,9 +18,7 @@ pub struct PutBlockListResponse {
 }
 
 impl PutBlockListResponse {
-    pub(crate) fn from_headers(
-        headers: &HeaderMap,
-    ) -> Result<PutBlockListResponse, AzureStorageError> {
+    pub(crate) fn from_headers(headers: &HeaderMap) -> Result<PutBlockListResponse, crate::Error> {
         debug!("headers == {:#?}", headers);
 
         let etag = etag_from_headers(headers)?;

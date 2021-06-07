@@ -1,4 +1,3 @@
-use crate::AzureStorageError;
 use azure_core::{headers::CommonStorageResponseHeaders, prelude::Etag};
 use bytes::Bytes;
 use http::{Response, StatusCode};
@@ -20,7 +19,7 @@ pub struct SubmitTransactionResponse {
 }
 
 impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let body = std::str::from_utf8(response.body())?;
@@ -44,7 +43,7 @@ impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
                         .split_whitespace()
                         .nth(1)
                         .ok_or_else(|| {
-                            AzureStorageError::TransactionResponseParseError(
+                            crate::Error::TransactionResponseParseError(
                                 "missing HTTP status code".to_owned(),
                             )
                         })?
@@ -54,7 +53,7 @@ impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
                         line.split_whitespace()
                             .nth(1)
                             .ok_or_else(|| {
-                                AzureStorageError::TransactionResponseParseError(
+                                crate::Error::TransactionResponseParseError(
                                     "invalid Location header".to_owned(),
                                 )
                             })?
@@ -67,7 +66,7 @@ impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
                             .ok_or_else(|| {
                                 {
                                     {
-                                        AzureStorageError::TransactionResponseParseError(
+                                        crate::Error::TransactionResponseParseError(
                                             "invalid DataServiceId header".to_owned(),
                                         )
                                     }
@@ -82,7 +81,7 @@ impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
                             .ok_or_else(|| {
                                 {
                                     {
-                                        AzureStorageError::TransactionResponseParseError(
+                                        crate::Error::TransactionResponseParseError(
                                             "invalid ETag header".to_owned(),
                                         )
                                     }

@@ -1,4 +1,4 @@
-use crate::{AzureStorageError, EntityWithMetadata};
+use crate::EntityWithMetadata;
 use azure_core::{
     headers::{etag_from_headers, string_from_headers_mandatory, CommonStorageResponseHeaders},
     prelude::Etag,
@@ -24,7 +24,7 @@ impl<E> TryFrom<&Response<Bytes>> for InsertEntityResponse<E>
 where
     E: DeserializeOwned,
 {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         println!("{}", std::str::from_utf8(response.body())?);
@@ -35,7 +35,7 @@ where
                 "return-no-content" => None,
                 "return-content" => Some(response.try_into()?),
                 _ => {
-                    return Err(AzureStorageError::GenericErrorWithText(
+                    return Err(crate::Error::GenericErrorWithText(
                         "Unexpected value for preference-applied header".to_owned(),
                     ))
                 }

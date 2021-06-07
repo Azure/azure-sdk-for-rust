@@ -1,7 +1,7 @@
+use crate::blob::blob::requests::*;
 use crate::blob::prelude::*;
 use crate::core::prelude::*;
 use crate::shared_access_signature::SharedAccessSignature;
-use crate::{blob::blob::requests::*, AzureStorageError};
 use azure_core::prelude::*;
 use azure_core::HttpClient;
 use bytes::Bytes;
@@ -168,7 +168,7 @@ impl BlobClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), AzureStorageError> {
+    ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
         self.container_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

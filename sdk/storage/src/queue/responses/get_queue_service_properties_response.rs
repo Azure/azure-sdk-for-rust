@@ -1,4 +1,4 @@
-use crate::{AzureStorageError, QueueServiceProperties};
+use crate::QueueServiceProperties;
 use azure_core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::response::Response;
@@ -11,7 +11,7 @@ pub struct GetQueueServicePropertiesResponse {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for GetQueueServicePropertiesResponse {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

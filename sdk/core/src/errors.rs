@@ -16,9 +16,9 @@ pub enum ParsingError {
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum ParseError {
-    #[error("Expected token \"{}\" not found", 0)]
+    #[error("Expected token \"{0}\" not found")]
     TokenNotFound(String),
-    #[error("Expected split char \'{}\' not found", 0)]
+    #[error("Expected split char \'{0}\' not found")]
     SplitNotFound(char),
     #[error("Parse int error {0}")]
     ParseIntError(std::num::ParseIntError),
@@ -222,7 +222,7 @@ pub enum TraversingError {
     ParseIntError(#[from] std::num::ParseIntError),
     #[error("Generic parse error: {0}")]
     GenericParseError(String),
-    #[error("Parsing error: {:?}", 0)]
+    #[error("Parsing error: {0:?}")]
     ParsingError(#[from] ParsingError),
 }
 

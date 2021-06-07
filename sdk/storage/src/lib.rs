@@ -8,7 +8,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;
 
-pub use self::core::AzureStorageError;
+pub use self::core::Error;
 
 #[cfg(feature = "account")]
 pub mod account;

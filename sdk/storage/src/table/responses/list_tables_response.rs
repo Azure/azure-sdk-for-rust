@@ -1,4 +1,4 @@
-use crate::{table::prelude::*, AzureStorageError, ContinuationNextTableName};
+use crate::{table::prelude::*, ContinuationNextTableName};
 use azure_core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::Response;
@@ -21,7 +21,7 @@ struct ListTablesResponseInternal {
 }
 
 impl TryFrom<&Response<Bytes>> for ListTablesResponse {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         debug!("{}", std::str::from_utf8(response.body())?);

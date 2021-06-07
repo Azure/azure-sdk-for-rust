@@ -1,4 +1,3 @@
-use crate::AzureStorageError;
 use azure_core::prelude::Etag;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -21,7 +20,7 @@ pub(crate) struct FileSystemList {
 }
 
 impl TryFrom<&Response<Bytes>> for FileSystemList {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         trace!("{}", std::str::from_utf8(response.body())?);

@@ -1,4 +1,3 @@
-use crate::AzureStorageError;
 use azure_core::headers::CommonStorageResponseHeaders;
 use azure_core::prelude::*;
 use bytes::Bytes;
@@ -12,7 +11,7 @@ pub struct GetQueueMetadataResponse {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for GetQueueMetadataResponse {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

@@ -1,4 +1,4 @@
-use crate::{AzureStorageError, ContinuationNextPartitionAndRowKey};
+use crate::ContinuationNextPartitionAndRowKey;
 use azure_core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::Response;
@@ -25,7 +25,7 @@ struct QueryEntityResponseInternal<E> {
 }
 
 impl<E: DeserializeOwned> TryFrom<&Response<Bytes>> for QueryEntityResponse<E> {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         debug!("{}", std::str::from_utf8(response.body())?);
