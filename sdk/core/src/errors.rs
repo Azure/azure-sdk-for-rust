@@ -174,30 +174,10 @@ pub enum Error {
     GetTokenError(Box<dyn std::error::Error + Send + Sync>),
     #[error("http error: {0}")]
     HttpError(#[from] HttpError),
-    #[error("{}-{} is not 512 byte aligned", start, end)]
-    PageNot512ByteAlignedError { start: u64, end: u64 },
-    #[error("{} is not 512 byte aligned", size)]
-    Not512ByteAlignedError { size: u64 },
-    #[error("Operation not supported. Operation == {0}, reason == {1}")]
-    OperationNotSupported(String, String),
     #[error("parse bool error: {0}")]
     ParseBoolError(#[from] std::str::ParseBoolError),
     #[error("to str error: {0}")]
     ToStrError(#[from] http::header::ToStrError),
-    #[error("json error: {0}")]
-    JSONError(#[from] serde_json::Error),
-    #[error("Permission error: {0}")]
-    PermissionError(#[from] PermissionError),
-    #[error("IO error: {0}")]
-    IOError(#[from] std::io::Error),
-    #[error("UnexpectedXMLError: {0}")]
-    UnexpectedXMLError(String),
-    #[error("Azure Path parse error: {0}")]
-    AzurePathParseError(#[from] AzurePathParseError),
-    #[error("UnexpectedHTTPResult error: {0:?}")]
-    UnexpectedHTTPResult(UnexpectedHTTPResult),
-    #[error("UnexpectedValue error: {0:?}")]
-    UnexpectedValue(UnexpectedValue),
     #[error("Header not found: {0}")]
     HeaderNotFound(String),
     #[error("At least one of these headers must be present: {0:?}")]
@@ -211,45 +191,14 @@ pub enum Error {
         expected_parameter: String,
         url: url::Url,
     },
-    #[error("Traversing error: {0}")]
-    ResponseParsingError(#[from] TraversingError),
     #[error("Parse int error: {0}")]
     ParseIntError(#[from] std::num::ParseIntError),
-    #[error("Parse float error: {0}")]
-    ParseFloatError(#[from] std::num::ParseFloatError),
-    #[error("Parse error: {0}")]
-    ParseError(#[from] ParseError),
-    #[error("Parsing error: {0}")]
-    ParsingError(#[from] ParsingError),
-    #[error("Input parameters error: {0}")]
-    InputParametersError(String),
-    #[error("URL parse error: {0}")]
-    UrlParseError(#[from] url::ParseError),
     #[error("Error preparing HTTP request: {0}")]
     HttpPrepareError(#[from] http::Error),
     #[error("uuid error: {0}")]
     ParseUuidError(#[from] uuid::Error),
     #[error("Chrono parser error: {0}")]
     ChronoParserError(#[from] chrono::ParseError),
-    #[error("UTF8 conversion error: {0}")]
-    Utf8Error(#[from] std::str::Utf8Error),
-    #[error("FromUTF8 error: {0}")]
-    FromUtf8Error(#[from] std::string::FromUtf8Error),
-    #[error("A required header is missing: {0}")]
-    MissingHeaderError(String),
-    #[error(
-        "An expected JSON node is missing: {} of expected type {}",
-        value,
-        expected_type
-    )]
-    MissingValueError {
-        value: String,
-        expected_type: String,
-    },
-    #[error("Invalid status code: {:?}", 0)]
-    InvalidStatusCode(#[from] http::status::InvalidStatusCode),
-    #[error("Error parsing the transaction response: {:?}", 0)]
-    TransactionResponseParseError(String),
 }
 
 #[non_exhaustive]
