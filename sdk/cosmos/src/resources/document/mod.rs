@@ -9,7 +9,7 @@ pub use indexing_directive::IndexingDirective;
 pub use query::{Param, Query};
 
 use super::Resource;
-use crate::{headers, CosmosError};
+use crate::headers;
 
 use azure_core::AddAsHeader;
 use http::header::HeaderMap;
@@ -44,7 +44,7 @@ impl<T> std::convert::TryFrom<(&HeaderMap, &[u8])> for Document<T>
 where
     T: DeserializeOwned,
 {
-    type Error = CosmosError;
+    type Error = crate::Error;
     fn try_from(value: (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
         let _headers = value.0;
         let body = value.1;

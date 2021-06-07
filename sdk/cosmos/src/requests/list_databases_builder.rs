@@ -36,7 +36,7 @@ impl<'a> ListDatabasesBuilder<'a> {
         max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 
-    pub async fn execute(&self) -> Result<ListDatabasesResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<ListDatabasesResponse, crate::Error> {
         trace!("ListDatabasesBuilder::execute called");
 
         let request =
@@ -59,7 +59,7 @@ impl<'a> ListDatabasesBuilder<'a> {
             .try_into()?)
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<ListDatabasesResponse, CosmosError>> + '_ {
+    pub fn stream(&self) -> impl Stream<Item = Result<ListDatabasesResponse, crate::Error>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

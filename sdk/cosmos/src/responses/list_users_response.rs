@@ -1,6 +1,5 @@
 use crate::headers::from_headers::*;
 use crate::resources::User;
-use crate::CosmosError;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::SessionToken;
 use http::response::Response;
@@ -26,7 +25,7 @@ pub struct ListUsersResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for ListUsersResponse {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

@@ -31,7 +31,9 @@ impl<'a, 'b> DeleteAttachmentBuilder<'a, 'b> {
         if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
     }
 
-    pub async fn execute(&self) -> Result<crate::responses::DeleteAttachmentResponse, CosmosError> {
+    pub async fn execute(
+        &self,
+    ) -> Result<crate::responses::DeleteAttachmentResponse, crate::Error> {
         let mut req = self
             .attachment_client
             .prepare_request_with_attachment_name(http::Method::DELETE);

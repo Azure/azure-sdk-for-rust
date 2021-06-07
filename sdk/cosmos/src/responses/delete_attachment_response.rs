@@ -1,5 +1,4 @@
 use crate::headers::from_headers::*;
-use crate::CosmosError;
 use crate::ResourceQuota;
 use azure_core::headers::session_token_from_headers;
 use azure_core::SessionToken;
@@ -33,7 +32,7 @@ pub struct DeleteAttachmentResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for DeleteAttachmentResponse {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

@@ -1,6 +1,5 @@
 use crate::headers::from_headers::*;
 use crate::resources::UserDefinedFunction;
-use crate::CosmosError;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use chrono::{DateTime, Utc};
@@ -36,7 +35,7 @@ pub struct CreateUserDefinedFunctionResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for CreateUserDefinedFunctionResponse {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

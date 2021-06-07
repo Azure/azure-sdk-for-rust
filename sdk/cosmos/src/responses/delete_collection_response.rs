@@ -1,5 +1,4 @@
 use crate::headers::from_headers::*;
-use crate::CosmosError;
 use http::response::Response;
 
 #[derive(Debug, Clone)]
@@ -9,7 +8,7 @@ pub struct DeleteCollectionResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for DeleteCollectionResponse {
-    type Error = CosmosError;
+    type Error = crate::Error;
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
 

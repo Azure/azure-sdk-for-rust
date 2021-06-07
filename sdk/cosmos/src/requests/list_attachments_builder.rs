@@ -42,7 +42,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
         a_im: ChangeFeed,
     }
 
-    pub async fn execute(&self) -> Result<ListAttachmentsResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<ListAttachmentsResponse, crate::Error> {
         let mut req = self.document_client.cosmos_client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments",
@@ -78,7 +78,7 @@ impl<'a, 'b> ListAttachmentsBuilder<'a, 'b> {
             .try_into()?)
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<ListAttachmentsResponse, CosmosError>> + '_ {
+    pub fn stream(&self) -> impl Stream<Item = Result<ListAttachmentsResponse, crate::Error>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

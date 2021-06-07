@@ -1,5 +1,4 @@
 use crate::headers::from_headers::*;
-use crate::CosmosError;
 use azure_core::headers::session_token_from_headers;
 use http::response::Response;
 
@@ -11,7 +10,7 @@ pub struct DeleteDocumentResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for DeleteDocumentResponse {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

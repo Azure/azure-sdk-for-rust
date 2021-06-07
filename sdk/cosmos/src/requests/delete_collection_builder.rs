@@ -29,7 +29,7 @@ impl<'a> DeleteCollectionBuilder<'a> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub async fn execute(&self) -> Result<DeleteCollectionResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<DeleteCollectionResponse, crate::Error> {
         trace!("DeleteCollectionBuilder::execute called");
 
         let request = self

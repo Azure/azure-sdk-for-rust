@@ -58,7 +58,7 @@ impl<'a, 'b, 'c> CreateDocumentBuilder<'a, 'b> {
         &self,
         document: &'c DOC,
         fn_add_primary_key: FNPK,
-    ) -> Result<CreateDocumentResponse, CosmosError>
+    ) -> Result<CreateDocumentResponse, crate::Error>
     where
         DOC: Serialize,
         FNPK: FnOnce(http::request::Builder) -> Result<http::request::Builder, serde_json::Error>,
@@ -120,7 +120,7 @@ impl<'a, 'b, 'c> CreateDocumentBuilder<'a, 'b> {
         &self,
         document: &'c DOC,
         partition_key: &PK,
-    ) -> Result<CreateDocumentResponse, CosmosError> {
+    ) -> Result<CreateDocumentResponse, crate::Error> {
         self.perform_execute(document, |req| {
             Ok(add_as_partition_key_header_serialized(
                 &serialize_partition_key(partition_key)?,
@@ -133,7 +133,7 @@ impl<'a, 'b, 'c> CreateDocumentBuilder<'a, 'b> {
     pub async fn execute<T: Serialize + CosmosEntity<'c>>(
         &self,
         document: &'c T,
-    ) -> Result<CreateDocumentResponse, CosmosError> {
+    ) -> Result<CreateDocumentResponse, crate::Error> {
         self.perform_execute(document, |req| {
             Ok(add_as_partition_key_header(document, req)?)
         })

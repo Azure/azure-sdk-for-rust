@@ -31,7 +31,7 @@ impl<'a, 'b> GetAttachmentBuilder<'a, 'b> {
         if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
     }
 
-    pub async fn execute(&self) -> Result<crate::responses::GetAttachmentResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<crate::responses::GetAttachmentResponse, crate::Error> {
         let mut req = self
             .attachment_client
             .prepare_request_with_attachment_name(http::Method::GET);

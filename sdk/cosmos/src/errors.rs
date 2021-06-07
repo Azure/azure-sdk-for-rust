@@ -2,7 +2,7 @@
 #[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
-pub enum CosmosError {
+pub enum Error {
     #[error(transparent)]
     AzureCoreError(#[from] azure_core::Error),
     #[error("Resource quota parsing error: {0}")]

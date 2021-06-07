@@ -28,7 +28,7 @@ impl<'a, 'b> GetUserBuilder<'a, 'b> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub async fn execute(&self) -> Result<Option<CreateUserResponse>, CosmosError> {
+    pub async fn execute(&self) -> Result<Option<CreateUserResponse>, crate::Error> {
         trace!("GetUserBuilder::execute called");
 
         let req = self

@@ -2,7 +2,6 @@ use super::*;
 use crate::operations::*;
 use crate::requests;
 use crate::resources::ResourceType;
-use crate::CosmosError;
 use crate::ReadonlyString;
 use azure_core::pipeline::Pipeline;
 use azure_core::{Context, HttpClient, Request};
@@ -56,7 +55,7 @@ impl DatabaseClient {
         ctx: Context,
         collection_name: S,
         options: CreateCollectionOptions,
-    ) -> Result<CreateCollectionResponse, CosmosError> {
+    ) -> Result<CreateCollectionResponse, crate::Error> {
         let request = self.cosmos_client().prepare_request(
             &format!("dbs/{}/colls", self.database_name()),
             http::Method::POST,
@@ -70,7 +69,7 @@ impl DatabaseClient {
             .pipeline()
             .send(&mut ctx, &mut request)
             .await
-            .map_err(CosmosError::PolicyError)?;
+            .map_err(crate::Error::PolicyError)?;
 
         Ok(CreateCollectionResponse::try_from(response).await?)
     }

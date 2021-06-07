@@ -36,7 +36,7 @@ impl<'a, 'b> ReplacePermissionBuilder<'a, 'b> {
     pub async fn execute(
         &self,
         permission_mode: &PermissionMode<'a>,
-    ) -> Result<ReplacePermissionResponse<'a>, CosmosError> {
+    ) -> Result<ReplacePermissionResponse<'a>, crate::Error> {
         trace!("ReplacePermissionBuilder::execute called");
 
         let request = self

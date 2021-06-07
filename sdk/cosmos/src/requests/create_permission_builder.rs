@@ -42,7 +42,7 @@ impl<'a, 'b> CreatePermissionBuilder<'a, 'b> {
     pub async fn execute(
         &self,
         permission_mode: &PermissionMode<'a>,
-    ) -> Result<CreatePermissionResponse<'a>, CosmosError> {
+    ) -> Result<CreatePermissionResponse<'a>, crate::Error> {
         trace!("CreatePermissionBuilder::execute called");
 
         let request = self.permission_client.cosmos_client().prepare_request(

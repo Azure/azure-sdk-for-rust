@@ -36,7 +36,7 @@ impl<'a> ListCollectionsBuilder<'a> {
         max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 
-    pub async fn execute(&self) -> Result<ListCollectionsResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<ListCollectionsResponse, crate::Error> {
         trace!("ListCollectionsBuilder::execute called");
         let request = self.database_client.cosmos_client().prepare_request(
             &format!("dbs/{}/colls", self.database_client.database_name()),
@@ -62,7 +62,7 @@ impl<'a> ListCollectionsBuilder<'a> {
             .try_into()?)
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<ListCollectionsResponse, CosmosError>> + '_ {
+    pub fn stream(&self) -> impl Stream<Item = Result<ListCollectionsResponse, crate::Error>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

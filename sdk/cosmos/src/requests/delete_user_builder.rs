@@ -29,7 +29,7 @@ impl<'a, 'b> DeleteUserBuilder<'a, 'b> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub async fn execute(&self) -> Result<DeleteUserResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<DeleteUserResponse, crate::Error> {
         trace!("DeleteUserBuilder::execute called");
 
         let req = self

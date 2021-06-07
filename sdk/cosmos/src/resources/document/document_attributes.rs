@@ -1,4 +1,3 @@
-use crate::CosmosError;
 use azure_core::prelude::IfMatchCondition;
 use http::response::Response;
 
@@ -45,7 +44,7 @@ impl DocumentAttributes {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for DocumentAttributes {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice(response.body())?)

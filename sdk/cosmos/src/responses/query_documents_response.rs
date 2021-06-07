@@ -1,6 +1,6 @@
 use crate::headers::from_headers::*;
 use crate::resources::document::DocumentAttributes;
-use crate::{CosmosError, ResourceQuota};
+use crate::ResourceQuota;
 use azure_core::headers::{
     continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
 };
@@ -23,7 +23,7 @@ impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for DocumentQueryResult<T>
 where
     T: DeserializeOwned,
 {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice(response.body())?)
@@ -39,7 +39,7 @@ pub struct QueryResponseMeta {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for QueryResponseMeta {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice(response.body())?)
@@ -87,7 +87,7 @@ impl<T> QueryDocumentsResponse<T> {
         self.into()
     }
 
-    pub fn into_documents(self) -> Result<QueryDocumentsResponseDocuments<T>, CosmosError> {
+    pub fn into_documents(self) -> Result<QueryDocumentsResponseDocuments<T>, crate::Error> {
         self.try_into()
     }
 }
@@ -96,7 +96,7 @@ impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for QueryDocumentsResponse
 where
     T: DeserializeOwned,
 {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
@@ -268,7 +268,7 @@ pub struct QueryDocumentsResponseDocuments<T> {
 }
 
 impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsResponseDocuments<T> {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     #[inline]
     fn try_from(q: QueryDocumentsResponse<T>) -> Result<Self, Self::Error> {
@@ -277,7 +277,7 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
             QueryResult::Document(_) => false,
             QueryResult::Raw(_) => true,
         }) {
-            return Err(CosmosError::RawElementError);
+            return Err(crate::Error::RawElementError);
         }
 
         Ok(Self {

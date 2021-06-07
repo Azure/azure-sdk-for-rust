@@ -36,7 +36,7 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
         max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 
-    pub async fn execute(&self) -> Result<ListPermissionsResponse<'a>, CosmosError> {
+    pub async fn execute(&self) -> Result<ListPermissionsResponse<'a>, crate::Error> {
         trace!("ListPermissionsBuilder::execute called");
 
         let request = self.user_client.cosmos_client().prepare_request(
@@ -68,7 +68,7 @@ impl<'a, 'b> ListPermissionsBuilder<'a, 'b> {
 
     pub fn stream(
         &self,
-    ) -> impl Stream<Item = Result<ListPermissionsResponse<'a>, CosmosError>> + '_ {
+    ) -> impl Stream<Item = Result<ListPermissionsResponse<'a>, crate::Error>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

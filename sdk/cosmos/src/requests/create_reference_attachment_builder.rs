@@ -35,7 +35,7 @@ impl<'a, 'b> CreateReferenceAttachmentBuilder<'a, 'b> {
         &self,
         media: M,
         content_type: C,
-    ) -> Result<crate::responses::CreateReferenceAttachmentResponse, CosmosError>
+    ) -> Result<crate::responses::CreateReferenceAttachmentResponse, crate::Error>
     where
         M: AsRef<str>,
         C: AsRef<str>,
