@@ -1,4 +1,3 @@
-use crate::errors::ConversionToDocumentError;
 use crate::headers::from_headers::*;
 use crate::resources::document::DocumentAttributes;
 use crate::{CosmosError, ResourceQuota};
@@ -88,9 +87,7 @@ impl<T> QueryDocumentsResponse<T> {
         self.into()
     }
 
-    pub fn into_documents(
-        self,
-    ) -> Result<QueryDocumentsResponseDocuments<T>, ConversionToDocumentError> {
+    pub fn into_documents(self) -> Result<QueryDocumentsResponseDocuments<T>, CosmosError> {
         self.try_into()
     }
 }
@@ -271,7 +268,7 @@ pub struct QueryDocumentsResponseDocuments<T> {
 }
 
 impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsResponseDocuments<T> {
-    type Error = ConversionToDocumentError;
+    type Error = CosmosError;
 
     #[inline]
     fn try_from(q: QueryDocumentsResponse<T>) -> Result<Self, Self::Error> {
@@ -280,7 +277,7 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
             QueryResult::Document(_) => false,
             QueryResult::Raw(_) => true,
         }) {
-            return Err(ConversionToDocumentError::RawElementFound {});
+            return Err(CosmosError::RawElementError);
         }
 
         Ok(Self {

@@ -35,10 +35,6 @@ pub enum CosmosError {
     Utf8Error(#[from] std::str::Utf8Error),
     #[error("base64 decode error: {0}")]
     DecodeError(#[from] base64::DecodeError),
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum ConversionToDocumentError {
     #[error("Conversion to document failed because at lease one element is raw.")]
-    RawElementFound,
+    RawElementError,
 }
