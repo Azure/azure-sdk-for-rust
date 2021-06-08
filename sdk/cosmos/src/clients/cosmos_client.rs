@@ -5,6 +5,7 @@ use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 
+use azure_core::client_options::ClientOptions;
 use azure_core::pipeline::Pipeline;
 use azure_core::policies::{LinearRetryPolicy, Policy, TransportOptions, TransportPolicy};
 use azure_core::Context;
@@ -33,6 +34,7 @@ pub struct CosmosClient {
 }
 /// Options for specifying how a Cosmos client will behave
 pub struct CosmosOptions {
+    options: ClientOptions,
     retry: Arc<dyn Policy>,
     transport: TransportOptions,
 }
@@ -41,6 +43,7 @@ impl CosmosOptions {
     /// Create options based on the provided http client
     pub fn with_client(client: Arc<dyn HttpClient>) -> Self {
         Self {
+            options: ClientOptions::default(),
             retry: Arc::new(LinearRetryPolicy::default()), // this defaults to linear backoff
             transport: TransportOptions::new(client),
         }
@@ -53,6 +56,9 @@ fn new_pipeline_from_options(options: CosmosOptions) -> Pipeline {
     let per_retry_policies = Vec::new();
     let transport_policy = TransportPolicy::new(options.transport);
     Pipeline::new(
+        option_env!("CARGO_PKG_NAME"),
+        option_env!("CARGO_PKG_VERSION"),
+        &options.options,
         per_call_policies,
         options.retry,
         per_retry_policies,

@@ -1,17 +1,20 @@
-use crate::policies::{Policy, PolicyResult};
-use crate::{Context, Request, Response};
+use crate::policies::{Policy, PolicyResult, TelemetryPolicy};
+use crate::{ClientOptions, Context, Request, Response};
 use std::sync::Arc;
 
 /// Execution pipeline.
 ///
 /// A pipeline follows a precise flow:
 ///
-/// 1. Per call policies are executed. Per call policies can fail and bail out of the pipeline
+/// 1. Client library-specified per-call policies are executed. Per-call policies can fail and bail out of the pipeline
 ///    immediately.
-/// 2. Retry policy. It allows to reexecute the following policies.
-/// 3. Per retry policies. Per retry polices are always executed at least once but are reexecuted
+/// 2. User-specified per-call policies are executed.
+/// 3. Telemetry policy.
+/// 4. Retry policy. It allows to re-execute the following policies.
+/// 5. Client library-specified per-retry policies. Per-retry polices are always executed at least once but are re-executed
 ///    in case of retries.
-/// 4. Transport policy. Transtport policy is always the last policy and is the policy that
+/// 6. User-specified per-retry policies are executed.
+/// 7. Transport policy. Transport policy is always the last policy and is the policy that
 ///    actually constructs the `Response` to be passed up the pipeline.
 ///
 /// A pipeline is immutable. In other words a policy can either succeed and call the following
@@ -24,18 +27,38 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
+    /// Creates a new pipeline given the client library crate name and version,
+    /// alone with user-specified and client library-specified policies.
+    ///
+    /// Crates can simply pass `option_env!("CARGO_PKG_NAME")` and `option_env!("CARGO_PKG_VERSION")` for the
+    /// `crate_name` and `crate_version` arguments respectively.
     pub fn new(
+        crate_name: Option<&'static str>,
+        crate_version: Option<&'static str>,
+        options: &ClientOptions,
         per_call_policies: Vec<Arc<dyn Policy>>,
         retry: Arc<dyn Policy>,
         per_retry_policies: Vec<Arc<dyn Policy>>,
         transport_policy: Arc<dyn Policy>,
     ) -> Self {
-        let mut pipeline =
-            Vec::with_capacity(per_call_policies.len() + per_retry_policies.len() + 2);
+        let mut pipeline: Vec<Arc<dyn Policy>> = Vec::with_capacity(
+            options.per_call_policies.len()
+                + per_call_policies.len()
+                + options.per_retry_policies.len()
+                + per_retry_policies.len()
+                + 3,
+        );
 
         pipeline.extend_from_slice(&per_call_policies);
+        pipeline.extend_from_slice(&options.per_call_policies);
+        pipeline.push(Arc::new(TelemetryPolicy::new(
+            crate_name,
+            crate_version,
+            &options.telemetry,
+        )));
         pipeline.push(retry);
         pipeline.extend_from_slice(&per_retry_policies);
+        pipeline.extend_from_slice(&options.per_retry_policies);
         pipeline.push(transport_policy);
 
         Self { pipeline }
