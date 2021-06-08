@@ -36,7 +36,7 @@ impl<'a, 'b> GetDocumentBuilder<'a, 'b> {
         if_modified_since: &'b DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
     }
 
-    pub async fn execute<T>(&self) -> Result<GetDocumentResponse<T>, CosmosError>
+    pub async fn execute<T>(&self) -> Result<GetDocumentResponse<T>, crate::Error>
     where
         T: DeserializeOwned,
     {

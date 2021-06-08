@@ -1,6 +1,5 @@
 use crate::headers::from_headers::*;
 use crate::resources::UserDefinedFunction;
-use crate::CosmosError;
 use crate::ResourceQuota;
 use azure_core::headers::{
     continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
@@ -37,7 +36,7 @@ pub struct ListUserDefinedFunctionsResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for ListUserDefinedFunctionsResponse {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

@@ -39,7 +39,7 @@ impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
         if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
     }
 
-    pub async fn execute(&self) -> Result<ListTriggersResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<ListTriggersResponse, crate::Error> {
         trace!("ListTriggersBuilder::execute called");
 
         let request = self.collection_client.cosmos_client().prepare_request(
@@ -70,7 +70,7 @@ impl<'a, 'b> ListTriggersBuilder<'a, 'b> {
             .try_into()?)
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<ListTriggersResponse, CosmosError>> + '_ {
+    pub fn stream(&self) -> impl Stream<Item = Result<ListTriggersResponse, crate::Error>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

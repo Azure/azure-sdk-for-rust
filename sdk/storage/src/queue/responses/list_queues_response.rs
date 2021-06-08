@@ -1,4 +1,3 @@
-use crate::AzureStorageError;
 use azure_core::headers::CommonStorageResponseHeaders;
 use azure_core::prelude::*;
 use bytes::Bytes;
@@ -56,7 +55,7 @@ pub struct Queue {
 }
 
 impl std::convert::TryFrom<&Response<Bytes>> for ListQueuesResponse {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
         let body = response.body();

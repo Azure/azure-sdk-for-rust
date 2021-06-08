@@ -1,6 +1,5 @@
 use crate::headers::from_headers::*;
 use crate::resources::Permission;
-use crate::CosmosError;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use http::response::Response;
 
@@ -16,7 +15,7 @@ pub struct ListPermissionsResponse<'a> {
 }
 
 impl<'a> std::convert::TryFrom<Response<bytes::Bytes>> for ListPermissionsResponse<'a> {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

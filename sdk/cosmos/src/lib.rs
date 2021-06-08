@@ -117,6 +117,6 @@ pub use consistency_level::ConsistencyLevel;
 pub use cosmos_entity::CosmosEntity;
 pub use resource_quota::ResourceQuota;
 
-pub use errors::CosmosError;
+pub use errors::Error;
 
 type ReadonlyString = std::borrow::Cow<'static, str>;

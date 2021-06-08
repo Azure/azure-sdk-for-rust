@@ -1,4 +1,3 @@
-use crate::AzureStorageError;
 use azure_core::AddAsHeader;
 use http::request::Builder;
 use http::HeaderMap;
@@ -51,7 +50,7 @@ impl<'a, 'b> AddAsHeader for Properties<'a, 'b> {
 }
 
 impl TryFrom<&HeaderMap> for Properties<'static, 'static> {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
         let mut properties = Self::new();
@@ -68,30 +67,30 @@ impl TryFrom<&HeaderMap> for Properties<'static, 'static> {
         //          7. Insert the key value pair in the returned struct.
         headers
             .get(HEADER)
-            .ok_or_else(|| AzureStorageError::HeaderNotFound(HEADER.to_owned()))? // HEADER must exists or we return Err
+            .ok_or_else(|| crate::Error::HeaderNotFound(HEADER.to_owned()))? // HEADER must exists or we return Err
             .to_str()?
             .split(',') // The list is a CSV so we split by comma
             .map(|key_value_pair| {
                 let mut key_and_value = key_value_pair.split('='); // Each entry is key and value separated by =
 
                 // we must have a key and a value (so two entries)
-                let key = key_and_value.next().ok_or_else(|| {
-                    AzureStorageError::GenericErrorWithText("missing key".to_owned())
-                })?;
+                let key = key_and_value
+                    .next()
+                    .ok_or_else(|| crate::Error::GenericErrorWithText("missing key".to_owned()))?;
                 let value = key_and_value.next().ok_or_else(|| {
-                    AzureStorageError::GenericErrorWithText("missing value".to_owned())
+                    crate::Error::GenericErrorWithText("missing value".to_owned())
                 })?;
 
                 // we do not check if there are more entries. We just ignore them.
                 Ok((key, value))
             })
-            .collect::<Result<Vec<(&str, &str)>, AzureStorageError>>()? // if we have an error, return error
+            .collect::<Result<Vec<(&str, &str)>, crate::Error>>()? // if we have an error, return error
             .into_iter()
             .map(|(key, value)| {
                 let value = std::str::from_utf8(&base64::decode(value)?)?.to_owned(); // the value is base64 encoded se we decode it
                 Ok((key, value))
             })
-            .collect::<Result<Vec<(&str, String)>, AzureStorageError>>()? // if we have an error, return error
+            .collect::<Result<Vec<(&str, String)>, crate::Error>>()? // if we have an error, return error
             .into_iter()
             .for_each(|(key, value)| {
                 properties.insert(key.to_owned(), value); // finally store the key and value into the properties

@@ -40,7 +40,7 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b> {
     pub async fn execute<B: AsRef<str>>(
         &self,
         body: B,
-    ) -> Result<CreateUserDefinedFunctionResponse, CosmosError> {
+    ) -> Result<CreateUserDefinedFunctionResponse, crate::Error> {
         trace!("CreateOrReplaceUserDefinedFunctionBuilder::execute called");
 
         // Create is POST with no name in the URL. Expected return is CREATED.

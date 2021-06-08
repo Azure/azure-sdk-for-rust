@@ -1,5 +1,5 @@
+use crate::data_lake::file_system::FileSystemList;
 use crate::data_lake::FileSystem;
-use crate::{data_lake::file_system::FileSystemList, AzureStorageError};
 use azure_core::{headers::CommonStorageResponseHeaders, prelude::NextMarker};
 use bytes::Bytes;
 use http::Response;
@@ -13,7 +13,7 @@ pub struct ListFileSystemsResponse {
 }
 
 impl TryFrom<&Response<Bytes>> for ListFileSystemsResponse {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         trace!("{}", std::str::from_utf8(response.body())?);

@@ -1,6 +1,5 @@
 use crate::headers::from_headers::*;
 use crate::resources::Document;
-use crate::CosmosError;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::SessionToken;
@@ -19,7 +18,7 @@ impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for GetDocumentResponse<T>
 where
     T: DeserializeOwned,
 {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let status_code = response.status();
@@ -76,7 +75,7 @@ impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for FoundDocumentResponse<
 where
     T: DeserializeOwned,
 {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
@@ -134,7 +133,7 @@ pub struct NotFoundDocumentResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for NotFoundDocumentResponse {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

@@ -41,7 +41,7 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b> {
     pub async fn execute<P: Into<PartitionKey>>(
         &self,
         partition_key: P,
-    ) -> Result<CreateCollectionResponse, CosmosError> {
+    ) -> Result<CreateCollectionResponse, crate::Error> {
         trace!("ReplaceCollectionBuilder::execute called");
 
         let req = self

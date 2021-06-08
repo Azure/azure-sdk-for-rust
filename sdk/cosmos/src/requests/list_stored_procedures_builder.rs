@@ -36,7 +36,7 @@ impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
         max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 
-    pub async fn execute(&self) -> Result<ListStoredProceduresResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<ListStoredProceduresResponse, crate::Error> {
         trace!("ListStoredProceduresBuilder::execute called");
 
         let request = self.collection_client.cosmos_client().prepare_request(
@@ -68,7 +68,7 @@ impl<'a, 'b> ListStoredProceduresBuilder<'a, 'b> {
 
     pub fn stream(
         &self,
-    ) -> impl Stream<Item = Result<ListStoredProceduresResponse, CosmosError>> + '_ {
+    ) -> impl Stream<Item = Result<ListStoredProceduresResponse, crate::Error>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

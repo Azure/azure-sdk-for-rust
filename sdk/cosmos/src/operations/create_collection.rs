@@ -35,7 +35,7 @@ impl CreateCollectionOptions {
         &self,
         request: &mut HttpRequest,
         collection_name: &str,
-    ) -> Result<(), CosmosError> {
+    ) -> Result<(), crate::Error> {
         azure_core::headers::add_optional_header2(&self.offer, request);
         azure_core::headers::add_optional_header2(&self.consistency_level, request);
 
@@ -78,7 +78,7 @@ pub struct CreateCollectionResponse {
 }
 
 impl CreateCollectionResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, CosmosError> {
+    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

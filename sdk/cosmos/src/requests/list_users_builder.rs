@@ -38,7 +38,7 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
         max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 
-    pub async fn execute(&self) -> Result<ListUsersResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<ListUsersResponse, crate::Error> {
         trace!("ListUsersBuilder::execute called");
 
         let req = self.database_client.cosmos_client().prepare_request(
@@ -58,7 +58,7 @@ impl<'a, 'b> ListUsersBuilder<'a, 'b> {
             .try_into()?)
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<ListUsersResponse, CosmosError>> + '_ {
+    pub fn stream(&self) -> impl Stream<Item = Result<ListUsersResponse, crate::Error>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

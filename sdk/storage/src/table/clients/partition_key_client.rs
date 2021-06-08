@@ -1,6 +1,6 @@
+use crate::core::clients::StorageAccountClient;
 use crate::table::prelude::*;
 use crate::table::requests::*;
-use crate::{core::clients::StorageAccountClient, AzureStorageError};
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
@@ -59,7 +59,7 @@ impl PartitionKeyClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), AzureStorageError> {
+    ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
         self.table_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

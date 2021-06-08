@@ -1,6 +1,5 @@
 use crate::headers::from_headers::*;
 use crate::resources::Permission;
-use crate::CosmosError;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use http::response::Response;
 
@@ -16,7 +15,7 @@ pub struct GetPermissionResponse<'a> {
 }
 
 impl<'a> std::convert::TryFrom<Response<bytes::Bytes>> for GetPermissionResponse<'a> {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

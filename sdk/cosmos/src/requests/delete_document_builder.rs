@@ -39,7 +39,7 @@ impl<'a> DeleteDocumentBuilder<'a> {
         if_modified_since: &'a DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
     }
 
-    pub async fn execute(&self) -> Result<DeleteDocumentResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<DeleteDocumentResponse, crate::Error> {
         trace!("DeleteDocumentBuilder::execute called");
 
         let mut req = self

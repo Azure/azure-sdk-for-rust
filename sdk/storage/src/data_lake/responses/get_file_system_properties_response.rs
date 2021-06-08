@@ -1,4 +1,4 @@
-use crate::{data_lake::util::*, AzureStorageError, Properties};
+use crate::{data_lake::util::*, Properties};
 use azure_core::{
     headers::{etag_from_headers, last_modified_from_headers, CommonStorageResponseHeaders},
     prelude::Etag,
@@ -18,7 +18,7 @@ pub struct GetFileSystemPropertiesResponse {
 }
 
 impl TryFrom<&Response<Bytes>> for GetFileSystemPropertiesResponse {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         debug!("body == {}", std::str::from_utf8(response.body())?);

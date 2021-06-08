@@ -48,7 +48,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         })
     }
 
-    pub async fn execute<T>(&self) -> Result<ExecuteStoredProcedureResponse<T>, CosmosError>
+    pub async fn execute<T>(&self) -> Result<ExecuteStoredProcedureResponse<T>, crate::Error>
     where
         T: DeserializeOwned,
     {

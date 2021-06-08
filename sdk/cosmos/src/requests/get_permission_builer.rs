@@ -28,7 +28,7 @@ impl<'a, 'b> GetPermissionBuilder<'a, 'b> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub async fn execute(&self) -> Result<Option<GetPermissionResponse<'a>>, CosmosError> {
+    pub async fn execute(&self) -> Result<Option<GetPermissionResponse<'a>>, crate::Error> {
         trace!("GetPermissionBuilder::execute called");
 
         let request = self

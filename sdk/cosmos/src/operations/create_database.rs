@@ -1,7 +1,7 @@
 use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::Database;
-use crate::{CosmosError, ResourceQuota};
+use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as HttpResponse};
 use chrono::{DateTime, Utc};
@@ -28,7 +28,7 @@ impl CreateDatabaseOptions {
         &self,
         request: &mut HttpRequest,
         database_name: &str,
-    ) -> Result<(), CosmosError> {
+    ) -> Result<(), crate::Error> {
         #[derive(Serialize)]
         struct CreateDatabaseRequest<'a> {
             pub id: &'a str,
@@ -60,7 +60,7 @@ pub struct CreateDatabaseResponse {
 }
 
 impl CreateDatabaseResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, CosmosError> {
+    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

@@ -63,7 +63,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
         })
     }
 
-    pub async fn execute<T, Q>(&self, query: Q) -> Result<QueryDocumentsResponse<T>, CosmosError>
+    pub async fn execute<T, Q>(&self, query: Q) -> Result<QueryDocumentsResponse<T>, crate::Error>
     where
         T: DeserializeOwned,
         Q: Into<Query<'a>>,
@@ -120,7 +120,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
     pub fn stream<T, Q>(
         &'a self,
         query: Q,
-    ) -> impl Stream<Item = Result<QueryDocumentsResponse<T>, CosmosError>> + 'a
+    ) -> impl Stream<Item = Result<QueryDocumentsResponse<T>, crate::Error>> + 'a
     where
         T: DeserializeOwned,
         Q: Into<Query<'a>> + 'a + Copy,

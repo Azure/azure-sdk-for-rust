@@ -1,4 +1,3 @@
-use crate::AzureStorageError;
 use chrono::{DateTime, FixedOffset};
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -39,7 +38,7 @@ impl StoredAccessPolicyList {
         StoredAccessPolicyList::default()
     }
 
-    pub fn from_xml(xml: &str) -> Result<StoredAccessPolicyList, AzureStorageError> {
+    pub fn from_xml(xml: &str) -> Result<StoredAccessPolicyList, crate::Error> {
         debug!("{}", xml);
 
         let mut sal = StoredAccessPolicyList::default();

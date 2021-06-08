@@ -19,7 +19,7 @@ function tax(income) {
 }"#;
 
 #[tokio::test]
-async fn user_defined_function00() -> Result<(), CosmosError> {
+async fn user_defined_function00() -> Result<(), azure_cosmos::Error> {
     const DATABASE_NAME: &str = "test-cosmos-db-udf";
     const COLLECTION_NAME: &str = "test-udf";
     const USER_DEFINED_FUNCTION_NAME: &str = "test";

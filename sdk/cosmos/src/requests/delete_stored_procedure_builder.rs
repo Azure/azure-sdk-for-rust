@@ -29,7 +29,7 @@ impl<'a, 'b> DeleteStoredProcedureBuilder<'a, 'b> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub async fn execute(&self) -> Result<DeleteStoredProcedureResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<DeleteStoredProcedureResponse, crate::Error> {
         trace!("DeleteStoredProcedureBuilder::execute called");
 
         let request = self

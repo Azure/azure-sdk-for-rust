@@ -1,5 +1,4 @@
 use crate::headers::from_headers::*;
-use crate::CosmosError;
 use azure_core::headers::{item_count_from_headers, session_token_from_headers};
 use chrono::{DateTime, Utc};
 use http::response::Response;
@@ -29,7 +28,7 @@ pub struct GetPartitionKeyRangesResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for GetPartitionKeyRangesResponse {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

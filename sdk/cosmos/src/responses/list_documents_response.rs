@@ -1,6 +1,6 @@
 use crate::headers::from_headers::*;
 use crate::resources::document::{Document, DocumentAttributes};
-use crate::{CosmosError, ResourceQuota};
+use crate::ResourceQuota;
 
 use azure_core::headers::{
     continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
@@ -58,7 +58,7 @@ pub struct ListDocumentsResponseEntities<T> {
 }
 
 impl std::convert::TryFrom<&[u8]> for ListDocumentsResponseAttributes {
-    type Error = CosmosError;
+    type Error = crate::Error;
     fn try_from(body: &[u8]) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice(body)?)
     }
@@ -68,7 +68,7 @@ impl<T> std::convert::TryFrom<&[u8]> for ListDocumentsResponseEntities<T>
 where
     T: DeserializeOwned,
 {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(body: &[u8]) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice(body)?)
@@ -79,7 +79,7 @@ impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for ListDocumentsResponse<
 where
     T: DeserializeOwned,
 {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

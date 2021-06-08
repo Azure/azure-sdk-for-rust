@@ -1,5 +1,5 @@
 use super::PermissionToken;
-use crate::{resources::Resource, CosmosError};
+use crate::resources::Resource;
 
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -87,7 +87,7 @@ impl<'a> PermissionMode<'a> {
 }
 
 impl<'a> std::convert::TryFrom<&[u8]> for Permission<'a> {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(slice: &[u8]) -> Result<Self, Self::Error> {
         Ok(serde_json::from_slice(slice)?)
@@ -99,15 +99,15 @@ mod tests {
     use super::*;
     use crate::resources::permission::AuthorizationToken;
 
-    const PERMISSION_JSON: &str = r#"{  
-    "id": "a_permission",  
-    "permissionMode": "Read",  
-    "resource": "dbs/volcanodb/colls/volcano1",  
-    "_rid": "Sl8fAG8cXgBn6Ju2GqNsAA==",  
-    "_ts": 1449604760,  
-    "_self": "dbs\/Sl8fAA==\/users\/Sl8fAG8cXgA=\/permissions\/Sl8fAG8cXgBn6Ju2GqNsAA==\/",  
-    "_etag": "\"00000e00-0000-0000-0000-566736980000\"",  
-    "_token": "type=resource&ver=1.0&sig=ocPyc9QQFybITu1EqzX0kg==;w+WR1aWafB3+yZq5JSoBwgz78XDlU+k9Xiqvc+Q7TlAl1P4h4t721Cn5cjhZ9h3TSd2\/MJLy+wG+YkhDL9UlGkVv05RZGy2fMaLGdeQkWc7TShkc\/M2boPc3GXq2yiERKl5CN4AZWSOcrFhOFuuTOqF4ZdBlflmNudaakodr\/8qTip0i+a7moz1Jkc5+9iLAsDFyqTR1sirp7kAVNFbiqPdYTjNkvZUHF3nYYmRskOg=;"  
+    const PERMISSION_JSON: &str = r#"{
+    "id": "a_permission",
+    "permissionMode": "Read",
+    "resource": "dbs/volcanodb/colls/volcano1",
+    "_rid": "Sl8fAG8cXgBn6Ju2GqNsAA==",
+    "_ts": 1449604760,
+    "_self": "dbs\/Sl8fAA==\/users\/Sl8fAG8cXgA=\/permissions\/Sl8fAG8cXgBn6Ju2GqNsAA==\/",
+    "_etag": "\"00000e00-0000-0000-0000-566736980000\"",
+    "_token": "type=resource&ver=1.0&sig=ocPyc9QQFybITu1EqzX0kg==;w+WR1aWafB3+yZq5JSoBwgz78XDlU+k9Xiqvc+Q7TlAl1P4h4t721Cn5cjhZ9h3TSd2\/MJLy+wG+YkhDL9UlGkVv05RZGy2fMaLGdeQkWc7TShkc\/M2boPc3GXq2yiERKl5CN4AZWSOcrFhOFuuTOqF4ZdBlflmNudaakodr\/8qTip0i+a7moz1Jkc5+9iLAsDFyqTR1sirp7kAVNFbiqPdYTjNkvZUHF3nYYmRskOg=;"
 } "#;
 
     #[test]

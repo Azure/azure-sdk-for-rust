@@ -15,7 +15,7 @@ pub use copy_id::{copy_id_from_headers, CopyId};
 pub use copy_progress::CopyProgress;
 pub(crate) mod parsing_xml;
 mod stored_access_policy;
-pub use errors::AzureStorageError;
+pub use errors::Error;
 
 #[derive(Debug, Clone, Eq, PartialEq, Copy, Serialize, Deserialize)]
 pub struct Yes;

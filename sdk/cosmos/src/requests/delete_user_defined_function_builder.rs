@@ -29,7 +29,7 @@ impl<'a, 'b> DeleteUserDefinedFunctionBuilder<'a, 'b> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub async fn execute(&self) -> Result<DeleteUserDefinedFunctionResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<DeleteUserDefinedFunctionResponse, crate::Error> {
         trace!("DeleteUserDefinedFunctionBuilder::execute called");
 
         let request = self

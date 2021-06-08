@@ -1,4 +1,3 @@
-use crate::AzureStorageError;
 use azure_core::headers::{
     date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
     request_server_encrypted_from_headers,
@@ -17,7 +16,7 @@ pub struct PutBlobResponse {
 }
 
 impl PutBlobResponse {
-    pub fn from_headers(headers: &HeaderMap) -> Result<PutBlobResponse, AzureStorageError> {
+    pub fn from_headers(headers: &HeaderMap) -> Result<PutBlobResponse, crate::Error> {
         debug!("{:#?}", headers);
 
         let etag = etag_from_headers(headers)?;

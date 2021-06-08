@@ -35,7 +35,7 @@ impl<'a, 'b> ReplaceStoredProcedureBuilder<'a, 'b> {
     pub async fn execute<B: AsRef<str>>(
         &self,
         body: B,
-    ) -> Result<ReplaceStoredProcedureResponse, CosmosError> {
+    ) -> Result<ReplaceStoredProcedureResponse, crate::Error> {
         trace!("ReplaceStoredProcedureBuilder::execute called");
 
         let req = self

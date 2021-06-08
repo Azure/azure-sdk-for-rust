@@ -46,7 +46,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
         partition_range_id: &'b str => Some(PartitionRangeId::new(partition_range_id)),
     }
 
-    pub async fn execute<T>(&self) -> Result<ListDocumentsResponse<T>, CosmosError>
+    pub async fn execute<T>(&self) -> Result<ListDocumentsResponse<T>, crate::Error>
     where
         T: DeserializeOwned,
     {
@@ -82,7 +82,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
 
     pub fn stream<T>(
         &self,
-    ) -> impl Stream<Item = Result<ListDocumentsResponse<T>, CosmosError>> + '_
+    ) -> impl Stream<Item = Result<ListDocumentsResponse<T>, crate::Error>> + '_
     where
         T: DeserializeOwned,
     {

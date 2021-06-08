@@ -1,6 +1,6 @@
 use crate::headers::from_headers::*;
 use crate::resources::Database;
-use crate::{CosmosError, ResourceQuota};
+use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use chrono::{DateTime, Utc};
 use http::response::Response;
@@ -21,7 +21,7 @@ pub struct GetDatabaseResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for GetDatabaseResponse {
-    type Error = CosmosError;
+    type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();

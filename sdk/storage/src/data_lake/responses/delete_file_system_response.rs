@@ -1,4 +1,3 @@
-use crate::AzureStorageError;
 use azure_core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::Response;
@@ -10,7 +9,7 @@ pub struct DeleteFileSystemResponse {
 }
 
 impl TryFrom<&Response<Bytes>> for DeleteFileSystemResponse {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         debug!("body == {}", std::str::from_utf8(response.body())?);

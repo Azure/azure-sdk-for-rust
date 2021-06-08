@@ -28,7 +28,7 @@ impl<'a, 'b> DeletePermissionsBuilder<'a, 'b> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub async fn execute(&self) -> Result<DeletePermissionResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<DeletePermissionResponse, crate::Error> {
         trace!("DeletePermissionBuilder::execute called");
 
         let request = self

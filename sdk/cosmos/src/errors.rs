@@ -2,7 +2,7 @@
 #[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
-pub enum CosmosError {
+pub enum Error {
     #[error(transparent)]
     AzureCoreError(#[from] azure_core::Error),
     #[error("Resource quota parsing error: {0}")]
@@ -35,10 +35,6 @@ pub enum CosmosError {
     Utf8Error(#[from] std::str::Utf8Error),
     #[error("base64 decode error: {0}")]
     DecodeError(#[from] base64::DecodeError),
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum ConversionToDocumentError {
     #[error("Conversion to document failed because at lease one element is raw.")]
-    RawElementFound,
+    RawElementError,
 }

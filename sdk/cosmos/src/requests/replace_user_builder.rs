@@ -35,7 +35,7 @@ impl<'a, 'b> ReplaceUserBuilder<'a, 'b> {
     pub async fn execute<U: AsRef<str>>(
         &self,
         user_name: U,
-    ) -> Result<Option<CreateUserResponse>, CosmosError> {
+    ) -> Result<Option<CreateUserResponse>, crate::Error> {
         trace!("ReplaceUserBuilder::execute called");
 
         let req = self

@@ -27,7 +27,7 @@ impl<'a, 'b> GetDatabaseBuilder<'a, 'b> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub async fn execute(&self) -> Result<GetDatabaseResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<GetDatabaseResponse, crate::Error> {
         trace!("GetDatabaseResponse::execute called");
 
         let request = self

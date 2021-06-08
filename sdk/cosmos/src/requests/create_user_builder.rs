@@ -28,7 +28,7 @@ impl<'a, 'b> CreateUserBuilder<'a, 'b> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub async fn execute(&self) -> Result<CreateUserResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<CreateUserResponse, crate::Error> {
         trace!("CreateUserBuilder::execute called");
 
         let req = self.user_client.prepare_request(http::Method::POST);

@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // list_databases will give us the databases available in our account. If there is
     // an error (for example, the given key is not valid) you will receive a
-    // specific CosmosError. In this example we will look for a specific database
+    // specific azure_cosmos::Error. In this example we will look for a specific database
     // so we chain a filter operation.
     let db = client
         .list_databases()

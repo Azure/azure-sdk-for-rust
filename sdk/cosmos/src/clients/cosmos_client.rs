@@ -1,8 +1,8 @@
 use super::DatabaseClient;
+use crate::headers::*;
 use crate::operations::*;
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
-use crate::{headers::*, CosmosError};
 use crate::{requests, ReadonlyString};
 
 use azure_core::pipeline::Pipeline;
@@ -163,7 +163,7 @@ impl CosmosClient {
         ctx: Context,
         database_name: S,
         options: CreateDatabaseOptions,
-    ) -> Result<CreateDatabaseResponse, CosmosError> {
+    ) -> Result<CreateDatabaseResponse, crate::Error> {
         let mut request = self.prepare_request2("dbs", http::Method::POST, ResourceType::Databases);
         let mut ctx = ctx.clone();
         options.decorate_request(&mut request, database_name.as_ref())?;
@@ -171,7 +171,7 @@ impl CosmosClient {
             .pipeline()
             .send(&mut ctx, &mut request)
             .await
-            .map_err(CosmosError::PolicyError)?;
+            .map_err(crate::Error::PolicyError)?;
 
         Ok(CreateDatabaseResponse::try_from(response).await?)
     }

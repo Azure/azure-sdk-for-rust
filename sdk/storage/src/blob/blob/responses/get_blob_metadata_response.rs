@@ -1,4 +1,3 @@
-use crate::AzureStorageError;
 use azure_core::headers::{
     date_from_headers, etag_from_headers, request_id_from_headers, server_from_headers,
 };
@@ -18,7 +17,7 @@ pub struct GetBlobMetadataResponse {
 }
 
 impl TryFrom<&HeaderMap> for GetBlobMetadataResponse {
-    type Error = AzureStorageError;
+    type Error = crate::Error;
 
     fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
         debug!("headers == {:#?}", headers);

@@ -39,7 +39,7 @@ impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
         if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
     }
 
-    pub async fn execute(&self) -> Result<ListUserDefinedFunctionsResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<ListUserDefinedFunctionsResponse, crate::Error> {
         trace!("ListUserDefinedFunctionsBuilder::execute called");
 
         let request = self.collection_client.cosmos_client().prepare_request(
@@ -72,7 +72,7 @@ impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
 
     pub fn stream(
         &self,
-    ) -> impl Stream<Item = Result<ListUserDefinedFunctionsResponse, CosmosError>> + '_ {
+    ) -> impl Stream<Item = Result<ListUserDefinedFunctionsResponse, crate::Error>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum States {
             Init,

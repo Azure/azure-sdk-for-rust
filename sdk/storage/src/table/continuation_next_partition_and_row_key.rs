@@ -1,4 +1,3 @@
-use crate::AzureStorageError;
 use azure_core::AppendToUrlQuery;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -16,9 +15,7 @@ impl ContinuationNextPartitionAndRowKey {
         &self.0
     }
 
-    pub fn from_header_optional(
-        headers: &http::HeaderMap,
-    ) -> Result<Option<Self>, AzureStorageError> {
+    pub fn from_header_optional(headers: &http::HeaderMap) -> Result<Option<Self>, crate::Error> {
         let partition_header_as_str = headers
             .get("x-ms-continuation-NextPartitionKey")
             .map(|item| item.to_str())

@@ -28,7 +28,7 @@ impl<'a> GetCollectionBuilder<'a> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub async fn execute(&self) -> Result<GetCollectionResponse, CosmosError> {
+    pub async fn execute(&self) -> Result<GetCollectionResponse, crate::Error> {
         trace!("GetCollectionResponse::execute called");
 
         let request = self
