@@ -65,7 +65,7 @@ create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Blob {
     pub name: String,
@@ -76,7 +76,7 @@ pub struct Blob {
     pub properties: BlobProperties,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct BlobProperties {
     #[cfg(not(feature = "azurite_workaround"))]
