@@ -12,6 +12,7 @@ mod block_list;
 pub use self::block_list::BlockList;
 pub mod requests;
 pub mod responses;
+use crate::headers::CONTENT_CRC64;
 use crate::{
     headers::{CONTENT_MD5, COPY_ID},
     ConsistencyCRC64, ConsistencyMD5,
@@ -210,21 +211,16 @@ impl Blob {
         trace!("content_language == {:?}", content_language);
 
         let content_md5 = h
-            .get_as_string(CONTENT_MD5)
-            .map(base64::decode)
-            .transpose()?
-            .map(|content_md5_vec| {
-                if content_md5_vec.len() != 16 {
-                    return Err(crate::Error::DigestNot16BytesLong(
-                        content_md5_vec.len() as u64
-                    ));
-                }
-                let mut content_md5 = [0; 16];
-                content_md5.copy_from_slice(&content_md5_vec[0..16]);
-                Ok(content_md5)
-            })
+            .get_header(CONTENT_MD5)
+            .map(|header| ConsistencyMD5::decode(header.as_bytes()))
             .transpose()?;
         trace!("content_md5 == {:?}", content_md5);
+
+        let content_crc64 = h
+            .get_header(CONTENT_CRC64)
+            .map(|header| ConsistencyCRC64::decode(header.as_bytes()))
+            .transpose()?;
+        trace!("content_crc64 == {:?}", content_crc64);
 
         let cache_control = h.get_as_string(header::CACHE_CONTROL);
 
@@ -311,8 +307,8 @@ impl Blob {
                 content_type,
                 content_encoding,
                 content_language,
-                content_md5: content_md5.map(ConsistencyMD5),
-                content_crc64: None, // TODO
+                content_md5,
+                content_crc64,
                 cache_control,
                 content_disposition,
                 blob_sequence_number,
