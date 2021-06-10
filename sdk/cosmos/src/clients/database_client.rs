@@ -1,10 +1,10 @@
 use super::*;
 use crate::operations::*;
-use crate::requests;
 use crate::resources::ResourceType;
-use crate::ReadonlyString;
+use crate::{requests, ReadonlyString};
+
 use azure_core::pipeline::Pipeline;
-use azure_core::{Context, HttpClient, Request};
+use azure_core::{Context, HttpClient};
 
 /// A client for Cosmos database resources.
 #[derive(Debug, Clone)]
@@ -52,18 +52,15 @@ impl DatabaseClient {
     /// Create a collection
     pub async fn create_collection<S: AsRef<str>>(
         &self,
-        ctx: Context,
+        mut ctx: Context,
         collection_name: S,
         options: CreateCollectionOptions,
     ) -> Result<CreateCollectionResponse, crate::Error> {
-        let request = self.cosmos_client().prepare_request(
+        let mut request = self.cosmos_client().prepare_request2(
             &format!("dbs/{}/colls", self.database_name()),
             http::Method::POST,
             ResourceType::Collections,
         );
-        let mut request: Request = request.body(bytes::Bytes::new()).unwrap().into();
-
-        let mut ctx = ctx.clone();
         options.decorate_request(&mut request, collection_name.as_ref())?;
         let response = self
             .pipeline()
