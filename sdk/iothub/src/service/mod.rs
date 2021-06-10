@@ -116,8 +116,8 @@ impl ServiceClient {
 
         let key = decode(private_key).map_err(GenerateSasTokenError::DecodePrivateKeyError)?;
 
-        let mut hmac =
-            HmacSHA256::new_varkey(key.as_ref()).map_err(GenerateSasTokenError::HashingFailed)?;
+        let mut hmac = HmacSHA256::new_from_slice(key.as_ref())
+            .map_err(GenerateSasTokenError::HashingFailed)?;
 
         hmac.update(data.as_bytes());
         let result = hmac.finalize();
