@@ -1,3 +1,4 @@
+use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use std::error::Error;
 
@@ -43,8 +44,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         let db = client
             .clone()
             .into_database_client(db.id.clone())
-            .get_database()
-            .execute()
+            .get_database(Context::new(), GetDatabaseOptions::default())
             .await?;
         println!("db {} found == {:?}", &db.database.id, &db);
     }

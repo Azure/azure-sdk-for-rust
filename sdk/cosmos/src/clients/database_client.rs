@@ -35,8 +35,26 @@ impl DatabaseClient {
     }
 
     /// Get the database
-    pub fn get_database(&self) -> requests::GetDatabaseBuilder<'_, '_> {
-        requests::GetDatabaseBuilder::new(self)
+    pub async fn get_database(
+        &self,
+        mut ctx: Context,
+        options: GetDatabaseOptions,
+    ) -> Result<GetDatabaseResponse, crate::Error> {
+        let mut request = self
+            .prepare_request_with_database_name(http::Method::GET)
+            .body(bytes::Bytes::new())
+            .unwrap()
+            .into();
+        options.decorate_request(&mut request)?;
+        let response = self
+            .pipeline()
+            .send(&mut ctx, &mut request)
+            .await
+            .map_err(crate::Error::PolicyError)?
+            .validate(http::StatusCode::OK)
+            .await?;
+
+        Ok(GetDatabaseResponse::try_from(response).await?)
     }
 
     /// List collections in the database
@@ -66,7 +84,9 @@ impl DatabaseClient {
             .pipeline()
             .send(&mut ctx, &mut request)
             .await
-            .map_err(crate::Error::PolicyError)?;
+            .map_err(crate::Error::PolicyError)?
+            .validate(http::StatusCode::CREATED)
+            .await?;
 
         Ok(CreateCollectionResponse::try_from(response).await?)
     }

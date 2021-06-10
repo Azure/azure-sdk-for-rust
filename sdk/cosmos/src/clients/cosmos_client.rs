@@ -162,7 +162,9 @@ impl CosmosClient {
             .pipeline()
             .send(&mut ctx, &mut request)
             .await
-            .map_err(crate::Error::PolicyError)?;
+            .map_err(crate::Error::PolicyError)?
+            .validate(http::StatusCode::CREATED)
+            .await?;
 
         Ok(CreateDatabaseResponse::try_from(response).await?)
     }
