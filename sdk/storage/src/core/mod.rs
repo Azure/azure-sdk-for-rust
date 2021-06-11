@@ -62,7 +62,7 @@ impl<'de> Deserialize<'de> for ConsistencyCRC64 {
     where
         D: Deserializer<'de>,
     {
-        let bytes = <&[u8]>::deserialize(deserializer)?;
+        let bytes = String::deserialize(deserializer)?;
         Ok(ConsistencyCRC64::decode(bytes).map_err(serde::de::Error::custom)?)
     }
 }
@@ -87,7 +87,7 @@ impl<'de> Deserialize<'de> for ConsistencyMD5 {
     where
         D: Deserializer<'de>,
     {
-        let bytes = <&[u8]>::deserialize(deserializer)?;
+        let bytes = String::deserialize(deserializer)?;
         Ok(ConsistencyMD5::decode(bytes).map_err(serde::de::Error::custom)?)
     }
 }
@@ -95,13 +95,13 @@ impl<'de> Deserialize<'de> for ConsistencyMD5 {
 #[cfg(test)]
 mod test {
     use super::*;
-    use serde::de::value::{BorrowedBytesDeserializer, Error};
+    use serde::de::value::{Error, StringDeserializer};
+    use serde::de::IntoDeserializer;
 
     #[test]
     fn should_deserialize_consistency_crc64() {
         let input = base64::encode([1, 2, 4, 8, 16, 32, 64, 128]);
-        let deserializer: BorrowedBytesDeserializer<Error> =
-            BorrowedBytesDeserializer::new(input.as_bytes());
+        let deserializer: StringDeserializer<Error> = input.into_deserializer();
         let content_crc64 = ConsistencyCRC64::deserialize(deserializer).unwrap();
         assert_eq!(
             content_crc64,
@@ -112,8 +112,7 @@ mod test {
     #[test]
     fn should_deserialize_consistency_md5() {
         let input = base64::encode([1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
-        let deserializer: BorrowedBytesDeserializer<Error> =
-            BorrowedBytesDeserializer::new(input.as_bytes());
+        let deserializer: StringDeserializer<Error> = input.into_deserializer();
         let content_md5 = ConsistencyMD5::deserialize(deserializer).unwrap();
         assert_eq!(
             content_md5,

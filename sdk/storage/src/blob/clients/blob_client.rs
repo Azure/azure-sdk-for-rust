@@ -231,7 +231,7 @@ mod integration_tests {
         assert_eq!(properties.blob.name, "hello.txt");
         assert_eq!(
             properties.blob.properties.content_md5,
-            Some(ConsistencyMD5(md5.0))
+            Some(ConsistencyMD5(Bytes::copy_from_slice(&md5.0)))
         );
 
         container_client
