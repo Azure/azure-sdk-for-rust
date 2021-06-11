@@ -1,4 +1,6 @@
-use crate::policies::{Policy, PolicyResult, TelemetryPolicy, TransportPolicy};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::policies::TransportPolicy;
+use crate::policies::{Policy, PolicyResult, TelemetryPolicy};
 use crate::{ClientOptions, Context, Request, Response};
 use std::sync::Arc;
 
@@ -59,8 +61,12 @@ impl Pipeline {
         pipeline.extend_from_slice(&per_retry_policies);
         pipeline.extend_from_slice(&options.per_retry_policies);
 
-        let transport_policy = TransportPolicy::new(&options.transport);
-        pipeline.push(Arc::new(transport_policy));
+        // TODO: Add transport policy for WASM once https://github.com/Azure/azure-sdk-for-rust/issues/293 is resolved.
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let transport_policy = TransportPolicy::new(&options.transport);
+            pipeline.push(Arc::new(transport_policy));
+        }
 
         Self { pipeline }
     }
