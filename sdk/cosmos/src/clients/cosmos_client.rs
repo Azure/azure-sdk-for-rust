@@ -5,11 +5,11 @@ use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 
-use azure_core::*;
 use azure_core::pipeline::Pipeline;
 use azure_core::Context;
 use azure_core::HttpClient;
 use azure_core::Request;
+use azure_core::*;
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};
 use ring::hmac;
@@ -42,8 +42,7 @@ impl CosmosOptions {
     pub fn with_client(client: Arc<dyn HttpClient>) -> Self {
         Self {
             options: ClientOptions::default()
-                .retry(RetryOptions::default()
-                    .mode(RetryMode::Fixed))
+                .retry(RetryOptions::default().mode(RetryMode::Fixed))
                 .transport(TransportOptions::new(client)),
         }
     }

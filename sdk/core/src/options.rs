@@ -4,6 +4,17 @@ use std::sync::Arc;
 use std::time::Duration;
 
 /// Client options allow customization of policies, retry options, and more.
+///
+/// # Examples
+///
+/// You can override default options and even add your own per-call or per-retry policies:
+///
+/// ```
+/// use azure_core::{ClientOptions, RetryOptions, TelemetryOptions};
+/// let options = ClientOptions::default()
+///     .retry(RetryOptions::default().max_retries(10u32))
+///     .telemetry(TelemetryOptions::default().application_id("my-application"));
+/// ```
 #[derive(Clone, Debug, Default)]
 pub struct ClientOptions {
     // TODO: Expose transport override.
@@ -24,6 +35,16 @@ pub struct ClientOptions {
 }
 
 impl ClientOptions {
+    /// A mutable reference to per-call policies.
+    pub fn mut_per_call_policies(&mut self) -> &mut Vec<Arc<dyn Policy>> {
+        &mut self.per_call_policies
+    }
+
+    /// A mutable reference to per-retry policies.
+    pub fn mut_per_retry_policies(&mut self) -> &mut Vec<Arc<dyn Policy>> {
+        &mut self.per_retry_policies
+    }
+
     setters! {
         per_call_policies: Vec<Arc<dyn Policy>> => per_call_policies,
         per_retry_policies: Vec<Arc<dyn Policy>> => per_retry_policies,
@@ -144,7 +165,7 @@ impl TransportOptions {
 }
 
 impl Default for TransportOptions {
-    /// Creates an instance of the ```TransportOptions``` using the enabled HTTP client.
+    /// Creates an instance of the `TransportOptions` using the enabled HTTP client.
     fn default() -> Self {
         TransportOptions {
             http_client: new_http_client(),

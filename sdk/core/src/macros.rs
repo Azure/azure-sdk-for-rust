@@ -26,7 +26,7 @@
 #[macro_export]
 macro_rules! setters {
     (@single $name:ident : $typ:ty => $transform:expr) => {
-        // TODO: Declare with_$name when https://github.com/rust-lang/rust/issues/29599 is fixed.
+        // TODO: Declare using idiomatic with_$name when https://github.com/Azure/azure-sdk-for-rust/issues/292 is resolved.
         pub fn $name<T: ::std::convert::Into<$typ>>(self, $name: T) -> Self {
             let $name: $typ = $name.into();
             Self  {
@@ -186,10 +186,7 @@ mod test {
 
     impl Default for Options {
         fn default() -> Self {
-            Options {
-                a: None,
-                b: 1,
-            }
+            Options { a: None, b: 1 }
         }
     }
 
@@ -213,8 +210,7 @@ mod test {
 
     #[test]
     fn test_setters() {
-        let options = Options::default()
-            .a("test".to_owned());
+        let options = Options::default().a("test".to_owned());
 
         assert_eq!(Some("test".to_owned()), options.a);
         assert_eq!(1, options.b);

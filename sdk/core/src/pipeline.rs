@@ -50,11 +50,8 @@ impl Pipeline {
         pipeline.extend_from_slice(&per_call_policies);
         pipeline.extend_from_slice(&options.per_call_policies);
 
-        pipeline.push(Arc::new(TelemetryPolicy::new(
-            crate_name,
-            crate_version,
-            &options.telemetry,
-        )));
+        let telemetry_policy = TelemetryPolicy::new(crate_name, crate_version, &options.telemetry);
+        pipeline.push(Arc::new(telemetry_policy));
 
         let retry_policy = options.retry.to_policy();
         pipeline.push(retry_policy);

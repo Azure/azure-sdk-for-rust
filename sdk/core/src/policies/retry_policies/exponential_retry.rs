@@ -21,9 +21,9 @@ pub struct ExponentialRetryPolicy {
 impl ExponentialRetryPolicy {
     pub(crate) fn new(delay: Duration, max_retries: u32, max_delay: Duration) -> Self {
         ExponentialRetryPolicy {
-            delay: delay,
-            max_retries: max_retries,
-            max_delay: max_delay,
+            delay,
+            max_retries,
+            max_delay,
         }
     }
 
