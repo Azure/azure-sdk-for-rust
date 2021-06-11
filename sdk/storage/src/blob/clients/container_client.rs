@@ -181,8 +181,13 @@ mod integration_tests {
         assert_eq!(list.blobs.blobs.len(), 1);
         assert_eq!(list.blobs.blobs[0].name, "hello.txt");
         assert_eq!(
-            list.blobs.blobs[0].properties.content_md5,
-            Some(ConsistencyMD5(Bytes::copy_from_slice(&md5.0)))
+            list.blobs.blobs[0]
+                .properties
+                .content_md5
+                .as_ref()
+                .expect("has content_md5")
+                .as_slice(),
+            &md5.0
         );
 
         container_client

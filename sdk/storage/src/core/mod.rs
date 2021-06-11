@@ -7,6 +7,8 @@ mod errors;
 mod into_azure_path;
 pub mod prelude;
 pub mod shared_access_signature;
+use std::convert::TryInto;
+
 pub use self::connection_string::{ConnectionString, EndpointProtocol};
 pub use self::connection_string_builder::ConnectionStringBuilder;
 pub use self::into_azure_path::IntoAzurePath;
@@ -43,7 +45,9 @@ use serde::{Deserialize, Deserializer};
 pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ConsistencyCRC64(pub Bytes);
+pub struct ConsistencyCRC64(Bytes);
+
+const CRC64_BYTE_LENGTH: usize = 8;
 
 impl ConsistencyCRC64 {
     /// Decodes from base64 encoded input
@@ -51,9 +55,22 @@ impl ConsistencyCRC64 {
         let bytes = base64::decode(input).map_err(Error::Base64DecodeError)?;
         let bytes = Bytes::from(bytes);
         match bytes.len() {
-            8 => Ok(Self(bytes)),
+            CRC64_BYTE_LENGTH => Ok(Self(bytes)),
             len => Err(Error::CRC64Not8BytesLong(len)),
         }
+    }
+    pub fn bytes(&self) -> &Bytes {
+        &self.0
+    }
+    pub fn as_slice(&self) -> &[u8; CRC64_BYTE_LENGTH] {
+        // we check the length when decoding, so this unwrap is safe
+        self.0.as_ref().try_into().unwrap()
+    }
+}
+
+impl AsRef<[u8; CRC64_BYTE_LENGTH]> for ConsistencyCRC64 {
+    fn as_ref(&self) -> &[u8; CRC64_BYTE_LENGTH] {
+        self.as_slice()
     }
 }
 
@@ -68,7 +85,11 @@ impl<'de> Deserialize<'de> for ConsistencyCRC64 {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ConsistencyMD5(pub Bytes);
+pub struct ConsistencyMD5(Bytes);
+
+const MD5_BYTE_LENGTH: usize = 16;
+
+impl ConsistencyMD5 {}
 
 impl ConsistencyMD5 {
     /// Decodes from base64 encoded input
@@ -76,9 +97,22 @@ impl ConsistencyMD5 {
         let bytes = base64::decode(input).map_err(Error::Base64DecodeError)?;
         let bytes = Bytes::from(bytes);
         match bytes.len() {
-            16 => Ok(Self(bytes)),
+            MD5_BYTE_LENGTH => Ok(Self(bytes)),
             len => Err(Error::DigestNot16BytesLong(len)),
         }
+    }
+    pub fn bytes(&self) -> &Bytes {
+        &self.0
+    }
+    pub fn as_slice(&self) -> &[u8; MD5_BYTE_LENGTH] {
+        // we check the length when decoding, so this unwrap is safe
+        self.0.as_ref().try_into().unwrap()
+    }
+}
+
+impl AsRef<[u8; MD5_BYTE_LENGTH]> for ConsistencyMD5 {
+    fn as_ref(&self) -> &[u8; MD5_BYTE_LENGTH] {
+        self.as_slice()
     }
 }
 

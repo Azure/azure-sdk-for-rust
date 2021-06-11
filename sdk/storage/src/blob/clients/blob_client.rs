@@ -230,8 +230,13 @@ mod integration_tests {
             .expect("get properties should succeed");
         assert_eq!(properties.blob.name, "hello.txt");
         assert_eq!(
-            properties.blob.properties.content_md5,
-            Some(ConsistencyMD5(Bytes::copy_from_slice(&md5.0)))
+            properties
+                .blob
+                .properties
+                .content_md5
+                .expect("has content_md5")
+                .as_slice(),
+            &md5.0
         );
 
         container_client
