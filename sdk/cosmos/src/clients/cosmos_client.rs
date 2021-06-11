@@ -185,8 +185,9 @@ impl CosmosClient {
 
     /// Prepares an `http::RequestBuilder`.
     ///
-    /// Note: This is used by legacy operations that have not moved to the use of the
-    /// pipeline architecture. Once that is complete, this will be superceded by `prepare_request2`.
+    /// TODO: Remove once all operations have been moved to pipeline architecture. This is used by
+    /// legacy operations that have not moved to the use of the pipeline architecture. Once
+    /// that is complete, this will be superceded by `prepare_request2`.
     pub(crate) fn prepare_request(
         &self,
         uri_path: &str,
