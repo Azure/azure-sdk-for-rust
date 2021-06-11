@@ -15,7 +15,7 @@
 /// ```
 /// struct MyStruct<'a> { foo: Option<&'a str> };
 /// impl <'a> MyStruct<'a> {
-///     fn with_foo(self, foo: &'a str) -> Self {
+///     fn foo(self, foo: &'a str) -> Self {
 ///         Self {
 ///             foo: Some(foo),
 ///             ..self
@@ -26,6 +26,7 @@
 #[macro_export]
 macro_rules! setters {
     (@single $name:ident : $typ:ty => $transform:expr) => {
+        // TODO: Declare with_$name when https://github.com/rust-lang/rust/issues/29599 is fixed.
         pub fn $name<T: ::std::convert::Into<$typ>>(self, $name: T) -> Self {
             let $name: $typ = $name.into();
             Self  {
@@ -170,6 +171,28 @@ mod test {
     create_enum!(Colors, (Black, "Black"), (White, "White"), (Red, "Red"));
     create_enum!(ColorsMonochrome, (Black, "Black"), (White, "White"));
 
+    struct Options {
+        a: Option<String>,
+        b: u32,
+    }
+
+    #[allow(dead_code)]
+    impl Options {
+        setters! {
+            a: String => Some(a),
+            b: u32 => b,
+        }
+    }
+
+    impl Default for Options {
+        fn default() -> Self {
+            Options {
+                a: None,
+                b: 1,
+            }
+        }
+    }
+
     #[test]
     fn test_color_parse_1() {
         let color = "Black".parse::<Colors>().unwrap();
@@ -186,5 +209,14 @@ mod test {
     #[should_panic(expected = "ElementNotFound(\"Red\")")]
     fn test_color_parse_err_1() {
         "Red".parse::<ColorsMonochrome>().unwrap();
+    }
+
+    #[test]
+    fn test_setters() {
+        let options = Options::default()
+            .a("test".to_owned());
+
+        assert_eq!(Some("test".to_owned()), options.a);
+        assert_eq!(1, options.b);
     }
 }
