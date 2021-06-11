@@ -4,7 +4,6 @@ use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
 use std::error::Error;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -32,11 +31,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
     let http_client = azure_core::new_http_client();
-    let client = CosmosClient::new(
-        http_client.clone(),
-        account.clone(),
-        authorization_token.clone(),
-    );
+    let client = CosmosClient::new(http_client, account, authorization_token);
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
@@ -45,13 +40,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let list_databases_response = client.list_databases().execute().await?;
     println!("list_databases_response = {:#?}", list_databases_response);
 
-    let cosmos_client = CosmosClient::with_pipeline(
-        http_client,
-        account,
-        authorization_token,
-        CosmosOptions::with_client(Arc::new(reqwest::Client::new())),
-    );
-    let db = cosmos_client
+    let db = client
         .create_database(
             azure_core::Context::new(),
             &database_name,

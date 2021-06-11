@@ -28,9 +28,7 @@ impl CreateCollectionOptions {
         indexing_policy: IndexingPolicy => Some(indexing_policy),
         offer: Offer => Some(offer),
     }
-}
 
-impl CreateCollectionOptions {
     pub(crate) fn decorate_request(
         &self,
         request: &mut HttpRequest,

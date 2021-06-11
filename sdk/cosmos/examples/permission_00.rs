@@ -1,3 +1,4 @@
+use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use std::error::Error;
 
@@ -36,7 +37,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_collection_client(collection_name2);
     let user_client = database_client.clone().into_user_client(user_name);
 
-    let get_database_response = database_client.get_database().execute().await?;
+    let get_database_response = database_client
+        .get_database(Context::new(), GetDatabaseOptions::new())
+        .await?;
     println!("get_database_response == {:#?}", get_database_response);
 
     let get_collection_response = collection_client.get_collection().execute().await?;
