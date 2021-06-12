@@ -12,6 +12,7 @@ pub struct TransportPolicy {
 }
 
 impl TransportPolicy {
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn new(options: &TransportOptions) -> Self {
         Self {
             http_client: options.http_client.clone(),

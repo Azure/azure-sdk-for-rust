@@ -62,10 +62,12 @@ impl Pipeline {
         pipeline.extend_from_slice(&per_retry_policies);
         pipeline.extend_from_slice(&options.per_retry_policies);
 
-        let transport_policy = TransportPolicy::new(&options.transport);
         // TODO: Add transport policy for WASM once https://github.com/Azure/azure-sdk-for-rust/issues/293 is resolved.
         #[cfg(not(target_arch = "wasm32"))]
-        pipeline.push(Arc::new(transport_policy));
+        {
+            let transport_policy = TransportPolicy::new(&options.transport);
+            pipeline.push(Arc::new(transport_policy));
+        }
 
         Self {
             http_client: options.transport.http_client.clone(),
