@@ -47,11 +47,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // Next we will create a Cosmos client. You need an authorization_token but you can later
     // change it if needed.
-    let http_client = new_http_client();
     let client = CosmosClient::new(
-        http_client.clone(),
         account.clone(),
         authorization_token.clone(),
+        CosmosOptions::default(),
     );
 
     // list_databases will give us the databases available in our account. If there is

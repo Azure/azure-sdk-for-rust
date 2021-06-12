@@ -8,11 +8,10 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct TransportPolicy {
-    http_client: Arc<dyn HttpClient>,
+    pub(crate) http_client: Arc<dyn HttpClient>,
 }
 
 impl TransportPolicy {
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn new(options: &TransportOptions) -> Self {
         Self {
             http_client: options.http_client.clone(),

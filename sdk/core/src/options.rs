@@ -159,13 +159,14 @@ pub struct TransportOptions {
 }
 
 impl TransportOptions {
+    /// Creates a new `TransportOptions` using the given `HttpClient`.
     pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
         Self { http_client }
     }
 }
 
 impl Default for TransportOptions {
-    /// Creates an instance of the `TransportOptions` using the enabled HTTP client.
+    /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
     fn default() -> Self {
         TransportOptions {
             http_client: new_http_client(),

@@ -1,7 +1,7 @@
 #[cfg(not(target_arch = "wasm32"))]
 use crate::policies::TransportPolicy;
 use crate::policies::{Policy, PolicyResult, TelemetryPolicy};
-use crate::{ClientOptions, Context, Request, Response};
+use crate::{ClientOptions, Context, HttpClient, Request, Response};
 use std::sync::Arc;
 
 /// Execution pipeline.
@@ -25,6 +25,7 @@ use std::sync::Arc;
 /// self.pipeline[0] is always valid).
 #[derive(Debug, Clone)]
 pub struct Pipeline {
+    http_client: Arc<dyn HttpClient>,
     pipeline: Vec<Arc<dyn Policy>>,
 }
 
@@ -61,14 +62,21 @@ impl Pipeline {
         pipeline.extend_from_slice(&per_retry_policies);
         pipeline.extend_from_slice(&options.per_retry_policies);
 
+        let transport_policy = TransportPolicy::new(&options.transport);
         // TODO: Add transport policy for WASM once https://github.com/Azure/azure-sdk-for-rust/issues/293 is resolved.
         #[cfg(not(target_arch = "wasm32"))]
-        {
-            let transport_policy = TransportPolicy::new(&options.transport);
-            pipeline.push(Arc::new(transport_policy));
-        }
+        pipeline.push(Arc::new(transport_policy));
 
-        Self { pipeline }
+        Self {
+            http_client: options.transport.http_client.clone(),
+            pipeline,
+        }
+    }
+
+    /// Gets the `HttpClient` used by the pipeline.
+    pub fn http_client(&self) -> &dyn HttpClient {
+        // TODO: Request methods should be defined directly on the pipeline instead of exposing the HttpClient.
+        self.http_client.as_ref()
     }
 
     pub async fn send(&self, ctx: &mut Context, request: &mut Request) -> PolicyResult<Response> {

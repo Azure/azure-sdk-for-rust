@@ -6,8 +6,7 @@ pub fn initialize() -> Result<CosmosClient, azure_cosmos::Error> {
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
 
     let authorization_token = AuthorizationToken::primary_from_base64(&key)?;
-    let http_client = azure_core::new_http_client();
-    let client = CosmosClient::new(http_client, account, authorization_token);
+    let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
 
     Ok(client)
 }
