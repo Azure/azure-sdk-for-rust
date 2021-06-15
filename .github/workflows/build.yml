@@ -99,9 +99,9 @@ jobs:
 
     - name: integration tests
       run: |
-        npm install -g azurite
-        azurite --version
-        azurite &
+        npm install azurite
+        npx azurite --version
+        npx azurite &
 
         cargo test --features test_integration
 
