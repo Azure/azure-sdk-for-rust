@@ -85,7 +85,7 @@ jobs:
 
   test-integration:
     name: Integration Tests
-    runs-on: windows-2019
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
@@ -99,10 +99,9 @@ jobs:
 
     - name: integration tests
       run: |
-        sqllocaldb create MSSQLLocalDB
-        sqllocaldb start MSSQLLocalDB
-
-        &"C:\Program Files (x86)\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe" start
+        npm install -g azurite
+        azurite --version
+        azurite &
 
         cargo test --features test_integration
 
