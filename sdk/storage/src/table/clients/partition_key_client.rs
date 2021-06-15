@@ -67,8 +67,7 @@ impl PartitionKeyClient {
 
 #[cfg(test)]
 #[cfg(feature = "test_integration")]
-// TODO #297 enable test once transactions are working in Azurite
-#[cfg(feature = "azurite_todo")]
+#[ignore = "enable test once transactions are working in Azurite #297"]
 mod integration_tests {
     use super::*;
     use crate::{
