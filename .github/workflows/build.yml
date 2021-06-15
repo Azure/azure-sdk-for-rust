@@ -5,7 +5,7 @@ on:
   push:
 
 env:
-  RUSTFLAGS: -Dwarnings
+  RUSTFLAGS: --deny warnings --allow unused_attributes
   CARGO_INCREMENTAL: 0
 
 jobs:
