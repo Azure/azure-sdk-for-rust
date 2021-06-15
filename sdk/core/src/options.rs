@@ -81,23 +81,23 @@ impl Default for RetryMode {
 #[derive(Clone, Debug)]
 pub struct RetryOptions {
     /// The algorithm to use for calculating retry delays.
-    pub(crate) mode: RetryMode,
+    mode: RetryMode,
 
     /// The delay between retry attempts for a fixed algorithm
     /// or the delay on which to base calculations for a back-off-based approach.
     ///
     /// The default is 800 milliseconds.
-    pub(crate) delay: Duration,
+    delay: Duration,
 
     /// The maximum number of retry attempts before giving up.
     ///
     /// The default is 3.
-    pub(crate) max_retries: u32,
+    max_retries: u32,
 
     /// The maximum permissible delay between retry attempts.
     ///
     /// The default is 1 minute.
-    pub(crate) max_delay: Duration,
+    max_delay: Duration,
 }
 
 impl RetryOptions {
