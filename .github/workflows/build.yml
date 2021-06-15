@@ -99,10 +99,8 @@ jobs:
 
     - name: integration tests
       run: |
-        npm install azurite
-        npx azurite --version
+        npm install azurite@3.13.1
         npx azurite &
-
         cargo test --features test_integration
 
     - name: display free disk space
