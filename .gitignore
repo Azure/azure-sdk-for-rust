@@ -13,3 +13,4 @@ sample/
 *.swo
 *.vim
 __azurite*.json
+__blobstorage__
