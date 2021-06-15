@@ -5,7 +5,7 @@ on:
   push:
 
 env:
-  RUSTFLAGS: -Dwarnings
+  RUSTFLAGS: --deny warnings --allow unused_attributes
   CARGO_INCREMENTAL: 0
 
 jobs:
@@ -85,7 +85,7 @@ jobs:
 
   test-integration:
     name: Integration Tests
-    runs-on: windows-2019
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
@@ -99,11 +99,8 @@ jobs:
 
     - name: integration tests
       run: |
-        sqllocaldb create MSSQLLocalDB
-        sqllocaldb start MSSQLLocalDB
-
-        &"C:\Program Files (x86)\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe" start
-
+        npm install azurite@3.13.1
+        npx azurite &
         cargo test --features test_integration
 
     - name: display free disk space
