@@ -111,7 +111,8 @@ mod integration_tests {
             .expect("a table service client")
     }
 
-    #[tokio::test]
+    // TODO #297 enable test once transactions are working in Azurite
+    // #[tokio::test]
     async fn test_transaction() {
         let table_service = get_emulator_client();
         let table = table_service.as_table_client("PartitionKeyClientTransaction");
