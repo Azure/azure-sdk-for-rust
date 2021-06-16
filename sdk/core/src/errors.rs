@@ -170,6 +170,8 @@ pub enum Parse512AlignedError {
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("Policy error: {0}")]
+    PolicyError(Box<dyn std::error::Error + Send + Sync>),
     #[error("Error getting token: {0}")]
     GetTokenError(Box<dyn std::error::Error + Send + Sync>),
     #[error("http error: {0}")]

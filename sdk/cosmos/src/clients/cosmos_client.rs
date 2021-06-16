@@ -140,8 +140,7 @@ impl CosmosClient {
         let response = self
             .pipeline()
             .send(&mut ctx, &mut request)
-            .await
-            .map_err(crate::Error::PolicyError)?
+            .await?
             .validate(http::StatusCode::CREATED)
             .await?;
 

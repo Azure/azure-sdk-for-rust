@@ -1,7 +1,7 @@
 #[cfg(not(target_arch = "wasm32"))]
 use crate::policies::TransportPolicy;
-use crate::policies::{Policy, PolicyResult, TelemetryPolicy};
-use crate::{ClientOptions, Context, HttpClient, Request, Response};
+use crate::policies::{Policy, TelemetryPolicy};
+use crate::{ClientOptions, Context, Error, HttpClient, Request, Response};
 use std::sync::Arc;
 
 /// Execution pipeline.
@@ -81,9 +81,10 @@ impl Pipeline {
         self.http_client.as_ref()
     }
 
-    pub async fn send(&self, ctx: &mut Context, request: &mut Request) -> PolicyResult<Response> {
+    pub async fn send(&self, ctx: &mut Context, request: &mut Request) -> Result<Response, Error> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
+            .map_err(Error::PolicyError)
     }
 }
