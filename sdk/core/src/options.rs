@@ -36,12 +36,12 @@ pub struct ClientOptions {
 
 impl ClientOptions {
     /// A mutable reference to per-call policies.
-    pub fn mut_per_call_policies(&mut self) -> &mut Vec<Arc<dyn Policy>> {
+    pub fn per_call_policies_mut(&mut self) -> &mut Vec<Arc<dyn Policy>> {
         &mut self.per_call_policies
     }
 
     /// A mutable reference to per-retry policies.
-    pub fn mut_per_retry_policies(&mut self) -> &mut Vec<Arc<dyn Policy>> {
+    pub fn per_retry_policies_mut(&mut self) -> &mut Vec<Arc<dyn Policy>> {
         &mut self.per_retry_policies
     }
 
