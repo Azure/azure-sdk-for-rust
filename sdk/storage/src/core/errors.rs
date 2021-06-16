@@ -63,9 +63,9 @@ pub enum Error {
     #[error("UnexpectedXMLError: {0}")]
     UnexpectedXMLError(String),
     #[error("digest length {0} bytes instead of 16")]
-    DigestNot16BytesLong(u64),
+    DigestNot16BytesLong(usize),
     #[error("CRC64 length {0} bytes instead of 8")]
-    CRC64Not8BytesLong(u64),
+    CRC64Not8BytesLong(usize),
     #[error("At least one of these headers must be present: {0:?}")]
     HeadersNotFound(Vec<String>),
 }
