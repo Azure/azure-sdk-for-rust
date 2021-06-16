@@ -33,6 +33,7 @@ pub enum Error {
     Utf8Error(#[from] std::str::Utf8Error),
     #[error("base64 decode error: {0}")]
     DecodeError(#[from] base64::DecodeError),
-    #[error("Conversion to document failed because at lease one element is raw.")]
-    RawElementError,
+    /// Other errors that can happen but are unlikely to be matched against
+    #[error(transparent)]
+    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
