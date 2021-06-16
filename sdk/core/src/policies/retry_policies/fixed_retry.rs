@@ -19,7 +19,7 @@ pub struct FixedRetryPolicy {
 
 impl FixedRetryPolicy {
     pub(crate) fn new(delay: Duration, max_retries: u32, max_delay: Duration) -> Self {
-        FixedRetryPolicy {
+        Self {
             delay,
             max_retries,
             max_delay,
