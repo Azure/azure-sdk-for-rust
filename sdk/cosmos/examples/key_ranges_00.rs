@@ -16,8 +16,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
-    let http_client = azure_core::new_http_client();
-    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
+    let client = CosmosClient::new(
+        account.clone(),
+        authorization_token,
+        CosmosOptions::default(),
+    );
 
     let client = client.into_database_client(database);
     let client = client.into_collection_client(collection);

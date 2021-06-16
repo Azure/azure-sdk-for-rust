@@ -1,28 +1,22 @@
-#[allow(unused_imports)]
+#[cfg(not(target_arch = "wasm32"))]
 use crate::policies::{Policy, PolicyResult};
+#[allow(unused_imports)]
+use crate::TransportOptions;
 #[allow(unused_imports)]
 use crate::{Context, HttpClient, Request, Response};
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
-pub struct TransportOptions {
-    http_client: Arc<dyn HttpClient>,
-}
-
-impl TransportOptions {
-    pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
-        Self { http_client }
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct TransportPolicy {
-    options: TransportOptions,
+    pub(crate) http_client: Arc<dyn HttpClient>,
 }
 
 impl TransportPolicy {
-    pub fn new(options: TransportOptions) -> Self {
-        Self { options }
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn new(options: &TransportOptions) -> Self {
+        Self {
+            http_client: options.http_client.clone(),
+        }
     }
 }
 
@@ -38,7 +32,7 @@ impl Policy for TransportPolicy {
         // there must be no more policies
         assert_eq!(0, next.len());
 
-        let response = { self.options.http_client.execute_request2(request) };
+        let response = { self.http_client.execute_request2(request) };
 
         Ok(response.await?.into())
     }

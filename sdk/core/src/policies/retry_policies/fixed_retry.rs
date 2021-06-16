@@ -4,30 +4,28 @@ use chrono::{DateTime, Local};
 use std::sync::Arc;
 use std::time::Duration;
 
-/// Retry policy with linear backoff.
+/// Retry policy with fixed back-off.
 ///
-/// Retry policy with linear backoff (with an added random delay up to 256 ms). Each retry will
+/// Retry policy with fixed back-off (with an added random delay up to 256 ms). Each retry will
 /// happen at least after the same, configured sleep time. The policy will retry until the maximum number of
 /// retries have been reached or the maximum allowed delay has passed (whichever comes first). The
 /// wait time is not precise.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LinearRetryPolicy {
+pub struct FixedRetryPolicy {
     delay: Duration,
     max_retries: u32,
     max_delay: Duration,
 }
 
-impl Default for LinearRetryPolicy {
-    fn default() -> Self {
-        Self {
-            delay: Duration::from_secs(3),
-            max_retries: 3,
-            max_delay: Duration::from_secs(10),
+impl FixedRetryPolicy {
+    pub(crate) fn new(delay: Duration, max_retries: u32, max_delay: Duration) -> Self {
+        FixedRetryPolicy {
+            delay,
+            max_retries,
+            max_delay,
         }
     }
-}
 
-impl LinearRetryPolicy {
     fn is_expired(
         &self,
         first_retry_time: &mut Option<DateTime<Local>>,
@@ -47,7 +45,7 @@ impl LinearRetryPolicy {
 }
 
 #[async_trait::async_trait]
-impl Policy for LinearRetryPolicy {
+impl Policy for FixedRetryPolicy {
     async fn send(
         &self,
         ctx: &mut Context,

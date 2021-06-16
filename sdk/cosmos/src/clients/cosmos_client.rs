@@ -5,12 +5,11 @@ use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 
-use azure_core::client_options::ClientOptions;
 use azure_core::pipeline::Pipeline;
-use azure_core::policies::{LinearRetryPolicy, Policy, TransportOptions, TransportPolicy};
 use azure_core::Context;
 use azure_core::HttpClient;
 use azure_core::Request;
+use azure_core::*;
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};
 use ring::hmac;
@@ -27,62 +26,45 @@ const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 /// A plain Cosmos client.
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
-    http_client: Arc<dyn HttpClient>,
     pipeline: Pipeline,
     auth_token: AuthorizationToken,
     cloud_location: CloudLocation,
 }
 
 /// Options for specifying how a Cosmos client will behave
+#[derive(Debug, Clone, Default)]
 pub struct CosmosOptions {
     options: ClientOptions,
-    retry: Arc<dyn Policy>,
-    transport: TransportOptions,
 }
 
 impl CosmosOptions {
     /// Create options based on the provided http client
     pub fn with_client(client: Arc<dyn HttpClient>) -> Self {
         Self {
-            options: ClientOptions::default(),
-            retry: Arc::new(LinearRetryPolicy::default()), // this defaults to linear backoff
-            transport: TransportOptions::new(client),
+            options: ClientOptions::default()
+                .retry(RetryOptions::default().mode(RetryMode::Fixed))
+                .transport(TransportOptions::new(client)),
         }
     }
 }
 
 /// Create a Pipeline from CosmosOptions
 fn new_pipeline_from_options(options: CosmosOptions) -> Pipeline {
-    let per_call_policies = Vec::new();
-    let per_retry_policies = Vec::new();
-    let transport_policy = TransportPolicy::new(options.transport);
     Pipeline::new(
         option_env!("CARGO_PKG_NAME"),
         option_env!("CARGO_PKG_VERSION"),
         &options.options,
-        per_call_policies,
-        options.retry,
-        per_retry_policies,
-        Arc::new(transport_policy),
+        Vec::new(),
+        Vec::new(),
     )
-}
-
-/// Create a Pipeline from an HttpClient
-fn new_pipeline_from_http_client(http_client: Arc<dyn HttpClient>) -> Pipeline {
-    new_pipeline_from_options(CosmosOptions::with_client(http_client))
 }
 
 impl CosmosClient {
     /// Create a new `CosmosClient` which connects to the account's instance in the public Azure cloud.
-    pub fn new(
-        http_client: Arc<dyn HttpClient>,
-        account: String,
-        auth_token: AuthorizationToken,
-    ) -> Self {
+    pub fn new(account: String, auth_token: AuthorizationToken, options: CosmosOptions) -> Self {
         let cloud_location = CloudLocation::Public(account);
-        let pipeline = new_pipeline_from_http_client(http_client.clone());
+        let pipeline = new_pipeline_from_options(options);
         Self {
-            http_client,
             pipeline,
             auth_token,
             cloud_location,
@@ -91,14 +73,13 @@ impl CosmosClient {
 
     /// Create a new `CosmosClient` which connects to the account's instance in the Chinese Azure cloud.
     pub fn new_china(
-        http_client: Arc<dyn HttpClient>,
         account: String,
         auth_token: AuthorizationToken,
+        options: CosmosOptions,
     ) -> Self {
         let cloud_location = CloudLocation::China(account);
-        let pipeline = new_pipeline_from_http_client(http_client.clone());
+        let pipeline = new_pipeline_from_options(options);
         Self {
-            http_client,
             pipeline,
             auth_token,
             cloud_location,
@@ -107,15 +88,14 @@ impl CosmosClient {
 
     /// Create a new `CosmosClient` which connects to the account's instance in custom Azure cloud.
     pub fn new_custom(
-        http_client: Arc<dyn HttpClient>,
         account: String,
         auth_token: AuthorizationToken,
         uri: String,
+        options: CosmosOptions,
     ) -> Self {
         let cloud_location = CloudLocation::Custom { account, uri };
-        let pipeline = new_pipeline_from_http_client(http_client.clone());
+        let pipeline = new_pipeline_from_options(options);
         Self {
-            http_client,
             pipeline,
             auth_token,
             cloud_location,
@@ -123,7 +103,7 @@ impl CosmosClient {
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in Azure emulator
-    pub fn new_emulator(http_client: Arc<dyn HttpClient>, address: &str, port: u16) -> Self {
+    pub fn new_emulator(address: &str, port: u16, options: CosmosOptions) -> Self {
         //Account name: localhost:<port>
         //Account key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
         let auth_token = AuthorizationToken::primary_from_base64(
@@ -134,9 +114,8 @@ impl CosmosClient {
             account: String::from("Custom"),
             uri,
         };
-        let pipeline = new_pipeline_from_http_client(http_client.clone());
+        let pipeline = new_pipeline_from_options(options);
         Self {
-            http_client,
             pipeline,
             auth_token,
             cloud_location,
@@ -223,7 +202,7 @@ impl CosmosClient {
     }
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.http_client.as_ref()
+        self.pipeline.http_client()
     }
 
     fn prepare_request_with_signature(
