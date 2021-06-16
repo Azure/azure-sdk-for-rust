@@ -32,6 +32,7 @@ pub struct CosmosClient {
     auth_token: AuthorizationToken,
     cloud_location: CloudLocation,
 }
+
 /// Options for specifying how a Cosmos client will behave
 pub struct CosmosOptions {
     options: ClientOptions,
@@ -142,22 +143,6 @@ impl CosmosClient {
         }
     }
 
-    /// Construct a pipeline with explicit options
-    pub fn with_pipeline(
-        http_client: Arc<dyn HttpClient>,
-        account: String, // TODO: this will eventually be a URL
-        auth_token: AuthorizationToken,
-        options: CosmosOptions,
-    ) -> Self {
-        let pipeline = new_pipeline_from_options(options);
-        Self {
-            http_client,
-            pipeline,
-            auth_token,
-            cloud_location: CloudLocation::Public(account),
-        }
-    }
-
     /// Set the auth token used
     pub fn auth_token(&mut self, auth_token: AuthorizationToken) {
         self.auth_token = auth_token;
@@ -177,7 +162,9 @@ impl CosmosClient {
             .pipeline()
             .send(&mut ctx, &mut request)
             .await
-            .map_err(crate::Error::PolicyError)?;
+            .map_err(crate::Error::PolicyError)?
+            .validate(http::StatusCode::CREATED)
+            .await?;
 
         Ok(CreateDatabaseResponse::try_from(response).await?)
     }
@@ -196,6 +183,11 @@ impl CosmosClient {
         DatabaseClient::new(self, database_name)
     }
 
+    /// Prepares an `http::RequestBuilder`.
+    ///
+    /// TODO: Remove once all operations have been moved to pipeline architecture. This is used by
+    /// legacy operations that have not moved to the use of the pipeline architecture. Once
+    /// that is complete, this will be superceded by `prepare_request2`.
     pub(crate) fn prepare_request(
         &self,
         uri_path: &str,
@@ -217,7 +209,9 @@ impl CosmosClient {
         self.prepare_request_with_signature(uri_path, http_method, &time, &auth)
     }
 
-    // Eventually this method will replace `prepare_request` fully
+    /// Prepares' an `azure_core::Request`.
+    ///
+    /// Note: Eventually this method will replace `prepare_request` fully
     pub(crate) fn prepare_request2(
         &self,
         uri_path: &str,

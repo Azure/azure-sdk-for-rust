@@ -6,7 +6,6 @@ use azure_cosmos::prelude::*;
 use azure_cosmos::responses::GetDocumentResponse;
 use std::borrow::Cow;
 use std::error::Error;
-use std::sync::Arc;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 struct MySampleStruct<'a> {
@@ -67,17 +66,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_iter()
         .find(|db| db.id == DATABASE);
 
-    let database_client = CosmosClient::with_pipeline(
-        http_client,
-        account,
-        authorization_token,
-        CosmosOptions::with_client(Arc::new(reqwest::Client::new())),
-    );
     // If the requested database is not found we create it.
     let database = match db {
         Some(db) => db,
         None => {
-            database_client
+            client
                 .create_database(Context::new(), DATABASE, CreateDatabaseOptions::new())
                 .await?
                 .database

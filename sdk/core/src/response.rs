@@ -37,15 +37,15 @@ impl ResponseBuilder {
 pub struct Response {
     status: StatusCode,
     headers: HeaderMap,
-    response: PinnedStream,
+    body: PinnedStream,
 }
 
 impl Response {
-    fn new(status: StatusCode, headers: HeaderMap, response: PinnedStream) -> Self {
+    fn new(status: StatusCode, headers: HeaderMap, body: PinnedStream) -> Self {
         Self {
             status,
             headers,
-            response,
+            body,
         }
     }
 
@@ -58,7 +58,23 @@ impl Response {
     }
 
     pub fn deconstruct(self) -> (StatusCode, HeaderMap, PinnedStream) {
-        (self.status, self.headers, self.response)
+        (self.status, self.headers, self.body)
+    }
+
+    pub async fn validate(self, expected_status: StatusCode) -> Result<Self, crate::HttpError> {
+        let status = self.status();
+        if expected_status != status {
+            let body = collect_pinned_stream(self.body)
+                .await
+                .unwrap_or_else(|_| Bytes::from_static("<INVALID BODY>".as_bytes()));
+            Err(crate::HttpError::new_unexpected_status_code(
+                expected_status,
+                status,
+                std::str::from_utf8(&body as &[u8]).unwrap_or("<NON-UTF8 BODY>"),
+            ))
+        } else {
+            Ok(self)
+        }
     }
 }
 

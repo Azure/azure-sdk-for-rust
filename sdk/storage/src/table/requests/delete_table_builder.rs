@@ -42,7 +42,7 @@ impl<'a> DeleteTableBuilder<'a> {
             &Method::DELETE,
             &|mut request| {
                 request = add_optional_header(&self.client_request_id, request);
-                request = request.header("Content-Type", "application/json");
+                request = request.header("Accept", "application/json");
                 request
             },
             None,

@@ -111,6 +111,7 @@ mod integration_tests {
             .expect("a table service client")
     }
 
+    #[ignore = "enable test once transactions are working in Azurite #297"]
     #[tokio::test]
     async fn test_transaction() {
         let table_service = get_emulator_client();
