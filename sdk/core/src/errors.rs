@@ -30,8 +30,6 @@ pub enum ParsingError {
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum ParseError {
-    #[error("Expected token \"{0}\" not found")]
-    TokenNotFound(String),
     #[error("Expected split char \'{0}\' not found")]
     SplitNotFound(char),
     #[error("Parse int error {0}")]
