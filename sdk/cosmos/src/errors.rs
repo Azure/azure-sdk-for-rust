@@ -1,4 +1,4 @@
-/// A general error having to do with Cosmos.
+/// An error having to do with Cosmos.
 #[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
@@ -26,7 +26,7 @@ pub enum Error {
 pub enum ParsingError {
     #[error("Resource quota parsing error: {0}")]
     ParseResourceQuotaError(#[from] crate::resource_quota::ResourceQuotaParsingError),
-    #[error("parsing error: {0}")]
+    #[error(transparent)]
     Other(azure_core::ParsingError),
 }
 

@@ -3,7 +3,7 @@ use crate::request_options::LeaseId;
 use crate::util::HeaderMapExt;
 use crate::*;
 use crate::{RequestId, SessionToken};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, FixedOffset, Utc};
 use http::header::{DATE, ETAG, LAST_MODIFIED};
 #[cfg(feature = "enable_hyper")]
 use http::status::StatusCode;
@@ -33,10 +33,10 @@ pub fn rfc2822_from_headers_mandatory(
     headers: &HeaderMap,
     header_name: &str,
 ) -> Result<DateTime<Utc>, Error> {
-    let val = get_str_from_headers(headers, header_name)?;
-    let val = DateTime::parse_from_rfc2822(val)?;
-    let val = DateTime::from_utc(val.naive_utc(), Utc);
-    Ok(val)
+    let date = get_str_from_headers(headers, header_name)?;
+    let date = parse_from_rfc2822(date)?;
+    let date = DateTime::from_utc(date.naive_utc(), Utc);
+    Ok(date)
 }
 
 pub fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, Error> {
@@ -54,13 +54,13 @@ pub fn continuation_token_from_headers_optional(
 }
 
 pub fn utc_date_from_rfc2822(date: &str) -> Result<DateTime<Utc>, Error> {
-    let date = DateTime::parse_from_rfc2822(date)?;
+    let date = parse_from_rfc2822(date)?;
     Ok(DateTime::from_utc(date.naive_utc(), Utc))
 }
 
 pub fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, Error> {
     let date = get_str_from_headers(headers, &DATE.to_string())?;
-    let date = DateTime::parse_from_rfc2822(date)?;
+    let date = parse_from_rfc2822(date)?;
     let date = DateTime::from_utc(date.naive_utc(), Utc);
     Ok(date)
 }
@@ -182,4 +182,8 @@ where
         )),
         None => Ok(None),
     }
+}
+
+fn parse_from_rfc2822(date: &str) -> Result<DateTime<FixedOffset>, ParsingError> {
+    DateTime::parse_from_rfc2822(date).map_err(ParsingError::ParseDateTimeError)
 }

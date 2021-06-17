@@ -28,14 +28,10 @@ pub enum Error {
         expected_parameter: String,
         url: url::Url,
     },
-    #[error("Parse int error: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
     #[error("Error preparing HTTP request: {0}")]
     HttpPrepareError(#[from] http::Error),
-    #[error("uuid error: {0}")]
-    ParseUuidError(#[from] uuid::Error),
-    #[error("Chrono parser error: {0}")]
-    ChronoParserError(#[from] chrono::ParseError),
+    #[error(transparent)]
+    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
 #[cfg(feature = "enable_hyper")]
@@ -59,7 +55,7 @@ pub enum ParsingError {
     #[error("error parsing uuid: {0}")]
     ParseUuidError(#[from] uuid::Error),
     #[error("error parsing date time: {0}")]
-    ParseDateTimeError(#[from] chrono::format::ParseError),
+    ParseDateTimeError(#[from] chrono::ParseError),
     #[error("error parsing a float: {0}")]
     ParseFloatError(#[from] std::num::ParseFloatError),
     #[error("error parsing bool: {0}")]
