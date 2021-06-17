@@ -1,14 +1,15 @@
 /// An error having to do with Cosmos.
-#[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    /// An error as defined in the `azure_core` crate
     #[error(transparent)]
     AzureCoreError(#[from] azure_core::Error),
+    /// An error related to parsing
     #[error(transparent)]
     ParsingError(ParsingError),
-    #[error("http error: {0}")]
-    AzureHttpError(#[from] azure_core::HttpError),
+    // TODO forward this to azure_core::Error
+    #[allow(missing_docs)]
     #[error("http error: {0}")]
     HttpError(#[from] http::Error),
     /// Other errors that can happen but are unlikely to be matched against
@@ -16,6 +17,9 @@ pub enum Error {
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
+/// A parsing error
+///
+/// Most issues are already defined in `azure_core`
 #[derive(Debug, thiserror::Error)]
 pub enum ParsingError {
     #[error("Resource quota parsing error: {0}")]
@@ -38,5 +42,10 @@ impl From<serde_json::Error> for Error {
 impl From<azure_core::StreamError> for Error {
     fn from(error: azure_core::StreamError) -> Self {
         Self::AzureCoreError(azure_core::Error::StreamError(error))
+    }
+}
+impl From<azure_core::HttpError> for Error {
+    fn from(error: azure_core::HttpError) -> Self {
+        Self::AzureCoreError(azure_core::Error::HttpError(error))
     }
 }

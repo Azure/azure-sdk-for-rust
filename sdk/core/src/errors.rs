@@ -9,18 +9,18 @@ pub enum Error {
     PolicyError(Box<dyn std::error::Error + Send + Sync>),
     #[error("parsing error: {0}")]
     ParsingError(#[from] ParsingError),
-    #[error("Error getting token: {0}")]
+    #[error("error getting token: {0}")]
     GetTokenError(Box<dyn std::error::Error + Send + Sync>),
     #[error("http error: {0}")]
     HttpError(#[from] HttpError),
     #[error("to str error: {0}")]
     ToStrError(#[from] http::header::ToStrError),
-    #[error("Header not found: {0}")]
+    #[error("header not found: {0}")]
     HeaderNotFound(String),
-    #[error("At least one of these headers must be present: {0:?}")]
+    #[error("at least one of these headers must be present: {0:?}")]
     HeadersNotFound(Vec<String>),
     #[error(
-        "The expected query parameter {} was not found in the provided Url: {:?}",
+        "the expected query parameter {} was not found in the provided Url: {:?}",
         expected_parameter,
         url
     )]
@@ -28,7 +28,7 @@ pub enum Error {
         expected_parameter: String,
         url: url::Url,
     },
-    #[error("Error preparing HTTP request: {0}")]
+    #[error("error preparing HTTP request: {0}")]
     HttpPrepareError(#[from] http::Error),
     #[error(transparent)]
     StreamError(#[from] StreamError),
