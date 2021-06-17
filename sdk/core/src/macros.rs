@@ -91,7 +91,7 @@ macro_rules! create_enum {
                     $(
                         $value => Ok($name::$variant),
                     )*
-                    _ => Err($crate::ParsingError::ElementNotFound(s.to_owned())),
+                    _ => Err($crate::ParsingError::UnknownVariant(stringify!($name).to_owned(), s.to_owned())),
                 }
             }
         }

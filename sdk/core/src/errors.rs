@@ -9,8 +9,16 @@ type HttpClientError = reqwest::Error;
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum ParsingError {
-    #[error("Element not found: {0}")]
-    ElementNotFound(String),
+    #[error("error parsing int: {0}")]
+    ParseIntError(#[from] std::num::ParseIntError),
+    #[error("error parsing uuid: {0}")]
+    ParseUuidError(#[from] uuid::Error),
+    #[error("error parsing date time: {0}")]
+    ParseDateTimeError(#[from] chrono::format::ParseError),
+    #[error("error parsing a float: {0}")]
+    ParseFloatError(#[from] std::num::ParseFloatError),
+    #[error("unknown variant of {0} found: \"{1}\"")]
+    UnknownVariant(String, String),
 }
 
 #[non_exhaustive]

@@ -30,16 +30,14 @@ pub enum Error {
 
 #[derive(Debug, thiserror::Error)]
 pub enum ParsingError {
-    #[error("Parse int error: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
-    #[error("uuid error: {0}")]
-    ParseUuidError(#[from] uuid::Error),
-    #[error("Date time parse error: {0}")]
-    ParseDateTimeError(#[from] chrono::format::ParseError),
-    #[error("Parse float error: {0}")]
-    ParseFloatError(#[from] std::num::ParseFloatError),
     #[error("Resource quota parsing error: {0}")]
     ParseResourceQuotaError(#[from] crate::resource_quota::ResourceQuotaParsingError),
     #[error("parsing error: {0}")]
-    Other(#[from] azure_core::ParsingError),
+    Other(azure_core::ParsingError),
+}
+
+impl<T: Into<azure_core::ParsingError>> From<T> for ParsingError {
+    fn from(error: T) -> Self {
+        Self::Other(error.into())
+    }
 }

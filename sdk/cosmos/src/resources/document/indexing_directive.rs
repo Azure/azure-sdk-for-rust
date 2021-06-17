@@ -32,7 +32,10 @@ impl std::str::FromStr for IndexingDirective {
             "Default" => Ok(IndexingDirective::Default),
             "Exclude" => Ok(IndexingDirective::Exclude),
             "Include" => Ok(IndexingDirective::Include),
-            _ => Err(ParsingError::ElementNotFound(s.to_owned())),
+            _ => Err(ParsingError::UnknownVariant(
+                "IndexingDirective".to_owned(),
+                s.to_owned(),
+            )),
         }
     }
 }
