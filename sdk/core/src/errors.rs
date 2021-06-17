@@ -1,6 +1,43 @@
 use http::StatusCode;
 #[cfg(feature = "enable_hyper")]
 use hyper::{self, body, Body};
+
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Policy error: {0}")]
+    PolicyError(Box<dyn std::error::Error + Send + Sync>),
+    #[error("Error getting token: {0}")]
+    GetTokenError(Box<dyn std::error::Error + Send + Sync>),
+    #[error("http error: {0}")]
+    HttpError(#[from] HttpError),
+    #[error("parse bool error: {0}")]
+    ParseBoolError(#[from] std::str::ParseBoolError),
+    #[error("to str error: {0}")]
+    ToStrError(#[from] http::header::ToStrError),
+    #[error("Header not found: {0}")]
+    HeaderNotFound(String),
+    #[error("At least one of these headers must be present: {0:?}")]
+    HeadersNotFound(Vec<String>),
+    #[error(
+        "The expected query parameter {} was not found in the provided Url: {:?}",
+        expected_parameter,
+        url
+    )]
+    UrlQueryParameterNotFound {
+        expected_parameter: String,
+        url: url::Url,
+    },
+    #[error("Parse int error: {0}")]
+    ParseIntError(#[from] std::num::ParseIntError),
+    #[error("Error preparing HTTP request: {0}")]
+    HttpPrepareError(#[from] http::Error),
+    #[error("uuid error: {0}")]
+    ParseUuidError(#[from] uuid::Error),
+    #[error("Chrono parser error: {0}")]
+    ChronoParserError(#[from] chrono::ParseError),
+}
+
 #[cfg(feature = "enable_hyper")]
 type HttpClientError = hyper::Error;
 #[cfg(feature = "enable_reqwest")]
@@ -25,28 +62,6 @@ pub enum ParsingError {
         token: String,
         full: String,
     },
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, thiserror::Error)]
-pub enum ParseError {
-    #[error("Expected split char \'{0}\' not found")]
-    SplitNotFound(char),
-    #[error("Parse int error {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
-}
-
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum AzurePathParseError {
-    #[error("Path separator not found")]
-    PathSeparatorNotFoundError,
-    #[error("Multiple path separators found")]
-    MultiplePathSeparatorsFoundError,
-    #[error("Missing container name")]
-    MissingContainerError,
-    #[error("Missing blob name")]
-    MissingBlobError,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -177,42 +192,6 @@ pub enum Parse512AlignedError {
     ParseIntError(#[from] std::num::ParseIntError),
     #[error("not 512 byte aligned error: {0}")]
     Not512ByteAlignedError(#[from] Not512ByteAlignedError),
-}
-
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Policy error: {0}")]
-    PolicyError(Box<dyn std::error::Error + Send + Sync>),
-    #[error("Error getting token: {0}")]
-    GetTokenError(Box<dyn std::error::Error + Send + Sync>),
-    #[error("http error: {0}")]
-    HttpError(#[from] HttpError),
-    #[error("parse bool error: {0}")]
-    ParseBoolError(#[from] std::str::ParseBoolError),
-    #[error("to str error: {0}")]
-    ToStrError(#[from] http::header::ToStrError),
-    #[error("Header not found: {0}")]
-    HeaderNotFound(String),
-    #[error("At least one of these headers must be present: {0:?}")]
-    HeadersNotFound(Vec<String>),
-    #[error(
-        "The expected query parameter {} was not found in the provided Url: {:?}",
-        expected_parameter,
-        url
-    )]
-    UrlQueryParameterNotFound {
-        expected_parameter: String,
-        url: url::Url,
-    },
-    #[error("Parse int error: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
-    #[error("Error preparing HTTP request: {0}")]
-    HttpPrepareError(#[from] http::Error),
-    #[error("uuid error: {0}")]
-    ParseUuidError(#[from] uuid::Error),
-    #[error("Chrono parser error: {0}")]
-    ChronoParserError(#[from] chrono::ParseError),
 }
 
 #[non_exhaustive]
