@@ -7,12 +7,12 @@ use hyper::{self, body, Body};
 pub enum Error {
     #[error("Policy error: {0}")]
     PolicyError(Box<dyn std::error::Error + Send + Sync>),
+    #[error("parsing error: {0}")]
+    ParsingError(#[from] ParsingError),
     #[error("Error getting token: {0}")]
     GetTokenError(Box<dyn std::error::Error + Send + Sync>),
     #[error("http error: {0}")]
     HttpError(#[from] HttpError),
-    #[error("parse bool error: {0}")]
-    ParseBoolError(#[from] std::str::ParseBoolError),
     #[error("to str error: {0}")]
     ToStrError(#[from] http::header::ToStrError),
     #[error("Header not found: {0}")]
@@ -46,14 +46,6 @@ type HttpClientError = reqwest::Error;
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum ParsingError {
-    #[error("error parsing int: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
-    #[error("error parsing uuid: {0}")]
-    ParseUuidError(#[from] uuid::Error),
-    #[error("error parsing date time: {0}")]
-    ParseDateTimeError(#[from] chrono::format::ParseError),
-    #[error("error parsing a float: {0}")]
-    ParseFloatError(#[from] std::num::ParseFloatError),
     #[error("unknown variant of {item} found: \"{variant}\"")]
     UnknownVariant { item: &'static str, variant: String },
     #[error("expected token \"{token}\" not found when parsing {item} from \"{full}\"")]
@@ -62,6 +54,16 @@ pub enum ParsingError {
         token: String,
         full: String,
     },
+    #[error("error parsing int: {0}")]
+    ParseIntError(#[from] std::num::ParseIntError),
+    #[error("error parsing uuid: {0}")]
+    ParseUuidError(#[from] uuid::Error),
+    #[error("error parsing date time: {0}")]
+    ParseDateTimeError(#[from] chrono::format::ParseError),
+    #[error("error parsing a float: {0}")]
+    ParseFloatError(#[from] std::num::ParseFloatError),
+    #[error("error parsing bool: {0}")]
+    ParseBoolError(#[from] std::str::ParseBoolError),
 }
 
 #[derive(Debug, Clone, PartialEq)]

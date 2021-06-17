@@ -184,7 +184,9 @@ pub fn delete_type_permanent_from_headers(headers: &HeaderMap) -> Result<bool, E
         .ok_or_else(|| Error::HeaderNotFound(DELETE_TYPE_PERMANENT.to_owned()))?
         .to_str()?;
 
-    let delete_type_permanent = delete_type_permanent.parse::<bool>()?;
+    let delete_type_permanent = delete_type_permanent
+        .parse::<bool>()
+        .map_err(ParsingError::ParseBoolError)?;
 
     trace!("delete_type_permanent == {:?}", delete_type_permanent);
     Ok(delete_type_permanent)
@@ -243,7 +245,9 @@ pub fn request_server_encrypted_from_headers(headers: &HeaderMap) -> Result<bool
         .ok_or_else(|| Error::HeaderNotFound(REQUEST_SERVER_ENCRYPTED.to_owned()))?
         .to_str()?;
 
-    let request_server_encrypted = request_server_encrypted.parse::<bool>()?;
+    let request_server_encrypted = request_server_encrypted
+        .parse::<bool>()
+        .map_err(ParsingError::ParseBoolError)?;
 
     trace!("request_server_encrypted == {:?}", request_server_encrypted);
     Ok(request_server_encrypted)
