@@ -107,19 +107,25 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "TokenNotFound(\"bytes \")")]
+    #[should_panic(
+        expected = "TokenNotFound { item: \"ContentRange\", token: \"bytes \", full: \"something else\" }"
+    )]
     fn test_parse_no_starting_token() {
         "something else".parse::<ContentRange>().unwrap();
     }
 
     #[test]
-    #[should_panic(expected = "SplitNotFound('-')")]
+    #[should_panic(
+        expected = "TokenNotFound { item: \"ContentRange\", token: \"-\", full: \"bytes 100\""
+    )]
     fn test_parse_no_dash() {
         "bytes 100".parse::<ContentRange>().unwrap();
     }
 
     #[test]
-    #[should_panic(expected = "SplitNotFound('/')")]
+    #[should_panic(
+        expected = "TokenNotFound { item: \"ContentRange\", token: \"/\", full: \"bytes 100-500\""
+    )]
     fn test_parse_no_slash() {
         "bytes 100-500".parse::<ContentRange>().unwrap();
     }

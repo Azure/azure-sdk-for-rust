@@ -206,7 +206,7 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "ElementNotFound(\"Red\")")]
+    #[should_panic(expected = "UnknownVariant { item: \"ColorsMonochrome\", variant: \"Red\" }")]
     fn test_color_parse_err_1() {
         "Red".parse::<ColorsMonochrome>().unwrap();
     }

@@ -121,7 +121,7 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "SplitNotFound")]
+    #[should_panic(expected = "TokenNotFound")]
     fn test_range_parse_panic_2() {
         "1000-2000".parse::<Range>().unwrap();
     }
