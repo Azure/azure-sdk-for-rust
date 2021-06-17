@@ -20,10 +20,6 @@ impl<'a> std::convert::TryFrom<Response<bytes::Bytes>> for GetPermissionResponse
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
         let body = response.body();
-
-        debug!("headers == {:#?}", headers);
-        debug!("body == {:#?}", std::str::from_utf8(body)?);
-
         let permission: Permission<'_> = serde_json::from_slice(body)?;
 
         Ok(Self {

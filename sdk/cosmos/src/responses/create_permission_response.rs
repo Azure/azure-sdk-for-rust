@@ -22,9 +22,6 @@ impl<'a> std::convert::TryFrom<Response<bytes::Bytes>> for CreatePermissionRespo
         let headers = response.headers();
         let body: &[u8] = response.body();
 
-        debug!("headers == {:#?}", headers);
-        debug!("body == {:#?}", std::str::from_utf8(body)?);
-
         Ok(Self {
             permission: body.try_into()?,
             charge: request_charge_from_headers(headers)?,

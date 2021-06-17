@@ -7,9 +7,7 @@ pub enum Error {
     AzureCoreError(#[from] azure_core::Error),
     #[error(transparent)]
     ParsingError(ParsingError),
-    #[error("Header not found: {0}")]
-    HeaderNotFound(String),
-    #[error("To str error: {0}")]
+    #[error("error converting to string: {0}")]
     ToStrError(#[from] http::header::ToStrError),
     #[error("http error: {0}")]
     AzureHttpError(#[from] azure_core::HttpError),
@@ -19,10 +17,6 @@ pub enum Error {
     HttpError(#[from] http::Error),
     #[error("JSON error: {0}")]
     JsonError(#[from] serde_json::Error),
-    #[error("UTF-8 conversion error: {0}")]
-    Utf8Error(#[from] std::str::Utf8Error),
-    #[error("base64 decode error: {0}")]
-    DecodeError(#[from] base64::DecodeError),
     /// Other errors that can happen but are unlikely to be matched against
     #[error(transparent)]
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),

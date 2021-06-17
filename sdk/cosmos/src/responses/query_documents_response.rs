@@ -102,9 +102,6 @@ where
         let headers = response.headers();
         let body = response.body();
 
-        debug!("headers == {:#?}", headers);
-        debug!("body == {}", std::str::from_utf8(body)?);
-
         let inner: Value = serde_json::from_slice(body)?;
         let mut results = Vec::new();
         if let Value::Array(documents) = &inner["Documents"] {

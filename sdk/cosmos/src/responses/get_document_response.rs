@@ -22,12 +22,6 @@ where
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let status_code = response.status();
-        let headers = response.headers();
-        let body: &[u8] = response.body();
-
-        debug!("status_code == {:?}", status_code);
-        debug!("headers == {:#?}", headers);
-        debug!("body == {:#?}", std::str::from_utf8(body)?);
 
         let has_been_found =
             status_code == StatusCode::OK || status_code == StatusCode::NOT_MODIFIED;

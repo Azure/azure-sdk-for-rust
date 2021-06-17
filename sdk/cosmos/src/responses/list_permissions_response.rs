@@ -21,9 +21,6 @@ impl<'a> std::convert::TryFrom<Response<bytes::Bytes>> for ListPermissionsRespon
         let headers = response.headers();
         let body = response.body();
 
-        debug!("headers == {:#?}", headers);
-        debug!("body == {:#?}", std::str::from_utf8(body)?);
-
         #[derive(Debug, Deserialize)]
         struct Response<'b> {
             _rid: String,
