@@ -7,12 +7,8 @@ pub enum Error {
     AzureCoreError(#[from] azure_core::Error),
     #[error(transparent)]
     ParsingError(ParsingError),
-    #[error("error converting to string: {0}")]
-    ToStrError(#[from] http::header::ToStrError),
     #[error("http error: {0}")]
     AzureHttpError(#[from] azure_core::HttpError),
-    #[error("stream error: {0}")]
-    StreamError(#[from] azure_core::StreamError),
     #[error("http error: {0}")]
     HttpError(#[from] http::Error),
     #[error("JSON error: {0}")]

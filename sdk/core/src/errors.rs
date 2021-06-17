@@ -31,6 +31,8 @@ pub enum Error {
     #[error("Error preparing HTTP request: {0}")]
     HttpPrepareError(#[from] http::Error),
     #[error(transparent)]
+    StreamError(#[from] StreamError),
+    #[error(transparent)]
     Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
@@ -94,9 +96,9 @@ pub struct UnexpectedHTTPResult {
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum StreamError {
-    #[error("Stream poll error: {0}")]
+    #[error("error polling stream: {0}")]
     PollError(std::io::Error),
-    #[error("Stream read error: {0}")]
+    #[error("error reading stream: {0}")]
     ReadError(HttpClientError),
 }
 

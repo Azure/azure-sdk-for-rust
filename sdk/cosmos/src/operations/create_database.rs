@@ -62,7 +62,9 @@ pub struct CreateDatabaseResponse {
 impl CreateDatabaseResponse {
     pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let body = collect_pinned_stream(pinned_stream)
+            .await
+            .map_err(|e| crate::Error::AzureCoreError(e.into()))?;
 
         Ok(Self {
             database: serde_json::from_slice(&body)?,
