@@ -1,8 +1,9 @@
-use crate::errors::{Error, ParsingError};
+use crate::errors::Error;
 use crate::headers::*;
 use crate::resource_quota::resource_quotas_from_str;
 use crate::resources::document::IndexingDirective;
 use crate::ResourceQuota;
+use azure_core::headers;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 
@@ -159,8 +160,7 @@ pub(crate) fn media_storage_usage_mb_from_headers(headers: &HeaderMap) -> Result
 fn _date_from_headers(headers: &HeaderMap, header_name: &str) -> Result<DateTime<Utc>, Error> {
     let date = get_str_from_headers(headers, header_name)?;
 
-    // since Azure returns "GMT" instead of +0000 as timezone we replace it
-    // ourselves.
+    // since Azure returns "GMT" instead of +0000 as timezone we replace it ourselves.
     // For example: Wed, 15 Jan 2020 23:39:44.369 GMT
     let date = date.replace("GMT", "+0000");
     let date = DateTime::parse_from_str(&date, "%a, %e %h %Y %H:%M:%S%.f %z")
@@ -180,34 +180,21 @@ pub(crate) fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, Er
 }
 
 fn get_str_from_headers<'a>(headers: &'a HeaderMap, key: &str) -> Result<&'a str, Error> {
-    Ok(headers
-        .get(key)
-        .ok_or_else(|| Error::HeaderNotFound(key.to_owned()))?
-        .to_str()?)
+    Ok(headers::get_str_from_headers(headers, key)?)
 }
 
 fn get_from_headers<T: std::str::FromStr>(headers: &HeaderMap, key: &str) -> Result<T, Error>
 where
     T: std::str::FromStr,
-    T::Err: Into<ParsingError>,
+    T::Err: Into<azure_core::ParsingError>,
 {
-    Ok(get_str_from_headers(headers, key)?
-        .parse()
-        .map_err(|e: T::Err| Error::ParsingError(e.into()))?)
+    Ok(headers::get_from_headers(headers, key)?)
 }
 
 fn get_option_from_headers<T>(headers: &HeaderMap, key: &str) -> Result<Option<T>, Error>
 where
     T: std::str::FromStr,
-    T::Err: Into<ParsingError>,
+    T::Err: Into<azure_core::ParsingError>,
 {
-    match headers.get(key) {
-        Some(header) => Ok(Some(
-            header
-                .to_str()?
-                .parse()
-                .map_err(|e: T::Err| Error::ParsingError(e.into()))?,
-        )),
-        None => Ok(None),
-    }
+    Ok(headers::get_option_from_headers(headers, key)?)
 }

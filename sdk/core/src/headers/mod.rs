@@ -1,11 +1,38 @@
 mod utilities;
 
+use crate::{Error, RequestId};
+use chrono::{DateTime, Utc};
 use http::request::Builder;
+use http::HeaderMap;
+use std::convert::TryFrom;
 
 pub use http::header::{IF_MODIFIED_SINCE, USER_AGENT};
 pub use utilities::*;
 
 pub const MS_DATE: &str = "x-ms-date";
+
+#[derive(Debug, Clone)]
+pub struct CommonStorageResponseHeaders {
+    pub request_id: RequestId,
+    pub client_request_id: Option<String>,
+    pub version: String,
+    pub date: DateTime<Utc>,
+    pub server: String,
+}
+
+impl TryFrom<&HeaderMap> for CommonStorageResponseHeaders {
+    type Error = Error;
+
+    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
+        Ok(Self {
+            request_id: request_id_from_headers(headers)?,
+            client_request_id: client_request_id_from_headers_optional(headers),
+            version: version_from_headers(headers)?.to_owned(),
+            date: date_from_headers(headers)?,
+            server: server_from_headers(headers)?.to_owned(),
+        })
+    }
+}
 
 pub trait AddAsHeader {
     fn add_as_header(&self, builder: Builder) -> Builder;

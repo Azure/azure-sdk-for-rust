@@ -1,6 +1,6 @@
 use crate::EntityWithMetadata;
 use azure_core::{
-    headers::{etag_from_headers, string_from_headers_mandatory, CommonStorageResponseHeaders},
+    headers::{etag_from_headers, get_str_from_headers, CommonStorageResponseHeaders},
     prelude::Etag,
     util::HeaderMapExt,
 };
@@ -32,7 +32,7 @@ where
         println!("headers == {:#?}", response.headers());
 
         let entity_with_metadata =
-            match string_from_headers_mandatory(response.headers(), "preference-applied")? {
+            match get_str_from_headers(response.headers(), "preference-applied")? {
                 "return-no-content" => None,
                 "return-content" => Some(response.try_into()?),
                 _ => {

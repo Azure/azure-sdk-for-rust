@@ -1,5 +1,5 @@
 use azure_core::headers::{
-    rfc2822_from_headers_mandatory, string_from_headers_mandatory, CommonStorageResponseHeaders,
+    get_str_from_headers, rfc2822_from_headers_mandatory, CommonStorageResponseHeaders,
 };
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -25,8 +25,7 @@ impl std::convert::TryFrom<&Response<Bytes>> for UpdateMessageResponse {
                 response.headers(),
                 "x-ms-time-next-visible",
             )?,
-            pop_receipt: string_from_headers_mandatory(response.headers(), "x-ms-popreceipt")?
-                .to_owned(),
+            pop_receipt: get_str_from_headers(response.headers(), "x-ms-popreceipt")?.to_owned(),
         })
     }
 }
