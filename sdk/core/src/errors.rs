@@ -17,8 +17,14 @@ pub enum ParsingError {
     ParseDateTimeError(#[from] chrono::format::ParseError),
     #[error("error parsing a float: {0}")]
     ParseFloatError(#[from] std::num::ParseFloatError),
-    #[error("unknown variant of {0} found: \"{1}\"")]
-    UnknownVariant(String, String),
+    #[error("unknown variant of {item} found: \"{variant}\"")]
+    UnknownVariant { item: &'static str, variant: String },
+    #[error("expected token \"{token}\" not found when parsing {item} from \"{full}\"")]
+    TokenNotFound {
+        item: &'static str,
+        token: String,
+        full: String,
+    },
 }
 
 #[non_exhaustive]
@@ -29,7 +35,7 @@ pub enum ParseError {
     #[error("Expected split char \'{0}\' not found")]
     SplitNotFound(char),
     #[error("Parse int error {0}")]
-    ParseIntError(std::num::ParseIntError),
+    ParseIntError(#[from] std::num::ParseIntError),
 }
 
 #[non_exhaustive]
@@ -52,7 +58,7 @@ pub struct UnexpectedValue {
 }
 
 impl UnexpectedValue {
-    pub fn new(expected: String, received: String) -> UnexpectedValue {
+    pub fn new(expected: String, received: String) -> Self {
         Self {
             expected: vec![expected],
             received,
@@ -60,7 +66,7 @@ impl UnexpectedValue {
     }
 
     pub fn new_multiple(allowed: Vec<String>, received: String) -> Self {
-        UnexpectedValue {
+        Self {
             expected: allowed,
             received,
         }
