@@ -1,5 +1,5 @@
 use azure_identity::token_credentials::{ClientSecretCredential, TokenCredentialOptions};
-use azure_key_vault::KeyClient;
+use azure_keyvault::KeyClient;
 use std::env;
 
 #[tokio::main]
@@ -20,8 +20,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     let mut client = KeyClient::new(&keyvault_url, &creds)?;
 
-    let backup_response = client.backup_secret(&secret_name).await?;
-    dbg!(&backup_response);
+    let secret = client.get_secret(&secret_name).await?;
+    dbg!(&secret.value());
 
     Ok(())
 }

@@ -1,9 +1,15 @@
 mod client;
-pub mod key;
-pub mod secret;
+
+#[cfg(feature = "keys")]
+pub mod keys;
+
+#[cfg(feature = "secrets")]
+pub mod secrets;
 
 pub use client::KeyClient;
-pub use secret::RecoveryLevel;
+
+#[cfg(feature = "secrets")]
+pub use secrets::RecoveryLevel;
 
 #[non_exhaustive]
 #[derive(thiserror::Error, Debug)]
