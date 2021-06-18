@@ -27,7 +27,7 @@ pub fn client_request_id_from_headers_optional(headers: &HeaderMap) -> Option<St
 pub fn last_modified_from_headers_optional(
     headers: &HeaderMap,
 ) -> Result<Option<DateTime<Utc>>, Error> {
-    Ok(get_option_from_headers(headers, LAST_MODIFIED.as_str())?)
+    get_option_from_headers(headers, LAST_MODIFIED.as_str())
 }
 
 pub fn rfc2822_from_headers_mandatory(
