@@ -1,5 +1,6 @@
 use azure_core::headers::CommonStorageResponseHeaders;
 use azure_core::prelude::*;
+use azure_core::util::to_str_without_bom;
 use bytes::Bytes;
 use http::response::Response;
 use std::convert::TryInto;
@@ -58,13 +59,11 @@ impl std::convert::TryFrom<&Response<Bytes>> for ListQueuesResponse {
     type Error = crate::Error;
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
-        let body = response.body();
+        let body = to_str_without_bom(response.body())?;
 
         debug!("headers == {:?}", headers);
-
-        let received = &std::str::from_utf8(body)?[3..];
-        debug!("receieved == {:#?}", received);
-        let mut response: ListQueuesResponseInternal = serde_xml_rs::from_reader(&body[3..])?;
+        debug!("body == {:#?}", body);
+        let mut response: ListQueuesResponseInternal = serde_xml_rs::from_str(body)?;
 
         // get rid of the ugly Some("") empty string
         // we use None instead

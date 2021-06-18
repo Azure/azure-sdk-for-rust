@@ -1,4 +1,5 @@
 use azure_core::headers::{utc_date_from_rfc2822, CommonStorageResponseHeaders};
+use azure_core::util::to_str_without_bom;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use http::response::Response;
@@ -44,13 +45,11 @@ impl std::convert::TryFrom<&Response<Bytes>> for PeekMessagesResponse {
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
-        let body = response.body();
+        let body = to_str_without_bom(response.body())?;
 
         debug!("headers == {:?}", headers);
-
-        let received = &std::str::from_utf8(body)?[3..];
-        debug!("receieved == {:#?}", received);
-        let response: PeekMessagesInternal = serde_xml_rs::from_reader(&body[3..])?;
+        debug!("body == {:#?}", body);
+        let response: PeekMessagesInternal = serde_xml_rs::from_str(body)?;
         debug!("response == {:?}", response);
 
         let mut messages = Vec::new();

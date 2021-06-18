@@ -1,5 +1,6 @@
 use crate::{QueueStoredAccessPolicy, StoredAccessPolicyList};
 use azure_core::headers::CommonStorageResponseHeaders;
+use azure_core::util::to_str_without_bom;
 use azure_core::PermissionError;
 use bytes::Bytes;
 use http::response::Response;
@@ -16,12 +17,12 @@ impl std::convert::TryFrom<&Response<Bytes>> for GetQueueACLResponse {
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
-        let body = response.body();
+        let body = to_str_without_bom(response.body())?;
 
         debug!("headers == {:?}", headers);
 
         let a: Result<Vec<QueueStoredAccessPolicy>, PermissionError> =
-            StoredAccessPolicyList::from_xml(&std::str::from_utf8(body)?[3..])?
+            StoredAccessPolicyList::from_xml(body)?
                 .stored_access
                 .into_iter()
                 .map(|sap| sap.try_into())
