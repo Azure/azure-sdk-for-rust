@@ -1,12 +1,15 @@
+use async_channel::RecvError;
 use azure_core::TokenResponse;
 use chrono::{DateTime, Utc};
 use oauth2::AccessToken;
 use regex::Regex;
 use serde::Deserialize;
+use std::ffi::OsString;
 use std::io::Error;
+use std::process::{Command, Output};
 use std::str::Utf8Error;
+use std::thread;
 use std::{io::ErrorKind, path::PathBuf, str::FromStr};
-use tokio::process::Command;
 
 use super::TokenCredential;
 
@@ -54,97 +57,106 @@ pub struct AzurePowerShellCredential {
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum AzurePowerShellCredentialError {
-    #[error("Failed to import the Az.Account module (is it installed?): {0}")]
+    #[error("failed to import the Az.Account module (is it installed?): {0}")]
     ImportFailed(String),
-    #[error("Failed to authenticate using the Az.Account module (are you logged in using `Connect-AzAccount`?): {0}")]
+    #[error("failed to authenticate using the Az.Account module (are you logged in using `Connect-AzAccount`?): {0}")]
     CommandFailed(String),
-    #[error("PowerShell is not installed and available on the system PATH: {0}")]
-    PowerShellNotInstalled(Error),
-    #[error("Az.Account token response was not UTF-8 encoded")]
+    #[error("unable to execute PowerShell: {0}")]
+    PowerShellNotExecutable(Error),
+    #[error("failed to receive PowerShell subprocess output: {0}")]
+    ReceiveFailed(RecvError),
+    #[error("the token response from Az.Account was not UTF-8 encoded")]
     ResponseNotUtf8(Utf8Error),
-    #[error("Failed to deserialize Az.Account token response")]
+    #[error("failed to deserialize Az.Account token response")]
     ResponseFailedToDeserialize(serde_json::Error),
-    #[error("Unknown error of kind: {0:?}")]
+    #[error("unknown error of kind: {0:?}")]
     UnknownError(ErrorKind),
 }
 
-fn error_to_powershellcredential_error<T>(
-    error: Error,
-) -> Result<T, AzurePowerShellCredentialError> {
-    match error.kind() {
-        ErrorKind::NotFound => Err(AzurePowerShellCredentialError::PowerShellNotInstalled(
-            error,
-        )),
-        error_kind => Err(AzurePowerShellCredentialError::UnknownError(error_kind)),
+impl From<Error> for AzurePowerShellCredentialError {
+    fn from(error: Error) -> Self {
+        match error.kind() {
+            ErrorKind::NotFound => AzurePowerShellCredentialError::PowerShellNotExecutable(error),
+            error_kind => AzurePowerShellCredentialError::UnknownError(error_kind),
+        }
     }
 }
 
 impl AzurePowerShellCredential {
-    pub fn new(powershell_path: Option<PathBuf>) -> AzurePowerShellCredential {
-        AzurePowerShellCredential {
+    pub fn new(powershell_path: Option<PathBuf>) -> Self {
+        Self {
             powershell_path: powershell_path,
         }
+    }
+
+    /// A helper to run PowerShell commands asynchronously using threads and an async_channel
+    async fn execute_powershell_command<I, S>(
+        &self,
+        args_iter: I,
+    ) -> Result<Output, AzurePowerShellCredentialError>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<OsString>,
+    {
+        let pwsh = self.powershell_path.as_ref().unwrap_or(&*POWERSHELL_PATH);
+
+        let mut command = Command::new(pwsh.clone());
+
+        let args: Vec<OsString> = args_iter.into_iter().map(|v| v.into()).collect();
+
+        let (s, r) = async_channel::bounded(1);
+        thread::spawn(move || {
+            let output = command.args(args).output();
+            futures::executor::block_on(s.send(output)).unwrap();
+        });
+
+        r.recv()
+            .await
+            .map_err(|recv_error| AzurePowerShellCredentialError::ReceiveFailed(recv_error))?
+            .map_err(|error| error.into())
     }
 
     async fn get_access_token(
         &self,
         resource: Option<&str>,
     ) -> Result<PowerShellTokenResponse, AzurePowerShellCredentialError> {
-        let pwsh = self
-            .powershell_path
-            .as_ref()
-            .unwrap_or(&*POWERSHELL_PATH)
-            .as_os_str();
-
-        match Command::new(pwsh)
-            .args(vec![
+        let import_response = self
+            .execute_powershell_command(vec![
                 "-Command",
                 "Import-Module Az.Accounts -MinimumVersion 2.2.0 -PassThru",
             ])
-            .output()
-            .await
-        {
-            Ok(response) if !response.status.success() => {
-                let output = String::from_utf8_lossy(&response.stderr);
-                return Err(AzurePowerShellCredentialError::ImportFailed(
-                    output.to_string(),
-                ));
-            }
-            Err(err) => {
-                return error_to_powershellcredential_error(err);
-            }
-            _ => { /* Everything else is OK to proceed. */ }
-        };
+            .await?;
 
-        let resource_fragment = match resource {
-            Some(scope) => format!("-ResourceUrl \"{}\" ", get_scope_resource(scope)),
-            None => String::from(""),
-        };
+        if !import_response.status.success() {
+            let output = String::from_utf8_lossy(&import_response.stderr);
+            return Err(AzurePowerShellCredentialError::ImportFailed(
+                output.to_string(),
+            ));
+        }
 
-        let result = Command::new(pwsh)
-            .args(vec![
+        let resource_fragment = resource
+            .map(|scope| format!("-ResourceUrl \"{}\"", get_scope_resource(scope)))
+            .unwrap_or_default();
+
+        let get_token_response = self
+            .execute_powershell_command(vec![
                 "-Command",
                 format!("Get-AzAccessToken {}| ConvertTo-Json", resource_fragment).as_str(),
             ])
-            .output()
-            .await;
+            .await?;
 
-        match result {
-            Ok(get_token_output) if get_token_output.status.success() => {
-                let response = std::str::from_utf8(&get_token_output.stdout)
-                    .map_err(AzurePowerShellCredentialError::ResponseNotUtf8)?;
+        if !get_token_response.status.success() {
+            let output = String::from_utf8_lossy(&get_token_response.stderr);
+            Err(AzurePowerShellCredentialError::CommandFailed(
+                output.to_string(),
+            ))
+        } else {
+            let result = std::str::from_utf8(&get_token_response.stdout)
+                .map_err(AzurePowerShellCredentialError::ResponseNotUtf8)?;
 
-                let token_response = serde_json::from_str::<PowerShellTokenResponse>(response)
-                    .map_err(AzurePowerShellCredentialError::ResponseFailedToDeserialize)?;
-                Ok(token_response)
-            }
-            Ok(get_token_output) => {
-                let output = String::from_utf8_lossy(&get_token_output.stderr);
-                Err(AzurePowerShellCredentialError::CommandFailed(
-                    output.to_string(),
-                ))
-            }
-            Err(error) => error_to_powershellcredential_error(error),
+            let token_response = serde_json::from_str::<PowerShellTokenResponse>(result)
+                .map_err(AzurePowerShellCredentialError::ResponseFailedToDeserialize)?;
+            Ok(token_response)
         }
     }
 }
