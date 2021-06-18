@@ -25,9 +25,11 @@ reqwest = { version = "0.11", features = ["json"] }
 async-timer = "1.0.0-beta.7"
 thiserror = "1.0"
 async-trait = "0.1"
+lazy_static = "1.4.0"
+regex = "1"
+tokio = { version = "1.0", features = ["macros", "process"] }
 
 [dev-dependencies]
-tokio = { version = "1.0", features = ["macros"] }
 azure_storage = { version = "0.1", path = "../storage" }
 env_logger = "0.8"
 serde_test = "1"

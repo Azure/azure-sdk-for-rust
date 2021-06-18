@@ -1,5 +1,6 @@
 use super::{
-    AzureCliCredential, EnvironmentCredential, ManagedIdentityCredential, TokenCredential,
+    AzureCliCredential, AzurePowerShellCredential, EnvironmentCredential,
+    ManagedIdentityCredential, TokenCredential,
 };
 use azure_core::TokenResponse;
 use log::debug;
@@ -10,6 +11,7 @@ pub struct DefaultCredentialBuilder {
     include_environment_credential: bool,
     include_managed_identity_credential: bool,
     include_cli_credential: bool,
+    include_powershell_credential: bool,
 }
 
 impl DefaultCredentialBuilder {
@@ -27,6 +29,11 @@ impl DefaultCredentialBuilder {
     /// Exclude using credentials from the cli
     pub fn exclude_cli_credential(&mut self) -> &mut Self {
         self.include_cli_credential = false;
+        self
+    }
+
+    pub fn exclude_powershell_credential(&mut self) -> &mut Self {
+        self.include_powershell_credential = false;
         self
     }
 
@@ -54,6 +61,11 @@ impl DefaultCredentialBuilder {
         if self.include_cli_credential {
             sources.push(DefaultCredentialEnum::AzureCli(AzureCliCredential {}));
         }
+        if self.include_powershell_credential {
+            sources.push(DefaultCredentialEnum::AzurePowerShell(
+                AzurePowerShellCredential::new(None),
+            ))
+        }
         DefaultCredential::with_sources(sources)
     }
 }
@@ -67,6 +79,8 @@ pub enum DefaultCredentialError {
     EnvironmentCredentialError(#[from] super::EnvironmentCredentialError),
     #[error("Error getting managed identity credential: {0}")]
     ManagedIdentityCredentialError(#[from] super::ManagedIdentityCredentialError),
+    #[error("Error getting PowerShell credential: {0}")]
+    AzurePowerShellCredentialError(#[from] super::AzurePowerShellCredentialError),
     #[error("End of default list")]
     EndOfDefaultList,
 }
@@ -76,6 +90,7 @@ pub enum DefaultCredentialEnum {
     Environment(EnvironmentCredential),
     ManagedIdentity(ManagedIdentityCredential),
     AzureCli(AzureCliCredential),
+    AzurePowerShell(AzurePowerShellCredential),
 }
 
 #[async_trait::async_trait]
@@ -96,6 +111,10 @@ impl TokenCredential for DefaultCredentialEnum {
                 .get_token(resource)
                 .await
                 .map_err(DefaultCredentialError::AzureCliCredentialError),
+            DefaultCredentialEnum::AzurePowerShell(credential) => credential
+                .get_token(resource)
+                .await
+                .map_err(DefaultCredentialError::AzurePowerShellCredentialError),
         }
     }
 }
@@ -124,6 +143,7 @@ impl Default for DefaultCredential {
                 DefaultCredentialEnum::Environment(EnvironmentCredential::default()),
                 DefaultCredentialEnum::ManagedIdentity(ManagedIdentityCredential {}),
                 DefaultCredentialEnum::AzureCli(AzureCliCredential {}),
+                DefaultCredentialEnum::AzurePowerShell(AzurePowerShellCredential::new(None)),
             ],
         }
     }
