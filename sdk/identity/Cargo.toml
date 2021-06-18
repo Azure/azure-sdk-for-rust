@@ -25,7 +25,6 @@ reqwest = { version = "0.11", features = ["json"] }
 async-timer = "1.0.0-beta.7"
 thiserror = "1.0"
 async-trait = "0.1"
-async-channel = "1.6"
 lazy_static = "1.4"
 regex = "1.5"
 

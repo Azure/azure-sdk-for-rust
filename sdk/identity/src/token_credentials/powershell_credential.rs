@@ -1,6 +1,6 @@
-use async_channel::RecvError;
 use azure_core::TokenResponse;
 use chrono::{DateTime, Utc};
+use futures::channel::oneshot::Canceled;
 use oauth2::AccessToken;
 use regex::Regex;
 use serde::Deserialize;
@@ -64,7 +64,7 @@ pub enum AzurePowerShellCredentialError {
     #[error("unable to execute PowerShell: {0}")]
     PowerShellNotExecutable(Error),
     #[error("failed to receive PowerShell subprocess output: {0}")]
-    ReceiveFailed(RecvError),
+    ReceiveFailed(Canceled),
     #[error("the token response from Az.Account was not UTF-8 encoded")]
     ResponseNotUtf8(Utf8Error),
     #[error("failed to deserialize Az.Account token response")]
@@ -104,14 +104,13 @@ impl AzurePowerShellCredential {
 
         let args: Vec<OsString> = args_iter.into_iter().map(|v| v.into()).collect();
 
-        let (s, r) = async_channel::bounded(1);
+        let (s, r) = futures::channel::oneshot::channel();
         thread::spawn(move || {
             let output = command.args(args).output();
-            futures::executor::block_on(s.send(output)).unwrap();
+            s.send(output).unwrap();
         });
 
-        r.recv()
-            .await
+        r.await
             .map_err(|recv_error| AzurePowerShellCredentialError::ReceiveFailed(recv_error))?
             .map_err(|error| error.into())
     }
