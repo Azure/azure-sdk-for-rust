@@ -58,6 +58,6 @@ impl<'a> GetACLBuilder<'a> {
             .await?;
 
         // todo: parse SAS policies
-        Ok((std::str::from_utf8(response.body())?, response.headers()).try_into()?)
+        Ok((response.body(), response.headers()).try_into()?)
     }
 }

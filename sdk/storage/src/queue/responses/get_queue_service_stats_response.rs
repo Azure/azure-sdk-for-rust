@@ -1,5 +1,5 @@
+use crate::xml::read_xml;
 use azure_core::headers::CommonStorageResponseHeaders;
-use azure_core::util::to_str_without_bom;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use http::response::Response;
@@ -38,11 +38,11 @@ impl std::convert::TryFrom<&Response<Bytes>> for GetQueueServiceStatsResponse {
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
-        let body = to_str_without_bom(response.body())?;
+        let body = response.body();
 
         debug!("headers == {:?}", headers);
         debug!("body == {:#?}", body);
-        let response: GetQueueServiceStatsResponseInternal = serde_xml_rs::from_str(body)?;
+        let response: GetQueueServiceStatsResponseInternal = read_xml(body)?;
         debug!("deserde == {:#?}", response);
 
         Ok(GetQueueServiceStatsResponse {

@@ -1,6 +1,5 @@
 use crate::{QueueStoredAccessPolicy, StoredAccessPolicyList};
 use azure_core::headers::CommonStorageResponseHeaders;
-use azure_core::util::to_str_without_bom;
 use azure_core::PermissionError;
 use bytes::Bytes;
 use http::response::Response;
@@ -17,7 +16,7 @@ impl std::convert::TryFrom<&Response<Bytes>> for GetQueueACLResponse {
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
-        let body = to_str_without_bom(response.body())?;
+        let body = response.body();
 
         debug!("headers == {:?}", headers);
 
