@@ -107,7 +107,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_strip_bom() {
+    fn test_slice_bom() {
         let bytes = Bytes::from_static(&[0xEF, 0xBB, 0xBF, 7]);
         assert_eq!(Bytes::from_static(&[7]), slice_bom(&bytes));
 
