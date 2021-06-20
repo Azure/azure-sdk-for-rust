@@ -135,10 +135,11 @@ mod test {
       </SignedIdentifier>
     </SignedIdentifiers>";
 
-        let sis: SignedIdentifiers = serde_xml_rs::de::from_reader(resp.as_bytes()).unwrap();
+        let resp = Bytes::from(resp);
+        let sis: SignedIdentifiers = read_xml(&resp).unwrap();
         assert!(sis.signed_identifiers.unwrap().len() == 2);
 
-        let sal = StoredAccessPolicyList::from_xml(resp).unwrap();
+        let sal = StoredAccessPolicyList::from_xml(&resp).unwrap();
 
         let _sxml = sal.to_xml();
     }

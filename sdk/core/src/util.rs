@@ -104,8 +104,7 @@ pub fn slice_bom(bytes: &Bytes) -> Bytes {
 
 #[cfg(test)]
 mod test {
-    use crate::util::*;
-    use bytes::Bytes;
+    use super::*;
 
     #[test]
     fn test_strip_bom() {
