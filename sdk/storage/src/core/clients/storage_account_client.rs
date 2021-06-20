@@ -15,6 +15,15 @@ use ring::hmac;
 use std::sync::Arc;
 use url::Url;
 
+/// The well-known account used by Azurite and the legacy Azure Storage Emulator.
+/// https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key
+pub const EMULATOR_ACCOUNT: &str = "devstoreaccount1";
+
+/// The well-known account key used by Azurite and the legacy Azure Storage Emulator.
+/// https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key
+pub const EMULATOR_ACCOUNT_KEY: &str =
+    "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
+
 pub(crate) const HEADER_VERSION: &str = "x-ms-version";
 
 pub(crate) const AZURE_VERSION: &str = "2019-12-12";
@@ -94,6 +103,7 @@ impl StorageAccountClient {
         })
     }
 
+    /// Create a new client for customized emulator endpoints.
     pub fn new_emulator(
         http_client: Arc<dyn HttpClient>,
         blob_storage_url: &Url,
@@ -107,8 +117,24 @@ impl StorageAccountClient {
             table_storage_url,
             queue_storage_url,
             filesystem_url,
-            "devstoreaccount1",
-            "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==",
+            EMULATOR_ACCOUNT,
+            EMULATOR_ACCOUNT_KEY,
+        )
+    }
+
+    /// Create a new client using the default HttpClient and the default emulator endpoints.
+    pub fn new_emulator_default() -> Arc<Self> {
+        let http_client = new_http_client();
+        let blob_storage_url = Url::parse("http://127.0.0.1:10000").unwrap();
+        let queue_storage_url = Url::parse("http://127.0.0.1:10001").unwrap();
+        let table_storage_url = Url::parse("http://127.0.0.1:10002").unwrap();
+        let filesystem_url = Url::parse("http://127.0.0.1:10004").unwrap();
+        Self::new_emulator(
+            http_client,
+            &blob_storage_url,
+            &table_storage_url,
+            &queue_storage_url,
+            &filesystem_url,
         )
     }
 
