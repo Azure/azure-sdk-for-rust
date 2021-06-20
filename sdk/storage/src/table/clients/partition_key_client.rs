@@ -73,9 +73,7 @@ mod integration_tests {
         core::prelude::*,
         table::clients::{AsTableClient, AsTableServiceClient},
     };
-    use azure_core::prelude::*;
     use http::StatusCode;
-    use url::Url;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     struct TestEntity {
