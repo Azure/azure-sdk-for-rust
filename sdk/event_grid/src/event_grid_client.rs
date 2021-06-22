@@ -27,7 +27,7 @@ impl EventGridClient {
     }
 
     /// Publishes events to a topic.
-    /// REST API Spec: https://docs.microsoft.com/en-us/rest/api/eventgrid/dataplane/publishevents/publishevents
+    /// REST API Spec: https://docs.microsoft.com/rest/api/eventgrid/dataplane/publishevents/publishevents
     pub async fn publish_events<T>(&self, events: &[Event<T>]) -> Result<(), azure_core::Error>
     where
         T: Serialize,
