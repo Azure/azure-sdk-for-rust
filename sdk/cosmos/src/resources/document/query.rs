@@ -2,7 +2,7 @@ use serde_json::Value;
 
 /// A SQL Query
 ///
-/// You can learn more about how SQL queries work in Cosmos [here](https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-getting-started).
+/// You can learn more about how SQL queries work in Cosmos [here](https://docs.microsoft.com/azure/cosmos-db/sql-query-getting-started).
 #[derive(Debug, Serialize, Clone)]
 pub struct Query<'a> {
     query: &'a str,

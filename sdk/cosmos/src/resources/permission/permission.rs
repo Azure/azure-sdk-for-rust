@@ -9,7 +9,7 @@ use std::borrow::Cow;
 /// A permission has an authorization token associated with a user for authorized
 /// access to a specific resource. It is used to manage access to collections, documents,
 /// attachments, stored procedures, triggers, and user-defined functions for a particular user.
-/// You can learn more about permissions [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/permissions).
+/// You can learn more about permissions [here](https://docs.microsoft.com/rest/api/cosmos-db/permissions).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Permission<'a> {
     ///  The unique name that identifies the permission.

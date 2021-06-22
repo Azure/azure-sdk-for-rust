@@ -44,9 +44,9 @@ impl<'a, 'b> CreateOrReplaceUserDefinedFunctionBuilder<'a, 'b> {
         trace!("CreateOrReplaceUserDefinedFunctionBuilder::execute called");
 
         // Create is POST with no name in the URL. Expected return is CREATED.
-        // See https://docs.microsoft.com/en-us/rest/api/cosmos-db/create-a-user-defined-function
+        // See https://docs.microsoft.com/rest/api/cosmos-db/create-a-user-defined-function
         // Replace is PUT with name appended to the URL. Expected return is OK.
-        // See: https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-user-defined-function
+        // See: https://docs.microsoft.com/rest/api/cosmos-db/replace-a-user-defined-function
         let req = match self.is_create {
             true => self
                 .user_defined_function_client

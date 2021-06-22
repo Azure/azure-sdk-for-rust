@@ -76,7 +76,7 @@ impl<'a, 'b> ReplaceCollectionBuilder<'a, 'b> {
         debug!("\nreq == {:?}", req);
 
         // the docs are wrong here
-        // [https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-collection](https://docs.microsoft.com/en-us/rest/api/cosmos-db/replace-a-collection).
+        // [https://docs.microsoft.com/rest/api/cosmos-db/replace-a-collection](https://docs.microsoft.com/rest/api/cosmos-db/replace-a-collection).
         // They say you should receive 201 instead azure returns 200 upon success. I've filed a PR
         // to correct it.
         Ok(self

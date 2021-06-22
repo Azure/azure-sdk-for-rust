@@ -20,7 +20,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 /// The well-known account key used by Azure Cosmos DB Emulator.
-/// https://docs.microsoft.com/en-us/azure/cosmos-db/local-emulator?tabs=ssl-netstd21#connect-with-emulator-apis
+/// https://docs.microsoft.com/azure/cosmos-db/local-emulator?tabs=ssl-netstd21#connect-with-emulator-apis
 pub const EMULATOR_ACCOUNT_KEY: &str =
     "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
 

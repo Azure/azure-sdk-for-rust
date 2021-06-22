@@ -5,7 +5,7 @@ use uuid::Uuid;
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 /// An Event Grid Event, used to create new events that subscribers will receive.
-/// In compliance with spec: https://docs.microsoft.com/en-us/azure/event-grid/event-schema
+/// In compliance with spec: https://docs.microsoft.com/azure/event-grid/event-schema
 pub struct Event<T>
 where
     T: Serialize,

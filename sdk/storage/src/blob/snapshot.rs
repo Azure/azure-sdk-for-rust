@@ -4,7 +4,7 @@ use azure_core::AppendToUrlQuery;
 // but the docs clearly states to treat is
 // as opaque so we do not convert it in
 // any way.
-// see: https://docs.microsoft.com/en-us/rest/api/storageservices/get-blob
+// see: https://docs.microsoft.com/rest/api/storageservices/get-blob
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Snapshot(String);
 

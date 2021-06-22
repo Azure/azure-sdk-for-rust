@@ -37,7 +37,7 @@ impl<'a, 'b> Properties<'a, 'b> {
 impl<'a, 'b> AddAsHeader for Properties<'a, 'b> {
     fn add_as_header(&self, builder: Builder) -> Builder {
         // the header is a comma separated list of key=base64(value) see
-        // [https://docs.microsoft.com/en-us/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers](https://docs.microsoft.com/en-us/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers)
+        // [https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers](https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers)
         let mut s = String::new();
         self.0.iter().for_each(|(k, v)| {
             s.push_str(&format!("{}={},", k.as_ref(), base64::encode(v.as_ref())));

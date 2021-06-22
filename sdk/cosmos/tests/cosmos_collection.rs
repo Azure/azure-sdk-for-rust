@@ -43,7 +43,7 @@ async fn create_and_delete_collection() {
     let collection_after_get = collection_client.get_collection().execute().await.unwrap();
     assert!(collection.collection.rid == collection_after_get.collection.rid);
 
-    // check GetPartitionKeyRanges: https://docs.microsoft.com/en-us/rest/api/cosmos-db/get-partition-key-ranges
+    // check GetPartitionKeyRanges: https://docs.microsoft.com/rest/api/cosmos-db/get-partition-key-ranges
     collection_client
         .get_partition_key_ranges()
         .execute()

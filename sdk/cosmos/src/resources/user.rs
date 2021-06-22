@@ -4,7 +4,7 @@ use super::Resource;
 
 /// A logical namespace for scoping permissions on resources.
 ///
-/// You can learn more about users [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/users).
+/// You can learn more about users [here](https://docs.microsoft.com/rest/api/cosmos-db/users).
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub struct User {
     /// The user's id
