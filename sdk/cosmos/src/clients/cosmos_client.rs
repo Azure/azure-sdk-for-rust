@@ -19,6 +19,11 @@ use std::borrow::Cow;
 use std::fmt::Debug;
 use std::sync::Arc;
 
+/// The well-known account key used by Azure Cosmos DB Emulator.
+/// https://docs.microsoft.com/en-us/azure/cosmos-db/local-emulator?tabs=ssl-netstd21#connect-with-emulator-apis
+pub const EMULATOR_ACCOUNT_KEY: &str =
+    "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
+
 const AZURE_VERSION: &str = "2018-12-31";
 const VERSION: &str = "1.0";
 const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
@@ -104,11 +109,7 @@ impl CosmosClient {
 
     /// Create a new `CosmosClient` which connects to the account's instance in Azure emulator
     pub fn new_emulator(address: &str, port: u16, options: CosmosOptions) -> Self {
-        //Account name: localhost:<port>
-        //Account key: C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
-        let auth_token = AuthorizationToken::primary_from_base64(
-            "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
-        ).unwrap();
+        let auth_token = AuthorizationToken::primary_from_base64(EMULATOR_ACCOUNT_KEY).unwrap();
         let uri = format!("https://{}:{}", address, port);
         let cloud_location = CloudLocation::Custom {
             account: String::from("Custom"),

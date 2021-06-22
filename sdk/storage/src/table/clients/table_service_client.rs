@@ -78,31 +78,10 @@ impl TableServiceClient {
 mod integration_tests {
     use super::*;
     use crate::{core::prelude::*, table::clients::AsTableClient};
-    use azure_core::prelude::*;
     use futures::StreamExt;
-    use url::Url;
 
     fn get_emulator_client() -> Arc<StorageClient> {
-        let blob_storage_url =
-            Url::parse("http://127.0.0.1:10000").expect("the default local storage emulator URL");
-        let queue_storage_url =
-            Url::parse("http://127.0.0.1:10001").expect("the default local storage emulator URL");
-        let table_storage_url =
-            Url::parse("http://127.0.0.1:10002").expect("the default local storage emulator URL");
-        let filesystem_url =
-            Url::parse("http://127.0.0.1:10004").expect("the default local storage emulator URL");
-
-        let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
-        let storage_account = StorageAccountClient::new_emulator(
-            http_client,
-            &blob_storage_url,
-            &table_storage_url,
-            &queue_storage_url,
-            &filesystem_url,
-        )
-        .as_storage_client();
-
-        storage_account
+        StorageAccountClient::new_emulator_default().as_storage_client()
     }
 
     #[tokio::test]
