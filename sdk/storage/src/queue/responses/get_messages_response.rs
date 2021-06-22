@@ -1,4 +1,4 @@
-use crate::queue::PopReceipt;
+use crate::{queue::PopReceipt, xml::read_xml};
 use azure_core::headers::{utc_date_from_rfc2822, CommonStorageResponseHeaders};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -59,10 +59,8 @@ impl std::convert::TryFrom<&Response<Bytes>> for GetMessagesResponse {
         let body = response.body();
 
         debug!("headers == {:?}", headers);
-
-        let received = &std::str::from_utf8(body)?[3..];
-        debug!("receieved == {:#?}", received);
-        let response: MessagesInternal = serde_xml_rs::from_reader(&body[3..])?;
+        debug!("body == {:#?}", body);
+        let response: MessagesInternal = read_xml(body)?;
         debug!("response == {:?}", response);
 
         let mut messages = Vec::new();

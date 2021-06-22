@@ -1,3 +1,4 @@
+use crate::xml::read_xml;
 use azure_core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -40,9 +41,8 @@ impl std::convert::TryFrom<&Response<Bytes>> for GetQueueServiceStatsResponse {
         let body = response.body();
 
         debug!("headers == {:?}", headers);
-
-        debug!("receieved == {:#?}", &std::str::from_utf8(body)?[3..]);
-        let response: GetQueueServiceStatsResponseInternal = serde_xml_rs::from_reader(&body[3..])?;
+        debug!("body == {:#?}", body);
+        let response: GetQueueServiceStatsResponseInternal = read_xml(body)?;
         debug!("deserde == {:#?}", response);
 
         Ok(GetQueueServiceStatsResponse {
