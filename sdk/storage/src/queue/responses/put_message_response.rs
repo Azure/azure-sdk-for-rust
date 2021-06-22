@@ -1,3 +1,4 @@
+use crate::xml::read_xml;
 use azure_core::headers::{utc_date_from_rfc2822, CommonStorageResponseHeaders};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -46,17 +47,16 @@ impl std::convert::TryFrom<&Response<Bytes>> for PutMessageResponse {
         let body = response.body();
 
         debug!("headers == {:?}", headers);
-
-        let received = &std::str::from_utf8(body)?[3..];
-        debug!("receieved == {:#?}", received);
-        let response: PutMessageResponseInternal = serde_xml_rs::from_reader(&body[3..])?;
+        debug!("body == {:#?}", body);
+        let response: PutMessageResponseInternal = read_xml(body)?;
+        let queue_message = response.queue_message;
 
         let queue_message = QueueMessage {
-            message_id: response.queue_message.message_id,
-            insertion_time: utc_date_from_rfc2822(&response.queue_message.insertion_time)?,
-            expiration_time: utc_date_from_rfc2822(&response.queue_message.expiration_time)?,
-            pop_receipt: response.queue_message.pop_receipt,
-            time_next_visible: utc_date_from_rfc2822(&response.queue_message.time_next_visible)?,
+            message_id: queue_message.message_id,
+            insertion_time: utc_date_from_rfc2822(&queue_message.insertion_time)?,
+            expiration_time: utc_date_from_rfc2822(&queue_message.expiration_time)?,
+            pop_receipt: queue_message.pop_receipt,
+            time_next_visible: utc_date_from_rfc2822(&queue_message.time_next_visible)?,
         };
 
         Ok(Self {

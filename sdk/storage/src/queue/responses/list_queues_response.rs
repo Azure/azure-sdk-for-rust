@@ -1,3 +1,4 @@
+use crate::xml::read_xml;
 use azure_core::headers::CommonStorageResponseHeaders;
 use azure_core::prelude::*;
 use bytes::Bytes;
@@ -61,10 +62,8 @@ impl std::convert::TryFrom<&Response<Bytes>> for ListQueuesResponse {
         let body = response.body();
 
         debug!("headers == {:?}", headers);
-
-        let received = &std::str::from_utf8(body)?[3..];
-        debug!("receieved == {:#?}", received);
-        let mut response: ListQueuesResponseInternal = serde_xml_rs::from_reader(&body[3..])?;
+        debug!("body == {:#?}", body);
+        let mut response: ListQueuesResponseInternal = read_xml(body)?;
 
         // get rid of the ugly Some("") empty string
         // we use None instead

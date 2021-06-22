@@ -4,6 +4,7 @@ use crate::{
 };
 use azure_core::headers::REQUEST_ID;
 use azure_core::RequestId;
+use bytes::Bytes;
 use chrono::{DateTime, FixedOffset};
 use http::header;
 use http::HeaderMap;
@@ -20,10 +21,10 @@ pub struct GetACLResponse {
     pub stored_access_policy_list: StoredAccessPolicyList,
 }
 
-impl TryFrom<(&str, &HeaderMap)> for GetACLResponse {
+impl TryFrom<(&Bytes, &HeaderMap)> for GetACLResponse {
     type Error = crate::Error;
 
-    fn try_from((body, header_map): (&str, &HeaderMap)) -> Result<Self, Self::Error> {
+    fn try_from((body, header_map): (&Bytes, &HeaderMap)) -> Result<Self, Self::Error> {
         GetACLResponse::from_response(body, header_map)
     }
 }
@@ -31,7 +32,7 @@ impl TryFrom<(&str, &HeaderMap)> for GetACLResponse {
 impl GetACLResponse {
     // this should be named into and be consuming
     pub(crate) fn from_response(
-        body: &str,
+        body: &Bytes,
         headers: &HeaderMap,
     ) -> Result<GetACLResponse, crate::Error> {
         let public_access = public_access_from_header(&headers)?;
@@ -67,7 +68,7 @@ impl GetACLResponse {
         };
         let date = DateTime::parse_from_rfc2822(date)?;
 
-        let stored_access_policy_list = StoredAccessPolicyList::from_xml(&body[3..])?;
+        let stored_access_policy_list = StoredAccessPolicyList::from_xml(&body)?;
 
         Ok(GetACLResponse {
             public_access,

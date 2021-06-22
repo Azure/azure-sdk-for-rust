@@ -19,6 +19,7 @@ pub use copy_progress::CopyProgress;
 pub(crate) mod parsing_xml;
 mod stored_access_policy;
 pub use errors::Error;
+pub(crate) mod xml;
 
 #[derive(Debug, Clone, Eq, PartialEq, Copy, Serialize, Deserialize)]
 pub struct Yes;

@@ -1,11 +1,7 @@
 use bytes::Bytes;
 use http::header::{AsHeaderName, HeaderMap, HeaderName, HeaderValue};
 use http::{self, request::Builder};
-use std::{
-    convert::TryFrom,
-    fmt::Display,
-    str::{from_utf8, FromStr},
-};
+use std::{convert::TryFrom, fmt::Display, str::FromStr};
 
 pub fn format_header_value<D: Display>(value: D) -> Result<HeaderValue, http::Error> {
     let value: &str = &format(value);
@@ -95,12 +91,27 @@ fn format<D: Display>(value: D) -> String {
     format!("{}", value)
 }
 
-pub fn to_str_without_bom(bytes: &bytes::Bytes) -> Result<&str, std::str::Utf8Error> {
-    let s = from_utf8(bytes)?;
+const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
-    Ok(if let Some(stripped) = s.strip_prefix('\u{FEFF}') {
-        stripped
+/// Returns Bytes without the UTF-8 BOM.
+pub fn slice_bom(bytes: &Bytes) -> Bytes {
+    if bytes.len() > 3 && bytes.slice(0..3).as_ref() == &UTF8_BOM {
+        bytes.slice(3..)
     } else {
-        s
-    })
+        bytes.clone()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_slice_bom() {
+        let bytes = Bytes::from_static(&[0xEF, 0xBB, 0xBF, 7]);
+        assert_eq!(Bytes::from_static(&[7]), slice_bom(&bytes));
+
+        let bytes = Bytes::from_static(&[8]);
+        assert_eq!(Bytes::from_static(&[8]), slice_bom(&bytes));
+    }
 }

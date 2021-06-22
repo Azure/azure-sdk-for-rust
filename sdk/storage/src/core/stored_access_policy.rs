@@ -1,3 +1,5 @@
+use crate::xml::read_xml;
+use bytes::Bytes;
 use chrono::{DateTime, FixedOffset};
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -38,11 +40,11 @@ impl StoredAccessPolicyList {
         StoredAccessPolicyList::default()
     }
 
-    pub fn from_xml(xml: &str) -> Result<StoredAccessPolicyList, crate::Error> {
-        debug!("{}", xml);
+    pub fn from_xml(xml: &Bytes) -> Result<StoredAccessPolicyList, crate::Error> {
+        debug!("{:?}", xml);
 
         let mut sal = StoredAccessPolicyList::default();
-        let sis: SignedIdentifiers = serde_xml_rs::de::from_str(xml)?;
+        let sis: SignedIdentifiers = read_xml(xml)?;
 
         if let Some(sis) = sis.signed_identifiers {
             for si in sis {
@@ -133,10 +135,11 @@ mod test {
       </SignedIdentifier>
     </SignedIdentifiers>";
 
-        let sis: SignedIdentifiers = serde_xml_rs::de::from_reader(resp.as_bytes()).unwrap();
+        let resp = Bytes::from(resp);
+        let sis: SignedIdentifiers = read_xml(&resp).unwrap();
         assert!(sis.signed_identifiers.unwrap().len() == 2);
 
-        let sal = StoredAccessPolicyList::from_xml(resp).unwrap();
+        let sal = StoredAccessPolicyList::from_xml(&resp).unwrap();
 
         let _sxml = sal.to_xml();
     }

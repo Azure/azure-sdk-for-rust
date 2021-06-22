@@ -103,3 +103,97 @@ impl QueueClient {
         ClearMessagesBuilder::new(self)
     }
 }
+
+#[cfg(test)]
+#[cfg(feature = "test_integration")]
+mod integration_tests {
+    use super::*;
+    use crate::core::prelude::*;
+    use crate::queue::clients::AsQueueClient;
+    use azure_core::HttpClient;
+    use url::Url;
+
+    fn get_emulator_client(queue_name: &str) -> Arc<QueueClient> {
+        let blob_storage_url =
+            Url::parse("http://127.0.0.1:10000").expect("the default local storage emulator URL");
+        let queue_storage_url =
+            Url::parse("http://127.0.0.1:10001").expect("the default local storage emulator URL");
+        let table_storage_url =
+            Url::parse("http://127.0.0.1:10002").expect("the default local storage emulator URL");
+        let filesystem_url =
+            Url::parse("http://127.0.0.1:10004").expect("the default local storage emulator URL");
+
+        let http_client: Arc<dyn HttpClient> = Arc::new(reqwest::Client::new());
+        let storage_account = StorageAccountClient::new_emulator(
+            http_client,
+            &blob_storage_url,
+            &table_storage_url,
+            &queue_storage_url,
+            &filesystem_url,
+        )
+        .as_storage_client();
+
+        storage_account.as_queue_client(queue_name)
+    }
+
+    #[tokio::test]
+    async fn test_create_delete() {
+        let queue_name = uuid::Uuid::new_v4().to_string();
+        let queue_client = get_emulator_client(&queue_name);
+
+        queue_client
+            .create()
+            .execute()
+            .await
+            .expect("create container should succeed");
+        queue_client
+            .delete()
+            .execute()
+            .await
+            .expect("delete container should succeed");
+    }
+
+    #[tokio::test]
+    async fn test_put_peek_get_message() {
+        let queue_name = uuid::Uuid::new_v4().to_string();
+        let queue_client = get_emulator_client(&queue_name);
+
+        queue_client
+            .create()
+            .execute()
+            .await
+            .expect("create container should succeed");
+
+        queue_client
+            .put_message()
+            .execute("Hello")
+            .await
+            .expect("put message should succeed");
+
+        let mut messages = queue_client
+            .peek_messages()
+            .execute()
+            .await
+            .expect("peek messages should succeed");
+        assert_eq!(
+            messages.messages.pop().expect("message").message_text,
+            "Hello"
+        );
+
+        let mut messages = queue_client
+            .get_messages()
+            .execute()
+            .await
+            .expect("get messages should succeed");
+        assert_eq!(
+            messages.messages.pop().expect("message").message_text,
+            "Hello"
+        );
+
+        queue_client
+            .delete()
+            .execute()
+            .await
+            .expect("delete container should succeed");
+    }
+}
