@@ -93,4 +93,5 @@ pub const VERSION: &str = "x-ms-version";
 pub const PROPERTIES: &str = "x-ms-properties";
 pub const NAMESPACE_ENABLED: &str = "x-ms-namespace-enabled";
 pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
+pub const ITEM_COUNT: &str = "x-ms-item-count";
 pub const ITEM_TYPE: &str = "x-ms-item-type";

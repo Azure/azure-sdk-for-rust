@@ -261,8 +261,8 @@ pub fn content_type_from_headers(headers: &HeaderMap) -> Result<&str, Error> {
 
 pub fn item_count_from_headers(headers: &HeaderMap) -> Result<u32, Error> {
     Ok(headers
-        .get(crate::headers::MAX_ITEM_COUNT)
-        .ok_or_else(|| Error::HeaderNotFound(crate::MAX_ITEM_COUNT.to_owned()))?
+        .get(crate::headers::ITEM_COUNT)
+        .ok_or_else(|| Error::HeaderNotFound(crate::ITEM_COUNT.to_owned()))?
         .to_str()?
         .parse()?)
 }
