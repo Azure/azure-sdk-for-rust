@@ -28,7 +28,7 @@ impl<'a> SetQueueServicePropertiesBuilder<'a> {
 
     /// Pass the properties here.
     /// More info here
-    /// [https://docs.microsoft.com/en-us/rest/api/storageservices/set-queue-service-properties](https://docs.microsoft.com/en-us/rest/api/storageservices/set-queue-service-properties).
+    /// [https://docs.microsoft.com/rest/api/storageservices/set-queue-service-properties](https://docs.microsoft.com/rest/api/storageservices/set-queue-service-properties).
     pub async fn execute(
         &self,
         queue_service_properties: &QueueServiceProperties,

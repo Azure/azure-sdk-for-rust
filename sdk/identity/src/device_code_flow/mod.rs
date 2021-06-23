@@ -2,7 +2,7 @@
 //!
 //! This flow allows users to sign in to input-constrained devices such as a smart TV, IoT device, or printer.
 //!
-//! You can learn more about this authorization flow [here](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-device-code).
+//! You can learn more about this authorization flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-device-code).
 mod device_code_responses;
 use crate::Error;
 use async_timer::timer::new_timer;

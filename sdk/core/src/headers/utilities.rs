@@ -135,7 +135,7 @@ pub fn content_type_from_headers(headers: &HeaderMap) -> Result<&str, Error> {
 }
 
 pub fn item_count_from_headers(headers: &HeaderMap) -> Result<u32, Error> {
-    get_from_headers(headers, MAX_ITEM_COUNT)
+    get_from_headers(headers, ITEM_COUNT)
 }
 
 #[cfg(feature = "enable_hyper")]

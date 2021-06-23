@@ -18,7 +18,7 @@ use serde::de::DeserializeOwned;
 
 /// User-defined content in JSON format.
 ///
-/// You can learn more about Documents [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/documents).
+/// You can learn more about Documents [here](https://docs.microsoft.com/rest/api/cosmos-db/documents).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(missing_docs)]
 pub struct Document<T> {

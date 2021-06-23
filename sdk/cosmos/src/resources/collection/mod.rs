@@ -7,7 +7,7 @@ pub use offer::Offer;
 
 /// A container of JSON documents and associated JavaScript application logic.
 ///
-/// You can learn more about Collections [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/collections).
+/// You can learn more about Collections [here](https://docs.microsoft.com/rest/api/cosmos-db/collections).
 #[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
 pub struct Collection {
     /// The collection id

@@ -6,7 +6,7 @@ use std::fmt;
 use std::marker::PhantomData;
 use url::form_urlencoded;
 
-/// Service version of the shared access signature ([Azure documentation](https://docs.microsoft.com/en-us/rest/api/storageservices/create-service-sas#specifying-the-signed-version-field)).
+/// Service version of the shared access signature ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-the-signed-version-field)).
 #[derive(Copy, Clone)]
 pub enum SasVersion {
     V20181109,
@@ -45,7 +45,7 @@ impl fmt::Display for SasService {
     }
 }
 
-/// Specifies the protocol permitted for a request made with the SAS ([Azure documentation](https://docs.microsoft.com/en-us/rest/api/storageservices/create-service-sas#specifying-the-http-protocol)).
+/// Specifies the protocol permitted for a request made with the SAS ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-the-http-protocol)).
 #[derive(Copy, Clone)]
 pub enum SasProtocol {
     Https,
@@ -61,7 +61,7 @@ impl fmt::Display for SasProtocol {
     }
 }
 
-/// Which resources are accessible via the shared access signature ([Azure documentation](https://docs.microsoft.com/en-us/rest/api/storageservices/create-service-sas#specifying-the-signed-resource-blob-service-only)).
+/// Which resources are accessible via the shared access signature ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-the-signed-resource-blob-service-only)).
 #[derive(Copy, Clone)]
 pub enum SasResource {
     Blob,
@@ -98,7 +98,7 @@ impl fmt::Display for SasResourceType {
     }
 }
 
-/// Indicate which operations a key_client may perform on the resource ([Azure documentation](https://docs.microsoft.com/en-us/rest/api/storageservices/create-service-sas#specifying-permissions)).
+/// Indicate which operations a key_client may perform on the resource ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-permissions)).
 #[derive(Copy, Clone)]
 pub enum SasPermissions {
     Read,
@@ -153,7 +153,7 @@ impl SharedAccessSignature {
         d.format("%Y-%m-%dT%H:%M:%SZ").to_string()
     }
 
-    // Azure documentation: https://docs.microsoft.com/en-us/rest/api/storageservices/create-service-sas#constructing-the-signature-string
+    // Azure documentation: https://docs.microsoft.com/rest/api/storageservices/create-service-sas#constructing-the-signature-string
     fn signature(&self) -> String {
         match self.signed_version {
             SasVersion::V20181109 => {
@@ -186,7 +186,7 @@ impl SharedAccessSignature {
         }
     }
 
-    /// [Example](https://docs.microsoft.com/en-us/rest/api/storageservices/create-service-sas#service-sas-example) from Azure documentation.
+    /// [Example](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#service-sas-example) from Azure documentation.
     pub fn token(&self) -> String {
         let mut elements: Vec<String> = vec![
             format!("sv={}", self.signed_version),

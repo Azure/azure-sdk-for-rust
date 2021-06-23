@@ -1,6 +1,6 @@
 //! All the resources that can be interacted with in a Cosmos instance.
 //!
-//! You can learn about the Cosmos DB resource model [here](https://docs.microsoft.com/en-us/azure/cosmos-db/account-databases-containers-items).
+//! You can learn about the Cosmos DB resource model [here](https://docs.microsoft.com/azure/cosmos-db/account-databases-containers-items).
 
 pub mod collection;
 pub mod document;

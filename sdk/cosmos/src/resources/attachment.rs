@@ -1,6 +1,6 @@
 /// Special documents that contain references and associated metadata to an external blob or media file.
 ///
-/// You can find more information about attachments in Cosmos [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/attachments)
+/// You can find more information about attachments in Cosmos [here](https://docs.microsoft.com/rest/api/cosmos-db/attachments)
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Attachment {
     /// The attachment id

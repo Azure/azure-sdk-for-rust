@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 
 /// The consistency guarantee provided by Cosmos.
 ///
-/// You can learn more about consistency levels in Cosmos [here](https://docs.microsoft.com/en-us/azure/cosmos-db/consistency-levels).
+/// You can learn more about consistency levels in Cosmos [here](https://docs.microsoft.com/azure/cosmos-db/consistency-levels).
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConsistencyLevel {
     /// A linearizability guarantee
@@ -27,7 +27,7 @@ impl ConsistencyLevel {
             Self::Strong => "Strong",
             Self::Bounded => "Bounded",
             Self::Session(_) => "Session",
-            Self::ConsistentPrefix => "Prefix", //this is guessed since it's missing here: https://docs.microsoft.com/en-us/rest/api/cosmos-db/common-cosmosdb-rest-request-headers
+            Self::ConsistentPrefix => "Prefix", //this is guessed since it's missing here: https://docs.microsoft.com/rest/api/cosmos-db/common-cosmosdb-rest-request-headers
             Self::Eventual => "Eventual",
         }
     }

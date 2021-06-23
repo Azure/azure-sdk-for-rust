@@ -1,7 +1,7 @@
 use crate::blob::blob::Blob;
+use crate::xml::read_xml;
 use azure_core::headers::{date_from_headers, request_id_from_headers};
 use azure_core::prelude::NextMarker;
-use azure_core::util::to_str_without_bom;
 use azure_core::RequestId;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -46,10 +46,10 @@ impl TryFrom<&http::Response<Bytes>> for ListBlobsResponse {
     type Error = crate::Error;
 
     fn try_from(response: &http::Response<Bytes>) -> Result<Self, Self::Error> {
-        let body = to_str_without_bom(response.body())?;
+        let body = response.body();
 
-        trace!("body == {}", body);
-        let list_blobs_response_internal: ListBlobsResponseInternal = serde_xml_rs::from_str(body)?;
+        trace!("body == {:?}", body);
+        let list_blobs_response_internal: ListBlobsResponseInternal = read_xml(body)?;
 
         Ok(Self {
             request_id: request_id_from_headers(response.headers())?,
