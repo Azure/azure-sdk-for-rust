@@ -91,7 +91,10 @@ macro_rules! create_enum {
                     $(
                         $value => Ok($name::$variant),
                     )*
-                    _ => Err($crate::ParsingError::ElementNotFound(s.to_owned())),
+                    _ => Err($crate::ParsingError::UnknownVariant {
+                        item: stringify!($name),
+                        variant: s.to_owned()
+                    })
                 }
             }
         }
@@ -203,7 +206,7 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "ElementNotFound(\"Red\")")]
+    #[should_panic(expected = "UnknownVariant { item: \"ColorsMonochrome\", variant: \"Red\" }")]
     fn test_color_parse_err_1() {
         "Red".parse::<ColorsMonochrome>().unwrap();
     }

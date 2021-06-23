@@ -93,22 +93,19 @@ impl<'a, 'b, 'c> CreateDocumentBuilder<'a, 'b> {
             .execute_request(req)
             .await?;
 
-        debug!("status_core == {:?}", response.status());
-        debug!("headers == {:?}", response.headers());
-        debug!("whole body == {:#?}", response.body());
-
+        const NON_UTF8_BODY: &'static str = "<NON-UTF8 BODY>";
         if self.is_upsert == IsUpsert::No && response.status() != StatusCode::CREATED {
             return Err(HttpError::new_unexpected_status_code(
                 StatusCode::CREATED,
                 response.status(),
-                std::str::from_utf8(response.body())?,
+                std::str::from_utf8(response.body()).unwrap_or_else(|_| NON_UTF8_BODY),
             )
             .into());
         } else if response.status() != StatusCode::CREATED && response.status() != StatusCode::OK {
             return Err(HttpError::new_multiple_unexpected_status_code(
                 vec![StatusCode::CREATED, StatusCode::OK],
                 response.status(),
-                std::str::from_utf8(response.body())?,
+                std::str::from_utf8(response.body()).unwrap_or_else(|_| NON_UTF8_BODY),
             )
             .into());
         }

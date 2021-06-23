@@ -1,10 +1,8 @@
 use super::BA512Range;
-use crate::AddAsHeader;
-use crate::ParseError;
+use crate::{AddAsHeader, ParsingError};
 use http::request::Builder;
 use std::convert::From;
 use std::fmt;
-use std::num::ParseIntError;
 use std::str::FromStr;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -63,18 +61,16 @@ impl From<std::ops::Range<usize>> for Range {
     }
 }
 
-impl From<ParseIntError> for ParseError {
-    fn from(pie: ParseIntError) -> ParseError {
-        ParseError::ParseIntError(pie)
-    }
-}
-
 impl FromStr for Range {
-    type Err = ParseError;
-    fn from_str(s: &str) -> Result<Range, ParseError> {
+    type Err = ParsingError;
+    fn from_str(s: &str) -> Result<Range, Self::Err> {
         let v = s.split('/').collect::<Vec<&str>>();
         if v.len() != 2 {
-            return Err(ParseError::SplitNotFound('/'));
+            return Err(ParsingError::TokenNotFound {
+                item: "Range",
+                token: "/".to_owned(),
+                full: s.to_owned(),
+            });
         }
 
         let cp_start = v[0].parse::<u64>()?;
@@ -125,7 +121,7 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "SplitNotFound")]
+    #[should_panic(expected = "TokenNotFound")]
     fn test_range_parse_panic_2() {
         "1000-2000".parse::<Range>().unwrap();
     }

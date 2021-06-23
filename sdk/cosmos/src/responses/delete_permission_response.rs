@@ -16,10 +16,6 @@ impl std::convert::TryFrom<Response<bytes::Bytes>> for DeletePermissionResponse 
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
         let headers = response.headers();
-        let body = response.body();
-
-        debug!("headers == {:#?}", headers);
-        debug!("body == {:#?}", std::str::from_utf8(body)?);
 
         Ok(Self {
             charge: request_charge_from_headers(headers)?,

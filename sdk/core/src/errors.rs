@@ -1,6 +1,43 @@
 use http::StatusCode;
 #[cfg(feature = "enable_hyper")]
 use hyper::{self, body, Body};
+
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Policy error: {0}")]
+    PolicyError(Box<dyn std::error::Error + Send + Sync>),
+    #[error("parsing error: {0}")]
+    ParsingError(#[from] ParsingError),
+    #[error("error getting token: {0}")]
+    GetTokenError(Box<dyn std::error::Error + Send + Sync>),
+    #[error("http error: {0}")]
+    HttpError(#[from] HttpError),
+    #[error("to str error: {0}")]
+    ToStrError(#[from] http::header::ToStrError),
+    #[error("header not found: {0}")]
+    HeaderNotFound(String),
+    #[error("at least one of these headers must be present: {0:?}")]
+    HeadersNotFound(Vec<String>),
+    #[error(
+        "the expected query parameter {} was not found in the provided Url: {:?}",
+        expected_parameter,
+        url
+    )]
+    UrlQueryParameterNotFound {
+        expected_parameter: String,
+        url: url::Url,
+    },
+    #[error("error preparing HTTP request: {0}")]
+    HttpPrepareError(#[from] http::Error),
+    #[error(transparent)]
+    StreamError(#[from] StreamError),
+    #[error("JSON error: {0}")]
+    JsonError(#[from] serde_json::Error),
+    #[error(transparent)]
+    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+}
+
 #[cfg(feature = "enable_hyper")]
 type HttpClientError = hyper::Error;
 #[cfg(feature = "enable_reqwest")]
@@ -9,32 +46,24 @@ type HttpClientError = reqwest::Error;
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum ParsingError {
-    #[error("Element not found: {0}")]
-    ElementNotFound(String),
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, thiserror::Error)]
-pub enum ParseError {
-    #[error("Expected token \"{0}\" not found")]
-    TokenNotFound(String),
-    #[error("Expected split char \'{0}\' not found")]
-    SplitNotFound(char),
-    #[error("Parse int error {0}")]
-    ParseIntError(std::num::ParseIntError),
-}
-
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum AzurePathParseError {
-    #[error("Path separator not found")]
-    PathSeparatorNotFoundError,
-    #[error("Multiple path separators found")]
-    MultiplePathSeparatorsFoundError,
-    #[error("Missing container name")]
-    MissingContainerError,
-    #[error("Missing blob name")]
-    MissingBlobError,
+    #[error("unknown variant of {item} found: \"{variant}\"")]
+    UnknownVariant { item: &'static str, variant: String },
+    #[error("expected token \"{token}\" not found when parsing {item} from \"{full}\"")]
+    TokenNotFound {
+        item: &'static str,
+        token: String,
+        full: String,
+    },
+    #[error("error parsing int: {0}")]
+    ParseIntError(#[from] std::num::ParseIntError),
+    #[error("error parsing uuid: {0}")]
+    ParseUuidError(#[from] uuid::Error),
+    #[error("error parsing date time: {0}")]
+    ParseDateTimeError(#[from] chrono::ParseError),
+    #[error("error parsing a float: {0}")]
+    ParseFloatError(#[from] std::num::ParseFloatError),
+    #[error("error parsing bool: {0}")]
+    ParseBoolError(#[from] std::str::ParseBoolError),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -44,7 +73,7 @@ pub struct UnexpectedValue {
 }
 
 impl UnexpectedValue {
-    pub fn new(expected: String, received: String) -> UnexpectedValue {
+    pub fn new(expected: String, received: String) -> Self {
         Self {
             expected: vec![expected],
             received,
@@ -52,7 +81,7 @@ impl UnexpectedValue {
     }
 
     pub fn new_multiple(allowed: Vec<String>, received: String) -> Self {
-        UnexpectedValue {
+        Self {
             expected: allowed,
             received,
         }
@@ -69,9 +98,9 @@ pub struct UnexpectedHTTPResult {
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum StreamError {
-    #[error("Stream poll error: {0}")]
+    #[error("error polling stream: {0}")]
     PollError(std::io::Error),
-    #[error("Stream read error: {0}")]
+    #[error("error reading stream: {0}")]
     ReadError(HttpClientError),
 }
 
@@ -165,42 +194,6 @@ pub enum Parse512AlignedError {
     ParseIntError(#[from] std::num::ParseIntError),
     #[error("not 512 byte aligned error: {0}")]
     Not512ByteAlignedError(#[from] Not512ByteAlignedError),
-}
-
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Policy error: {0}")]
-    PolicyError(Box<dyn std::error::Error + Send + Sync>),
-    #[error("Error getting token: {0}")]
-    GetTokenError(Box<dyn std::error::Error + Send + Sync>),
-    #[error("http error: {0}")]
-    HttpError(#[from] HttpError),
-    #[error("parse bool error: {0}")]
-    ParseBoolError(#[from] std::str::ParseBoolError),
-    #[error("to str error: {0}")]
-    ToStrError(#[from] http::header::ToStrError),
-    #[error("Header not found: {0}")]
-    HeaderNotFound(String),
-    #[error("At least one of these headers must be present: {0:?}")]
-    HeadersNotFound(Vec<String>),
-    #[error(
-        "The expected query parameter {} was not found in the provided Url: {:?}",
-        expected_parameter,
-        url
-    )]
-    UrlQueryParameterNotFound {
-        expected_parameter: String,
-        url: url::Url,
-    },
-    #[error("Parse int error: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
-    #[error("Error preparing HTTP request: {0}")]
-    HttpPrepareError(#[from] http::Error),
-    #[error("uuid error: {0}")]
-    ParseUuidError(#[from] uuid::Error),
-    #[error("Chrono parser error: {0}")]
-    ChronoParserError(#[from] chrono::ParseError),
 }
 
 #[non_exhaustive]

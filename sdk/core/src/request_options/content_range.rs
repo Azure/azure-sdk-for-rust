@@ -1,4 +1,4 @@
-use crate::ParseError;
+use crate::ParsingError;
 use std::fmt;
 use std::str::FromStr;
 
@@ -38,24 +38,36 @@ impl ContentRange {
 }
 
 impl FromStr for ContentRange {
-    type Err = ParseError;
-    fn from_str(s: &str) -> Result<ContentRange, ParseError> {
+    type Err = ParsingError;
+    fn from_str(s: &str) -> Result<ContentRange, Self::Err> {
         let remaining = s
             .strip_prefix(PREFIX)
-            .ok_or(ParseError::TokenNotFound(PREFIX.to_owned()))?;
+            .ok_or_else(|| ParsingError::TokenNotFound {
+                item: "ContentRange",
+                token: PREFIX.to_owned(),
+                full: s.into(),
+            })?;
 
         let mut split_at_dash = remaining.split('-');
         let start = split_at_dash.next().unwrap().parse()?;
 
         let mut split_at_slash = split_at_dash
             .next()
-            .ok_or(ParseError::SplitNotFound('-'))?
+            .ok_or_else(|| ParsingError::TokenNotFound {
+                item: "ContentRange",
+                token: "-".to_owned(),
+                full: s.into(),
+            })?
             .split('/');
 
         let end = split_at_slash.next().unwrap().parse()?;
         let total_length = split_at_slash
             .next()
-            .ok_or(ParseError::SplitNotFound('/'))?
+            .ok_or_else(|| ParsingError::TokenNotFound {
+                item: "ContentRange",
+                token: "/".to_owned(),
+                full: s.into(),
+            })?
             .parse()?;
 
         Ok(ContentRange {
@@ -95,19 +107,25 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "TokenNotFound(\"bytes \")")]
+    #[should_panic(
+        expected = "TokenNotFound { item: \"ContentRange\", token: \"bytes \", full: \"something else\" }"
+    )]
     fn test_parse_no_starting_token() {
         "something else".parse::<ContentRange>().unwrap();
     }
 
     #[test]
-    #[should_panic(expected = "SplitNotFound('-')")]
+    #[should_panic(
+        expected = "TokenNotFound { item: \"ContentRange\", token: \"-\", full: \"bytes 100\""
+    )]
     fn test_parse_no_dash() {
         "bytes 100".parse::<ContentRange>().unwrap();
     }
 
     #[test]
-    #[should_panic(expected = "SplitNotFound('/')")]
+    #[should_panic(
+        expected = "TokenNotFound { item: \"ContentRange\", token: \"/\", full: \"bytes 100-500\""
+    )]
     fn test_parse_no_slash() {
         "bytes 100-500".parse::<ContentRange>().unwrap();
     }

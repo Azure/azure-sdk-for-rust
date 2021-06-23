@@ -35,9 +35,6 @@ impl std::convert::TryFrom<Response<bytes::Bytes>> for GetCollectionResponse {
         let headers = response.headers();
         let body = response.body();
 
-        debug!("headers == {:#?}", headers);
-        debug!("body == {}", std::str::from_utf8(body)?);
-
         Ok(Self {
             collection: serde_json::from_slice(body)?,
             last_state_change: last_state_change_from_headers(headers)?,
