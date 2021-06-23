@@ -10,6 +10,7 @@ use http::status::StatusCode;
 use http::HeaderMap;
 #[cfg(feature = "enable_hyper")]
 use hyper::{Body, Client, Request};
+use std::str::FromStr;
 
 pub fn lease_id_from_headers(headers: &HeaderMap) -> Result<LeaseId, Error> {
     get_from_headers(headers, LEASE_ID)
@@ -26,7 +27,7 @@ pub fn client_request_id_from_headers_optional(headers: &HeaderMap) -> Option<St
 pub fn last_modified_from_headers_optional(
     headers: &HeaderMap,
 ) -> Result<Option<DateTime<Utc>>, Error> {
-    get_option_from_headers(headers, &LAST_MODIFIED.to_string())
+    get_option_from_headers(headers, LAST_MODIFIED.as_str())
 }
 
 pub fn rfc2822_from_headers_mandatory(
@@ -34,7 +35,7 @@ pub fn rfc2822_from_headers_mandatory(
     header_name: &str,
 ) -> Result<DateTime<Utc>, Error> {
     let date = get_str_from_headers(headers, header_name)?;
-    let date = parse_from_rfc2822(date)?;
+    let date = parse_date_from_rfc2822(date)?;
     let date = DateTime::from_utc(date.naive_utc(), Utc);
     Ok(date)
 }
@@ -54,13 +55,13 @@ pub fn continuation_token_from_headers_optional(
 }
 
 pub fn utc_date_from_rfc2822(date: &str) -> Result<DateTime<Utc>, Error> {
-    let date = parse_from_rfc2822(date)?;
+    let date = parse_date_from_rfc2822(date)?;
     Ok(DateTime::from_utc(date.naive_utc(), Utc))
 }
 
 pub fn date_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>, Error> {
-    let date = get_str_from_headers(headers, &DATE.to_string())?;
-    let date = parse_from_rfc2822(date)?;
+    let date = get_str_from_headers(headers, DATE.as_str())?;
+    let date = parse_date_from_rfc2822(date)?;
     let date = DateTime::from_utc(date.naive_utc(), Utc);
     Ok(date)
 }
@@ -84,7 +85,7 @@ pub fn etag_from_headers_optional(headers: &HeaderMap) -> Result<Option<String>,
 }
 
 pub fn etag_from_headers(headers: &HeaderMap) -> Result<String, Error> {
-    get_str_from_headers(headers, &ETAG.to_string()).map(ToOwned::to_owned)
+    get_str_from_headers(headers, ETAG.as_str()).map(ToOwned::to_owned)
 }
 
 pub fn lease_time_from_headers(headers: &HeaderMap) -> Result<u8, Error> {
@@ -130,7 +131,7 @@ pub fn request_server_encrypted_from_headers(headers: &HeaderMap) -> Result<bool
 }
 
 pub fn content_type_from_headers(headers: &HeaderMap) -> Result<&str, Error> {
-    get_str_from_headers(headers, &http::header::CONTENT_TYPE.to_string())
+    get_str_from_headers(headers, http::header::CONTENT_TYPE.as_str())
 }
 
 pub fn item_count_from_headers(headers: &HeaderMap) -> Result<u32, Error> {
@@ -184,6 +185,17 @@ where
     }
 }
 
-fn parse_from_rfc2822(date: &str) -> Result<DateTime<FixedOffset>, ParsingError> {
+pub fn parse_date_from_str(date: &str, fmt: &str) -> Result<DateTime<FixedOffset>, ParsingError> {
+    DateTime::parse_from_str(date, fmt).map_err(ParsingError::ParseDateTimeError)
+}
+
+pub fn parse_date_from_rfc2822(date: &str) -> Result<DateTime<FixedOffset>, ParsingError> {
     DateTime::parse_from_rfc2822(date).map_err(ParsingError::ParseDateTimeError)
+}
+
+pub fn parse_int<F>(s: &str) -> Result<F, ParsingError>
+where
+    F: FromStr<Err = std::num::ParseIntError>,
+{
+    FromStr::from_str(s).map_err(ParsingError::ParseIntError)
 }

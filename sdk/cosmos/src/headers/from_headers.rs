@@ -1,9 +1,12 @@
 use crate::errors::Error;
+use crate::errors::ParsingError;
 use crate::headers::*;
 use crate::resource_quota::resource_quotas_from_str;
 use crate::resources::document::IndexingDirective;
 use crate::ResourceQuota;
 use azure_core::headers;
+use azure_core::headers::parse_date_from_str;
+use azure_core::headers::parse_int;
 use chrono::{DateTime, Utc};
 use http::HeaderMap;
 
@@ -106,8 +109,7 @@ pub(crate) fn global_committed_lsn_from_headers(headers: &HeaderMap) -> Result<u
     Ok(if s == "-1" {
         0
     } else {
-        s.parse()
-            .map_err(|e: <u64 as std::str::FromStr>::Err| Error::ParsingError(e.into()))?
+        parse_int(s).map_err(ParsingError::Core)?
     })
 }
 
@@ -159,14 +161,12 @@ pub(crate) fn media_storage_usage_mb_from_headers(headers: &HeaderMap) -> Result
 
 fn _date_from_headers(headers: &HeaderMap, header_name: &str) -> Result<DateTime<Utc>, Error> {
     let date = get_str_from_headers(headers, header_name)?;
-
     // since Azure returns "GMT" instead of +0000 as timezone we replace it ourselves.
     // For example: Wed, 15 Jan 2020 23:39:44.369 GMT
     let date = date.replace("GMT", "+0000");
-    let date = DateTime::parse_from_str(&date, "%a, %e %h %Y %H:%M:%S%.f %z")
-        .map_err(|e| Error::ParsingError(e.into()))?;
+    let date =
+        parse_date_from_str(&date, "%a, %e %h %Y %H:%M:%S%.f %z").map_err(ParsingError::Core)?;
     let date = DateTime::from_utc(date.naive_utc(), Utc);
-
     Ok(date)
 }
 
