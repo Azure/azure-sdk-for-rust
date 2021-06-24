@@ -107,27 +107,42 @@ mod test {
     }
 
     #[test]
-    #[should_panic(
-        expected = "TokenNotFound { item: \"ContentRange\", token: \"bytes \", full: \"something else\" }"
-    )]
     fn test_parse_no_starting_token() {
-        "something else".parse::<ContentRange>().unwrap();
+        let err = "something else".parse::<ContentRange>().unwrap_err();
+        assert_eq!(
+            err,
+            ParsingError::TokenNotFound {
+                item: "ContentRange",
+                token: "bytes ".to_string(),
+                full: "something else".to_string()
+            }
+        );
     }
 
     #[test]
-    #[should_panic(
-        expected = "TokenNotFound { item: \"ContentRange\", token: \"-\", full: \"bytes 100\""
-    )]
     fn test_parse_no_dash() {
-        "bytes 100".parse::<ContentRange>().unwrap();
+        let err = "bytes 100".parse::<ContentRange>().unwrap_err();
+        assert_eq!(
+            err,
+            ParsingError::TokenNotFound {
+                item: "ContentRange",
+                token: "-".to_string(),
+                full: "bytes 100".to_string()
+            }
+        );
     }
 
     #[test]
-    #[should_panic(
-        expected = "TokenNotFound { item: \"ContentRange\", token: \"/\", full: \"bytes 100-500\""
-    )]
     fn test_parse_no_slash() {
-        "bytes 100-500".parse::<ContentRange>().unwrap();
+        let err = "bytes 100-500".parse::<ContentRange>().unwrap_err();
+        assert_eq!(
+            err,
+            ParsingError::TokenNotFound {
+                item: "ContentRange",
+                token: "/".to_string(),
+                full: "bytes 100-500".to_string()
+            }
+        );
     }
 
     #[test]

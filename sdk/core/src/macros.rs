@@ -171,6 +171,7 @@ macro_rules! response_from_headers {
 
 #[cfg(test)]
 mod test {
+    use crate::ParsingError;
     create_enum!(Colors, (Black, "Black"), (White, "White"), (Red, "Red"));
     create_enum!(ColorsMonochrome, (Black, "Black"), (White, "White"));
 
@@ -206,9 +207,15 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "UnknownVariant { item: \"ColorsMonochrome\", variant: \"Red\" }")]
     fn test_color_parse_err_1() {
-        "Red".parse::<ColorsMonochrome>().unwrap();
+        let err = "Red".parse::<ColorsMonochrome>().unwrap_err();
+        assert_eq!(
+            err,
+            ParsingError::UnknownVariant {
+                item: "ColorsMonochrome",
+                variant: "Red".to_string()
+            }
+        );
     }
 
     #[test]

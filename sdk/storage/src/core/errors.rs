@@ -1,3 +1,4 @@
+use std::cmp::PartialEq;
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -69,7 +70,7 @@ pub enum Error {
 }
 
 #[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, PartialEq, thiserror::Error)]
 pub enum AzurePathParseError {
     #[error("path separator not found")]
     PathSeparatorNotFoundError,
