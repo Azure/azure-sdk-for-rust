@@ -9,17 +9,36 @@ pub enum Error {
     /// An error related to parsing
     #[error(transparent)]
     ParsingError(#[from] ParsingError),
-    #[error("http error: {0}")]
-    CoreHttpError(#[from] azure_core::HttpError),
-    #[error("stream error: {0}")]
-    StreamError(#[from] azure_core::StreamError),
-    #[error("http error: {0}")]
-    HttpError(#[from] http::Error),
-    #[error("JSON error: {0}")]
-    JsonError(#[from] serde_json::Error),
-    /// Other errors that can happen but are unlikely to be matched against
-    #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(error: serde_json::Error) -> Self {
+        Self::Core(azure_core::Error::JsonError(error))
+    }
+}
+
+impl From<azure_core::StreamError> for Error {
+    fn from(error: azure_core::StreamError) -> Self {
+        Self::Core(azure_core::Error::StreamError(error))
+    }
+}
+
+impl From<azure_core::HttpError> for Error {
+    fn from(error: azure_core::HttpError) -> Self {
+        Self::Core(azure_core::Error::HttpError(error))
+    }
+}
+
+impl From<Box<dyn std::error::Error + Sync + Send>> for Error {
+    fn from(error: Box<dyn std::error::Error + Sync + Send>) -> Self {
+        Self::Core(azure_core::Error::Other(error))
+    }
+}
+
+impl From<http::Error> for Error {
+    fn from(error: http::Error) -> Self {
+        Self::Core(azure_core::Error::Other(error.into()))
+    }
 }
 
 /// A parsing error
@@ -28,7 +47,13 @@ pub enum Error {
 #[derive(Debug, thiserror::Error)]
 pub enum ParsingError {
     #[error(transparent)]
-    Core(#[from] azure_core::ParsingError),
+    Core(azure_core::ParsingError),
     #[error("Resource quota parsing error: {0}")]
     ParseResourceQuotaError(#[from] crate::resource_quota::ResourceQuotaParsingError),
+}
+
+impl<T: Into<azure_core::ParsingError>> From<T> for ParsingError {
+    fn from(error: T) -> Self {
+        Self::Core(error.into())
+    }
 }
