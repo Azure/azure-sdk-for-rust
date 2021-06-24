@@ -72,38 +72,38 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "PathSeparatorNotFoundError")]
     fn no_slash() {
         let path = "containerblob";
         let p = &path;
-        assert!(p.container_name().unwrap() == "container");
-        assert!(path.blob_name().unwrap() == "blob");
+        let err = AzurePathParseError::PathSeparatorNotFoundError;
+        assert_eq!(p.container_name().unwrap_err(), err);
+        assert_eq!(path.blob_name().unwrap_err(), err);
     }
 
     #[test]
-    #[should_panic(expected = "MultiplePathSeparatorsFoundError")]
     fn three_slashes() {
         let path = "container/blob/extra";
         let p = &path;
-        assert!(p.container_name().unwrap() == "container");
-        assert!(path.blob_name().unwrap() == "blob");
+        let err = AzurePathParseError::MultiplePathSeparatorsFoundError;
+        assert_eq!(p.container_name().unwrap_err(), err);
+        assert_eq!(path.blob_name().unwrap_err(), err);
     }
 
     #[test]
-    #[should_panic(expected = "MissingContainerError")]
     fn missing_container() {
         let path = "/blob";
         let p = &path;
-        assert!(p.container_name().unwrap() == "container");
-        assert!(path.blob_name().unwrap() == "blob");
+        let err = AzurePathParseError::MissingContainerError;
+        assert_eq!(p.container_name().unwrap_err(), err);
+        assert_eq!(path.blob_name().unwrap_err(), err);
     }
 
     #[test]
-    #[should_panic(expected = "MissingBlobError")]
     fn missing_blob() {
         let path = "container/";
         let p = &path;
-        assert!(p.container_name().unwrap() == "container");
-        assert!(path.blob_name().unwrap() == "blob");
+        let err = AzurePathParseError::MissingBlobError;
+        assert_eq!(p.container_name().unwrap_err(), err);
+        assert_eq!(path.blob_name().unwrap_err(), err);
     }
 }

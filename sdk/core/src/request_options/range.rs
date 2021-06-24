@@ -115,15 +115,22 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "ParseIntError(ParseIntError { kind: InvalidDigit })")]
     fn test_range_parse_panic_1() {
-        "abba/2000".parse::<Range>().unwrap();
+        let err = "abba/2000".parse::<Range>().unwrap_err();
+        assert!(matches!(err, ParsingError::ParseIntError(_)));
     }
 
     #[test]
-    #[should_panic(expected = "TokenNotFound")]
     fn test_range_parse_panic_2() {
-        "1000-2000".parse::<Range>().unwrap();
+        let err = "1000-2000".parse::<Range>().unwrap_err();
+        assert_eq!(
+            err,
+            ParsingError::TokenNotFound {
+                item: "Range",
+                token: "/".to_string(),
+                full: "1000-2000".to_string()
+            }
+        );
     }
 
     #[test]

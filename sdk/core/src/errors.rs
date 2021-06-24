@@ -1,6 +1,7 @@
 use http::StatusCode;
 #[cfg(feature = "enable_hyper")]
 use hyper::{self, body, Body};
+use std::cmp::PartialEq;
 
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
@@ -44,7 +45,7 @@ type HttpClientError = hyper::Error;
 type HttpClientError = reqwest::Error;
 
 #[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, PartialEq, thiserror::Error)]
 pub enum ParsingError {
     #[error("unknown variant of {item} found: \"{variant}\"")]
     UnknownVariant { item: &'static str, variant: String },
@@ -167,7 +168,7 @@ impl HttpError {
         }
     }
 }
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, PartialEq, thiserror::Error)]
 pub enum Not512ByteAlignedError {
     #[error("start range not 512-byte aligned: {0}")]
     StartRange(u64),
@@ -186,7 +187,7 @@ pub enum PermissionError {
     },
 }
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, PartialEq, thiserror::Error)]
 pub enum Parse512AlignedError {
     #[error("split not found")]
     SplitNotFound,
