@@ -9,8 +9,6 @@ pub enum Error {
     /// An error related to parsing
     #[error(transparent)]
     ParsingError(#[from] ParsingError),
-    // #[error(transparent)]
-    // Other(#[from] Box<dyn std::error::Error + Send + Sync>),
     #[error("conversion to `{0}` failed because at lease one element is raw")]
     ElementIsRaw(String),
 }
