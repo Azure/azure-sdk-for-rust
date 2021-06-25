@@ -4,11 +4,11 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<resource::Kind>,
@@ -44,14 +44,14 @@ pub struct WorkbookProperties {
     pub display_name: String,
     #[serde(rename = "serializedData")]
     pub serialized_data: String,
-    #[serde(rename = "timeModified", skip_serializing)]
+    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
     pub category: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
-    #[serde(rename = "userId", skip_serializing)]
+    #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
     #[serde(rename = "sourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_id: Option<String>,

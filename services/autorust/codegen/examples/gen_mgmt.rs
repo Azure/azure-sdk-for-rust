@@ -14,6 +14,9 @@ const OUTPUT_FOLDER: &str = "../mgmt";
 const ONLY_SERVICES: &[&str] = &[
     // "vmware",
     // "network",
+    // "cosmos-db",
+    // "databricks",
+    // "marketplace",
 ];
 
 const SKIP_SERVICES: &[&str] = &[
@@ -22,12 +25,13 @@ const SKIP_SERVICES: &[&str] = &[
     "deviceprovisioningservices", // TODO #82 certificate_name used as parameter more than once
     "dnc",                        // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
     "m365securityandcompliance",  // can't find privateLinkServicesForO365ManagementActivityAPI.json
-    "mixedreality",               // TODO #83 AccountKeyRegenerateRequest not generated
-    "netapp",                     // Ident "10minutely"
-    "network",                    // recursive types need to be boxed
-    "powerplatform",              // https://github.com/Azure/azure-rest-api-specs/pull/11580 incorrect ref & duplicate Operations_List
-    "service-map",                // Ident "Ref:machine"
-    "servicefabric",              // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
+    "marketplace",
+    "mixedreality",  // TODO #83 AccountKeyRegenerateRequest not generated
+    "netapp",        // Ident "10minutely"
+    "network",       // recursive types need to be boxed
+    "powerplatform", // https://github.com/Azure/azure-rest-api-specs/pull/11580 incorrect ref & duplicate Operations_List
+    "service-map",   // Ident "Ref:machine"
+    "servicefabric", // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
     "servicefabricmanagedclusters",
     "synapse", // TODO #80 path parameters
     "web",     // TODO #81 DataType::File
@@ -44,6 +48,8 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("compute", "package-2021-03-01-only"),         // TODO #81 DataType::File
     ("consumption", "package-2019-11"),             // ReservationRecommendationDetails_Get has a path and query param both named "scope"
     ("consumption", "package-2021-05"),
+    ("cosmos-db", "package-2021-06"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14996
+    ("databricks", "package-2021-04-01-preview"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14995
     // datamigration, same error for all
     // SchemaNotFound MigrateSqlServerSqlDbTask.json ValidationStatus, but may be buried
     ("datamigration", "package-2018-07-15-preview"),
@@ -52,7 +58,10 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("datamigration", "package-2018-03-15-preview"),
     ("datamigration", "package-2017-11-15-preview"),
     ("mediaservices", "package-2019-05-preview"), // invalid unicode character of a dash instead of a hyphen https://github.com/Azure/azure-rest-api-specs/pull/11576
-    ("marketplace", "package-composite-v1"),
+    ("marketplace", "package-2020-01-01"),
+    ("marketplace", "package-2020-12-01"),
+    ("marketplace", "package-composite-v1"), // mixing versions
+    ("marketplace", "package-composite-v2"), // mixing versions
     // ("network", "package-2017-03-30-only"), // SchemaNotFound 2017-09-01/network.json SubResource
     // ("network", "package-2020-11"), // recursive types need to be boxed
     // ("network", "package-2021-02"), // recursive types need to be boxed

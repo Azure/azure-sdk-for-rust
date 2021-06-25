@@ -4,11 +4,11 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -45,9 +45,9 @@ pub struct PurchasePlan {
 pub struct OpenShiftRouterProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "publicSubdomain", skip_serializing)]
+    #[serde(rename = "publicSubdomain", default, skip_serializing_if = "Option::is_none")]
     pub public_subdomain: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -179,15 +179,15 @@ pub struct OpenShiftManagedClusterAuthProfile {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[serde(rename = "openShiftVersion")]
     pub open_shift_version: String,
-    #[serde(rename = "clusterVersion", skip_serializing)]
+    #[serde(rename = "clusterVersion", default, skip_serializing_if = "Option::is_none")]
     pub cluster_version: Option<String>,
-    #[serde(rename = "publicHostname", skip_serializing)]
+    #[serde(rename = "publicHostname", default, skip_serializing_if = "Option::is_none")]
     pub public_hostname: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<NetworkProfile>,
@@ -227,6 +227,6 @@ pub struct TagsObject {
 pub struct OpenShiftManagedClusterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OpenShiftManagedCluster>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

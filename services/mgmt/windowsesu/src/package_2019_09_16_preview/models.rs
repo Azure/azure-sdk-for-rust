@@ -13,9 +13,9 @@ pub mod multiple_activation_key {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
-        #[serde(rename = "multipleActivationKey", skip_serializing)]
+        #[serde(rename = "multipleActivationKey", default, skip_serializing_if = "Option::is_none")]
         pub multiple_activation_key: Option<String>,
-        #[serde(rename = "expirationDate", skip_serializing)]
+        #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
         pub expiration_date: Option<String>,
         #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
         pub os_type: Option<properties::OsType>,
@@ -27,7 +27,7 @@ pub mod multiple_activation_key {
         pub agreement_number: Option<String>,
         #[serde(rename = "isEligible", default, skip_serializing_if = "Option::is_none")]
         pub is_eligible: Option<bool>,
-        #[serde(rename = "provisioningState", skip_serializing)]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
     }
     pub mod properties {
@@ -57,7 +57,7 @@ pub mod multiple_activation_key {
 pub struct MultipleActivationKeyList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MultipleActivationKey>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -67,7 +67,7 @@ pub struct MultipleActivationKeyUpdate {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
@@ -87,7 +87,7 @@ pub struct OperationDisplay {
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -97,11 +97,11 @@ pub struct ErrorResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDefinition {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -114,10 +114,10 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

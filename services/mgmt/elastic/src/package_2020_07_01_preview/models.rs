@@ -70,28 +70,28 @@ pub enum MonitoringStatus {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticCloudUser {
-    #[serde(rename = "emailAddress", skip_serializing)]
+    #[serde(rename = "emailAddress", default, skip_serializing_if = "Option::is_none")]
     pub email_address: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "elasticCloudSsoDefaultUrl", skip_serializing)]
+    #[serde(rename = "elasticCloudSsoDefaultUrl", default, skip_serializing_if = "Option::is_none")]
     pub elastic_cloud_sso_default_url: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticCloudDeployment {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "deploymentId", skip_serializing)]
+    #[serde(rename = "deploymentId", default, skip_serializing_if = "Option::is_none")]
     pub deployment_id: Option<String>,
-    #[serde(rename = "azureSubscriptionId", skip_serializing)]
+    #[serde(rename = "azureSubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub azure_subscription_id: Option<String>,
-    #[serde(rename = "elasticsearchRegion", skip_serializing)]
+    #[serde(rename = "elasticsearchRegion", default, skip_serializing_if = "Option::is_none")]
     pub elasticsearch_region: Option<String>,
-    #[serde(rename = "elasticsearchServiceUrl", skip_serializing)]
+    #[serde(rename = "elasticsearchServiceUrl", default, skip_serializing_if = "Option::is_none")]
     pub elasticsearch_service_url: Option<String>,
-    #[serde(rename = "kibanaServiceUrl", skip_serializing)]
+    #[serde(rename = "kibanaServiceUrl", default, skip_serializing_if = "Option::is_none")]
     pub kibana_service_url: Option<String>,
-    #[serde(rename = "kibanaSsoUrl", skip_serializing)]
+    #[serde(rename = "kibanaSsoUrl", default, skip_serializing_if = "Option::is_none")]
     pub kibana_sso_url: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -142,9 +142,9 @@ pub struct MonitorProperties {
     pub elastic_properties: Option<ElasticProperties>,
     #[serde(rename = "userInfo", default, skip_serializing_if = "Option::is_none")]
     pub user_info: Option<UserInfo>,
-    #[serde(rename = "liftrResourceCategory", skip_serializing)]
+    #[serde(rename = "liftrResourceCategory", default, skip_serializing_if = "Option::is_none")]
     pub liftr_resource_category: Option<LiftrResourceCategories>,
-    #[serde(rename = "liftrResourcePreference", skip_serializing)]
+    #[serde(rename = "liftrResourcePreference", default, skip_serializing_if = "Option::is_none")]
     pub liftr_resource_preference: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -153,20 +153,20 @@ pub enum ManagedIdentityTypes {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IdentityProperties {
-    #[serde(rename = "principalId", skip_serializing)]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", skip_serializing)]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ManagedIdentityTypes>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticMonitorResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<ResourceSku>,
@@ -177,7 +177,7 @@ pub struct ElasticMonitorResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -247,15 +247,15 @@ pub struct MonitoringTagRulesProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitoringTagRules {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MonitoringTagRulesProperties>,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -274,11 +274,11 @@ pub enum ElasticDeploymentStatus {
 pub struct DeploymentInfoResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ElasticDeploymentStatus>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-    #[serde(rename = "memoryCapacity", skip_serializing)]
+    #[serde(rename = "memoryCapacity", default, skip_serializing_if = "Option::is_none")]
     pub memory_capacity: Option<String>,
-    #[serde(rename = "diskCapacity", skip_serializing)]
+    #[serde(rename = "diskCapacity", default, skip_serializing_if = "Option::is_none")]
     pub disk_capacity: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

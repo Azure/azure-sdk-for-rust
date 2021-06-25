@@ -52,7 +52,7 @@ pub struct Annotation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnnotationsListResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Annotation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -86,9 +86,9 @@ pub struct ApplicationInsightsComponentApiKeyListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentApiKey {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "apiKey", skip_serializing)]
+    #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
     pub api_key: Option<String>,
     #[serde(rename = "createdDate", default, skip_serializing_if = "Option::is_none")]
     pub created_date: Option<String>,
@@ -123,43 +123,43 @@ pub struct ApplicationInsightsComponentExportRequest {
 pub type ApplicationInsightsComponentExportConfigurationListResult = Vec<ApplicationInsightsComponentExportConfiguration>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentExportConfiguration {
-    #[serde(rename = "ExportId", skip_serializing)]
+    #[serde(rename = "ExportId", default, skip_serializing_if = "Option::is_none")]
     pub export_id: Option<String>,
-    #[serde(rename = "InstrumentationKey", skip_serializing)]
+    #[serde(rename = "InstrumentationKey", default, skip_serializing_if = "Option::is_none")]
     pub instrumentation_key: Option<String>,
     #[serde(rename = "RecordTypes", default, skip_serializing_if = "Option::is_none")]
     pub record_types: Option<String>,
-    #[serde(rename = "ApplicationName", skip_serializing)]
+    #[serde(rename = "ApplicationName", default, skip_serializing_if = "Option::is_none")]
     pub application_name: Option<String>,
-    #[serde(rename = "SubscriptionId", skip_serializing)]
+    #[serde(rename = "SubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
-    #[serde(rename = "ResourceGroup", skip_serializing)]
+    #[serde(rename = "ResourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub resource_group: Option<String>,
-    #[serde(rename = "DestinationStorageSubscriptionId", skip_serializing)]
+    #[serde(rename = "DestinationStorageSubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub destination_storage_subscription_id: Option<String>,
-    #[serde(rename = "DestinationStorageLocationId", skip_serializing)]
+    #[serde(rename = "DestinationStorageLocationId", default, skip_serializing_if = "Option::is_none")]
     pub destination_storage_location_id: Option<String>,
-    #[serde(rename = "DestinationAccountId", skip_serializing)]
+    #[serde(rename = "DestinationAccountId", default, skip_serializing_if = "Option::is_none")]
     pub destination_account_id: Option<String>,
-    #[serde(rename = "DestinationType", skip_serializing)]
+    #[serde(rename = "DestinationType", default, skip_serializing_if = "Option::is_none")]
     pub destination_type: Option<String>,
-    #[serde(rename = "IsUserEnabled", skip_serializing)]
+    #[serde(rename = "IsUserEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_user_enabled: Option<String>,
-    #[serde(rename = "LastUserUpdate", skip_serializing)]
+    #[serde(rename = "LastUserUpdate", default, skip_serializing_if = "Option::is_none")]
     pub last_user_update: Option<String>,
     #[serde(rename = "NotificationQueueEnabled", default, skip_serializing_if = "Option::is_none")]
     pub notification_queue_enabled: Option<String>,
-    #[serde(rename = "ExportStatus", skip_serializing)]
+    #[serde(rename = "ExportStatus", default, skip_serializing_if = "Option::is_none")]
     pub export_status: Option<String>,
-    #[serde(rename = "LastSuccessTime", skip_serializing)]
+    #[serde(rename = "LastSuccessTime", default, skip_serializing_if = "Option::is_none")]
     pub last_success_time: Option<String>,
-    #[serde(rename = "LastGapTime", skip_serializing)]
+    #[serde(rename = "LastGapTime", default, skip_serializing_if = "Option::is_none")]
     pub last_gap_time: Option<String>,
-    #[serde(rename = "PermanentErrorReason", skip_serializing)]
+    #[serde(rename = "PermanentErrorReason", default, skip_serializing_if = "Option::is_none")]
     pub permanent_error_reason: Option<String>,
-    #[serde(rename = "StorageName", skip_serializing)]
+    #[serde(rename = "StorageName", default, skip_serializing_if = "Option::is_none")]
     pub storage_name: Option<String>,
-    #[serde(rename = "ContainerName", skip_serializing)]
+    #[serde(rename = "ContainerName", default, skip_serializing_if = "Option::is_none")]
     pub container_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -173,7 +173,7 @@ pub struct ApplicationInsightsComponentBillingFeatures {
 pub struct ApplicationInsightsComponentDataVolumeCap {
     #[serde(rename = "Cap", default, skip_serializing_if = "Option::is_none")]
     pub cap: Option<f64>,
-    #[serde(rename = "ResetTime", skip_serializing)]
+    #[serde(rename = "ResetTime", default, skip_serializing_if = "Option::is_none")]
     pub reset_time: Option<i64>,
     #[serde(rename = "WarningThreshold", default, skip_serializing_if = "Option::is_none")]
     pub warning_threshold: Option<i64>,
@@ -181,92 +181,92 @@ pub struct ApplicationInsightsComponentDataVolumeCap {
     pub stop_send_notification_when_hit_threshold: Option<bool>,
     #[serde(rename = "StopSendNotificationWhenHitCap", default, skip_serializing_if = "Option::is_none")]
     pub stop_send_notification_when_hit_cap: Option<bool>,
-    #[serde(rename = "MaxHistoryCap", skip_serializing)]
+    #[serde(rename = "MaxHistoryCap", default, skip_serializing_if = "Option::is_none")]
     pub max_history_cap: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentQuotaStatus {
-    #[serde(rename = "AppId", skip_serializing)]
+    #[serde(rename = "AppId", default, skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
-    #[serde(rename = "ShouldBeThrottled", skip_serializing)]
+    #[serde(rename = "ShouldBeThrottled", default, skip_serializing_if = "Option::is_none")]
     pub should_be_throttled: Option<bool>,
-    #[serde(rename = "ExpirationTime", skip_serializing)]
+    #[serde(rename = "ExpirationTime", default, skip_serializing_if = "Option::is_none")]
     pub expiration_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentFeatureCapabilities {
-    #[serde(rename = "SupportExportData", skip_serializing)]
+    #[serde(rename = "SupportExportData", default, skip_serializing_if = "Option::is_none")]
     pub support_export_data: Option<bool>,
-    #[serde(rename = "BurstThrottlePolicy", skip_serializing)]
+    #[serde(rename = "BurstThrottlePolicy", default, skip_serializing_if = "Option::is_none")]
     pub burst_throttle_policy: Option<String>,
-    #[serde(rename = "MetadataClass", skip_serializing)]
+    #[serde(rename = "MetadataClass", default, skip_serializing_if = "Option::is_none")]
     pub metadata_class: Option<String>,
-    #[serde(rename = "LiveStreamMetrics", skip_serializing)]
+    #[serde(rename = "LiveStreamMetrics", default, skip_serializing_if = "Option::is_none")]
     pub live_stream_metrics: Option<bool>,
-    #[serde(rename = "ApplicationMap", skip_serializing)]
+    #[serde(rename = "ApplicationMap", default, skip_serializing_if = "Option::is_none")]
     pub application_map: Option<bool>,
-    #[serde(rename = "WorkItemIntegration", skip_serializing)]
+    #[serde(rename = "WorkItemIntegration", default, skip_serializing_if = "Option::is_none")]
     pub work_item_integration: Option<bool>,
-    #[serde(rename = "PowerBIIntegration", skip_serializing)]
+    #[serde(rename = "PowerBIIntegration", default, skip_serializing_if = "Option::is_none")]
     pub power_bi_integration: Option<bool>,
-    #[serde(rename = "OpenSchema", skip_serializing)]
+    #[serde(rename = "OpenSchema", default, skip_serializing_if = "Option::is_none")]
     pub open_schema: Option<bool>,
-    #[serde(rename = "ProactiveDetection", skip_serializing)]
+    #[serde(rename = "ProactiveDetection", default, skip_serializing_if = "Option::is_none")]
     pub proactive_detection: Option<bool>,
-    #[serde(rename = "AnalyticsIntegration", skip_serializing)]
+    #[serde(rename = "AnalyticsIntegration", default, skip_serializing_if = "Option::is_none")]
     pub analytics_integration: Option<bool>,
-    #[serde(rename = "MultipleStepWebTest", skip_serializing)]
+    #[serde(rename = "MultipleStepWebTest", default, skip_serializing_if = "Option::is_none")]
     pub multiple_step_web_test: Option<bool>,
-    #[serde(rename = "ApiAccessLevel", skip_serializing)]
+    #[serde(rename = "ApiAccessLevel", default, skip_serializing_if = "Option::is_none")]
     pub api_access_level: Option<String>,
-    #[serde(rename = "TrackingType", skip_serializing)]
+    #[serde(rename = "TrackingType", default, skip_serializing_if = "Option::is_none")]
     pub tracking_type: Option<String>,
-    #[serde(rename = "DailyCap", skip_serializing)]
+    #[serde(rename = "DailyCap", default, skip_serializing_if = "Option::is_none")]
     pub daily_cap: Option<f64>,
-    #[serde(rename = "DailyCapResetTime", skip_serializing)]
+    #[serde(rename = "DailyCapResetTime", default, skip_serializing_if = "Option::is_none")]
     pub daily_cap_reset_time: Option<f64>,
-    #[serde(rename = "ThrottleRate", skip_serializing)]
+    #[serde(rename = "ThrottleRate", default, skip_serializing_if = "Option::is_none")]
     pub throttle_rate: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentAvailableFeatures {
-    #[serde(rename = "Result", skip_serializing)]
+    #[serde(rename = "Result", default, skip_serializing_if = "Vec::is_empty")]
     pub result: Vec<ApplicationInsightsComponentFeature>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentFeature {
-    #[serde(rename = "FeatureName", skip_serializing)]
+    #[serde(rename = "FeatureName", default, skip_serializing_if = "Option::is_none")]
     pub feature_name: Option<String>,
-    #[serde(rename = "MeterId", skip_serializing)]
+    #[serde(rename = "MeterId", default, skip_serializing_if = "Option::is_none")]
     pub meter_id: Option<String>,
-    #[serde(rename = "MeterRateFrequency", skip_serializing)]
+    #[serde(rename = "MeterRateFrequency", default, skip_serializing_if = "Option::is_none")]
     pub meter_rate_frequency: Option<String>,
-    #[serde(rename = "ResouceId", skip_serializing)]
+    #[serde(rename = "ResouceId", default, skip_serializing_if = "Option::is_none")]
     pub resouce_id: Option<String>,
-    #[serde(rename = "IsHidden", skip_serializing)]
+    #[serde(rename = "IsHidden", default, skip_serializing_if = "Option::is_none")]
     pub is_hidden: Option<bool>,
-    #[serde(rename = "Capabilities", skip_serializing)]
+    #[serde(rename = "Capabilities", default, skip_serializing_if = "Vec::is_empty")]
     pub capabilities: Vec<ApplicationInsightsComponentFeatureCapability>,
-    #[serde(rename = "Title", skip_serializing)]
+    #[serde(rename = "Title", default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
-    #[serde(rename = "IsMainFeature", skip_serializing)]
+    #[serde(rename = "IsMainFeature", default, skip_serializing_if = "Option::is_none")]
     pub is_main_feature: Option<bool>,
-    #[serde(rename = "SupportedAddonFeatures", skip_serializing)]
+    #[serde(rename = "SupportedAddonFeatures", default, skip_serializing_if = "Option::is_none")]
     pub supported_addon_features: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentFeatureCapability {
-    #[serde(rename = "Name", skip_serializing)]
+    #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "Description", skip_serializing)]
+    #[serde(rename = "Description", default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "Value", skip_serializing)]
+    #[serde(rename = "Value", default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
-    #[serde(rename = "Unit", skip_serializing)]
+    #[serde(rename = "Unit", default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
-    #[serde(rename = "MeterId", skip_serializing)]
+    #[serde(rename = "MeterId", default, skip_serializing_if = "Option::is_none")]
     pub meter_id: Option<String>,
-    #[serde(rename = "MeterRateFrequency", skip_serializing)]
+    #[serde(rename = "MeterRateFrequency", default, skip_serializing_if = "Option::is_none")]
     pub meter_rate_frequency: Option<String>,
 }
 pub type ApplicationInsightsComponentProactiveDetectionConfigurationListResult =
@@ -310,11 +310,11 @@ pub mod application_insights_component_proactive_detection_configuration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentsResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -335,9 +335,9 @@ pub struct ApplicationInsightsComponent {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentProperties {
-    #[serde(rename = "ApplicationId", skip_serializing)]
+    #[serde(rename = "ApplicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
-    #[serde(rename = "AppId", skip_serializing)]
+    #[serde(rename = "AppId", default, skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
     #[serde(rename = "Application_Type")]
     pub application_type: application_insights_component_properties::ApplicationType,
@@ -345,21 +345,21 @@ pub struct ApplicationInsightsComponentProperties {
     pub flow_type: Option<application_insights_component_properties::FlowType>,
     #[serde(rename = "Request_Source", default, skip_serializing_if = "Option::is_none")]
     pub request_source: Option<application_insights_component_properties::RequestSource>,
-    #[serde(rename = "InstrumentationKey", skip_serializing)]
+    #[serde(rename = "InstrumentationKey", default, skip_serializing_if = "Option::is_none")]
     pub instrumentation_key: Option<String>,
-    #[serde(rename = "CreationDate", skip_serializing)]
+    #[serde(rename = "CreationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
-    #[serde(rename = "TenantId", skip_serializing)]
+    #[serde(rename = "TenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "HockeyAppId", default, skip_serializing_if = "Option::is_none")]
     pub hockey_app_id: Option<String>,
-    #[serde(rename = "HockeyAppToken", skip_serializing)]
+    #[serde(rename = "HockeyAppToken", default, skip_serializing_if = "Option::is_none")]
     pub hockey_app_token: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[serde(rename = "SamplingPercentage", default, skip_serializing_if = "Option::is_none")]
     pub sampling_percentage: Option<f64>,
-    #[serde(rename = "ConnectionString", skip_serializing)]
+    #[serde(rename = "ConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub connection_string: Option<String>,
     #[serde(rename = "RetentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_in_days: Option<i64>,
@@ -367,7 +367,7 @@ pub struct ApplicationInsightsComponentProperties {
     pub disable_ip_masking: Option<bool>,
     #[serde(rename = "ImmediatePurgeDataOn30Days", default, skip_serializing_if = "Option::is_none")]
     pub immediate_purge_data_on30_days: Option<bool>,
-    #[serde(rename = "PrivateLinkScopedResources", skip_serializing)]
+    #[serde(rename = "PrivateLinkScopedResources", default, skip_serializing_if = "Vec::is_empty")]
     pub private_link_scoped_resources: Vec<PrivateLinkScopedResource>,
     #[serde(rename = "IngestionMode", default, skip_serializing_if = "Option::is_none")]
     pub ingestion_mode: Option<application_insights_component_properties::IngestionMode>,
@@ -460,7 +460,7 @@ pub struct WorkItemConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkItemConfigurationsListResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkItemConfiguration>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -491,13 +491,13 @@ pub struct ApplicationInsightsComponentFavorite {
     pub config: Option<String>,
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-    #[serde(rename = "FavoriteId", skip_serializing)]
+    #[serde(rename = "FavoriteId", default, skip_serializing_if = "Option::is_none")]
     pub favorite_id: Option<String>,
     #[serde(rename = "FavoriteType", default, skip_serializing_if = "Option::is_none")]
     pub favorite_type: Option<application_insights_component_favorite::FavoriteType>,
     #[serde(rename = "SourceType", default, skip_serializing_if = "Option::is_none")]
     pub source_type: Option<String>,
-    #[serde(rename = "TimeModified", skip_serializing)]
+    #[serde(rename = "TimeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
     #[serde(rename = "Tags", default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
@@ -505,7 +505,7 @@ pub struct ApplicationInsightsComponentFavorite {
     pub category: Option<String>,
     #[serde(rename = "IsGeneratedFromTemplate", default, skip_serializing_if = "Option::is_none")]
     pub is_generated_from_template: Option<bool>,
-    #[serde(rename = "UserId", skip_serializing)]
+    #[serde(rename = "UserId", default, skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 }
 pub mod application_insights_component_favorite {
@@ -524,18 +524,18 @@ pub struct ApplicationInsightsWebTestLocationsListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentWebTestLocation {
-    #[serde(rename = "DisplayName", skip_serializing)]
+    #[serde(rename = "DisplayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(rename = "Tag", skip_serializing)]
+    #[serde(rename = "Tag", default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebtestsResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -588,7 +588,7 @@ pub struct WebTestProperties {
     pub locations: Vec<WebTestGeolocation>,
     #[serde(rename = "Configuration", default, skip_serializing_if = "Option::is_none")]
     pub configuration: Option<web_test_properties::Configuration>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
 pub mod web_test_properties {
@@ -619,15 +619,15 @@ pub struct ApplicationInsightsComponentAnalyticsItem {
     pub name: Option<String>,
     #[serde(rename = "Content", default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
-    #[serde(rename = "Version", skip_serializing)]
+    #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[serde(rename = "Scope", default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<application_insights_component_analytics_item::Scope>,
     #[serde(rename = "Type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<application_insights_component_analytics_item::Type>,
-    #[serde(rename = "TimeCreated", skip_serializing)]
+    #[serde(rename = "TimeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
-    #[serde(rename = "TimeModified", skip_serializing)]
+    #[serde(rename = "TimeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
     #[serde(rename = "Properties", default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationInsightsComponentAnalyticsItemProperties>,
@@ -660,11 +660,11 @@ pub struct ApplicationInsightsComponentAnalyticsItemProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkbookResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -673,7 +673,7 @@ pub struct WorkbookResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkbooksListResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workbook>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -714,7 +714,7 @@ pub struct WorkbookProperties {
     #[serde(rename = "workbookId")]
     pub workbook_id: String,
     pub kind: workbook_properties::Kind,
-    #[serde(rename = "timeModified", skip_serializing)]
+    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
     pub category: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -767,7 +767,7 @@ pub struct MyWorkbookResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MyWorkbooksListResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MyWorkbook>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -797,12 +797,12 @@ pub struct MyWorkbookProperties {
     pub serialized_data: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-    #[serde(rename = "timeModified", skip_serializing)]
+    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
     pub category: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
-    #[serde(rename = "userId", skip_serializing)]
+    #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
     #[serde(rename = "sourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_id: Option<String>,

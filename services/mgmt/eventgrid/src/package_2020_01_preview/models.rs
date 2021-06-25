@@ -4,15 +4,15 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<domain_properties::ProvisioningState>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
     #[serde(rename = "inputSchema", default, skip_serializing_if = "Option::is_none")]
     pub input_schema: Option<domain_properties::InputSchema>,
     #[serde(rename = "inputSchemaMapping", default, skip_serializing_if = "Option::is_none")]
     pub input_schema_mapping: Option<InputSchemaMapping>,
-    #[serde(rename = "metricResourceId", skip_serializing)]
+    #[serde(rename = "metricResourceId", default, skip_serializing_if = "Option::is_none")]
     pub metric_resource_id: Option<String>,
 }
 pub mod domain_properties {
@@ -36,11 +36,11 @@ pub mod domain_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -161,9 +161,9 @@ pub struct DomainTopicsListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSubscriptionProperties {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub topic: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<event_subscription_properties::ProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub destination: Option<EventSubscriptionDestination>,
@@ -224,7 +224,7 @@ pub struct RetryPolicy {
 pub struct WebHookEventSubscriptionDestinationProperties {
     #[serde(rename = "endpointUrl", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_url: Option<String>,
-    #[serde(rename = "endpointBaseUrl", skip_serializing)]
+    #[serde(rename = "endpointBaseUrl", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_base_url: Option<String>,
     #[serde(rename = "maxEventsPerBatch", default, skip_serializing_if = "Option::is_none")]
     pub max_events_per_batch: Option<i32>,
@@ -552,15 +552,15 @@ pub struct OperationInfo {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TopicProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<topic_properties::ProvisioningState>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
     #[serde(rename = "inputSchema", default, skip_serializing_if = "Option::is_none")]
     pub input_schema: Option<topic_properties::InputSchema>,
     #[serde(rename = "inputSchemaMapping", default, skip_serializing_if = "Option::is_none")]
     pub input_schema_mapping: Option<InputSchemaMapping>,
-    #[serde(rename = "metricResourceId", skip_serializing)]
+    #[serde(rename = "metricResourceId", default, skip_serializing_if = "Option::is_none")]
     pub metric_resource_id: Option<String>,
 }
 pub mod topic_properties {

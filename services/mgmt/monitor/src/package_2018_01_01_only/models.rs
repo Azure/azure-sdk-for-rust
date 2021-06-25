@@ -41,6 +41,14 @@ pub enum AggregationType {
     Total,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MetricClass {
+    Availability,
+    Transactions,
+    Errors,
+    Latency,
+    Saturation,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricDefinition {
     #[serde(rename = "isDimensionRequired", default, skip_serializing_if = "Option::is_none")]
     pub is_dimension_required: Option<bool>,
@@ -54,6 +62,8 @@ pub struct MetricDefinition {
     pub display_description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[serde(rename = "metricClass", default, skip_serializing_if = "Option::is_none")]
+    pub metric_class: Option<MetricClass>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<Unit>,
     #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
@@ -119,10 +129,12 @@ pub struct Metric {
     #[serde(rename = "type")]
     pub type_: String,
     pub name: LocalizableString,
-    #[serde(rename = "displayDescription")]
-    pub display_description: String,
+    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
     pub unit: Unit,
     pub timeseries: Vec<TimeSeriesElement>,
 }

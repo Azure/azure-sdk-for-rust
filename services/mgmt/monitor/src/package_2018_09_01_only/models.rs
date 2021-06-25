@@ -4,11 +4,11 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -187,9 +187,9 @@ pub struct BaselineMetadataValue {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaselineResponse {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
@@ -221,7 +221,7 @@ pub struct BaselineProperties {
     pub interval: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<String>,
-    #[serde(rename = "internalOperationId", skip_serializing)]
+    #[serde(rename = "internalOperationId", default, skip_serializing_if = "Option::is_none")]
     pub internal_operation_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -267,7 +267,7 @@ pub struct CalculateBaselineResponse {
     pub baseline: Vec<Baseline>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub statistics: Option<calculate_baseline_response::Statistics>,
-    #[serde(rename = "internalOperationId", skip_serializing)]
+    #[serde(rename = "internalOperationId", default, skip_serializing_if = "Option::is_none")]
     pub internal_operation_id: Option<String>,
     #[serde(rename = "errorType", default, skip_serializing_if = "Option::is_none")]
     pub error_type: Option<calculate_baseline_response::ErrorType>,

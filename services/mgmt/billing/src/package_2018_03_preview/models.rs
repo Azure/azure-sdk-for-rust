@@ -11,14 +11,14 @@ pub struct EnrollmentAccount {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnrollmentAccountListResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EnrollmentAccount>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnrollmentAccountProperties {
-    #[serde(rename = "principalName", skip_serializing)]
+    #[serde(rename = "principalName", default, skip_serializing_if = "Option::is_none")]
     pub principal_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -30,34 +30,34 @@ pub struct BillingPeriod {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BillingPeriodsListResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BillingPeriod>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BillingPeriodProperties {
-    #[serde(rename = "billingPeriodStartDate", skip_serializing)]
+    #[serde(rename = "billingPeriodStartDate", default, skip_serializing_if = "Option::is_none")]
     pub billing_period_start_date: Option<String>,
-    #[serde(rename = "billingPeriodEndDate", skip_serializing)]
+    #[serde(rename = "billingPeriodEndDate", default, skip_serializing_if = "Option::is_none")]
     pub billing_period_end_date: Option<String>,
-    #[serde(rename = "invoiceIds", skip_serializing)]
+    #[serde(rename = "invoiceIds", default, skip_serializing_if = "Vec::is_empty")]
     pub invoice_ids: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DownloadUrl {
-    #[serde(rename = "expiryTime", skip_serializing)]
+    #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetails {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -74,25 +74,25 @@ pub struct Invoice {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InvoicesListResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Invoice>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InvoiceProperties {
     #[serde(rename = "downloadUrl", default, skip_serializing_if = "Option::is_none")]
     pub download_url: Option<DownloadUrl>,
-    #[serde(rename = "invoicePeriodStartDate", skip_serializing)]
+    #[serde(rename = "invoicePeriodStartDate", default, skip_serializing_if = "Option::is_none")]
     pub invoice_period_start_date: Option<String>,
-    #[serde(rename = "invoicePeriodEndDate", skip_serializing)]
+    #[serde(rename = "invoicePeriodEndDate", default, skip_serializing_if = "Option::is_none")]
     pub invoice_period_end_date: Option<String>,
-    #[serde(rename = "billingPeriodIds", skip_serializing)]
+    #[serde(rename = "billingPeriodIds", default, skip_serializing_if = "Vec::is_empty")]
     pub billing_period_ids: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
@@ -101,27 +101,27 @@ pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

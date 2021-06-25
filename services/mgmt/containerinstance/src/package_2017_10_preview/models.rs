@@ -16,7 +16,7 @@ pub struct ContainerProperties {
     pub ports: Vec<ContainerPort>,
     #[serde(rename = "environmentVariables", default, skip_serializing_if = "Vec::is_empty")]
     pub environment_variables: Vec<EnvironmentVariable>,
-    #[serde(rename = "instanceView", skip_serializing)]
+    #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
     pub instance_view: Option<container_properties::InstanceView>,
     pub resources: ResourceRequirements,
     #[serde(rename = "volumeMounts", default, skip_serializing_if = "Vec::is_empty")]
@@ -26,13 +26,13 @@ pub mod container_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct InstanceView {
-        #[serde(rename = "restartCount", skip_serializing)]
+        #[serde(rename = "restartCount", default, skip_serializing_if = "Option::is_none")]
         pub restart_count: Option<i64>,
         #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
         pub current_state: Option<ContainerState>,
         #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
         pub previous_state: Option<ContainerState>,
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub events: Vec<Event>,
     }
 }
@@ -225,11 +225,11 @@ pub struct Logs {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]

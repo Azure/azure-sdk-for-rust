@@ -52,11 +52,11 @@ pub struct RedisUpdateProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -77,18 +77,18 @@ pub struct RedisUpdateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisAccessKeys {
-    #[serde(rename = "primaryKey", skip_serializing)]
+    #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
-    #[serde(rename = "secondaryKey", skip_serializing)]
+    #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisFirewallRule {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub properties: RedisFirewallRuleProperties,
 }
@@ -111,15 +111,15 @@ pub struct RedisResourceProperties {
     pub redis_properties: RedisProperties,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
-    #[serde(rename = "redisVersion", skip_serializing)]
+    #[serde(rename = "redisVersion", default, skip_serializing_if = "Option::is_none")]
     pub redis_version: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-    #[serde(rename = "hostName", skip_serializing)]
+    #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
-    #[serde(rename = "sslPort", skip_serializing)]
+    #[serde(rename = "sslPort", default, skip_serializing_if = "Option::is_none")]
     pub ssl_port: Option<i32>,
     #[serde(rename = "accessKeys", default, skip_serializing_if = "Option::is_none")]
     pub access_keys: Option<RedisAccessKeys>,
@@ -211,19 +211,19 @@ pub struct ScheduleEntries {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisPatchSchedule {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     pub properties: ScheduleEntries,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisForceRebootResponse {
-    #[serde(rename = "Message", skip_serializing)]
+    #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

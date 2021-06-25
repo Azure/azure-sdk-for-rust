@@ -17,7 +17,7 @@ pub struct DatabaseInstance {
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseInstanceProperties>,
@@ -76,7 +76,7 @@ pub struct Database {
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
@@ -132,14 +132,14 @@ pub struct MigrateEvent {
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MigrateEventProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrateEventProperties {
-    #[serde(rename = "instanceType", skip_serializing)]
+    #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
     pub instance_type: Option<String>,
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
@@ -169,7 +169,7 @@ pub struct ODataQueryContext {
     pub element_type: Option<IEdmType>,
     #[serde(rename = "navigationSource", default, skip_serializing_if = "Option::is_none")]
     pub navigation_source: Option<IEdmNavigationSource>,
-    #[serde(rename = "elementClrType", skip_serializing)]
+    #[serde(rename = "elementClrType", default, skip_serializing_if = "Option::is_none")]
     pub element_clr_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<ODataPath>,
@@ -178,7 +178,7 @@ pub struct ODataQueryContext {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ODataRawQueryOptions {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -189,7 +189,7 @@ pub struct FilterQueryOption {
     pub validator: Option<FilterQueryValidator>,
     #[serde(rename = "filterClause", default, skip_serializing_if = "Option::is_none")]
     pub filter_clause: Option<FilterClause>,
-    #[serde(rename = "rawValue", skip_serializing)]
+    #[serde(rename = "rawValue", default, skip_serializing_if = "Option::is_none")]
     pub raw_value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -211,13 +211,13 @@ pub struct DefaultQuerySettings {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmModel {
-    #[serde(rename = "schemaElements", skip_serializing)]
+    #[serde(rename = "schemaElements", default, skip_serializing_if = "Vec::is_empty")]
     pub schema_elements: Vec<IEdmSchemaElement>,
-    #[serde(rename = "vocabularyAnnotations", skip_serializing)]
+    #[serde(rename = "vocabularyAnnotations", default, skip_serializing_if = "Vec::is_empty")]
     pub vocabulary_annotations: Vec<IEdmVocabularyAnnotation>,
-    #[serde(rename = "referencedModels", skip_serializing)]
+    #[serde(rename = "referencedModels", default, skip_serializing_if = "Vec::is_empty")]
     pub referenced_models: Vec<IEdmModel>,
-    #[serde(rename = "declaredNamespaces", skip_serializing)]
+    #[serde(rename = "declaredNamespaces", default, skip_serializing_if = "Vec::is_empty")]
     pub declared_namespaces: Vec<String>,
     #[serde(rename = "directValueAnnotationsManager", default, skip_serializing_if = "Option::is_none")]
     pub direct_value_annotations_manager: Option<IEdmDirectValueAnnotationsManager>,
@@ -226,7 +226,7 @@ pub struct IEdmModel {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmType {
-    #[serde(rename = "typeKind", skip_serializing)]
+    #[serde(rename = "typeKind", default, skip_serializing_if = "Option::is_none")]
     pub type_kind: Option<i_edm_type::TypeKind>,
 }
 pub mod i_edm_type {
@@ -247,13 +247,13 @@ pub mod i_edm_type {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmNavigationSource {
-    #[serde(rename = "navigationPropertyBindings", skip_serializing)]
+    #[serde(rename = "navigationPropertyBindings", default, skip_serializing_if = "Vec::is_empty")]
     pub navigation_property_bindings: Vec<IEdmNavigationPropertyBinding>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<IEdmPathExpression>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<IEdmType>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -262,11 +262,11 @@ pub struct ODataPath {
     pub edm_type: Option<IEdmType>,
     #[serde(rename = "navigationSource", default, skip_serializing_if = "Option::is_none")]
     pub navigation_source: Option<IEdmNavigationSource>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub segments: Vec<ODataPathSegment>,
-    #[serde(rename = "pathTemplate", skip_serializing)]
+    #[serde(rename = "pathTemplate", default, skip_serializing_if = "Option::is_none")]
     pub path_template: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub path: Vec<ODataPathSegment>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -275,14 +275,14 @@ pub struct IServiceProvider {}
 pub struct SelectExpandQueryValidator {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelectExpandClause {
-    #[serde(rename = "selectedItems", skip_serializing)]
+    #[serde(rename = "selectedItems", default, skip_serializing_if = "Vec::is_empty")]
     pub selected_items: Vec<SelectItem>,
-    #[serde(rename = "allSelected", skip_serializing)]
+    #[serde(rename = "allSelected", default, skip_serializing_if = "Option::is_none")]
     pub all_selected: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplyClause {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transformations: Vec<TransformationNode>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -298,11 +298,11 @@ pub struct FilterClause {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmSchemaElement {
-    #[serde(rename = "schemaElementKind", skip_serializing)]
+    #[serde(rename = "schemaElementKind", default, skip_serializing_if = "Option::is_none")]
     pub schema_element_kind: Option<i_edm_schema_element::SchemaElementKind>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 pub mod i_edm_schema_element {
@@ -319,7 +319,7 @@ pub mod i_edm_schema_element {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmVocabularyAnnotation {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub qualifier: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub term: Option<IEdmTerm>,
@@ -332,13 +332,13 @@ pub struct IEdmVocabularyAnnotation {
 pub struct IEdmDirectValueAnnotationsManager {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmEntityContainer {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub elements: Vec<IEdmEntityContainerElement>,
-    #[serde(rename = "schemaElementKind", skip_serializing)]
+    #[serde(rename = "schemaElementKind", default, skip_serializing_if = "Option::is_none")]
     pub schema_element_kind: Option<i_edm_entity_container::SchemaElementKind>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 pub mod i_edm_entity_container {
@@ -364,11 +364,11 @@ pub struct IEdmNavigationPropertyBinding {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmPathExpression {
-    #[serde(rename = "pathSegments", skip_serializing)]
+    #[serde(rename = "pathSegments", default, skip_serializing_if = "Vec::is_empty")]
     pub path_segments: Vec<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
-    #[serde(rename = "expressionKind", skip_serializing)]
+    #[serde(rename = "expressionKind", default, skip_serializing_if = "Option::is_none")]
     pub expression_kind: Option<i_edm_path_expression::ExpressionKind>,
 }
 pub mod i_edm_path_expression {
@@ -414,7 +414,7 @@ pub struct ODataPathSegment {
 pub struct SelectItem {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransformationNode {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<transformation_node::Kind>,
 }
 pub mod transformation_node {
@@ -431,7 +431,7 @@ pub mod transformation_node {
 pub struct SingleValueNode {
     #[serde(rename = "typeReference", default, skip_serializing_if = "Option::is_none")]
     pub type_reference: Option<IEdmTypeReference>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<single_value_node::Kind>,
 }
 pub mod single_value_node {
@@ -476,16 +476,16 @@ pub mod single_value_node {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RangeVariable {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "typeReference", default, skip_serializing_if = "Option::is_none")]
     pub type_reference: Option<IEdmTypeReference>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmTypeReference {
-    #[serde(rename = "isNullable", skip_serializing)]
+    #[serde(rename = "isNullable", default, skip_serializing_if = "Option::is_none")]
     pub is_nullable: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub definition: Option<IEdmType>,
@@ -494,15 +494,15 @@ pub struct IEdmTypeReference {
 pub struct IEdmTerm {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<IEdmTypeReference>,
-    #[serde(rename = "appliesTo", skip_serializing)]
+    #[serde(rename = "appliesTo", default, skip_serializing_if = "Option::is_none")]
     pub applies_to: Option<String>,
-    #[serde(rename = "defaultValue", skip_serializing)]
+    #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<String>,
-    #[serde(rename = "schemaElementKind", skip_serializing)]
+    #[serde(rename = "schemaElementKind", default, skip_serializing_if = "Option::is_none")]
     pub schema_element_kind: Option<i_edm_term::SchemaElementKind>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 pub mod i_edm_term {
@@ -521,7 +521,7 @@ pub mod i_edm_term {
 pub struct IEdmVocabularyAnnotatable {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmExpression {
-    #[serde(rename = "expressionKind", skip_serializing)]
+    #[serde(rename = "expressionKind", default, skip_serializing_if = "Option::is_none")]
     pub expression_kind: Option<i_edm_expression::ExpressionKind>,
 }
 pub mod i_edm_expression {
@@ -558,11 +558,11 @@ pub mod i_edm_expression {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmEntityContainerElement {
-    #[serde(rename = "containerElementKind", skip_serializing)]
+    #[serde(rename = "containerElementKind", default, skip_serializing_if = "Option::is_none")]
     pub container_element_kind: Option<i_edm_entity_container_element::ContainerElementKind>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub container: Option<IEdmEntityContainer>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 pub mod i_edm_entity_container_element {
@@ -580,19 +580,19 @@ pub mod i_edm_entity_container_element {
 pub struct IEdmNavigationProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub partner: Box<Option<IEdmNavigationProperty>>,
-    #[serde(rename = "onDelete", skip_serializing)]
+    #[serde(rename = "onDelete", default, skip_serializing_if = "Option::is_none")]
     pub on_delete: Option<i_edm_navigation_property::OnDelete>,
-    #[serde(rename = "containsTarget", skip_serializing)]
+    #[serde(rename = "containsTarget", default, skip_serializing_if = "Option::is_none")]
     pub contains_target: Option<bool>,
     #[serde(rename = "referentialConstraint", default, skip_serializing_if = "Option::is_none")]
     pub referential_constraint: Option<IEdmReferentialConstraint>,
-    #[serde(rename = "propertyKind", skip_serializing)]
+    #[serde(rename = "propertyKind", default, skip_serializing_if = "Option::is_none")]
     pub property_kind: Option<i_edm_navigation_property::PropertyKind>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<IEdmTypeReference>,
     #[serde(rename = "declaringType", default, skip_serializing_if = "Option::is_none")]
     pub declaring_type: Option<IEdmStructuredType>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 pub mod i_edm_navigation_property {
@@ -611,20 +611,20 @@ pub mod i_edm_navigation_property {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmReferentialConstraint {
-    #[serde(rename = "propertyPairs", skip_serializing)]
+    #[serde(rename = "propertyPairs", default, skip_serializing_if = "Vec::is_empty")]
     pub property_pairs: Vec<EdmReferentialConstraintPropertyPair>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmStructuredType {
-    #[serde(rename = "isAbstract", skip_serializing)]
+    #[serde(rename = "isAbstract", default, skip_serializing_if = "Option::is_none")]
     pub is_abstract: Option<bool>,
-    #[serde(rename = "isOpen", skip_serializing)]
+    #[serde(rename = "isOpen", default, skip_serializing_if = "Option::is_none")]
     pub is_open: Option<bool>,
     #[serde(rename = "baseType", default, skip_serializing_if = "Option::is_none")]
     pub base_type: Box<Option<IEdmStructuredType>>,
-    #[serde(rename = "declaredProperties", skip_serializing)]
+    #[serde(rename = "declaredProperties", default, skip_serializing_if = "Vec::is_empty")]
     pub declared_properties: Vec<IEdmProperty>,
-    #[serde(rename = "typeKind", skip_serializing)]
+    #[serde(rename = "typeKind", default, skip_serializing_if = "Option::is_none")]
     pub type_kind: Option<i_edm_structured_type::TypeKind>,
 }
 pub mod i_edm_structured_type {
@@ -652,13 +652,13 @@ pub struct EdmReferentialConstraintPropertyPair {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmProperty {
-    #[serde(rename = "propertyKind", skip_serializing)]
+    #[serde(rename = "propertyKind", default, skip_serializing_if = "Option::is_none")]
     pub property_kind: Option<i_edm_property::PropertyKind>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<IEdmTypeReference>,
     #[serde(rename = "declaringType", default, skip_serializing_if = "Option::is_none")]
     pub declaring_type: Option<IEdmStructuredType>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 pub mod i_edm_property {
@@ -672,15 +672,15 @@ pub mod i_edm_property {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IEdmStructuralProperty {
-    #[serde(rename = "defaultValueString", skip_serializing)]
+    #[serde(rename = "defaultValueString", default, skip_serializing_if = "Option::is_none")]
     pub default_value_string: Option<String>,
-    #[serde(rename = "propertyKind", skip_serializing)]
+    #[serde(rename = "propertyKind", default, skip_serializing_if = "Option::is_none")]
     pub property_kind: Option<i_edm_structural_property::PropertyKind>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<IEdmTypeReference>,
     #[serde(rename = "declaringType", default, skip_serializing_if = "Option::is_none")]
     pub declaring_type: Option<IEdmStructuredType>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 pub mod i_edm_structural_property {
@@ -705,7 +705,7 @@ pub struct Machine {
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MachineProperties>,
@@ -832,11 +832,11 @@ pub struct MigrateProject {
     pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MigrateProjectProperties>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<migrate_project::Tags>,
@@ -853,11 +853,11 @@ pub mod migrate_project {
 pub struct MigrateProjectProperties {
     #[serde(rename = "registeredTools", default, skip_serializing_if = "Vec::is_empty")]
     pub registered_tools: Vec<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<serde_json::Value>,
-    #[serde(rename = "lastSummaryRefreshedTime", skip_serializing)]
+    #[serde(rename = "lastSummaryRefreshedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_summary_refreshed_time: Option<String>,
-    #[serde(rename = "refreshSummaryState", skip_serializing)]
+    #[serde(rename = "refreshSummaryState", default, skip_serializing_if = "Option::is_none")]
     pub refresh_summary_state: Option<migrate_project_properties::RefreshSummaryState>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<migrate_project_properties::ProvisioningState>,
@@ -883,7 +883,7 @@ pub mod migrate_project_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProjectSummary {
-    #[serde(rename = "instanceType", skip_serializing)]
+    #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
     pub instance_type: Option<String>,
     #[serde(rename = "refreshSummaryState", default, skip_serializing_if = "Option::is_none")]
     pub refresh_summary_state: Option<project_summary::RefreshSummaryState>,
@@ -951,11 +951,11 @@ pub mod refresh_summary_input {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Solution {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -1024,7 +1024,7 @@ pub mod solution_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SolutionSummary {
-    #[serde(rename = "instanceType", skip_serializing)]
+    #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
     pub instance_type: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1117,21 +1117,21 @@ pub struct OperationResultList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationDisplay {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }

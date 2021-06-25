@@ -73,10 +73,10 @@ pub struct AzureBackupDiscreteRecoveryPoint {
 pub struct AzureBackupFindRestorableTimeRangesRequest {
     #[serde(rename = "sourceDataStoreType")]
     pub source_data_store_type: azure_backup_find_restorable_time_ranges_request::SourceDataStoreType,
-    #[serde(rename = "startTime")]
-    pub start_time: String,
-    #[serde(rename = "endTime")]
-    pub end_time: String,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
 }
 pub mod azure_backup_find_restorable_time_ranges_request {
     use super::*;
@@ -114,7 +114,7 @@ pub struct AzureBackupJob {
     pub activity_id: String,
     #[serde(rename = "backupInstanceFriendlyName")]
     pub backup_instance_friendly_name: String,
-    #[serde(rename = "backupInstanceId", skip_serializing)]
+    #[serde(rename = "backupInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub backup_instance_id: Option<String>,
     #[serde(rename = "dataSourceId")]
     pub data_source_id: String,
@@ -128,9 +128,9 @@ pub struct AzureBackupJob {
     pub data_source_type: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<String>,
-    #[serde(rename = "endTime", skip_serializing)]
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
-    #[serde(rename = "errorDetails", skip_serializing)]
+    #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub error_details: Vec<UserFacingError>,
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<JobExtendedInfo>,
@@ -139,15 +139,15 @@ pub struct AzureBackupJob {
     pub operation: String,
     #[serde(rename = "operationCategory")]
     pub operation_category: String,
-    #[serde(rename = "policyId", skip_serializing)]
+    #[serde(rename = "policyId", default, skip_serializing_if = "Option::is_none")]
     pub policy_id: Option<String>,
-    #[serde(rename = "policyName", skip_serializing)]
+    #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
     pub policy_name: Option<String>,
     #[serde(rename = "progressEnabled")]
     pub progress_enabled: bool,
-    #[serde(rename = "progressUrl", skip_serializing)]
+    #[serde(rename = "progressUrl", default, skip_serializing_if = "Option::is_none")]
     pub progress_url: Option<String>,
-    #[serde(rename = "restoreType", skip_serializing)]
+    #[serde(rename = "restoreType", default, skip_serializing_if = "Option::is_none")]
     pub restore_type: Option<String>,
     #[serde(rename = "sourceResourceGroup")]
     pub source_resource_group: String,
@@ -301,11 +301,11 @@ pub struct BackupInstance {
     pub policy_info: PolicyInfo,
     #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub protection_status: Option<ProtectionStatusDetails>,
-    #[serde(rename = "currentProtectionState", skip_serializing)]
+    #[serde(rename = "currentProtectionState", default, skip_serializing_if = "Option::is_none")]
     pub current_protection_state: Option<backup_instance::CurrentProtectionState>,
     #[serde(rename = "protectionErrorDetails", default, skip_serializing_if = "Option::is_none")]
     pub protection_error_details: Option<UserFacingError>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[serde(rename = "objectType")]
     pub object_type: String,
@@ -361,7 +361,7 @@ pub struct BackupSchedule {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupVault {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<backup_vault::ProvisioningState>,
     #[serde(rename = "storageSettings")]
     pub storage_settings: Vec<StorageSetting>,
@@ -586,22 +586,22 @@ pub struct DeleteOption {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DppIdentityDetails {
-    #[serde(rename = "principalId", skip_serializing)]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", skip_serializing)]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DppResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -613,19 +613,19 @@ pub struct DppResourceList {
 pub struct DppTrackedResource {
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<DppIdentityDetails>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -684,33 +684,33 @@ pub struct DppWorkerRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {
-    #[serde(rename = "additionalInfo", skip_serializing)]
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<Error>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportJobsResult {
-    #[serde(rename = "blobUrl", skip_serializing)]
+    #[serde(rename = "blobUrl", default, skip_serializing_if = "Option::is_none")]
     pub blob_url: Option<String>,
-    #[serde(rename = "blobSasKey", skip_serializing)]
+    #[serde(rename = "blobSasKey", default, skip_serializing_if = "Option::is_none")]
     pub blob_sas_key: Option<String>,
-    #[serde(rename = "excelFileBlobUrl", skip_serializing)]
+    #[serde(rename = "excelFileBlobUrl", default, skip_serializing_if = "Option::is_none")]
     pub excel_file_blob_url: Option<String>,
-    #[serde(rename = "excelFileBlobSasKey", skip_serializing)]
+    #[serde(rename = "excelFileBlobSasKey", default, skip_serializing_if = "Option::is_none")]
     pub excel_file_blob_sas_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -791,15 +791,15 @@ pub struct ItemLevelRestoreTargetInfo {
 pub struct JobExtendedInfo {
     #[serde(rename = "additionalDetails", default, skip_serializing_if = "Option::is_none")]
     pub additional_details: Option<serde_json::Value>,
-    #[serde(rename = "backupInstanceState", skip_serializing)]
+    #[serde(rename = "backupInstanceState", default, skip_serializing_if = "Option::is_none")]
     pub backup_instance_state: Option<String>,
-    #[serde(rename = "dataTransferredInBytes", skip_serializing)]
+    #[serde(rename = "dataTransferredInBytes", default, skip_serializing_if = "Option::is_none")]
     pub data_transferred_in_bytes: Option<f64>,
-    #[serde(rename = "recoveryDestination", skip_serializing)]
+    #[serde(rename = "recoveryDestination", default, skip_serializing_if = "Option::is_none")]
     pub recovery_destination: Option<String>,
     #[serde(rename = "sourceRecoverPoint", default, skip_serializing_if = "Option::is_none")]
     pub source_recover_point: Option<RestoreJobRecoveryPointDetails>,
-    #[serde(rename = "subTasks", skip_serializing)]
+    #[serde(rename = "subTasks", default, skip_serializing_if = "Vec::is_empty")]
     pub sub_tasks: Vec<JobSubTask>,
     #[serde(rename = "targetRecoverPoint", default, skip_serializing_if = "Option::is_none")]
     pub target_recover_point: Option<RestoreJobRecoveryPointDetails>,
@@ -812,7 +812,7 @@ pub struct JobSubTask {
     pub task_id: i32,
     #[serde(rename = "taskName")]
     pub task_name: String,
-    #[serde(rename = "taskProgress", skip_serializing)]
+    #[serde(rename = "taskProgress", default, skip_serializing_if = "Option::is_none")]
     pub task_progress: Option<String>,
     #[serde(rename = "taskStatus")]
     pub task_status: String,
@@ -857,7 +857,7 @@ pub struct PatchResourceRequestInput {
 pub struct PolicyInfo {
     #[serde(rename = "policyId")]
     pub policy_id: String,
-    #[serde(rename = "policyVersion", skip_serializing)]
+    #[serde(rename = "policyVersion", default, skip_serializing_if = "Option::is_none")]
     pub policy_version: Option<String>,
     #[serde(rename = "policyParameters", default, skip_serializing_if = "Option::is_none")]
     pub policy_parameters: Option<PolicyParameters>,
@@ -911,9 +911,9 @@ pub struct RecoveryPointDataStoreDetails {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visible: Option<bool>,
-    #[serde(rename = "rehydrationExpiryTime", skip_serializing)]
+    #[serde(rename = "rehydrationExpiryTime", default, skip_serializing_if = "Option::is_none")]
     pub rehydration_expiry_time: Option<String>,
-    #[serde(rename = "rehydrationStatus", skip_serializing)]
+    #[serde(rename = "rehydrationStatus", default, skip_serializing_if = "Option::is_none")]
     pub rehydration_status: Option<recovery_point_data_store_details::RehydrationStatus>,
 }
 pub mod recovery_point_data_store_details {
@@ -988,9 +988,9 @@ pub struct RestorableTimeRange {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RetentionTag {
-    #[serde(rename = "eTag", skip_serializing)]
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(rename = "tagName")]
     pub tag_name: String,

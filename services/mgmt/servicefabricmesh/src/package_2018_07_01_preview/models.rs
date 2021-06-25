@@ -4,11 +4,11 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -20,11 +20,11 @@ pub struct ProxyResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedProxyResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -37,7 +37,7 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProvisionedResourceProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -144,13 +144,13 @@ pub struct ApplicationProperties {
     pub services: Vec<ServiceResourceDescription>,
     #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
-    #[serde(rename = "unhealthyEvaluation", skip_serializing)]
+    #[serde(rename = "unhealthyEvaluation", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluation: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<application_properties::Status>,
-    #[serde(rename = "statusDetails", skip_serializing)]
+    #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
-    #[serde(rename = "serviceNames", skip_serializing)]
+    #[serde(rename = "serviceNames", default, skip_serializing_if = "Vec::is_empty")]
     pub service_names: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub diagnostics: Option<DiagnosticsDescription>,
@@ -266,7 +266,7 @@ pub struct ResourceRequirements {
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationResult>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -377,7 +377,7 @@ pub struct IngressConfig {
     pub qos_level: Option<ingress_config::QosLevel>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub layer4: Vec<Layer4IngressConfig>,
-    #[serde(rename = "publicIPAddress", skip_serializing)]
+    #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<String>,
 }
 pub mod ingress_config {

@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveTokenResponse {
-    #[serde(rename = "liveToken", skip_serializing)]
+    #[serde(rename = "liveToken", default, skip_serializing_if = "Option::is_none")]
     pub live_token: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

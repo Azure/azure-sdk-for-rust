@@ -4,14 +4,14 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
@@ -20,11 +20,11 @@ pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
 }
@@ -38,13 +38,13 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -85,7 +85,7 @@ pub struct NamespaceProperties {
     pub updated_at: Option<String>,
     #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub service_bus_endpoint: Option<String>,
-    #[serde(rename = "metricId", skip_serializing)]
+    #[serde(rename = "metricId", default, skip_serializing_if = "Option::is_none")]
     pub metric_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
@@ -167,9 +167,9 @@ pub struct SharedAccessAuthorizationRulePostProperties {
     pub claim_type: Option<String>,
     #[serde(rename = "claimValue", default, skip_serializing_if = "Option::is_none")]
     pub claim_value: Option<String>,
-    #[serde(rename = "createdTime", skip_serializing)]
+    #[serde(rename = "createdTime", default, skip_serializing_if = "Option::is_none")]
     pub created_time: Option<String>,
-    #[serde(rename = "modifiedTime", skip_serializing)]
+    #[serde(rename = "modifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub modified_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -195,17 +195,17 @@ pub struct EventHubCreateOrUpdateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubProperties {
-    #[serde(rename = "createdAt", skip_serializing)]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
     #[serde(rename = "messageRetentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub message_retention_in_days: Option<i64>,
     #[serde(rename = "partitionCount", default, skip_serializing_if = "Option::is_none")]
     pub partition_count: Option<i64>,
-    #[serde(rename = "partitionIds", skip_serializing)]
+    #[serde(rename = "partitionIds", default, skip_serializing_if = "Vec::is_empty")]
     pub partition_ids: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<event_hub_properties::Status>,
-    #[serde(rename = "updatedAt", skip_serializing)]
+    #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
 }
 pub mod event_hub_properties {
@@ -249,11 +249,11 @@ pub struct ConsumerGroupCreateOrUpdateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsumerGroupProperties {
-    #[serde(rename = "createdAt", skip_serializing)]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
-    #[serde(rename = "eventHubPath", skip_serializing)]
+    #[serde(rename = "eventHubPath", default, skip_serializing_if = "Option::is_none")]
     pub event_hub_path: Option<String>,
-    #[serde(rename = "updatedAt", skip_serializing)]
+    #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
     #[serde(rename = "userMetadata", default, skip_serializing_if = "Option::is_none")]
     pub user_metadata: Option<String>,
@@ -291,7 +291,7 @@ pub struct CheckNameAvailabilityResult {
     pub name_available: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<UnavailableReason>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

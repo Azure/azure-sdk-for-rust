@@ -904,6 +904,7 @@ pub mod linked_services {
             .await
             .map_err(create_or_update::Error::ExecuteRequestError)?;
         match rsp.status() {
+            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
                 let rsp_value: LinkedService = serde_json::from_slice(rsp_body)
@@ -929,6 +930,7 @@ pub mod linked_services {
         use crate::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
+            Accepted202,
             Ok200(LinkedService),
             Created201(LinkedService),
         }
@@ -988,6 +990,7 @@ pub mod linked_services {
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -1003,6 +1006,7 @@ pub mod linked_services {
         #[derive(Debug)]
         pub enum Response {
             Ok200(LinkedService),
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]

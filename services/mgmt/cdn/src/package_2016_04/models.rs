@@ -13,9 +13,9 @@ pub struct Profile {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProfileProperties {
-    #[serde(rename = "resourceState", skip_serializing)]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<profile_properties::ResourceState>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 pub mod profile_properties {
@@ -58,7 +58,7 @@ pub struct Endpoint {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointProperties {
-    #[serde(rename = "hostName", skip_serializing)]
+    #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
     #[serde(rename = "originHostHeader", default, skip_serializing_if = "Option::is_none")]
     pub origin_host_header: Option<String>,
@@ -76,9 +76,9 @@ pub struct EndpointProperties {
     pub query_string_caching_behavior: Option<QueryStringCachingBehavior>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub origins: Vec<DeepCreatedOrigin>,
-    #[serde(rename = "resourceState", skip_serializing)]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<endpoint_properties::ResourceState>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 pub mod endpoint_properties {
@@ -188,9 +188,9 @@ pub struct OriginProperties {
     pub http_port: Option<i64>,
     #[serde(rename = "httpsPort", default, skip_serializing_if = "Option::is_none")]
     pub https_port: Option<i64>,
-    #[serde(rename = "resourceState", skip_serializing)]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<origin_properties::ResourceState>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 pub mod origin_properties {
@@ -232,9 +232,9 @@ pub struct CustomDomain {
 pub struct CustomDomainProperties {
     #[serde(rename = "hostName")]
     pub host_name: String,
-    #[serde(rename = "resourceState", skip_serializing)]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<custom_domain_properties::ResourceState>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 pub mod custom_domain_properties {
@@ -278,7 +278,7 @@ pub struct ValidateCustomDomainOutput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityInput {
     pub name: String,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type")]
     pub type_: ResourceType,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -328,11 +328,11 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

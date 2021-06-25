@@ -16,7 +16,7 @@ pub struct AccessControlRecordList {
 pub struct AccessControlRecordProperties {
     #[serde(rename = "initiatorName")]
     pub initiator_name: String,
-    #[serde(rename = "volumeCount", skip_serializing)]
+    #[serde(rename = "volumeCount", default, skip_serializing_if = "Option::is_none")]
     pub volume_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -281,17 +281,17 @@ pub struct BackupPolicyList {
 pub struct BackupPolicyProperties {
     #[serde(rename = "volumeIds")]
     pub volume_ids: Vec<String>,
-    #[serde(rename = "nextBackupTime", skip_serializing)]
+    #[serde(rename = "nextBackupTime", default, skip_serializing_if = "Option::is_none")]
     pub next_backup_time: Option<String>,
-    #[serde(rename = "lastBackupTime", skip_serializing)]
+    #[serde(rename = "lastBackupTime", default, skip_serializing_if = "Option::is_none")]
     pub last_backup_time: Option<String>,
-    #[serde(rename = "schedulesCount", skip_serializing)]
+    #[serde(rename = "schedulesCount", default, skip_serializing_if = "Option::is_none")]
     pub schedules_count: Option<i64>,
-    #[serde(rename = "scheduledBackupStatus", skip_serializing)]
+    #[serde(rename = "scheduledBackupStatus", default, skip_serializing_if = "Option::is_none")]
     pub scheduled_backup_status: Option<backup_policy_properties::ScheduledBackupStatus>,
-    #[serde(rename = "backupPolicyCreationType", skip_serializing)]
+    #[serde(rename = "backupPolicyCreationType", default, skip_serializing_if = "Option::is_none")]
     pub backup_policy_creation_type: Option<backup_policy_properties::BackupPolicyCreationType>,
-    #[serde(rename = "ssmHostName", skip_serializing)]
+    #[serde(rename = "ssmHostName", default, skip_serializing_if = "Option::is_none")]
     pub ssm_host_name: Option<String>,
 }
 pub mod backup_policy_properties {
@@ -361,7 +361,7 @@ pub struct BackupScheduleProperties {
     pub start_time: String,
     #[serde(rename = "scheduleStatus")]
     pub schedule_status: backup_schedule_properties::ScheduleStatus,
-    #[serde(rename = "lastSuccessfulRun", skip_serializing)]
+    #[serde(rename = "lastSuccessfulRun", default, skip_serializing_if = "Option::is_none")]
     pub last_successful_run: Option<String>,
 }
 pub mod backup_schedule_properties {
@@ -380,7 +380,7 @@ pub mod backup_schedule_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BandwidthRateSettingProperties {
     pub schedules: Vec<BandwidthSchedule>,
-    #[serde(rename = "volumeCount", skip_serializing)]
+    #[serde(rename = "volumeCount", default, skip_serializing_if = "Option::is_none")]
     pub volume_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -403,11 +403,11 @@ pub struct BandwidthSettingList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaseModel {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<base_model::Kind>,
@@ -659,7 +659,7 @@ pub struct DeviceProperties {
     pub network_interface_card_count: Option<i32>,
     #[serde(rename = "deviceLocation", default, skip_serializing_if = "Option::is_none")]
     pub device_location: Option<String>,
-    #[serde(rename = "virtualMachineApiType", skip_serializing)]
+    #[serde(rename = "virtualMachineApiType", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_api_type: Option<device_properties::VirtualMachineApiType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<DeviceDetails>,
@@ -1422,11 +1422,11 @@ pub mod remote_management_settings_patch {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1509,7 +1509,7 @@ pub struct StorageAccountCredentialProperties {
     pub ssl_status: storage_account_credential_properties::SslStatus,
     #[serde(rename = "accessKey", default, skip_serializing_if = "Option::is_none")]
     pub access_key: Option<AsymmetricEncryptedSecret>,
-    #[serde(rename = "volumesCount", skip_serializing)]
+    #[serde(rename = "volumesCount", default, skip_serializing_if = "Option::is_none")]
     pub volumes_count: Option<i32>,
 }
 pub mod storage_account_credential_properties {
@@ -1649,19 +1649,19 @@ pub struct VolumeContainerList {
 pub struct VolumeContainerProperties {
     #[serde(rename = "encryptionKey", default, skip_serializing_if = "Option::is_none")]
     pub encryption_key: Option<AsymmetricEncryptedSecret>,
-    #[serde(rename = "encryptionStatus", skip_serializing)]
+    #[serde(rename = "encryptionStatus", default, skip_serializing_if = "Option::is_none")]
     pub encryption_status: Option<volume_container_properties::EncryptionStatus>,
-    #[serde(rename = "volumeCount", skip_serializing)]
+    #[serde(rename = "volumeCount", default, skip_serializing_if = "Option::is_none")]
     pub volume_count: Option<i32>,
     #[serde(rename = "storageAccountCredentialId")]
     pub storage_account_credential_id: String,
-    #[serde(rename = "ownerShipStatus", skip_serializing)]
+    #[serde(rename = "ownerShipStatus", default, skip_serializing_if = "Option::is_none")]
     pub owner_ship_status: Option<volume_container_properties::OwnerShipStatus>,
     #[serde(rename = "bandWidthRateInMbps", default, skip_serializing_if = "Option::is_none")]
     pub band_width_rate_in_mbps: Option<i32>,
     #[serde(rename = "bandwidthSettingId", default, skip_serializing_if = "Option::is_none")]
     pub bandwidth_setting_id: Option<String>,
-    #[serde(rename = "totalCloudStorageUsageInBytes", skip_serializing)]
+    #[serde(rename = "totalCloudStorageUsageInBytes", default, skip_serializing_if = "Option::is_none")]
     pub total_cloud_storage_usage_in_bytes: Option<i64>,
 }
 pub mod volume_container_properties {
@@ -1713,19 +1713,19 @@ pub struct VolumeProperties {
     pub size_in_bytes: i64,
     #[serde(rename = "volumeType")]
     pub volume_type: volume_properties::VolumeType,
-    #[serde(rename = "volumeContainerId", skip_serializing)]
+    #[serde(rename = "volumeContainerId", default, skip_serializing_if = "Option::is_none")]
     pub volume_container_id: Option<String>,
     #[serde(rename = "accessControlRecordIds")]
     pub access_control_record_ids: Vec<String>,
     #[serde(rename = "volumeStatus")]
     pub volume_status: volume_properties::VolumeStatus,
-    #[serde(rename = "operationStatus", skip_serializing)]
+    #[serde(rename = "operationStatus", default, skip_serializing_if = "Option::is_none")]
     pub operation_status: Option<volume_properties::OperationStatus>,
-    #[serde(rename = "backupStatus", skip_serializing)]
+    #[serde(rename = "backupStatus", default, skip_serializing_if = "Option::is_none")]
     pub backup_status: Option<volume_properties::BackupStatus>,
     #[serde(rename = "monitoringStatus")]
     pub monitoring_status: volume_properties::MonitoringStatus,
-    #[serde(rename = "backupPolicyIds", skip_serializing)]
+    #[serde(rename = "backupPolicyIds", default, skip_serializing_if = "Vec::is_empty")]
     pub backup_policy_ids: Vec<String>,
 }
 pub mod volume_properties {

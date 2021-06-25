@@ -12,9 +12,9 @@ pub struct Profile {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProfileProperties {
-    #[serde(rename = "resourceState", skip_serializing)]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<profile_properties::ResourceState>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
 pub mod profile_properties {
@@ -59,12 +59,12 @@ pub struct Endpoint {
 pub struct EndpointProperties {
     #[serde(flatten)]
     pub endpoint_properties_update_parameters: EndpointPropertiesUpdateParameters,
-    #[serde(rename = "hostName", skip_serializing)]
+    #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
     pub origins: Vec<DeepCreatedOrigin>,
-    #[serde(rename = "resourceState", skip_serializing)]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<endpoint_properties::ResourceState>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
 pub mod endpoint_properties {
@@ -170,9 +170,9 @@ pub struct OriginProperties {
     pub http_port: Option<i64>,
     #[serde(rename = "httpsPort", default, skip_serializing_if = "Option::is_none")]
     pub https_port: Option<i64>,
-    #[serde(rename = "resourceState", skip_serializing)]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<origin_properties::ResourceState>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
 pub mod origin_properties {
@@ -216,13 +216,13 @@ pub struct CustomDomain {
 pub struct CustomDomainProperties {
     #[serde(rename = "hostName")]
     pub host_name: String,
-    #[serde(rename = "resourceState", skip_serializing)]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<custom_domain_properties::ResourceState>,
-    #[serde(rename = "customHttpsProvisioningState", skip_serializing)]
+    #[serde(rename = "customHttpsProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub custom_https_provisioning_state: Option<custom_domain_properties::CustomHttpsProvisioningState>,
     #[serde(rename = "validationData", default, skip_serializing_if = "Option::is_none")]
     pub validation_data: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
 pub mod custom_domain_properties {
@@ -374,11 +374,11 @@ pub struct CidrIpAddress {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]

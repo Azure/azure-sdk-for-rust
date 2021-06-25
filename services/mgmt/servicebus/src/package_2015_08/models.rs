@@ -12,13 +12,13 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -49,15 +49,15 @@ pub struct NamespaceResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamespaceProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<namespace_properties::Status>,
-    #[serde(rename = "createdAt", skip_serializing)]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
-    #[serde(rename = "updatedAt", skip_serializing)]
+    #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
-    #[serde(rename = "serviceBusEndpoint", skip_serializing)]
+    #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub service_bus_endpoint: Option<String>,
     #[serde(rename = "createACSNamespace", default, skip_serializing_if = "Option::is_none")]
     pub create_acs_namespace: Option<bool>,
@@ -192,13 +192,13 @@ pub struct QueueResource {
 pub struct QueueProperties {
     #[serde(rename = "lockDuration", default, skip_serializing_if = "Option::is_none")]
     pub lock_duration: Option<String>,
-    #[serde(rename = "accessedAt", skip_serializing)]
+    #[serde(rename = "accessedAt", default, skip_serializing_if = "Option::is_none")]
     pub accessed_at: Option<String>,
     #[serde(rename = "autoDeleteOnIdle", default, skip_serializing_if = "Option::is_none")]
     pub auto_delete_on_idle: Option<String>,
     #[serde(rename = "entityAvailabilityStatus", default, skip_serializing_if = "Option::is_none")]
     pub entity_availability_status: Option<EntityAvailabilityStatus>,
-    #[serde(rename = "createdAt", skip_serializing)]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
     #[serde(rename = "defaultMessageTimeToLive", default, skip_serializing_if = "Option::is_none")]
     pub default_message_time_to_live: Option<String>,
@@ -218,7 +218,7 @@ pub struct QueueProperties {
     pub max_delivery_count: Option<i32>,
     #[serde(rename = "maxSizeInMegabytes", default, skip_serializing_if = "Option::is_none")]
     pub max_size_in_megabytes: Option<i64>,
-    #[serde(rename = "messageCount", skip_serializing)]
+    #[serde(rename = "messageCount", default, skip_serializing_if = "Option::is_none")]
     pub message_count: Option<i64>,
     #[serde(rename = "countDetails", default, skip_serializing_if = "Option::is_none")]
     pub count_details: Option<MessageCountDetails>,
@@ -226,26 +226,26 @@ pub struct QueueProperties {
     pub requires_duplicate_detection: Option<bool>,
     #[serde(rename = "requiresSession", default, skip_serializing_if = "Option::is_none")]
     pub requires_session: Option<bool>,
-    #[serde(rename = "sizeInBytes", skip_serializing)]
+    #[serde(rename = "sizeInBytes", default, skip_serializing_if = "Option::is_none")]
     pub size_in_bytes: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<EntityStatus>,
     #[serde(rename = "supportOrdering", default, skip_serializing_if = "Option::is_none")]
     pub support_ordering: Option<bool>,
-    #[serde(rename = "updatedAt", skip_serializing)]
+    #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MessageCountDetails {
-    #[serde(rename = "activeMessageCount", skip_serializing)]
+    #[serde(rename = "activeMessageCount", default, skip_serializing_if = "Option::is_none")]
     pub active_message_count: Option<i64>,
-    #[serde(rename = "deadLetterMessageCount", skip_serializing)]
+    #[serde(rename = "deadLetterMessageCount", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_message_count: Option<i64>,
-    #[serde(rename = "scheduledMessageCount", skip_serializing)]
+    #[serde(rename = "scheduledMessageCount", default, skip_serializing_if = "Option::is_none")]
     pub scheduled_message_count: Option<i64>,
-    #[serde(rename = "transferDeadLetterMessageCount", skip_serializing)]
+    #[serde(rename = "transferDeadLetterMessageCount", default, skip_serializing_if = "Option::is_none")]
     pub transfer_dead_letter_message_count: Option<i64>,
-    #[serde(rename = "transferMessageCount", skip_serializing)]
+    #[serde(rename = "transferMessageCount", default, skip_serializing_if = "Option::is_none")]
     pub transfer_message_count: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -272,13 +272,13 @@ pub struct TopicResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TopicProperties {
-    #[serde(rename = "accessedAt", skip_serializing)]
+    #[serde(rename = "accessedAt", default, skip_serializing_if = "Option::is_none")]
     pub accessed_at: Option<String>,
     #[serde(rename = "autoDeleteOnIdle", default, skip_serializing_if = "Option::is_none")]
     pub auto_delete_on_idle: Option<String>,
     #[serde(rename = "entityAvailabilityStatus", default, skip_serializing_if = "Option::is_none")]
     pub entity_availability_status: Option<EntityAvailabilityStatus>,
-    #[serde(rename = "createdAt", skip_serializing)]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
     #[serde(rename = "countDetails", default, skip_serializing_if = "Option::is_none")]
     pub count_details: Option<MessageCountDetails>,
@@ -302,15 +302,15 @@ pub struct TopicProperties {
     pub max_size_in_megabytes: Option<i64>,
     #[serde(rename = "requiresDuplicateDetection", default, skip_serializing_if = "Option::is_none")]
     pub requires_duplicate_detection: Option<bool>,
-    #[serde(rename = "sizeInBytes", skip_serializing)]
+    #[serde(rename = "sizeInBytes", default, skip_serializing_if = "Option::is_none")]
     pub size_in_bytes: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<EntityStatus>,
-    #[serde(rename = "subscriptionCount", skip_serializing)]
+    #[serde(rename = "subscriptionCount", default, skip_serializing_if = "Option::is_none")]
     pub subscription_count: Option<i32>,
     #[serde(rename = "supportOrdering", default, skip_serializing_if = "Option::is_none")]
     pub support_ordering: Option<bool>,
-    #[serde(rename = "updatedAt", skip_serializing)]
+    #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -337,13 +337,13 @@ pub struct SubscriptionResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionProperties {
-    #[serde(rename = "accessedAt", skip_serializing)]
+    #[serde(rename = "accessedAt", default, skip_serializing_if = "Option::is_none")]
     pub accessed_at: Option<String>,
     #[serde(rename = "autoDeleteOnIdle", default, skip_serializing_if = "Option::is_none")]
     pub auto_delete_on_idle: Option<String>,
     #[serde(rename = "countDetails", default, skip_serializing_if = "Option::is_none")]
     pub count_details: Option<MessageCountDetails>,
-    #[serde(rename = "createdAt", skip_serializing)]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
     #[serde(rename = "defaultMessageTimeToLive", default, skip_serializing_if = "Option::is_none")]
     pub default_message_time_to_live: Option<String>,
@@ -365,13 +365,13 @@ pub struct SubscriptionProperties {
     pub lock_duration: Option<String>,
     #[serde(rename = "maxDeliveryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_delivery_count: Option<i32>,
-    #[serde(rename = "messageCount", skip_serializing)]
+    #[serde(rename = "messageCount", default, skip_serializing_if = "Option::is_none")]
     pub message_count: Option<i64>,
     #[serde(rename = "requiresSession", default, skip_serializing_if = "Option::is_none")]
     pub requires_session: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<EntityStatus>,
-    #[serde(rename = "updatedAt", skip_serializing)]
+    #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -413,19 +413,19 @@ pub struct CheckNameAvailabilityResult {
     pub name_available: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<UnavailableReason>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
@@ -434,11 +434,11 @@ pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
 }

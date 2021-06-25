@@ -29,7 +29,7 @@ pub struct StoragePoolOperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutboundEnvironmentEndpointList {
     pub value: Vec<OutboundEnvironmentEndpoint>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -60,7 +60,7 @@ pub struct EndpointDetail {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolListResult {
     pub value: Vec<DiskPool>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -86,7 +86,7 @@ pub struct DiskPool {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     pub properties: DiskPoolProperties,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemMetadata>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -96,11 +96,11 @@ pub struct DiskPoolCreate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -113,7 +113,7 @@ pub struct DiskPoolUpdate {
 pub struct AvailabilityZone {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState")]
     pub provisioning_state: ProvisioningState,
     #[serde(rename = "availabilityZones")]
     pub availability_zones: Vec<AvailabilityZone>,
@@ -150,7 +150,7 @@ pub struct AdditionalCapability {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetList {
     pub value: Vec<IscsiTarget>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -158,7 +158,7 @@ pub struct IscsiTarget {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     pub properties: IscsiTargetProperties,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemMetadata>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -183,7 +183,7 @@ pub struct IscsiTargetProperties {
     pub luns: Vec<IscsiLun>,
     #[serde(rename = "targetIqn")]
     pub target_iqn: String,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState")]
     pub provisioning_state: ProvisioningState,
     pub status: OperationalStatus,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -221,7 +221,7 @@ pub struct IscsiLun {
     pub name: String,
     #[serde(rename = "managedDiskAzureResourceId")]
     pub managed_disk_azure_resource_id: String,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -311,11 +311,11 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -325,21 +325,21 @@ pub struct ProxyResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponse>,
-    #[serde(rename = "additionalInfo", skip_serializing)]
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }

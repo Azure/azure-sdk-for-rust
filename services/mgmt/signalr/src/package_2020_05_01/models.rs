@@ -145,11 +145,11 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -157,9 +157,9 @@ pub struct ResourceSku {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<SignalRSkuTier>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
@@ -177,17 +177,17 @@ pub struct SignalRProperties {
     pub signal_r_create_or_update_properties: SignalRCreateOrUpdateProperties,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "externalIP", skip_serializing)]
+    #[serde(rename = "externalIP", default, skip_serializing_if = "Option::is_none")]
     pub external_ip: Option<String>,
-    #[serde(rename = "hostName", skip_serializing)]
+    #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
-    #[serde(rename = "publicPort", skip_serializing)]
+    #[serde(rename = "publicPort", default, skip_serializing_if = "Option::is_none")]
     pub public_port: Option<i32>,
-    #[serde(rename = "serverPort", skip_serializing)]
+    #[serde(rename = "serverPort", default, skip_serializing_if = "Option::is_none")]
     pub server_port: Option<i32>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-    #[serde(rename = "privateEndpointConnections", skip_serializing)]
+    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -204,7 +204,7 @@ pub enum ProvisioningState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignalRCreateOrUpdateProperties {
-    #[serde(rename = "hostNamePrefix", skip_serializing)]
+    #[serde(rename = "hostNamePrefix", default, skip_serializing_if = "Option::is_none")]
     pub host_name_prefix: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub features: Vec<SignalRFeature>,

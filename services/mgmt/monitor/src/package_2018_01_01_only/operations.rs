@@ -12,7 +12,7 @@ pub mod metric_definitions {
     ) -> std::result::Result<MetricDefinitionCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/metricDefinitions",
+            "{}/{}/providers/Microsoft.Insights/metricDefinitions",
             operation_config.base_path(),
             resource_uri
         );
@@ -93,7 +93,7 @@ pub mod metrics {
     ) -> std::result::Result<Response, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/metrics",
+            "{}/{}/providers/Microsoft.Insights/metrics",
             operation_config.base_path(),
             resource_uri
         );

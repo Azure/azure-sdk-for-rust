@@ -240,15 +240,11 @@ impl CodeGen {
             if &nm.to_string() != property_name {
                 serde_attrs.push(quote! { rename = #property_name });
             }
-            if property.schema.read_only == Some(true) {
-                serde_attrs.push(quote! { skip_serializing });
-            } else {
-                if !is_required {
-                    if is_vec {
-                        serde_attrs.push(quote! { default, skip_serializing_if = "Vec::is_empty"});
-                    } else {
-                        serde_attrs.push(quote! { default, skip_serializing_if = "Option::is_none"});
-                    }
+            if !is_required {
+                if is_vec {
+                    serde_attrs.push(quote! { default, skip_serializing_if = "Vec::is_empty"});
+                } else {
+                    serde_attrs.push(quote! { default, skip_serializing_if = "Option::is_none"});
                 }
             }
             let serde = if serde_attrs.len() > 0 {

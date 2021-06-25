@@ -125,7 +125,7 @@ pub struct Registry {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: sku::Name,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
 pub mod sku {
@@ -147,11 +147,11 @@ pub mod sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistryProperties {
-    #[serde(rename = "loginServer", skip_serializing)]
+    #[serde(rename = "loginServer", default, skip_serializing_if = "Option::is_none")]
     pub login_server: Option<String>,
-    #[serde(rename = "creationDate", skip_serializing)]
+    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registry_properties::ProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<Status>,
@@ -178,11 +178,11 @@ pub mod registry_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Status {
-    #[serde(rename = "displayStatus", skip_serializing)]
+    #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
     pub display_status: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -281,7 +281,7 @@ pub mod trust_policy {
 pub struct RetentionPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub days: Option<i32>,
-    #[serde(rename = "lastUpdatedTime", skip_serializing)]
+    #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<retention_policy::Status>,
@@ -392,7 +392,7 @@ pub struct Replication {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicationProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<replication_properties::ProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<Status>,
@@ -435,7 +435,7 @@ pub struct WebhookProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
     pub actions: Vec<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<webhook_properties::ProvisioningState>,
 }
 pub mod webhook_properties {
@@ -643,11 +643,11 @@ pub struct Source {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -670,7 +670,7 @@ pub struct AgentPoolProperties {
     pub os: Option<agent_pool_properties::Os>,
     #[serde(rename = "virtualNetworkSubnetResourceId", default, skip_serializing_if = "Option::is_none")]
     pub virtual_network_subnet_resource_id: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<agent_pool_properties::ProvisioningState>,
 }
 pub mod agent_pool_properties {
@@ -768,7 +768,7 @@ pub struct RunProperties {
     pub source_registry_auth: Option<String>,
     #[serde(rename = "customRegistries", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_registries: Vec<String>,
-    #[serde(rename = "runErrorMessage", skip_serializing)]
+    #[serde(rename = "runErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub run_error_message: Option<String>,
     #[serde(rename = "updateTriggerToken", default, skip_serializing_if = "Option::is_none")]
     pub update_trigger_token: Option<String>,
@@ -999,7 +999,7 @@ pub mod identity_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskRunProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<task_run_properties::ProvisioningState>,
     #[serde(rename = "runRequest", default, skip_serializing_if = "Option::is_none")]
     pub run_request: Option<RunRequest>,
@@ -1070,9 +1070,9 @@ pub struct Task {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<task_properties::ProvisioningState>,
-    #[serde(rename = "creationDate", skip_serializing)]
+    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<task_properties::Status>,
@@ -1116,7 +1116,7 @@ pub mod task_properties {
 pub struct TaskStepProperties {
     #[serde(rename = "type")]
     pub type_: task_step_properties::Type,
-    #[serde(rename = "baseImageDependencies", skip_serializing)]
+    #[serde(rename = "baseImageDependencies", default, skip_serializing_if = "Vec::is_empty")]
     pub base_image_dependencies: Vec<BaseImageDependency>,
     #[serde(rename = "contextPath", default, skip_serializing_if = "Option::is_none")]
     pub context_path: Option<String>,
@@ -1520,13 +1520,13 @@ pub mod auth_info_update_parameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1775,11 +1775,11 @@ pub struct ScopeMap {
 pub struct ScopeMapProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(rename = "creationDate", skip_serializing)]
+    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<scope_map_properties::ProvisioningState>,
     pub actions: Vec<String>,
 }
@@ -1823,9 +1823,9 @@ pub struct Token {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TokenProperties {
-    #[serde(rename = "creationDate", skip_serializing)]
+    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<token_properties::ProvisioningState>,
     #[serde(rename = "scopeMapId", default, skip_serializing_if = "Option::is_none")]
     pub scope_map_id: Option<String>,
@@ -1898,7 +1898,7 @@ pub struct TokenPassword {
     pub expiry: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<token_password::Name>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
 pub mod token_password {
