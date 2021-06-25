@@ -277,8 +277,9 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
                     QueryResult::Document(document) => Ok(document),
                     QueryResult::Raw(_) => {
                         // Bail if there is a raw document
-                        let error: Box<dyn std::error::Error + Sync + Send> = "conversion to `QueryDocumentsResponseDocuments` failed because at lease one element is raw".into();
-                        Err(error.into())
+                        Err(crate::Error::ElementIsRaw(
+                            "QueryDocumentsResponseDocuments".to_owned(),
+                        ))
                     }
                 })
                 .collect::<Result<Vec<DocumentQueryResult<T>>, Self::Error>>()?,

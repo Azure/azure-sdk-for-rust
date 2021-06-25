@@ -9,6 +9,10 @@ pub enum Error {
     /// An error related to parsing
     #[error(transparent)]
     ParsingError(#[from] ParsingError),
+    // #[error(transparent)]
+    // Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    #[error("conversion to `{0}` failed because at lease one element is raw")]
+    ElementIsRaw(String),
 }
 
 impl From<serde_json::Error> for Error {
@@ -29,15 +33,9 @@ impl From<azure_core::HttpError> for Error {
     }
 }
 
-impl From<Box<dyn std::error::Error + Sync + Send>> for Error {
-    fn from(error: Box<dyn std::error::Error + Sync + Send>) -> Self {
-        Self::Core(azure_core::Error::Other(error))
-    }
-}
-
 impl From<http::Error> for Error {
     fn from(error: http::Error) -> Self {
-        Self::Core(azure_core::Error::Other(error.into()))
+        Self::Core(azure_core::Error::HttpPrepareError(error))
     }
 }
 
