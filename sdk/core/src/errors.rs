@@ -35,8 +35,6 @@ pub enum Error {
     StreamError(#[from] StreamError),
     #[error("JSON error: {0}")]
     JsonError(#[from] serde_json::Error),
-    #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
 #[cfg(feature = "enable_hyper")]
