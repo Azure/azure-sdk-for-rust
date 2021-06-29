@@ -72,6 +72,7 @@ pub(crate) struct KeyVaultGetSecretResponse {
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultGetSecretResponseAttributes {
     enabled: bool,
+    #[serde(default)]
     #[serde(with = "ts_seconds_option")]
     exp: Option<DateTime<Utc>>,
     #[serde(with = "ts_seconds")]
