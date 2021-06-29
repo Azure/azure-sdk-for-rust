@@ -6,8 +6,10 @@ mod permission;
 mod permission_token;
 
 pub use authorization_token::AuthorizationToken;
+pub use authorization_token::AuthorizationTokenParsingError;
 pub use permission::{Permission, PermissionMode};
 pub use permission_token::PermissionToken;
+pub use permission_token::PermissionTokenParsingError;
 
 use crate::headers;
 use azure_core::AddAsHeader;

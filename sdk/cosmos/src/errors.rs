@@ -11,6 +11,10 @@ pub enum Error {
     ParsingError(#[from] ParsingError),
     #[error("conversion to `{0}` failed because at lease one element is raw")]
     ElementIsRaw(String),
+    #[error("error parsing authorization token: {0}")]
+    AuthorizationTokenParsing(#[from] crate::resources::permission::AuthorizationTokenParsingError),
+    #[error("error parsing permission token: {0}")]
+    PermissionTokenParsing(#[from] crate::resources::permission::PermissionTokenParsingError),
 }
 
 impl From<serde_json::Error> for Error {

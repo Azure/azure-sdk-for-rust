@@ -114,6 +114,8 @@ impl std::convert::From<AuthorizationToken> for PermissionToken {
     }
 }
 
+#[allow(missing_docs)]
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum PermissionTokenParsingError {
     #[error(
@@ -153,11 +155,8 @@ pub enum PermissionTokenParsingError {
         provided_type
     )]
     UnrecognizedPermissionType { provided_type: String },
-    #[error("The authorization token was not properly base64 encoded: {}", error)]
-    InvalidBase64Encoding {
-        #[from]
-        error: base64::DecodeError,
-    },
+    #[error("the authorization token was not properly base64 encoded: {0}")]
+    InvalidBase64Encoding(#[from] base64::DecodeError),
 }
 
 #[cfg(test)]
