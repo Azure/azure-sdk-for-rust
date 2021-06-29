@@ -19,8 +19,7 @@ impl AuthorizationToken {
     pub fn primary_from_base64(
         base64_encoded: &str,
     ) -> Result<AuthorizationToken, AuthorizationTokenParsingError> {
-        let key = base64::decode(base64_encoded)
-            .map_err(AuthorizationTokenParsingError::InvalidBase64Encoding)?;
+        let key = base64::decode(base64_encoded)?;
         Ok(AuthorizationToken::Primary(key))
     }
 
