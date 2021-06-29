@@ -37,13 +37,13 @@ pub mod identity_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -51,7 +51,7 @@ pub struct ExportPipelineProperties {
     pub target: ExportPipelineTargetProperties,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub options: Vec<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<export_pipeline_properties::ProvisioningState>,
 }
 pub mod export_pipeline_properties {
@@ -142,7 +142,7 @@ pub struct ImportPipelineProperties {
     pub trigger: Option<PipelineTriggerProperties>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub options: Vec<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<import_pipeline_properties::ProvisioningState>,
 }
 pub mod import_pipeline_properties {
@@ -294,7 +294,7 @@ pub struct PipelineRun {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineRunProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<pipeline_run_properties::ProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request: Option<PipelineRunRequest>,
@@ -414,7 +414,7 @@ pub struct PrivateEndpointConnectionProperties {
     pub private_endpoint: Option<PrivateEndpoint>,
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
 }
 pub mod private_endpoint_connection_properties {
@@ -478,7 +478,7 @@ pub struct Registry {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: sku::Name,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
 pub mod sku {
@@ -500,11 +500,11 @@ pub mod sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistryProperties {
-    #[serde(rename = "loginServer", skip_serializing)]
+    #[serde(rename = "loginServer", default, skip_serializing_if = "Option::is_none")]
     pub login_server: Option<String>,
-    #[serde(rename = "creationDate", skip_serializing)]
+    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registry_properties::ProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<Status>,
@@ -518,9 +518,9 @@ pub struct RegistryProperties {
     pub encryption: Option<EncryptionProperty>,
     #[serde(rename = "dataEndpointEnabled", default, skip_serializing_if = "Option::is_none")]
     pub data_endpoint_enabled: Option<bool>,
-    #[serde(rename = "dataEndpointHostNames", skip_serializing)]
+    #[serde(rename = "dataEndpointHostNames", default, skip_serializing_if = "Vec::is_empty")]
     pub data_endpoint_host_names: Vec<String>,
-    #[serde(rename = "privateEndpointConnections", skip_serializing)]
+    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<registry_properties::PublicNetworkAccess>,
@@ -551,11 +551,11 @@ pub mod registry_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Status {
-    #[serde(rename = "displayStatus", skip_serializing)]
+    #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
     pub display_status: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -667,7 +667,7 @@ pub mod trust_policy {
 pub struct RetentionPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub days: Option<i32>,
-    #[serde(rename = "lastUpdatedTime", skip_serializing)]
+    #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<retention_policy::Status>,
@@ -686,13 +686,13 @@ pub mod retention_policy {
 pub struct KeyVaultProperties {
     #[serde(rename = "keyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub key_identifier: Option<String>,
-    #[serde(rename = "versionedKeyIdentifier", skip_serializing)]
+    #[serde(rename = "versionedKeyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub versioned_key_identifier: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<String>,
-    #[serde(rename = "keyRotationEnabled", skip_serializing)]
+    #[serde(rename = "keyRotationEnabled", default, skip_serializing_if = "Option::is_none")]
     pub key_rotation_enabled: Option<bool>,
-    #[serde(rename = "lastKeyRotationTimestamp", skip_serializing)]
+    #[serde(rename = "lastKeyRotationTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub last_key_rotation_timestamp: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -814,7 +814,7 @@ pub struct PrivateLinkResourceListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkResource {
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -841,7 +841,7 @@ pub struct Replication {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicationProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<replication_properties::ProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<Status>,
@@ -893,7 +893,7 @@ pub struct WebhookProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
     pub actions: Vec<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<webhook_properties::ProvisioningState>,
 }
 pub mod webhook_properties {
@@ -1101,16 +1101,16 @@ pub struct Source {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

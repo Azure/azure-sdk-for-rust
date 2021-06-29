@@ -61,7 +61,7 @@ pub struct Registry {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: String,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
 pub mod sku {
@@ -73,11 +73,11 @@ pub mod sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistryProperties {
-    #[serde(rename = "loginServer", skip_serializing)]
+    #[serde(rename = "loginServer", default, skip_serializing_if = "Option::is_none")]
     pub login_server: Option<String>,
-    #[serde(rename = "creationDate", skip_serializing)]
+    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registry_properties::ProvisioningState>,
     #[serde(rename = "adminUserEnabled", default, skip_serializing_if = "Option::is_none")]
     pub admin_user_enabled: Option<bool>,
@@ -180,11 +180,11 @@ pub mod regenerate_credential_parameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]

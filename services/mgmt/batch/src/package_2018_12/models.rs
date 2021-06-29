@@ -43,9 +43,9 @@ pub struct AutoStorageProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BatchAccountProperties {
-    #[serde(rename = "accountEndpoint", skip_serializing)]
+    #[serde(rename = "accountEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub account_endpoint: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<batch_account_properties::ProvisioningState>,
     #[serde(rename = "poolAllocationMode", default, skip_serializing_if = "Option::is_none")]
     pub pool_allocation_mode: Option<PoolAllocationMode>,
@@ -53,13 +53,13 @@ pub struct BatchAccountProperties {
     pub key_vault_reference: Option<KeyVaultReference>,
     #[serde(rename = "autoStorage", default, skip_serializing_if = "Option::is_none")]
     pub auto_storage: Option<AutoStorageProperties>,
-    #[serde(rename = "dedicatedCoreQuota", skip_serializing)]
+    #[serde(rename = "dedicatedCoreQuota", default, skip_serializing_if = "Option::is_none")]
     pub dedicated_core_quota: Option<i32>,
-    #[serde(rename = "lowPriorityCoreQuota", skip_serializing)]
+    #[serde(rename = "lowPriorityCoreQuota", default, skip_serializing_if = "Option::is_none")]
     pub low_priority_core_quota: Option<i32>,
-    #[serde(rename = "poolQuota", skip_serializing)]
+    #[serde(rename = "poolQuota", default, skip_serializing_if = "Option::is_none")]
     pub pool_quota: Option<i32>,
-    #[serde(rename = "activeJobAndJobScheduleQuota", skip_serializing)]
+    #[serde(rename = "activeJobAndJobScheduleQuota", default, skip_serializing_if = "Option::is_none")]
     pub active_job_and_job_schedule_quota: Option<i32>,
 }
 pub mod batch_account_properties {
@@ -110,11 +110,11 @@ pub mod batch_account_regenerate_key_parameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BatchAccountKeys {
-    #[serde(rename = "accountName", skip_serializing)]
+    #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secondary: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -146,15 +146,15 @@ pub struct ApplicationPackage {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationPackageProperties {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<application_package_properties::State>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<String>,
-    #[serde(rename = "storageUrl", skip_serializing)]
+    #[serde(rename = "storageUrl", default, skip_serializing_if = "Option::is_none")]
     pub storage_url: Option<String>,
-    #[serde(rename = "storageUrlExpiry", skip_serializing)]
+    #[serde(rename = "storageUrlExpiry", default, skip_serializing_if = "Option::is_none")]
     pub storage_url_expiry: Option<String>,
-    #[serde(rename = "lastActivationTime", skip_serializing)]
+    #[serde(rename = "lastActivationTime", default, skip_serializing_if = "Option::is_none")]
     pub last_activation_time: Option<String>,
 }
 pub mod application_package_properties {
@@ -181,31 +181,31 @@ pub struct ListApplicationPackagesResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BatchLocationQuota {
-    #[serde(rename = "accountQuota", skip_serializing)]
+    #[serde(rename = "accountQuota", default, skip_serializing_if = "Option::is_none")]
     pub account_quota: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -234,15 +234,19 @@ pub mod certificate_base_properties {
 pub struct CertificateProperties {
     #[serde(flatten)]
     pub certificate_base_properties: CertificateBaseProperties,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<certificate_properties::ProvisioningState>,
-    #[serde(rename = "provisioningStateTransitionTime", skip_serializing)]
+    #[serde(rename = "provisioningStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state_transition_time: Option<String>,
-    #[serde(rename = "previousProvisioningState", skip_serializing)]
+    #[serde(rename = "previousProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub previous_provisioning_state: Option<certificate_properties::PreviousProvisioningState>,
-    #[serde(rename = "previousProvisioningStateTransitionTime", skip_serializing)]
+    #[serde(
+        rename = "previousProvisioningStateTransitionTime",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub previous_provisioning_state_transition_time: Option<String>,
-    #[serde(rename = "publicData", skip_serializing)]
+    #[serde(rename = "publicData", default, skip_serializing_if = "Option::is_none")]
     pub public_data: Option<String>,
     #[serde(rename = "deleteCertificateError", default, skip_serializing_if = "Option::is_none")]
     pub delete_certificate_error: Option<DeleteCertificateError>,
@@ -311,25 +315,25 @@ pub struct Pool {
 pub struct PoolProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(rename = "lastModified", skip_serializing)]
+    #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
-    #[serde(rename = "creationTime", skip_serializing)]
+    #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<pool_properties::ProvisioningState>,
-    #[serde(rename = "provisioningStateTransitionTime", skip_serializing)]
+    #[serde(rename = "provisioningStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state_transition_time: Option<String>,
-    #[serde(rename = "allocationState", skip_serializing)]
+    #[serde(rename = "allocationState", default, skip_serializing_if = "Option::is_none")]
     pub allocation_state: Option<pool_properties::AllocationState>,
-    #[serde(rename = "allocationStateTransitionTime", skip_serializing)]
+    #[serde(rename = "allocationStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub allocation_state_transition_time: Option<String>,
     #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<String>,
     #[serde(rename = "deploymentConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub deployment_configuration: Option<DeploymentConfiguration>,
-    #[serde(rename = "currentDedicatedNodes", skip_serializing)]
+    #[serde(rename = "currentDedicatedNodes", default, skip_serializing_if = "Option::is_none")]
     pub current_dedicated_nodes: Option<i32>,
-    #[serde(rename = "currentLowPriorityNodes", skip_serializing)]
+    #[serde(rename = "currentLowPriorityNodes", default, skip_serializing_if = "Option::is_none")]
     pub current_low_priority_nodes: Option<i32>,
     #[serde(rename = "scaleSettings", default, skip_serializing_if = "Option::is_none")]
     pub scale_settings: Option<ScaleSettings>,
@@ -809,11 +813,11 @@ pub mod check_name_availability_parameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityResult {
-    #[serde(rename = "nameAvailable", skip_serializing)]
+    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_result::Reason>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
 pub mod check_name_availability_result {

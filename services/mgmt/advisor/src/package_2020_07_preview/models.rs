@@ -51,7 +51,7 @@ pub struct ScoreEntity {
     pub impacted_resource_count: Option<f64>,
     #[serde(rename = "potentialScoreIncrease", default, skip_serializing_if = "Option::is_none")]
     pub potential_score_increase: Option<f64>,
-    #[serde(rename = "categoryCount", skip_serializing)]
+    #[serde(rename = "categoryCount", default, skip_serializing_if = "Option::is_none")]
     pub category_count: Option<f64>,
 }
 pub type TimeSeriesEntity = Vec<serde_json::Value>;

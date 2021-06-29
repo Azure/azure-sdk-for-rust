@@ -147,21 +147,21 @@ pub struct SkuName {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Catalog {
-    #[serde(rename = "resourceType", skip_serializing)]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub terms: Vec<ReservationTerm>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub capabilities: Vec<SkuCapability>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub restrictions: Vec<SkuRestriction>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -184,13 +184,13 @@ pub struct SkuRestriction {
 pub struct ReservationOrderResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<i64>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReservationOrderProperties>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -225,9 +225,9 @@ pub struct ReservationResponse {
     pub location: Option<Location>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<i64>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<reservation_response::Kind>,
@@ -235,7 +235,7 @@ pub struct ReservationResponse {
     pub sku: Option<SkuName>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReservationProperties>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 pub mod reservation_response {
@@ -260,7 +260,7 @@ pub struct ReservationProperties {
     pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "effectiveDateTime", default, skip_serializing_if = "Option::is_none")]
     pub effective_date_time: Option<String>,
-    #[serde(rename = "lastUpdatedDateTime", skip_serializing)]
+    #[serde(rename = "lastUpdatedDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_date_time: Option<String>,
     #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
     pub expiry_date: Option<String>,
@@ -354,11 +354,11 @@ pub struct ReservationList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppliedReservations {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AppliedReservationsProperties>,

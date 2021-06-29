@@ -104,11 +104,11 @@ pub struct Cache {
     pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<ResourceName>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<CacheIdentity>,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<cache::Properties>,
@@ -123,7 +123,7 @@ pub mod cache {
         pub cache_size_gb: Option<i64>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub health: Option<CacheHealth>,
-        #[serde(rename = "mountAddresses", skip_serializing)]
+        #[serde(rename = "mountAddresses", default, skip_serializing_if = "Vec::is_empty")]
         pub mount_addresses: Vec<String>,
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
@@ -158,9 +158,9 @@ pub mod cache {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheIdentity {
-    #[serde(rename = "principalId", skip_serializing)]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", skip_serializing)]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<cache_identity::Type>,
@@ -177,7 +177,7 @@ pub mod cache_identity {
 pub struct CacheNetworkSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mtu: Option<i64>,
-    #[serde(rename = "utilityAddresses", skip_serializing)]
+    #[serde(rename = "utilityAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub utility_addresses: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -236,15 +236,15 @@ pub mod cache_health {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheUpgradeStatus {
-    #[serde(rename = "currentFirmwareVersion", skip_serializing)]
+    #[serde(rename = "currentFirmwareVersion", default, skip_serializing_if = "Option::is_none")]
     pub current_firmware_version: Option<String>,
-    #[serde(rename = "firmwareUpdateStatus", skip_serializing)]
+    #[serde(rename = "firmwareUpdateStatus", default, skip_serializing_if = "Option::is_none")]
     pub firmware_update_status: Option<cache_upgrade_status::FirmwareUpdateStatus>,
-    #[serde(rename = "firmwareUpdateDeadline", skip_serializing)]
+    #[serde(rename = "firmwareUpdateDeadline", default, skip_serializing_if = "Option::is_none")]
     pub firmware_update_deadline: Option<String>,
-    #[serde(rename = "lastFirmwareUpdate", skip_serializing)]
+    #[serde(rename = "lastFirmwareUpdate", default, skip_serializing_if = "Option::is_none")]
     pub last_firmware_update: Option<String>,
-    #[serde(rename = "pendingFirmwareVersion", skip_serializing)]
+    #[serde(rename = "pendingFirmwareVersion", default, skip_serializing_if = "Option::is_none")]
     pub pending_firmware_version: Option<String>,
 }
 pub mod cache_upgrade_status {
@@ -270,13 +270,13 @@ pub struct StorageTarget {
 pub struct StorageTargetResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<ResourceName>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -351,11 +351,11 @@ pub struct UnknownTarget {
 pub struct ResourceName {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSku {
-    #[serde(rename = "resourceType", skip_serializing)]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub capabilities: Vec<ResourceSkuCapabilities>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<String>,
     #[serde(rename = "locationInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub location_info: Vec<ResourceSkuLocationInfo>,
@@ -366,9 +366,9 @@ pub struct ResourceSku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Restriction {
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
     #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<restriction::ReasonCode>,
@@ -399,7 +399,7 @@ pub struct ResourceSkuLocationInfo {
 pub struct ResourceSkusResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceSku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

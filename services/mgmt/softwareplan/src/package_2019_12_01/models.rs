@@ -37,7 +37,7 @@ pub struct HybridUseBenefitModel {
     #[serde(flatten)]
     pub resource: Resource,
     pub sku: Sku,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HybridUseBenefitProperties>,
@@ -46,9 +46,9 @@ pub struct HybridUseBenefitModel {
 pub struct HybridUseBenefitProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "createdDate", skip_serializing)]
+    #[serde(rename = "createdDate", default, skip_serializing_if = "Option::is_none")]
     pub created_date: Option<String>,
-    #[serde(rename = "lastUpdatedDate", skip_serializing)]
+    #[serde(rename = "lastUpdatedDate", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_date: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -80,10 +80,10 @@ pub struct OperationDisplay {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

@@ -9,13 +9,13 @@ pub struct AzureBackupGoalFeatureSupportRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureIaaSvmErrorInfo {
-    #[serde(rename = "errorCode", skip_serializing)]
+    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<i32>,
-    #[serde(rename = "errorTitle", skip_serializing)]
+    #[serde(rename = "errorTitle", default, skip_serializing_if = "Option::is_none")]
     pub error_title: Option<String>,
-    #[serde(rename = "errorString", skip_serializing)]
+    #[serde(rename = "errorString", default, skip_serializing_if = "Option::is_none")]
     pub error_string: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recommendations: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -450,9 +450,9 @@ pub struct JobResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MabErrorInfo {
-    #[serde(rename = "errorString", skip_serializing)]
+    #[serde(rename = "errorString", default, skip_serializing_if = "Option::is_none")]
     pub error_string: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recommendations: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -710,11 +710,11 @@ pub struct ProtectionIntentResourceList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,

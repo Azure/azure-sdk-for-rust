@@ -81,7 +81,7 @@ pub struct ActionResponseProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionsList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<ActionResponse>,
 }
@@ -118,7 +118,7 @@ pub struct AlertRuleTemplateDataSource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRuleTemplatesList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<AlertRuleTemplate>,
 }
@@ -131,7 +131,7 @@ pub enum AlertRuleTriggerOperator {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRulesList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<AlertRule>,
 }
@@ -203,7 +203,7 @@ pub struct Bookmark {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BookmarkList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<Bookmark>,
 }
@@ -283,7 +283,7 @@ pub enum DataConnectorKind {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnectorList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<DataConnector>,
 }
@@ -308,16 +308,16 @@ pub struct FusionAlertRule {
 pub struct FusionAlertRuleProperties {
     #[serde(rename = "alertRuleTemplateName")]
     pub alert_rule_template_name: String,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "displayName", skip_serializing)]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     pub enabled: bool,
-    #[serde(rename = "lastModifiedUtc", skip_serializing)]
+    #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_utc: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<AlertSeverity>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -331,7 +331,7 @@ pub struct FusionAlertRuleTemplate {
 pub struct FusionAlertRuleTemplateProperties {
     #[serde(rename = "alertRulesCreatedByTemplateCount", default, skip_serializing_if = "Option::is_none")]
     pub alert_rules_created_by_template_count: Option<i32>,
-    #[serde(rename = "createdDateUTC", skip_serializing)]
+    #[serde(rename = "createdDateUTC", default, skip_serializing_if = "Option::is_none")]
     pub created_date_utc: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -355,15 +355,15 @@ pub struct Incident {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentAdditionalData {
-    #[serde(rename = "alertsCount", skip_serializing)]
+    #[serde(rename = "alertsCount", default, skip_serializing_if = "Option::is_none")]
     pub alerts_count: Option<i32>,
-    #[serde(rename = "bookmarksCount", skip_serializing)]
+    #[serde(rename = "bookmarksCount", default, skip_serializing_if = "Option::is_none")]
     pub bookmarks_count: Option<i32>,
-    #[serde(rename = "commentsCount", skip_serializing)]
+    #[serde(rename = "commentsCount", default, skip_serializing_if = "Option::is_none")]
     pub comments_count: Option<i32>,
-    #[serde(rename = "alertProductNames", skip_serializing)]
+    #[serde(rename = "alertProductNames", default, skip_serializing_if = "Vec::is_empty")]
     pub alert_product_names: Vec<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -375,13 +375,13 @@ pub struct IncidentComment {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentCommentList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<IncidentComment>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentCommentProperties {
-    #[serde(rename = "createdTimeUtc", skip_serializing)]
+    #[serde(rename = "createdTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub created_time_utc: Option<String>,
     pub message: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -391,7 +391,7 @@ pub struct IncidentCommentProperties {
 pub struct IncidentLabel {
     #[serde(rename = "labelName")]
     pub label_name: String,
-    #[serde(rename = "labelType", skip_serializing)]
+    #[serde(rename = "labelType", default, skip_serializing_if = "Option::is_none")]
     pub label_type: Option<incident_label::LabelType>,
 }
 pub mod incident_label {
@@ -404,7 +404,7 @@ pub mod incident_label {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<Incident>,
 }
@@ -429,25 +429,25 @@ pub struct IncidentProperties {
     pub classification_comment: Option<String>,
     #[serde(rename = "classificationReason", default, skip_serializing_if = "Option::is_none")]
     pub classification_reason: Option<incident_properties::ClassificationReason>,
-    #[serde(rename = "createdTimeUtc", skip_serializing)]
+    #[serde(rename = "createdTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub created_time_utc: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(rename = "firstActivityTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub first_activity_time_utc: Option<String>,
-    #[serde(rename = "incidentUrl", skip_serializing)]
+    #[serde(rename = "incidentUrl", default, skip_serializing_if = "Option::is_none")]
     pub incident_url: Option<String>,
-    #[serde(rename = "incidentNumber", skip_serializing)]
+    #[serde(rename = "incidentNumber", default, skip_serializing_if = "Option::is_none")]
     pub incident_number: Option<i32>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<IncidentLabel>,
     #[serde(rename = "lastActivityTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_activity_time_utc: Option<String>,
-    #[serde(rename = "lastModifiedTimeUtc", skip_serializing)]
+    #[serde(rename = "lastModifiedTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time_utc: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub owner: Option<IncidentOwnerInfo>,
-    #[serde(rename = "relatedAnalyticRuleIds", skip_serializing)]
+    #[serde(rename = "relatedAnalyticRuleIds", default, skip_serializing_if = "Vec::is_empty")]
     pub related_analytic_rule_ids: Vec<String>,
     pub severity: incident_properties::Severity,
     pub status: incident_properties::Status,
@@ -551,14 +551,14 @@ pub struct MicrosoftSecurityIncidentCreationAlertRuleProperties {
     #[serde(rename = "displayName")]
     pub display_name: String,
     pub enabled: bool,
-    #[serde(rename = "lastModifiedUtc", skip_serializing)]
+    #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_utc: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MicrosoftSecurityIncidentCreationAlertRuleTemplateProperties {
     #[serde(rename = "alertRulesCreatedByTemplateCount", default, skip_serializing_if = "Option::is_none")]
     pub alert_rules_created_by_template_count: Option<i32>,
-    #[serde(rename = "createdDateUTC", skip_serializing)]
+    #[serde(rename = "createdDateUTC", default, skip_serializing_if = "Option::is_none")]
     pub created_date_utc: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -593,7 +593,7 @@ pub struct OfficeConsent {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeConsentList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<OfficeConsent>,
 }
@@ -601,7 +601,7 @@ pub struct OfficeConsentList {
 pub struct OfficeConsentProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
-    #[serde(rename = "tenantName", skip_serializing)]
+    #[serde(rename = "tenantName", default, skip_serializing_if = "Option::is_none")]
     pub tenant_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -658,20 +658,20 @@ pub struct OperationsList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceWithEtag {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -709,7 +709,7 @@ pub struct ScheduledAlertRuleProperties {
     #[serde(rename = "displayName")]
     pub display_name: String,
     pub enabled: bool,
-    #[serde(rename = "lastModifiedUtc", skip_serializing)]
+    #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_utc: Option<String>,
     #[serde(rename = "suppressionDuration")]
     pub suppression_duration: String,
@@ -722,7 +722,7 @@ pub struct ScheduledAlertRuleProperties {
 pub struct ScheduledAlertRuleTemplateProperties {
     #[serde(rename = "alertRulesCreatedByTemplateCount", default, skip_serializing_if = "Option::is_none")]
     pub alert_rules_created_by_template_count: Option<i32>,
-    #[serde(rename = "createdDateUTC", skip_serializing)]
+    #[serde(rename = "createdDateUTC", default, skip_serializing_if = "Option::is_none")]
     pub created_date_utc: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -788,17 +788,17 @@ pub struct TiDataConnectorProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligence {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub confidence: Option<f64>,
-    #[serde(rename = "providerName", skip_serializing)]
+    #[serde(rename = "providerName", default, skip_serializing_if = "Option::is_none")]
     pub provider_name: Option<String>,
-    #[serde(rename = "reportLink", skip_serializing)]
+    #[serde(rename = "reportLink", default, skip_serializing_if = "Option::is_none")]
     pub report_link: Option<String>,
-    #[serde(rename = "threatDescription", skip_serializing)]
+    #[serde(rename = "threatDescription", default, skip_serializing_if = "Option::is_none")]
     pub threat_description: Option<String>,
-    #[serde(rename = "threatName", skip_serializing)]
+    #[serde(rename = "threatName", default, skip_serializing_if = "Option::is_none")]
     pub threat_name: Option<String>,
-    #[serde(rename = "threatType", skip_serializing)]
+    #[serde(rename = "threatType", default, skip_serializing_if = "Option::is_none")]
     pub threat_type: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -822,11 +822,11 @@ pub struct UebaSettings {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UebaSettingsProperties {
-    #[serde(rename = "atpLicenseStatus", skip_serializing)]
+    #[serde(rename = "atpLicenseStatus", default, skip_serializing_if = "Option::is_none")]
     pub atp_license_status: Option<ueba_settings_properties::AtpLicenseStatus>,
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
-    #[serde(rename = "statusInMcas", skip_serializing)]
+    #[serde(rename = "statusInMcas", default, skip_serializing_if = "Option::is_none")]
     pub status_in_mcas: Option<ueba_settings_properties::StatusInMcas>,
 }
 pub mod ueba_settings_properties {
@@ -844,9 +844,9 @@ pub mod ueba_settings_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserInfo {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "objectId")]
     pub object_id: String,
@@ -875,21 +875,21 @@ pub mod incident_info {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponse>,
-    #[serde(rename = "additionalInfo", skip_serializing)]
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }

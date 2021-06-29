@@ -13,7 +13,7 @@ pub struct Account {
     pub tracked_resource: TrackedResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccountProperties>,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -25,9 +25,9 @@ pub struct AccountPatch {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountProperties {
-    #[serde(rename = "accountId", skip_serializing)]
+    #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<account_properties::ProvisioningState>,
 }
 pub mod account_properties {
@@ -44,7 +44,7 @@ pub mod account_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountList {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Account>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -65,13 +65,13 @@ pub struct DataPoolPatch {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataPoolBaseProperties {
-    #[serde(rename = "dataPoolId", skip_serializing)]
+    #[serde(rename = "dataPoolId", default, skip_serializing_if = "Option::is_none")]
     pub data_pool_id: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<data_pool_base_properties::ProvisioningState>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<DataPoolLocation>,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 pub mod data_pool_base_properties {
@@ -97,7 +97,7 @@ pub struct DataPoolLocation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataPoolList {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataPool>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -191,11 +191,11 @@ pub struct ErrorResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDefinition {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -240,10 +240,10 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

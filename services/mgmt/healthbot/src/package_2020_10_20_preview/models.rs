@@ -44,13 +44,13 @@ pub struct CheckNameAvailabilityResponseBody {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -72,9 +72,9 @@ pub struct HealthBot {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthBotProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-    #[serde(rename = "botManagementPortalLink", skip_serializing)]
+    #[serde(rename = "botManagementPortalLink", default, skip_serializing_if = "Option::is_none")]
     pub bot_management_portal_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -120,23 +120,23 @@ pub mod error {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Error {
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub target: Option<String>,
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub details: Vec<Error>,
-        #[serde(rename = "additionalInfo", skip_serializing)]
+        #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
         pub additional_info: Vec<ErrorAdditionalInfo>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -172,8 +172,8 @@ pub struct OperationDisplay {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BotResponseList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HealthBot>,
 }

@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationList {
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationsDefinition>,
@@ -31,7 +31,7 @@ pub struct OperationsDisplayDefinition {
 pub struct AttestationProvider {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StatusResult>,
@@ -44,7 +44,7 @@ pub struct StatusResult {
     pub status: Option<status_result::Status>,
     #[serde(rename = "attestUri", default, skip_serializing_if = "Option::is_none")]
     pub attest_uri: Option<String>,
-    #[serde(rename = "privateEndpointConnections", skip_serializing)]
+    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
 }
 pub mod status_result {
@@ -70,7 +70,7 @@ pub struct CloudErrorBody {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AttestationProviderListResult {
-    #[serde(rename = "systemData", skip_serializing)]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AttestationProvider>,
@@ -110,12 +110,12 @@ pub struct PrivateEndpointConnectionProperties {
     pub private_endpoint: Option<PrivateEndpoint>,
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpoint {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -142,11 +142,11 @@ pub enum PrivateEndpointConnectionProvisioningState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

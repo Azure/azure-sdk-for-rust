@@ -18,13 +18,13 @@ pub struct AccountList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountProperties {
-    #[serde(rename = "createdAt", skip_serializing)]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<account_properties::ProvisioningState>,
-    #[serde(rename = "userEmail", skip_serializing)]
+    #[serde(rename = "userEmail", default, skip_serializing_if = "Option::is_none")]
     pub user_email: Option<String>,
-    #[serde(rename = "userName", skip_serializing)]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
 pub mod account_properties {
@@ -53,7 +53,7 @@ pub struct AdlsGen1FileDataSet {
 pub struct AdlsGen1FileProperties {
     #[serde(rename = "accountName")]
     pub account_name: String,
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[serde(rename = "fileName")]
     pub file_name: String,
@@ -74,7 +74,7 @@ pub struct AdlsGen1FolderDataSet {
 pub struct AdlsGen1FolderProperties {
     #[serde(rename = "accountName")]
     pub account_name: String,
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[serde(rename = "folderPath")]
     pub folder_path: String,
@@ -99,7 +99,7 @@ pub struct AdlsGen2FileDataSetMapping {
 pub struct AdlsGen2FileDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", skip_serializing)]
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<adls_gen2_file_data_set_mapping_properties::DataSetMappingStatus>,
     #[serde(rename = "filePath")]
     pub file_path: String,
@@ -107,7 +107,7 @@ pub struct AdlsGen2FileDataSetMappingProperties {
     pub file_system: String,
     #[serde(rename = "outputType", default, skip_serializing_if = "Option::is_none")]
     pub output_type: Option<adls_gen2_file_data_set_mapping_properties::OutputType>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<adls_gen2_file_data_set_mapping_properties::ProvisioningState>,
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
@@ -139,7 +139,7 @@ pub mod adls_gen2_file_data_set_mapping_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileProperties {
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[serde(rename = "filePath")]
     pub file_path: String,
@@ -168,11 +168,11 @@ pub struct AdlsGen2FileSystemDataSetMapping {
 pub struct AdlsGen2FileSystemDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", skip_serializing)]
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<adls_gen2_file_system_data_set_mapping_properties::DataSetMappingStatus>,
     #[serde(rename = "fileSystem")]
     pub file_system: String,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<adls_gen2_file_system_data_set_mapping_properties::ProvisioningState>,
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
@@ -199,7 +199,7 @@ pub mod adls_gen2_file_system_data_set_mapping_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileSystemProperties {
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[serde(rename = "fileSystem")]
     pub file_system: String,
@@ -226,13 +226,13 @@ pub struct AdlsGen2FolderDataSetMapping {
 pub struct AdlsGen2FolderDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", skip_serializing)]
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<adls_gen2_folder_data_set_mapping_properties::DataSetMappingStatus>,
     #[serde(rename = "fileSystem")]
     pub file_system: String,
     #[serde(rename = "folderPath")]
     pub folder_path: String,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<adls_gen2_folder_data_set_mapping_properties::ProvisioningState>,
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
@@ -259,7 +259,7 @@ pub mod adls_gen2_folder_data_set_mapping_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FolderProperties {
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[serde(rename = "fileSystem")]
     pub file_system: String,
@@ -290,14 +290,14 @@ pub struct AdlsGen2StorageAccountDataSetMappingProperties {
     pub container_name: String,
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", skip_serializing)]
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<adls_gen2_storage_account_data_set_mapping_properties::DataSetMappingStatus>,
     pub folder: String,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[serde(rename = "mountPath", default, skip_serializing_if = "Option::is_none")]
     pub mount_path: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<adls_gen2_storage_account_data_set_mapping_properties::ProvisioningState>,
     #[serde(rename = "storageAccountResourceId")]
     pub storage_account_resource_id: String,
@@ -320,9 +320,9 @@ pub mod adls_gen2_storage_account_data_set_mapping_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2StorageAccountDataSetProperties {
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     pub paths: Vec<AdlsGen2StorageAccountPath>,
     #[serde(rename = "storageAccountResourceId")]
@@ -355,9 +355,9 @@ pub struct BlobContainerMappingProperties {
     pub container_name: String,
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", skip_serializing)]
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<blob_container_mapping_properties::DataSetMappingStatus>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<blob_container_mapping_properties::ProvisioningState>,
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
@@ -386,7 +386,7 @@ pub mod blob_container_mapping_properties {
 pub struct BlobContainerProperties {
     #[serde(rename = "containerName")]
     pub container_name: String,
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
@@ -425,10 +425,10 @@ pub struct BlobFolderMappingProperties {
     pub container_name: String,
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", skip_serializing)]
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<blob_folder_mapping_properties::DataSetMappingStatus>,
     pub prefix: String,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<blob_folder_mapping_properties::ProvisioningState>,
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
@@ -457,7 +457,7 @@ pub mod blob_folder_mapping_properties {
 pub struct BlobFolderProperties {
     #[serde(rename = "containerName")]
     pub container_name: String,
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     pub prefix: String,
     #[serde(rename = "resourceGroup")]
@@ -473,13 +473,13 @@ pub struct BlobMappingProperties {
     pub container_name: String,
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", skip_serializing)]
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<blob_mapping_properties::DataSetMappingStatus>,
     #[serde(rename = "filePath")]
     pub file_path: String,
     #[serde(rename = "outputType", default, skip_serializing_if = "Option::is_none")]
     pub output_type: Option<blob_mapping_properties::OutputType>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<blob_mapping_properties::ProvisioningState>,
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
@@ -513,7 +513,7 @@ pub mod blob_mapping_properties {
 pub struct BlobProperties {
     #[serde(rename = "containerName")]
     pub container_name: String,
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[serde(rename = "filePath")]
     pub file_path: String,
@@ -542,14 +542,14 @@ pub struct BlobStorageAccountDataSetMappingProperties {
     pub container_name: String,
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", skip_serializing)]
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<blob_storage_account_data_set_mapping_properties::DataSetMappingStatus>,
     pub folder: String,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[serde(rename = "mountPath", default, skip_serializing_if = "Option::is_none")]
     pub mount_path: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<blob_storage_account_data_set_mapping_properties::ProvisioningState>,
     #[serde(rename = "storageAccountResourceId")]
     pub storage_account_resource_id: String,
@@ -572,9 +572,9 @@ pub mod blob_storage_account_data_set_mapping_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageAccountDataSetProperties {
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     pub paths: Vec<BlobStorageAccountPath>,
     #[serde(rename = "storageAccountResourceId")]
@@ -603,35 +603,35 @@ pub struct ConsumerInvitationList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsumerInvitationProperties {
-    #[serde(rename = "dataSetCount", skip_serializing)]
+    #[serde(rename = "dataSetCount", default, skip_serializing_if = "Option::is_none")]
     pub data_set_count: Option<i32>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "expirationDate", skip_serializing)]
+    #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date: Option<String>,
     #[serde(rename = "invitationId")]
     pub invitation_id: String,
-    #[serde(rename = "invitationStatus", skip_serializing)]
+    #[serde(rename = "invitationStatus", default, skip_serializing_if = "Option::is_none")]
     pub invitation_status: Option<consumer_invitation_properties::InvitationStatus>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(rename = "providerEmail", skip_serializing)]
+    #[serde(rename = "providerEmail", default, skip_serializing_if = "Option::is_none")]
     pub provider_email: Option<String>,
-    #[serde(rename = "providerName", skip_serializing)]
+    #[serde(rename = "providerName", default, skip_serializing_if = "Option::is_none")]
     pub provider_name: Option<String>,
-    #[serde(rename = "providerTenantName", skip_serializing)]
+    #[serde(rename = "providerTenantName", default, skip_serializing_if = "Option::is_none")]
     pub provider_tenant_name: Option<String>,
-    #[serde(rename = "respondedAt", skip_serializing)]
+    #[serde(rename = "respondedAt", default, skip_serializing_if = "Option::is_none")]
     pub responded_at: Option<String>,
-    #[serde(rename = "sentAt", skip_serializing)]
+    #[serde(rename = "sentAt", default, skip_serializing_if = "Option::is_none")]
     pub sent_at: Option<String>,
-    #[serde(rename = "shareName", skip_serializing)]
+    #[serde(rename = "shareName", default, skip_serializing_if = "Option::is_none")]
     pub share_name: Option<String>,
-    #[serde(rename = "termsOfUse", skip_serializing)]
+    #[serde(rename = "termsOfUse", default, skip_serializing_if = "Option::is_none")]
     pub terms_of_use: Option<String>,
-    #[serde(rename = "userEmail", skip_serializing)]
+    #[serde(rename = "userEmail", default, skip_serializing_if = "Option::is_none")]
     pub user_email: Option<String>,
-    #[serde(rename = "userName", skip_serializing)]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
 pub mod consumer_invitation_properties {
@@ -659,15 +659,15 @@ pub struct ConsumerSourceDataSetList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsumerSourceDataSetProperties {
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
-    #[serde(rename = "dataSetLocation", skip_serializing)]
+    #[serde(rename = "dataSetLocation", default, skip_serializing_if = "Option::is_none")]
     pub data_set_location: Option<String>,
-    #[serde(rename = "dataSetName", skip_serializing)]
+    #[serde(rename = "dataSetName", default, skip_serializing_if = "Option::is_none")]
     pub data_set_name: Option<String>,
-    #[serde(rename = "dataSetPath", skip_serializing)]
+    #[serde(rename = "dataSetPath", default, skip_serializing_if = "Option::is_none")]
     pub data_set_path: Option<String>,
-    #[serde(rename = "dataSetType", skip_serializing)]
+    #[serde(rename = "dataSetType", default, skip_serializing_if = "Option::is_none")]
     pub data_set_type: Option<consumer_source_data_set_properties::DataSetType>,
 }
 pub mod consumer_source_data_set_properties {
@@ -792,9 +792,9 @@ pub struct DimensionProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Identity {
-    #[serde(rename = "principalId", skip_serializing)]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", skip_serializing)]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
@@ -823,13 +823,13 @@ pub struct InvitationList {
 pub struct InvitationProperties {
     #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date: Option<String>,
-    #[serde(rename = "invitationId", skip_serializing)]
+    #[serde(rename = "invitationId", default, skip_serializing_if = "Option::is_none")]
     pub invitation_id: Option<String>,
-    #[serde(rename = "invitationStatus", skip_serializing)]
+    #[serde(rename = "invitationStatus", default, skip_serializing_if = "Option::is_none")]
     pub invitation_status: Option<invitation_properties::InvitationStatus>,
-    #[serde(rename = "respondedAt", skip_serializing)]
+    #[serde(rename = "respondedAt", default, skip_serializing_if = "Option::is_none")]
     pub responded_at: Option<String>,
-    #[serde(rename = "sentAt", skip_serializing)]
+    #[serde(rename = "sentAt", default, skip_serializing_if = "Option::is_none")]
     pub sent_at: Option<String>,
     #[serde(rename = "targetActiveDirectoryId", default, skip_serializing_if = "Option::is_none")]
     pub target_active_directory_id: Option<String>,
@@ -837,9 +837,9 @@ pub struct InvitationProperties {
     pub target_email: Option<String>,
     #[serde(rename = "targetObjectId", default, skip_serializing_if = "Option::is_none")]
     pub target_object_id: Option<String>,
-    #[serde(rename = "userEmail", skip_serializing)]
+    #[serde(rename = "userEmail", default, skip_serializing_if = "Option::is_none")]
     pub user_email: Option<String>,
-    #[serde(rename = "userName", skip_serializing)]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
 pub mod invitation_properties {
@@ -868,13 +868,13 @@ pub struct KustoClusterDataSetMapping {
 pub struct KustoClusterDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", skip_serializing)]
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<kusto_cluster_data_set_mapping_properties::DataSetMappingStatus>,
     #[serde(rename = "kustoClusterResourceId")]
     pub kusto_cluster_resource_id: String,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<kusto_cluster_data_set_mapping_properties::ProvisioningState>,
 }
 pub mod kusto_cluster_data_set_mapping_properties {
@@ -895,13 +895,13 @@ pub mod kusto_cluster_data_set_mapping_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoClusterDataSetProperties {
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[serde(rename = "kustoClusterResourceId")]
     pub kusto_cluster_resource_id: String,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<kusto_cluster_data_set_properties::ProvisioningState>,
 }
 pub mod kusto_cluster_data_set_properties {
@@ -931,13 +931,13 @@ pub struct KustoDatabaseDataSetMapping {
 pub struct KustoDatabaseDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", skip_serializing)]
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<kusto_database_data_set_mapping_properties::DataSetMappingStatus>,
     #[serde(rename = "kustoClusterResourceId")]
     pub kusto_cluster_resource_id: String,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<kusto_database_data_set_mapping_properties::ProvisioningState>,
 }
 pub mod kusto_database_data_set_mapping_properties {
@@ -958,13 +958,13 @@ pub mod kusto_database_data_set_mapping_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoDatabaseDataSetProperties {
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[serde(rename = "kustoDatabaseResourceId")]
     pub kusto_database_resource_id: String,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<kusto_database_data_set_properties::ProvisioningState>,
 }
 pub mod kusto_database_data_set_properties {
@@ -1091,25 +1091,25 @@ pub struct ProviderShareSubscriptionList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProviderShareSubscriptionProperties {
-    #[serde(rename = "consumerEmail", skip_serializing)]
+    #[serde(rename = "consumerEmail", default, skip_serializing_if = "Option::is_none")]
     pub consumer_email: Option<String>,
-    #[serde(rename = "consumerName", skip_serializing)]
+    #[serde(rename = "consumerName", default, skip_serializing_if = "Option::is_none")]
     pub consumer_name: Option<String>,
-    #[serde(rename = "consumerTenantName", skip_serializing)]
+    #[serde(rename = "consumerTenantName", default, skip_serializing_if = "Option::is_none")]
     pub consumer_tenant_name: Option<String>,
-    #[serde(rename = "createdAt", skip_serializing)]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
     #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date: Option<String>,
-    #[serde(rename = "providerEmail", skip_serializing)]
+    #[serde(rename = "providerEmail", default, skip_serializing_if = "Option::is_none")]
     pub provider_email: Option<String>,
-    #[serde(rename = "providerName", skip_serializing)]
+    #[serde(rename = "providerName", default, skip_serializing_if = "Option::is_none")]
     pub provider_name: Option<String>,
-    #[serde(rename = "sharedAt", skip_serializing)]
+    #[serde(rename = "sharedAt", default, skip_serializing_if = "Option::is_none")]
     pub shared_at: Option<String>,
-    #[serde(rename = "shareSubscriptionObjectId", skip_serializing)]
+    #[serde(rename = "shareSubscriptionObjectId", default, skip_serializing_if = "Option::is_none")]
     pub share_subscription_object_id: Option<String>,
-    #[serde(rename = "shareSubscriptionStatus", skip_serializing)]
+    #[serde(rename = "shareSubscriptionStatus", default, skip_serializing_if = "Option::is_none")]
     pub share_subscription_status: Option<provider_share_subscription_properties::ShareSubscriptionStatus>,
 }
 pub mod provider_share_subscription_properties {
@@ -1124,13 +1124,13 @@ pub mod provider_share_subscription_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyDto {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1163,15 +1163,15 @@ pub struct ScheduledSynchronizationSetting {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledSynchronizationSettingProperties {
-    #[serde(rename = "createdAt", skip_serializing)]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<scheduled_synchronization_setting_properties::ProvisioningState>,
     #[serde(rename = "recurrenceInterval")]
     pub recurrence_interval: scheduled_synchronization_setting_properties::RecurrenceInterval,
     #[serde(rename = "synchronizationTime")]
     pub synchronization_time: String,
-    #[serde(rename = "userName", skip_serializing)]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
 pub mod scheduled_synchronization_setting_properties {
@@ -1198,9 +1198,9 @@ pub struct ScheduledTrigger {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledTriggerProperties {
-    #[serde(rename = "createdAt", skip_serializing)]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<scheduled_trigger_properties::ProvisioningState>,
     #[serde(rename = "recurrenceInterval")]
     pub recurrence_interval: scheduled_trigger_properties::RecurrenceInterval,
@@ -1208,9 +1208,9 @@ pub struct ScheduledTriggerProperties {
     pub synchronization_mode: Option<scheduled_trigger_properties::SynchronizationMode>,
     #[serde(rename = "synchronizationTime")]
     pub synchronization_time: String,
-    #[serde(rename = "triggerStatus", skip_serializing)]
+    #[serde(rename = "triggerStatus", default, skip_serializing_if = "Option::is_none")]
     pub trigger_status: Option<scheduled_trigger_properties::TriggerStatus>,
-    #[serde(rename = "userName", skip_serializing)]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
 pub mod scheduled_trigger_properties {
@@ -1255,19 +1255,19 @@ pub struct ShareList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareProperties {
-    #[serde(rename = "createdAt", skip_serializing)]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<share_properties::ProvisioningState>,
     #[serde(rename = "shareKind", default, skip_serializing_if = "Option::is_none")]
     pub share_kind: Option<share_properties::ShareKind>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub terms: Option<String>,
-    #[serde(rename = "userEmail", skip_serializing)]
+    #[serde(rename = "userEmail", default, skip_serializing_if = "Option::is_none")]
     pub user_email: Option<String>,
-    #[serde(rename = "userName", skip_serializing)]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
 pub mod share_properties {
@@ -1300,35 +1300,35 @@ pub struct ShareSubscriptionList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareSubscriptionProperties {
-    #[serde(rename = "createdAt", skip_serializing)]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
     #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date: Option<String>,
     #[serde(rename = "invitationId")]
     pub invitation_id: String,
-    #[serde(rename = "providerEmail", skip_serializing)]
+    #[serde(rename = "providerEmail", default, skip_serializing_if = "Option::is_none")]
     pub provider_email: Option<String>,
-    #[serde(rename = "providerName", skip_serializing)]
+    #[serde(rename = "providerName", default, skip_serializing_if = "Option::is_none")]
     pub provider_name: Option<String>,
-    #[serde(rename = "providerTenantName", skip_serializing)]
+    #[serde(rename = "providerTenantName", default, skip_serializing_if = "Option::is_none")]
     pub provider_tenant_name: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<share_subscription_properties::ProvisioningState>,
-    #[serde(rename = "shareDescription", skip_serializing)]
+    #[serde(rename = "shareDescription", default, skip_serializing_if = "Option::is_none")]
     pub share_description: Option<String>,
-    #[serde(rename = "shareKind", skip_serializing)]
+    #[serde(rename = "shareKind", default, skip_serializing_if = "Option::is_none")]
     pub share_kind: Option<share_subscription_properties::ShareKind>,
-    #[serde(rename = "shareName", skip_serializing)]
+    #[serde(rename = "shareName", default, skip_serializing_if = "Option::is_none")]
     pub share_name: Option<String>,
-    #[serde(rename = "shareSubscriptionStatus", skip_serializing)]
+    #[serde(rename = "shareSubscriptionStatus", default, skip_serializing_if = "Option::is_none")]
     pub share_subscription_status: Option<share_subscription_properties::ShareSubscriptionStatus>,
-    #[serde(rename = "shareTerms", skip_serializing)]
+    #[serde(rename = "shareTerms", default, skip_serializing_if = "Option::is_none")]
     pub share_terms: Option<String>,
     #[serde(rename = "sourceShareLocation")]
     pub source_share_location: String,
-    #[serde(rename = "userEmail", skip_serializing)]
+    #[serde(rename = "userEmail", default, skip_serializing_if = "Option::is_none")]
     pub user_email: Option<String>,
-    #[serde(rename = "userName", skip_serializing)]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
 pub mod share_subscription_properties {
@@ -1356,19 +1356,19 @@ pub mod share_subscription_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareSubscriptionSynchronization {
-    #[serde(rename = "durationMs", skip_serializing)]
+    #[serde(rename = "durationMs", default, skip_serializing_if = "Option::is_none")]
     pub duration_ms: Option<i32>,
-    #[serde(rename = "endTime", skip_serializing)]
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(rename = "startTime", skip_serializing)]
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(rename = "synchronizationId")]
     pub synchronization_id: String,
-    #[serde(rename = "synchronizationMode", skip_serializing)]
+    #[serde(rename = "synchronizationMode", default, skip_serializing_if = "Option::is_none")]
     pub synchronization_mode: Option<share_subscription_synchronization::SynchronizationMode>,
 }
 pub mod share_subscription_synchronization {
@@ -1405,7 +1405,7 @@ pub struct ShareSynchronization {
     pub status: Option<String>,
     #[serde(rename = "synchronizationId", default, skip_serializing_if = "Option::is_none")]
     pub synchronization_id: Option<String>,
-    #[serde(rename = "synchronizationMode", skip_serializing)]
+    #[serde(rename = "synchronizationMode", default, skip_serializing_if = "Option::is_none")]
     pub synchronization_mode: Option<share_synchronization::SynchronizationMode>,
 }
 pub mod share_synchronization {
@@ -1458,9 +1458,9 @@ pub struct SqlDbTableDataSetMappingProperties {
     pub database_name: String,
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", skip_serializing)]
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<sql_db_table_data_set_mapping_properties::DataSetMappingStatus>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<sql_db_table_data_set_mapping_properties::ProvisioningState>,
     #[serde(rename = "schemaName")]
     pub schema_name: String,
@@ -1489,7 +1489,7 @@ pub mod sql_db_table_data_set_mapping_properties {
 pub struct SqlDbTableProperties {
     #[serde(rename = "databaseName")]
     pub database_name: String,
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[serde(rename = "schemaName")]
     pub schema_name: String,
@@ -1515,11 +1515,11 @@ pub struct SqlDwTableDataSetMapping {
 pub struct SqlDwTableDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", skip_serializing)]
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<sql_dw_table_data_set_mapping_properties::DataSetMappingStatus>,
     #[serde(rename = "dataWarehouseName")]
     pub data_warehouse_name: String,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<sql_dw_table_data_set_mapping_properties::ProvisioningState>,
     #[serde(rename = "schemaName")]
     pub schema_name: String,
@@ -1546,7 +1546,7 @@ pub mod sql_dw_table_data_set_mapping_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDwTableProperties {
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[serde(rename = "dataWarehouseName")]
     pub data_warehouse_name: String,
@@ -1573,9 +1573,9 @@ pub struct SynapseWorkspaceSqlPoolTableDataSetMapping {
 pub struct SynapseWorkspaceSqlPoolTableDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", skip_serializing)]
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<synapse_workspace_sql_pool_table_data_set_mapping_properties::DataSetMappingStatus>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<synapse_workspace_sql_pool_table_data_set_mapping_properties::ProvisioningState>,
     #[serde(rename = "synapseWorkspaceSqlPoolTableResourceId")]
     pub synapse_workspace_sql_pool_table_resource_id: String,
@@ -1598,42 +1598,42 @@ pub mod synapse_workspace_sql_pool_table_data_set_mapping_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynapseWorkspaceSqlPoolTableDataSetProperties {
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[serde(rename = "synapseWorkspaceSqlPoolTableResourceId")]
     pub synapse_workspace_sql_pool_table_resource_id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynchronizationDetails {
-    #[serde(rename = "dataSetId", skip_serializing)]
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
-    #[serde(rename = "dataSetType", skip_serializing)]
+    #[serde(rename = "dataSetType", default, skip_serializing_if = "Option::is_none")]
     pub data_set_type: Option<synchronization_details::DataSetType>,
-    #[serde(rename = "durationMs", skip_serializing)]
+    #[serde(rename = "durationMs", default, skip_serializing_if = "Option::is_none")]
     pub duration_ms: Option<i32>,
-    #[serde(rename = "endTime", skip_serializing)]
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
-    #[serde(rename = "filesRead", skip_serializing)]
+    #[serde(rename = "filesRead", default, skip_serializing_if = "Option::is_none")]
     pub files_read: Option<i64>,
-    #[serde(rename = "filesWritten", skip_serializing)]
+    #[serde(rename = "filesWritten", default, skip_serializing_if = "Option::is_none")]
     pub files_written: Option<i64>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "rowsCopied", skip_serializing)]
+    #[serde(rename = "rowsCopied", default, skip_serializing_if = "Option::is_none")]
     pub rows_copied: Option<i64>,
-    #[serde(rename = "rowsRead", skip_serializing)]
+    #[serde(rename = "rowsRead", default, skip_serializing_if = "Option::is_none")]
     pub rows_read: Option<i64>,
-    #[serde(rename = "sizeRead", skip_serializing)]
+    #[serde(rename = "sizeRead", default, skip_serializing_if = "Option::is_none")]
     pub size_read: Option<i64>,
-    #[serde(rename = "sizeWritten", skip_serializing)]
+    #[serde(rename = "sizeWritten", default, skip_serializing_if = "Option::is_none")]
     pub size_written: Option<i64>,
-    #[serde(rename = "startTime", skip_serializing)]
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[serde(rename = "vCore", skip_serializing)]
+    #[serde(rename = "vCore", default, skip_serializing_if = "Option::is_none")]
     pub v_core: Option<i64>,
 }
 pub mod synchronization_details {

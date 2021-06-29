@@ -6,11 +6,11 @@ pub type ApplicationInsightsComponentProactiveDetectionConfigurationListResult =
     Vec<ApplicationInsightsComponentProactiveDetectionConfiguration>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentProactiveDetectionConfiguration {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -19,7 +19,7 @@ pub struct ApplicationInsightsComponentProactiveDetectionConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentProactiveDetectionConfigurationProperties {
-    #[serde(rename = "Name", skip_serializing)]
+    #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "Enabled", default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
@@ -27,7 +27,7 @@ pub struct ApplicationInsightsComponentProactiveDetectionConfigurationProperties
     pub send_emails_to_subscription_owners: Option<bool>,
     #[serde(rename = "CustomEmails", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_emails: Vec<String>,
-    #[serde(rename = "LastUpdatedTime", skip_serializing)]
+    #[serde(rename = "LastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
     #[serde(rename = "RuleDefinitions", default, skip_serializing_if = "Option::is_none")]
     pub rule_definitions: Option<application_insights_component_proactive_detection_configuration_properties::RuleDefinitions>,
@@ -56,11 +56,11 @@ pub mod application_insights_component_proactive_detection_configuration_propert
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentsResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -81,9 +81,9 @@ pub struct ApplicationInsightsComponent {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentProperties {
-    #[serde(rename = "ApplicationId", skip_serializing)]
+    #[serde(rename = "ApplicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
-    #[serde(rename = "AppId", skip_serializing)]
+    #[serde(rename = "AppId", default, skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
     #[serde(rename = "Application_Type")]
     pub application_type: application_insights_component_properties::ApplicationType,
@@ -91,21 +91,21 @@ pub struct ApplicationInsightsComponentProperties {
     pub flow_type: Option<application_insights_component_properties::FlowType>,
     #[serde(rename = "Request_Source", default, skip_serializing_if = "Option::is_none")]
     pub request_source: Option<application_insights_component_properties::RequestSource>,
-    #[serde(rename = "InstrumentationKey", skip_serializing)]
+    #[serde(rename = "InstrumentationKey", default, skip_serializing_if = "Option::is_none")]
     pub instrumentation_key: Option<String>,
-    #[serde(rename = "CreationDate", skip_serializing)]
+    #[serde(rename = "CreationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
-    #[serde(rename = "TenantId", skip_serializing)]
+    #[serde(rename = "TenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "HockeyAppId", default, skip_serializing_if = "Option::is_none")]
     pub hockey_app_id: Option<String>,
-    #[serde(rename = "HockeyAppToken", skip_serializing)]
+    #[serde(rename = "HockeyAppToken", default, skip_serializing_if = "Option::is_none")]
     pub hockey_app_token: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[serde(rename = "SamplingPercentage", default, skip_serializing_if = "Option::is_none")]
     pub sampling_percentage: Option<f64>,
-    #[serde(rename = "ConnectionString", skip_serializing)]
+    #[serde(rename = "ConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub connection_string: Option<String>,
     #[serde(rename = "RetentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_in_days: Option<i64>,
@@ -113,7 +113,7 @@ pub struct ApplicationInsightsComponentProperties {
     pub disable_ip_masking: Option<bool>,
     #[serde(rename = "ImmediatePurgeDataOn30Days", default, skip_serializing_if = "Option::is_none")]
     pub immediate_purge_data_on30_days: Option<bool>,
-    #[serde(rename = "PrivateLinkScopedResources", skip_serializing)]
+    #[serde(rename = "PrivateLinkScopedResources", default, skip_serializing_if = "Vec::is_empty")]
     pub private_link_scoped_resources: Vec<PrivateLinkScopedResource>,
     #[serde(rename = "publicNetworkAccessForIngestion", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_ingestion: Option<PublicNetworkAccessType>,

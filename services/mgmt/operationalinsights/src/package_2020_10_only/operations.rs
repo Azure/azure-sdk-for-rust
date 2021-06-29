@@ -402,6 +402,7 @@ pub mod clusters {
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
         match rsp.status() {
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::OK => Ok(delete::Response::Ok200),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
@@ -419,6 +420,7 @@ pub mod clusters {
         use crate::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
+            Accepted202,
             Ok200,
             NoContent204,
         }

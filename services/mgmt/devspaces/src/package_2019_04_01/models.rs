@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct ContainerHostMapping {
     #[serde(rename = "containerHostResourceId", default, skip_serializing_if = "Option::is_none")]
     pub container_host_resource_id: Option<String>,
-    #[serde(rename = "mappedControllerResourceId", skip_serializing)]
+    #[serde(rename = "mappedControllerResourceId", default, skip_serializing_if = "Option::is_none")]
     pub mapped_controller_resource_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -22,7 +22,7 @@ pub struct TrackedResource {
 pub struct ResourceProviderOperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceProviderOperationDefinition>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -52,13 +52,13 @@ pub struct Controller {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ControllerProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<controller_properties::ProvisioningState>,
-    #[serde(rename = "hostSuffix", skip_serializing)]
+    #[serde(rename = "hostSuffix", default, skip_serializing_if = "Option::is_none")]
     pub host_suffix: Option<String>,
-    #[serde(rename = "dataPlaneFqdn", skip_serializing)]
+    #[serde(rename = "dataPlaneFqdn", default, skip_serializing_if = "Option::is_none")]
     pub data_plane_fqdn: Option<String>,
-    #[serde(rename = "targetContainerHostApiServerFqdn", skip_serializing)]
+    #[serde(rename = "targetContainerHostApiServerFqdn", default, skip_serializing_if = "Option::is_none")]
     pub target_container_host_api_server_fqdn: Option<String>,
     #[serde(rename = "targetContainerHostResourceId")]
     pub target_container_host_resource_id: String,
@@ -111,7 +111,7 @@ pub struct ControllerUpdateParametersProperties {
 pub struct ControllerList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Controller>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -131,16 +131,16 @@ pub struct ControllerConnectionDetails {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorSpecificConnectionDetails {
-    #[serde(rename = "instanceType", skip_serializing)]
+    #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
     pub instance_type: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -157,10 +157,10 @@ pub struct DevSpacesErrorResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetails {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }

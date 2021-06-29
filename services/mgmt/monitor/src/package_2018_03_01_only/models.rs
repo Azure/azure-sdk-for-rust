@@ -4,11 +4,11 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -191,9 +191,9 @@ pub struct MetricAlertProperties {
     pub auto_mitigate: Option<bool>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<MetricAlertAction>,
-    #[serde(rename = "lastUpdatedTime", skip_serializing)]
+    #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
-    #[serde(rename = "isMigrated", skip_serializing)]
+    #[serde(rename = "isMigrated", default, skip_serializing_if = "Option::is_none")]
     pub is_migrated: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -220,9 +220,9 @@ pub struct MetricAlertPropertiesPatch {
     pub auto_mitigate: Option<bool>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<MetricAlertAction>,
-    #[serde(rename = "lastUpdatedTime", skip_serializing)]
+    #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
-    #[serde(rename = "isMigrated", skip_serializing)]
+    #[serde(rename = "isMigrated", default, skip_serializing_if = "Option::is_none")]
     pub is_migrated: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

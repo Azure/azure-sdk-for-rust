@@ -194,12 +194,7 @@ pub mod connected_cluster {
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: ConnectedCluster =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(update::Response::Created201(rsp_value))
-            }
+            http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
@@ -216,7 +211,7 @@ pub mod connected_cluster {
         #[derive(Debug)]
         pub enum Response {
             Ok200(ConnectedCluster),
-            Created201(ConnectedCluster),
+            Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {

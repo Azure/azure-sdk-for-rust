@@ -50,7 +50,7 @@ pub struct CognitiveServicesAccountUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: sku::Name,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
 pub mod sku {
@@ -101,12 +101,12 @@ pub struct CognitiveServicesAccount {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CognitiveServicesAccountListResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CognitiveServicesAccount>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CognitiveServicesAccountProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<cognitive_services_account_properties::ProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
@@ -144,7 +144,7 @@ pub mod regenerate_key_parameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CognitiveServicesAccountEnumerateSkusResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CognitiveServicesResourceAndSku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

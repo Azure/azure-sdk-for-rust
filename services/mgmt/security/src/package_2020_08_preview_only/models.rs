@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotDefenderSettingsList {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IotDefenderSettingsModel>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -35,11 +35,11 @@ pub mod iot_defender_settings_properties {
 pub struct DownloadLink {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PackageDownloadInfo {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub link: Option<DownloadLink>,
-    #[serde(rename = "versionKind", skip_serializing)]
+    #[serde(rename = "versionKind", default, skip_serializing_if = "Option::is_none")]
     pub version_kind: Option<package_download_info::VersionKind>,
 }
 pub mod package_download_info {
@@ -55,31 +55,31 @@ pub mod package_download_info {
 pub struct UpgradePackageDownloadInfo {
     #[serde(flatten)]
     pub package_download_info: PackageDownloadInfo,
-    #[serde(rename = "fromVersion", skip_serializing)]
+    #[serde(rename = "fromVersion", default, skip_serializing_if = "Option::is_none")]
     pub from_version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PackageDownloads {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sensor: Option<package_downloads::Sensor>,
-    #[serde(rename = "centralManager", skip_serializing)]
+    #[serde(rename = "centralManager", default, skip_serializing_if = "Option::is_none")]
     pub central_manager: Option<package_downloads::CentralManager>,
-    #[serde(rename = "threatIntelligence", skip_serializing)]
+    #[serde(rename = "threatIntelligence", default, skip_serializing_if = "Vec::is_empty")]
     pub threat_intelligence: Vec<PackageDownloadInfo>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub snmp: Vec<PackageDownloadInfo>,
-    #[serde(rename = "wmiTool", skip_serializing)]
+    #[serde(rename = "wmiTool", default, skip_serializing_if = "Vec::is_empty")]
     pub wmi_tool: Vec<PackageDownloadInfo>,
-    #[serde(rename = "authorizedDevicesImportTemplate", skip_serializing)]
+    #[serde(rename = "authorizedDevicesImportTemplate", default, skip_serializing_if = "Vec::is_empty")]
     pub authorized_devices_import_template: Vec<PackageDownloadInfo>,
-    #[serde(rename = "deviceInformationUpdateImportTemplate", skip_serializing)]
+    #[serde(rename = "deviceInformationUpdateImportTemplate", default, skip_serializing_if = "Vec::is_empty")]
     pub device_information_update_import_template: Vec<PackageDownloadInfo>,
 }
 pub mod package_downloads {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Sensor {
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub full: Option<sensor::Full>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub upgrade: Vec<UpgradePackageDownloadInfo>,
@@ -88,7 +88,7 @@ pub mod package_downloads {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub struct Full {
-            #[serde(skip_serializing)]
+            #[serde(default, skip_serializing_if = "Vec::is_empty")]
             pub iso: Vec<PackageDownloadInfo>,
             #[serde(default, skip_serializing_if = "Option::is_none")]
             pub ovf: Option<full::Ovf>,
@@ -97,42 +97,42 @@ pub mod package_downloads {
             use super::*;
             #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
             pub struct Ovf {
-                #[serde(skip_serializing)]
+                #[serde(default, skip_serializing_if = "Vec::is_empty")]
                 pub enterprise: Vec<PackageDownloadInfo>,
-                #[serde(skip_serializing)]
+                #[serde(default, skip_serializing_if = "Vec::is_empty")]
                 pub medium: Vec<PackageDownloadInfo>,
-                #[serde(skip_serializing)]
+                #[serde(default, skip_serializing_if = "Vec::is_empty")]
                 pub line: Vec<PackageDownloadInfo>,
             }
         }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct CentralManager {
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub full: Option<central_manager::Full>,
-        #[serde(skip_serializing)]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub upgrade: Vec<UpgradePackageDownloadInfo>,
     }
     pub mod central_manager {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub struct Full {
-            #[serde(skip_serializing)]
+            #[serde(default, skip_serializing_if = "Vec::is_empty")]
             pub iso: Vec<PackageDownloadInfo>,
-            #[serde(skip_serializing)]
+            #[serde(default, skip_serializing_if = "Option::is_none")]
             pub ovf: Option<full::Ovf>,
         }
         pub mod full {
             use super::*;
             #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
             pub struct Ovf {
-                #[serde(skip_serializing)]
+                #[serde(default, skip_serializing_if = "Vec::is_empty")]
                 pub enterprise: Vec<PackageDownloadInfo>,
-                #[serde(rename = "enterpriseHighAvailability", skip_serializing)]
+                #[serde(rename = "enterpriseHighAvailability", default, skip_serializing_if = "Vec::is_empty")]
                 pub enterprise_high_availability: Vec<PackageDownloadInfo>,
-                #[serde(skip_serializing)]
+                #[serde(default, skip_serializing_if = "Vec::is_empty")]
                 pub medium: Vec<PackageDownloadInfo>,
-                #[serde(rename = "mediumHighAvailability", skip_serializing)]
+                #[serde(rename = "mediumHighAvailability", default, skip_serializing_if = "Vec::is_empty")]
                 pub medium_high_availability: Vec<PackageDownloadInfo>,
             }
         }
@@ -140,7 +140,7 @@ pub mod package_downloads {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotSensorsList {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IotSensorsModel>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -152,23 +152,23 @@ pub struct IotSensorsModel {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotSensorProperties {
-    #[serde(rename = "connectivityTime", skip_serializing)]
+    #[serde(rename = "connectivityTime", default, skip_serializing_if = "Option::is_none")]
     pub connectivity_time: Option<String>,
-    #[serde(rename = "creationTime", skip_serializing)]
+    #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
-    #[serde(rename = "dynamicLearning", skip_serializing)]
+    #[serde(rename = "dynamicLearning", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_learning: Option<bool>,
-    #[serde(rename = "learningMode", skip_serializing)]
+    #[serde(rename = "learningMode", default, skip_serializing_if = "Option::is_none")]
     pub learning_mode: Option<bool>,
-    #[serde(rename = "sensorStatus", skip_serializing)]
+    #[serde(rename = "sensorStatus", default, skip_serializing_if = "Option::is_none")]
     pub sensor_status: Option<iot_sensor_properties::SensorStatus>,
-    #[serde(rename = "sensorVersion", skip_serializing)]
+    #[serde(rename = "sensorVersion", default, skip_serializing_if = "Option::is_none")]
     pub sensor_version: Option<String>,
     #[serde(rename = "tiAutomaticUpdates", default, skip_serializing_if = "Option::is_none")]
     pub ti_automatic_updates: Option<bool>,
-    #[serde(rename = "tiStatus", skip_serializing)]
+    #[serde(rename = "tiStatus", default, skip_serializing_if = "Option::is_none")]
     pub ti_status: Option<iot_sensor_properties::TiStatus>,
-    #[serde(rename = "tiVersion", skip_serializing)]
+    #[serde(rename = "tiVersion", default, skip_serializing_if = "Option::is_none")]
     pub ti_version: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub zone: Option<String>,
@@ -204,7 +204,7 @@ pub struct ResetPasswordInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceList {
     pub value: Vec<Device>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -220,21 +220,21 @@ pub struct DeviceProperties {
     pub display_name: Option<String>,
     #[serde(rename = "deviceType", default, skip_serializing_if = "Option::is_none")]
     pub device_type: Option<String>,
-    #[serde(rename = "sourceName", skip_serializing)]
+    #[serde(rename = "sourceName", default, skip_serializing_if = "Option::is_none")]
     pub source_name: Option<String>,
-    #[serde(rename = "networkInterfaces", skip_serializing)]
+    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
     pub network_interfaces: Vec<NetworkInterface>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vendor: Option<String>,
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
     pub os_name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub protocols: Vec<Protocol>,
-    #[serde(rename = "lastActiveTime", skip_serializing)]
+    #[serde(rename = "lastActiveTime", default, skip_serializing_if = "Option::is_none")]
     pub last_active_time: Option<String>,
-    #[serde(rename = "lastUpdateTime", skip_serializing)]
+    #[serde(rename = "lastUpdateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_update_time: Option<String>,
-    #[serde(rename = "managementState", skip_serializing)]
+    #[serde(rename = "managementState", default, skip_serializing_if = "Option::is_none")]
     pub management_state: Option<device_properties::ManagementState>,
     #[serde(rename = "authorizationState", default, skip_serializing_if = "Option::is_none")]
     pub authorization_state: Option<device_properties::AuthorizationState>,
@@ -244,25 +244,25 @@ pub struct DeviceProperties {
     pub purdue_level: Option<device_properties::PurdueLevel>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub firmwares: Vec<Firmware>,
-    #[serde(rename = "discoveryTime", skip_serializing)]
+    #[serde(rename = "discoveryTime", default, skip_serializing_if = "Option::is_none")]
     pub discovery_time: Option<String>,
-    #[serde(rename = "programmingState", skip_serializing)]
+    #[serde(rename = "programmingState", default, skip_serializing_if = "Option::is_none")]
     pub programming_state: Option<device_properties::ProgrammingState>,
-    #[serde(rename = "lastProgrammingTime", skip_serializing)]
+    #[serde(rename = "lastProgrammingTime", default, skip_serializing_if = "Option::is_none")]
     pub last_programming_time: Option<String>,
-    #[serde(rename = "scanningFunctionality", skip_serializing)]
+    #[serde(rename = "scanningFunctionality", default, skip_serializing_if = "Option::is_none")]
     pub scanning_functionality: Option<device_properties::ScanningFunctionality>,
-    #[serde(rename = "lastScanTime", skip_serializing)]
+    #[serde(rename = "lastScanTime", default, skip_serializing_if = "Option::is_none")]
     pub last_scan_time: Option<String>,
-    #[serde(rename = "riskScore", skip_serializing)]
+    #[serde(rename = "riskScore", default, skip_serializing_if = "Option::is_none")]
     pub risk_score: Option<i32>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sensors: Vec<Sensor>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub site: Option<Site>,
-    #[serde(rename = "deviceStatus", skip_serializing)]
+    #[serde(rename = "deviceStatus", default, skip_serializing_if = "Option::is_none")]
     pub device_status: Option<device_properties::DeviceStatus>,
 }
 pub mod device_properties {
@@ -310,31 +310,31 @@ pub struct NetworkInterface {
     pub ip_address: Option<IpAddress>,
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<MacAddress>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub vlans: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IpAddress {
-    #[serde(rename = "v4Address", skip_serializing)]
+    #[serde(rename = "v4Address", default, skip_serializing_if = "Option::is_none")]
     pub v4_address: Option<String>,
-    #[serde(rename = "detectionTime", skip_serializing)]
+    #[serde(rename = "detectionTime", default, skip_serializing_if = "Option::is_none")]
     pub detection_time: Option<String>,
-    #[serde(rename = "subnetCidr", skip_serializing)]
+    #[serde(rename = "subnetCidr", default, skip_serializing_if = "Option::is_none")]
     pub subnet_cidr: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
-    #[serde(rename = "fqdnLastLookupTime", skip_serializing)]
+    #[serde(rename = "fqdnLastLookupTime", default, skip_serializing_if = "Option::is_none")]
     pub fqdn_last_lookup_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MacAddress {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
-    #[serde(rename = "detectionTime", skip_serializing)]
+    #[serde(rename = "detectionTime", default, skip_serializing_if = "Option::is_none")]
     pub detection_time: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub significance: Option<mac_address::Significance>,
-    #[serde(rename = "relationToIpStatus", skip_serializing)]
+    #[serde(rename = "relationToIpStatus", default, skip_serializing_if = "Option::is_none")]
     pub relation_to_ip_status: Option<mac_address::RelationToIpStatus>,
 }
 pub mod mac_address {
@@ -352,43 +352,43 @@ pub mod mac_address {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Firmware {
-    #[serde(rename = "moduleAddress", skip_serializing)]
+    #[serde(rename = "moduleAddress", default, skip_serializing_if = "Option::is_none")]
     pub module_address: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rack: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub slot: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub serial: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-    #[serde(rename = "additionalData", skip_serializing)]
+    #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
     pub additional_data: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Protocol {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identifiers: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sensor {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub zone: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Site {
-    #[serde(rename = "displayName", skip_serializing)]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OnPremiseIotSensorsList {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OnPremiseIotSensor>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -402,7 +402,7 @@ pub struct OnPremiseIotSensor {
 pub struct OnPremiseIotSensorProperties {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotSitesList {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IotSitesModel>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -421,9 +421,9 @@ pub struct IotSiteProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotAlertListModel {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IotAlertModel>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -435,15 +435,15 @@ pub struct IotAlertModel {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotAlertPropertiesModel {
-    #[serde(rename = "systemAlertId", skip_serializing)]
+    #[serde(rename = "systemAlertId", default, skip_serializing_if = "Option::is_none")]
     pub system_alert_id: Option<String>,
-    #[serde(rename = "compromisedEntity", skip_serializing)]
+    #[serde(rename = "compromisedEntity", default, skip_serializing_if = "Option::is_none")]
     pub compromised_entity: Option<String>,
-    #[serde(rename = "alertType", skip_serializing)]
+    #[serde(rename = "alertType", default, skip_serializing_if = "Option::is_none")]
     pub alert_type: Option<String>,
-    #[serde(rename = "startTimeUtc", skip_serializing)]
+    #[serde(rename = "startTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub start_time_utc: Option<String>,
-    #[serde(rename = "endTimeUtc", skip_serializing)]
+    #[serde(rename = "endTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub end_time_utc: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub entities: Vec<serde_json::Value>,
@@ -464,23 +464,23 @@ pub struct IotAlertType {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotAlertTypeProperties {
-    #[serde(rename = "alertDisplayName", skip_serializing)]
+    #[serde(rename = "alertDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub alert_display_name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<iot_alert_type_properties::Severity>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "providerName", skip_serializing)]
+    #[serde(rename = "providerName", default, skip_serializing_if = "Option::is_none")]
     pub provider_name: Option<String>,
-    #[serde(rename = "productName", skip_serializing)]
+    #[serde(rename = "productName", default, skip_serializing_if = "Option::is_none")]
     pub product_name: Option<String>,
-    #[serde(rename = "productComponentName", skip_serializing)]
+    #[serde(rename = "productComponentName", default, skip_serializing_if = "Option::is_none")]
     pub product_component_name: Option<String>,
-    #[serde(rename = "vendorName", skip_serializing)]
+    #[serde(rename = "vendorName", default, skip_serializing_if = "Option::is_none")]
     pub vendor_name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub intent: Option<iot_alert_type_properties::Intent>,
-    #[serde(rename = "remediationSteps", skip_serializing)]
+    #[serde(rename = "remediationSteps", default, skip_serializing_if = "Vec::is_empty")]
     pub remediation_steps: Vec<String>,
 }
 pub mod iot_alert_type_properties {
@@ -514,9 +514,9 @@ pub mod iot_alert_type_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotRecommendationListModel {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IotRecommendationModel>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -528,11 +528,11 @@ pub struct IotRecommendationModel {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotRecommendationPropertiesModel {
-    #[serde(rename = "deviceId", skip_serializing)]
+    #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
-    #[serde(rename = "recommendationType", skip_serializing)]
+    #[serde(rename = "recommendationType", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_type: Option<String>,
-    #[serde(rename = "discoveredTimeUtc", skip_serializing)]
+    #[serde(rename = "discoveredTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub discovered_time_utc: Option<String>,
     #[serde(rename = "recommendationAdditionalData", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_additional_data: Option<serde_json::Value>,
@@ -551,23 +551,23 @@ pub struct IotRecommendationType {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotRecommendationTypeProperties {
-    #[serde(rename = "recommendationDisplayName", skip_serializing)]
+    #[serde(rename = "recommendationDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_display_name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<iot_recommendation_type_properties::Severity>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "productName", skip_serializing)]
+    #[serde(rename = "productName", default, skip_serializing_if = "Option::is_none")]
     pub product_name: Option<String>,
-    #[serde(rename = "productComponentName", skip_serializing)]
+    #[serde(rename = "productComponentName", default, skip_serializing_if = "Option::is_none")]
     pub product_component_name: Option<String>,
-    #[serde(rename = "vendorName", skip_serializing)]
+    #[serde(rename = "vendorName", default, skip_serializing_if = "Option::is_none")]
     pub vendor_name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub control: Option<String>,
-    #[serde(rename = "remediationSteps", skip_serializing)]
+    #[serde(rename = "remediationSteps", default, skip_serializing_if = "Vec::is_empty")]
     pub remediation_steps: Vec<String>,
-    #[serde(rename = "dataSource", skip_serializing)]
+    #[serde(rename = "dataSource", default, skip_serializing_if = "Option::is_none")]
     pub data_source: Option<String>,
 }
 pub mod iot_recommendation_type_properties {
@@ -590,30 +590,30 @@ pub struct CloudError {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudErrorBody {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
-    #[serde(rename = "additionalInfo", skip_serializing)]
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

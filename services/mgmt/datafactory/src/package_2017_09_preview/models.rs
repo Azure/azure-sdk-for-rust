@@ -4,11 +4,11 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -17,13 +17,13 @@ pub struct Resource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -96,7 +96,7 @@ pub struct IntegrationRuntimeResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatusResponse {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     pub properties: IntegrationRuntimeStatus,
 }
@@ -108,7 +108,7 @@ pub struct IntegrationRuntimeStatusListResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateIntegrationRuntimeRequest {
-    #[serde(rename = "autoUpdate", skip_serializing)]
+    #[serde(rename = "autoUpdate", default, skip_serializing_if = "Option::is_none")]
     pub auto_update: Option<IntegrationRuntimeAutoUpdate>,
     #[serde(rename = "updateDelayOffset", default, skip_serializing_if = "Option::is_none")]
     pub update_delay_offset: Option<String>,
@@ -208,11 +208,11 @@ pub struct FactoryRepoUpdate {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FactoryProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-    #[serde(rename = "createTime", skip_serializing)]
+    #[serde(rename = "createTime", default, skip_serializing_if = "Option::is_none")]
     pub create_time: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[serde(rename = "vstsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub vsts_configuration: Option<FactoryVstsConfiguration>,
@@ -272,9 +272,9 @@ pub struct FactoryUpdateParameters {
 pub struct FactoryIdentity {
     #[serde(rename = "type")]
     pub type_: factory_identity::Type,
-    #[serde(rename = "principalId", skip_serializing)]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", skip_serializing)]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
 pub mod factory_identity {
@@ -393,32 +393,32 @@ pub struct PipelineRunQueryResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineRun {
-    #[serde(rename = "runId", skip_serializing)]
+    #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
-    #[serde(rename = "pipelineName", skip_serializing)]
+    #[serde(rename = "pipelineName", default, skip_serializing_if = "Option::is_none")]
     pub pipeline_name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
     #[serde(rename = "invokedBy", default, skip_serializing_if = "Option::is_none")]
     pub invoked_by: Option<PipelineRunInvokedBy>,
-    #[serde(rename = "lastUpdated", skip_serializing)]
+    #[serde(rename = "lastUpdated", default, skip_serializing_if = "Option::is_none")]
     pub last_updated: Option<String>,
-    #[serde(rename = "runStart", skip_serializing)]
+    #[serde(rename = "runStart", default, skip_serializing_if = "Option::is_none")]
     pub run_start: Option<String>,
-    #[serde(rename = "runEnd", skip_serializing)]
+    #[serde(rename = "runEnd", default, skip_serializing_if = "Option::is_none")]
     pub run_end: Option<String>,
-    #[serde(rename = "durationInMs", skip_serializing)]
+    #[serde(rename = "durationInMs", default, skip_serializing_if = "Option::is_none")]
     pub duration_in_ms: Option<i64>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineRunInvokedBy {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -429,31 +429,31 @@ pub struct ActivityRunsListResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityRun {
-    #[serde(rename = "pipelineName", skip_serializing)]
+    #[serde(rename = "pipelineName", default, skip_serializing_if = "Option::is_none")]
     pub pipeline_name: Option<String>,
-    #[serde(rename = "pipelineRunId", skip_serializing)]
+    #[serde(rename = "pipelineRunId", default, skip_serializing_if = "Option::is_none")]
     pub pipeline_run_id: Option<String>,
-    #[serde(rename = "activityName", skip_serializing)]
+    #[serde(rename = "activityName", default, skip_serializing_if = "Option::is_none")]
     pub activity_name: Option<String>,
-    #[serde(rename = "activityType", skip_serializing)]
+    #[serde(rename = "activityType", default, skip_serializing_if = "Option::is_none")]
     pub activity_type: Option<String>,
-    #[serde(rename = "activityRunId", skip_serializing)]
+    #[serde(rename = "activityRunId", default, skip_serializing_if = "Option::is_none")]
     pub activity_run_id: Option<String>,
-    #[serde(rename = "linkedServiceName", skip_serializing)]
+    #[serde(rename = "linkedServiceName", default, skip_serializing_if = "Option::is_none")]
     pub linked_service_name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[serde(rename = "activityRunStart", skip_serializing)]
+    #[serde(rename = "activityRunStart", default, skip_serializing_if = "Option::is_none")]
     pub activity_run_start: Option<String>,
-    #[serde(rename = "activityRunEnd", skip_serializing)]
+    #[serde(rename = "activityRunEnd", default, skip_serializing_if = "Option::is_none")]
     pub activity_run_end: Option<String>,
-    #[serde(rename = "durationInMs", skip_serializing)]
+    #[serde(rename = "durationInMs", default, skip_serializing_if = "Option::is_none")]
     pub duration_in_ms: Option<i64>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub input: Option<serde_json::Value>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<serde_json::Value>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -464,21 +464,21 @@ pub struct TriggerRunListResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerRun {
-    #[serde(rename = "triggerRunId", skip_serializing)]
+    #[serde(rename = "triggerRunId", default, skip_serializing_if = "Option::is_none")]
     pub trigger_run_id: Option<String>,
-    #[serde(rename = "triggerName", skip_serializing)]
+    #[serde(rename = "triggerName", default, skip_serializing_if = "Option::is_none")]
     pub trigger_name: Option<String>,
-    #[serde(rename = "triggerType", skip_serializing)]
+    #[serde(rename = "triggerType", default, skip_serializing_if = "Option::is_none")]
     pub trigger_type: Option<String>,
-    #[serde(rename = "triggerRunTimestamp", skip_serializing)]
+    #[serde(rename = "triggerRunTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub trigger_run_timestamp: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<trigger_run::Status>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
-    #[serde(rename = "triggeredPipelines", skip_serializing)]
+    #[serde(rename = "triggeredPipelines", default, skip_serializing_if = "Option::is_none")]
     pub triggered_pipelines: Option<serde_json::Value>,
 }
 pub mod trigger_run {
@@ -573,17 +573,17 @@ pub struct OperationMetricAvailability {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeConnectionInfo {
-    #[serde(rename = "serviceToken", skip_serializing)]
+    #[serde(rename = "serviceToken", default, skip_serializing_if = "Option::is_none")]
     pub service_token: Option<String>,
-    #[serde(rename = "identityCertThumbprint", skip_serializing)]
+    #[serde(rename = "identityCertThumbprint", default, skip_serializing_if = "Option::is_none")]
     pub identity_cert_thumbprint: Option<String>,
-    #[serde(rename = "hostServiceUri", skip_serializing)]
+    #[serde(rename = "hostServiceUri", default, skip_serializing_if = "Option::is_none")]
     pub host_service_uri: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-    #[serde(rename = "publicKey", skip_serializing)]
+    #[serde(rename = "publicKey", default, skip_serializing_if = "Option::is_none")]
     pub public_key: Option<String>,
-    #[serde(rename = "isIdentityCertExprired", skip_serializing)]
+    #[serde(rename = "isIdentityCertExprired", default, skip_serializing_if = "Option::is_none")]
     pub is_identity_cert_exprired: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -622,60 +622,60 @@ pub struct IntegrationRuntimeMonitoringData {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeNodeMonitoringData {
-    #[serde(rename = "nodeName", skip_serializing)]
+    #[serde(rename = "nodeName", default, skip_serializing_if = "Option::is_none")]
     pub node_name: Option<String>,
-    #[serde(rename = "availableMemoryInMB", skip_serializing)]
+    #[serde(rename = "availableMemoryInMB", default, skip_serializing_if = "Option::is_none")]
     pub available_memory_in_mb: Option<i64>,
-    #[serde(rename = "cpuUtilization", skip_serializing)]
+    #[serde(rename = "cpuUtilization", default, skip_serializing_if = "Option::is_none")]
     pub cpu_utilization: Option<f64>,
-    #[serde(rename = "concurrentJobsLimit", skip_serializing)]
+    #[serde(rename = "concurrentJobsLimit", default, skip_serializing_if = "Option::is_none")]
     pub concurrent_jobs_limit: Option<i64>,
-    #[serde(rename = "concurrentJobsRunning", skip_serializing)]
+    #[serde(rename = "concurrentJobsRunning", default, skip_serializing_if = "Option::is_none")]
     pub concurrent_jobs_running: Option<i64>,
-    #[serde(rename = "maxConcurrentJobs", skip_serializing)]
+    #[serde(rename = "maxConcurrentJobs", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_jobs: Option<i64>,
-    #[serde(rename = "sentBytes", skip_serializing)]
+    #[serde(rename = "sentBytes", default, skip_serializing_if = "Option::is_none")]
     pub sent_bytes: Option<f64>,
-    #[serde(rename = "receivedBytes", skip_serializing)]
+    #[serde(rename = "receivedBytes", default, skip_serializing_if = "Option::is_none")]
     pub received_bytes: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelfHostedIntegrationRuntimeNode {
-    #[serde(rename = "nodeName", skip_serializing)]
+    #[serde(rename = "nodeName", default, skip_serializing_if = "Option::is_none")]
     pub node_name: Option<String>,
-    #[serde(rename = "machineName", skip_serializing)]
+    #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
     pub machine_name: Option<String>,
-    #[serde(rename = "hostServiceUri", skip_serializing)]
+    #[serde(rename = "hostServiceUri", default, skip_serializing_if = "Option::is_none")]
     pub host_service_uri: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<self_hosted_integration_runtime_node::Status>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<serde_json::Value>,
-    #[serde(rename = "versionStatus", skip_serializing)]
+    #[serde(rename = "versionStatus", default, skip_serializing_if = "Option::is_none")]
     pub version_status: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-    #[serde(rename = "registerTime", skip_serializing)]
+    #[serde(rename = "registerTime", default, skip_serializing_if = "Option::is_none")]
     pub register_time: Option<String>,
-    #[serde(rename = "lastConnectTime", skip_serializing)]
+    #[serde(rename = "lastConnectTime", default, skip_serializing_if = "Option::is_none")]
     pub last_connect_time: Option<String>,
-    #[serde(rename = "expiryTime", skip_serializing)]
+    #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time: Option<String>,
-    #[serde(rename = "lastStartTime", skip_serializing)]
+    #[serde(rename = "lastStartTime", default, skip_serializing_if = "Option::is_none")]
     pub last_start_time: Option<String>,
-    #[serde(rename = "lastStopTime", skip_serializing)]
+    #[serde(rename = "lastStopTime", default, skip_serializing_if = "Option::is_none")]
     pub last_stop_time: Option<String>,
-    #[serde(rename = "lastUpdateResult", skip_serializing)]
+    #[serde(rename = "lastUpdateResult", default, skip_serializing_if = "Option::is_none")]
     pub last_update_result: Option<self_hosted_integration_runtime_node::LastUpdateResult>,
-    #[serde(rename = "lastStartUpdateTime", skip_serializing)]
+    #[serde(rename = "lastStartUpdateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_start_update_time: Option<String>,
-    #[serde(rename = "lastEndUpdateTime", skip_serializing)]
+    #[serde(rename = "lastEndUpdateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_end_update_time: Option<String>,
-    #[serde(rename = "isActiveDispatcher", skip_serializing)]
+    #[serde(rename = "isActiveDispatcher", default, skip_serializing_if = "Option::is_none")]
     pub is_active_dispatcher: Option<bool>,
-    #[serde(rename = "concurrentJobsLimit", skip_serializing)]
+    #[serde(rename = "concurrentJobsLimit", default, skip_serializing_if = "Option::is_none")]
     pub concurrent_jobs_limit: Option<i64>,
-    #[serde(rename = "maxConcurrentJobs", skip_serializing)]
+    #[serde(rename = "maxConcurrentJobs", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_jobs: Option<i64>,
 }
 pub mod self_hosted_integration_runtime_node {
@@ -698,7 +698,7 @@ pub mod self_hosted_integration_runtime_node {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeNodeIpAddress {
-    #[serde(rename = "ipAddress", skip_serializing)]
+    #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -717,9 +717,9 @@ pub enum IntegrationRuntimeType {
 pub struct IntegrationRuntimeStatus {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<IntegrationRuntimeType>,
-    #[serde(rename = "dataFactoryName", skip_serializing)]
+    #[serde(rename = "dataFactoryName", default, skip_serializing_if = "Option::is_none")]
     pub data_factory_name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<IntegrationRuntimeState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

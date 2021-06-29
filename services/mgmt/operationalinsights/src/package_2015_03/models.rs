@@ -123,11 +123,11 @@ pub struct SearchMetadata {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SavedSearch {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
@@ -211,11 +211,11 @@ pub struct StorageInsightListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -223,11 +223,11 @@ pub struct Resource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -276,19 +276,19 @@ pub struct SharedKeys {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailableServiceTier {
-    #[serde(rename = "ServiceTier", skip_serializing)]
+    #[serde(rename = "ServiceTier", default, skip_serializing_if = "Option::is_none")]
     pub service_tier: Option<available_service_tier::ServiceTier>,
-    #[serde(rename = "Enabled", skip_serializing)]
+    #[serde(rename = "Enabled", default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
-    #[serde(rename = "MinimumRetention", skip_serializing)]
+    #[serde(rename = "MinimumRetention", default, skip_serializing_if = "Option::is_none")]
     pub minimum_retention: Option<i64>,
-    #[serde(rename = "MaximumRetention", skip_serializing)]
+    #[serde(rename = "MaximumRetention", default, skip_serializing_if = "Option::is_none")]
     pub maximum_retention: Option<i64>,
-    #[serde(rename = "DefaultRetention", skip_serializing)]
+    #[serde(rename = "DefaultRetention", default, skip_serializing_if = "Option::is_none")]
     pub default_retention: Option<i64>,
-    #[serde(rename = "CapacityReservationLevel", skip_serializing)]
+    #[serde(rename = "CapacityReservationLevel", default, skip_serializing_if = "Option::is_none")]
     pub capacity_reservation_level: Option<i64>,
-    #[serde(rename = "LastSkuUpdate", skip_serializing)]
+    #[serde(rename = "LastSkuUpdate", default, skip_serializing_if = "Option::is_none")]
     pub last_sku_update: Option<String>,
 }
 pub mod available_service_tier {

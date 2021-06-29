@@ -53,14 +53,14 @@ pub enum JobName {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobStatus {
-    #[serde(rename = "jobName", skip_serializing)]
+    #[serde(rename = "jobName", default, skip_serializing_if = "Option::is_none")]
     pub job_name: Option<JobName>,
-    #[serde(rename = "jobProgress", skip_serializing)]
+    #[serde(rename = "jobProgress", default, skip_serializing_if = "Option::is_none")]
     pub job_progress: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MoveResourceStatus {
-    #[serde(rename = "moveState", skip_serializing)]
+    #[serde(rename = "moveState", default, skip_serializing_if = "Option::is_none")]
     pub move_state: Option<MoveState>,
     #[serde(rename = "jobStatus", default, skip_serializing_if = "Option::is_none")]
     pub job_status: Option<JobStatus>,
@@ -113,11 +113,11 @@ pub struct AutomaticResolutionProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MoveResourceProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "sourceId")]
     pub source_id: String,
-    #[serde(rename = "targetId", skip_serializing)]
+    #[serde(rename = "targetId", default, skip_serializing_if = "Option::is_none")]
     pub target_id: Option<String>,
     #[serde(rename = "existingTargetId", default, skip_serializing_if = "Option::is_none")]
     pub existing_target_id: Option<String>,
@@ -125,24 +125,24 @@ pub struct MoveResourceProperties {
     pub resource_settings: Option<ResourceSettings>,
     #[serde(rename = "sourceResourceSettings", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_settings: Option<ResourceSettings>,
-    #[serde(rename = "moveStatus", skip_serializing)]
+    #[serde(rename = "moveStatus", default, skip_serializing_if = "Option::is_none")]
     pub move_status: Option<serde_json::Value>,
-    #[serde(rename = "dependsOn", skip_serializing)]
+    #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
     pub depends_on: Vec<MoveResourceDependency>,
     #[serde(rename = "dependsOnOverrides", default, skip_serializing_if = "Vec::is_empty")]
     pub depends_on_overrides: Vec<MoveResourceDependencyOverride>,
-    #[serde(rename = "isResolveRequired", skip_serializing)]
+    #[serde(rename = "isResolveRequired", default, skip_serializing_if = "Option::is_none")]
     pub is_resolve_required: Option<bool>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub errors: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MoveResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MoveResourceProperties>,
@@ -167,20 +167,20 @@ pub struct MoveCollectionProperties {
     pub source_region: String,
     #[serde(rename = "targetRegion")]
     pub target_region: String,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub errors: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MoveCollection {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -271,7 +271,7 @@ pub struct MoveResourceCollection {
     pub next_link: Option<String>,
     #[serde(rename = "summaryCollection", default, skip_serializing_if = "Option::is_none")]
     pub summary_collection: Option<SummaryCollection>,
-    #[serde(rename = "totalCount", skip_serializing)]
+    #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
     pub total_count: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -296,7 +296,7 @@ pub struct UnresolvedDependencyCollection {
     pub next_link: Option<String>,
     #[serde(rename = "summaryCollection", default, skip_serializing_if = "Option::is_none")]
     pub summary_collection: Option<SummaryCollection>,
-    #[serde(rename = "totalCount", skip_serializing)]
+    #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
     pub total_count: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -344,13 +344,13 @@ pub struct MoveResourceError {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MoveResourceErrorBody {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<MoveResourceErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -614,15 +614,15 @@ pub struct CloudErrorBody {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationStatus {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[serde(rename = "startTime", skip_serializing)]
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
-    #[serde(rename = "endTime", skip_serializing)]
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<OperationStatusError>,
@@ -631,35 +631,35 @@ pub struct OperationStatus {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationStatusError {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<OperationStatusError>,
-    #[serde(rename = "additionalInfo", skip_serializing)]
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<OperationErrorAdditionalInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationStatusProperties {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationErrorAdditionalInfo {
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<MoveErrorInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MoveErrorInfo {
-    #[serde(rename = "moveResources", skip_serializing)]
+    #[serde(rename = "moveResources", default, skip_serializing_if = "Vec::is_empty")]
     pub move_resources: Vec<AffectedMoveResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AffectedMoveResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "sourceId", skip_serializing)]
+    #[serde(rename = "sourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_id: Option<String>,
-    #[serde(rename = "moveResources", skip_serializing)]
+    #[serde(rename = "moveResources", default, skip_serializing_if = "Vec::is_empty")]
     pub move_resources: Vec<AffectedMoveResource>,
 }

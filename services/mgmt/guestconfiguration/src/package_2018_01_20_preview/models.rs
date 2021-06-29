@@ -40,26 +40,26 @@ pub struct ConfigurationParameterList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationParameter {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestConfigurationAssignmentProperties {
     #[serde(rename = "guestConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub guest_configuration: Option<GuestConfigurationNavigation>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<guest_configuration_assignment_properties::ProvisioningState>,
-    #[serde(rename = "complianceStatus", skip_serializing)]
+    #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<guest_configuration_assignment_properties::ComplianceStatus>,
-    #[serde(rename = "complianceReason", skip_serializing)]
+    #[serde(rename = "complianceReason", default, skip_serializing_if = "Option::is_none")]
     pub compliance_reason: Option<String>,
-    #[serde(rename = "latestReportId", skip_serializing)]
+    #[serde(rename = "latestReportId", default, skip_serializing_if = "Option::is_none")]
     pub latest_report_id: Option<String>,
-    #[serde(rename = "assignmentHash", skip_serializing)]
+    #[serde(rename = "assignmentHash", default, skip_serializing_if = "Option::is_none")]
     pub assignment_hash: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
 pub mod guest_configuration_assignment_properties {
@@ -82,11 +82,11 @@ pub struct GuestConfigurationAssignmentReportList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestConfigurationAssignmentReport {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "reportId", skip_serializing)]
+    #[serde(rename = "reportId", default, skip_serializing_if = "Option::is_none")]
     pub report_id: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<guest_configuration_assignment_report::Type>,
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
@@ -94,7 +94,7 @@ pub struct GuestConfigurationAssignmentReport {
     pub end_time: Option<String>,
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<guest_configuration_assignment_report::Status>,
     #[serde(rename = "refreshMode", default, skip_serializing_if = "Option::is_none")]
     pub refresh_mode: Option<guest_configuration_assignment_report::RefreshMode>,
@@ -185,12 +185,12 @@ pub struct ProxyResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

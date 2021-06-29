@@ -25,11 +25,11 @@ pub struct HealthMonitor {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -42,9 +42,9 @@ pub struct HealthMonitorProperties {
     pub monitored_object: Option<String>,
     #[serde(rename = "parentMonitorName", default, skip_serializing_if = "Option::is_none")]
     pub parent_monitor_name: Option<String>,
-    #[serde(rename = "previousMonitorState", skip_serializing)]
+    #[serde(rename = "previousMonitorState", default, skip_serializing_if = "Option::is_none")]
     pub previous_monitor_state: Option<HealthState>,
-    #[serde(rename = "currentMonitorState", skip_serializing)]
+    #[serde(rename = "currentMonitorState", default, skip_serializing_if = "Option::is_none")]
     pub current_monitor_state: Option<HealthState>,
     #[serde(rename = "evaluationTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub evaluation_timestamp: Option<String>,
@@ -76,9 +76,9 @@ pub struct HealthMonitorStateChangeProperties {
     pub evaluation_timestamp: Option<String>,
     #[serde(rename = "currentStateFirstObservedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub current_state_first_observed_timestamp: Option<String>,
-    #[serde(rename = "previousMonitorState", skip_serializing)]
+    #[serde(rename = "previousMonitorState", default, skip_serializing_if = "Option::is_none")]
     pub previous_monitor_state: Option<HealthState>,
-    #[serde(rename = "currentMonitorState", skip_serializing)]
+    #[serde(rename = "currentMonitorState", default, skip_serializing_if = "Option::is_none")]
     pub current_monitor_state: Option<HealthState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub evidence: Option<serde_json::Value>,

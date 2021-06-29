@@ -27,11 +27,11 @@ pub struct CloudErrorBody {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -47,7 +47,7 @@ pub struct PricingPlanProperties {
     pub plan_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cap: Option<f64>,
-    #[serde(rename = "resetHour", skip_serializing)]
+    #[serde(rename = "resetHour", default, skip_serializing_if = "Option::is_none")]
     pub reset_hour: Option<i64>,
     #[serde(rename = "warningThreshold", default, skip_serializing_if = "Option::is_none")]
     pub warning_threshold: Option<i64>,
@@ -55,6 +55,6 @@ pub struct PricingPlanProperties {
     pub stop_send_notification_when_hit_threshold: Option<bool>,
     #[serde(rename = "stopSendNotificationWhenHitCap", default, skip_serializing_if = "Option::is_none")]
     pub stop_send_notification_when_hit_cap: Option<bool>,
-    #[serde(rename = "maxHistoryCap", skip_serializing)]
+    #[serde(rename = "maxHistoryCap", default, skip_serializing_if = "Option::is_none")]
     pub max_history_cap: Option<f64>,
 }

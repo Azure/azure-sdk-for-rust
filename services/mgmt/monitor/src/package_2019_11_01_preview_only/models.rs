@@ -8,7 +8,7 @@ pub struct DataCollectionRuleAssociation {
     pub description: Option<String>,
     #[serde(rename = "dataCollectionRuleId", default, skip_serializing_if = "Option::is_none")]
     pub data_collection_rule_id: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<data_collection_rule_association::ProvisioningState>,
 }
 pub mod data_collection_rule_association {
@@ -26,13 +26,13 @@ pub mod data_collection_rule_association {
 pub struct DataCollectionRuleAssociationProxyOnlyResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -100,7 +100,7 @@ pub struct DataSourcesSpec {
 pub struct LogAnalyticsDestination {
     #[serde(rename = "workspaceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_resource_id: Option<String>,
-    #[serde(rename = "workspaceId", skip_serializing)]
+    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -128,7 +128,7 @@ pub struct DataFlow {
 pub struct DataCollectionRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "immutableId", skip_serializing)]
+    #[serde(rename = "immutableId", default, skip_serializing_if = "Option::is_none")]
     pub immutable_id: Option<String>,
     #[serde(rename = "dataSources", default, skip_serializing_if = "Option::is_none")]
     pub data_sources: Option<serde_json::Value>,
@@ -136,7 +136,7 @@ pub struct DataCollectionRule {
     pub destinations: Option<serde_json::Value>,
     #[serde(rename = "dataFlows", default, skip_serializing_if = "Vec::is_empty")]
     pub data_flows: Vec<DataFlow>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<data_collection_rule::ProvisioningState>,
 }
 pub mod data_collection_rule {
@@ -159,13 +159,13 @@ pub struct DataCollectionRuleResource {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<data_collection_rule_resource::Kind>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
 pub mod data_collection_rule_resource {
@@ -194,21 +194,21 @@ pub struct ErrorResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
-    #[serde(rename = "additionalInfo", skip_serializing)]
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }

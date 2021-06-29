@@ -33,11 +33,11 @@ pub struct ErrorInfo {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryPacksResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -56,13 +56,13 @@ pub struct LogAnalyticsQueryPack {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsQueryPackProperties {
-    #[serde(rename = "queryPackId", skip_serializing)]
+    #[serde(rename = "queryPackId", default, skip_serializing_if = "Option::is_none")]
     pub query_pack_id: Option<String>,
-    #[serde(rename = "timeCreated", skip_serializing)]
+    #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
-    #[serde(rename = "timeModified", skip_serializing)]
+    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -102,11 +102,11 @@ pub struct OperationDisplay {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureResourceProperties {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -120,15 +120,15 @@ pub struct LogAnalyticsQueryPackQuery {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsQueryPackQueryProperties {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(rename = "displayName")]
     pub display_name: String,
-    #[serde(rename = "timeCreated", skip_serializing)]
+    #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
-    #[serde(rename = "timeModified", skip_serializing)]
+    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub author: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,

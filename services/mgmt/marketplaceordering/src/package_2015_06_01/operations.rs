@@ -160,7 +160,7 @@ pub mod marketplace_agreements {
         publisher_id: &str,
         offer_id: &str,
         plan_id: &str,
-    ) -> std::result::Result<AgreementTerms, sign::Error> {
+    ) -> std::result::Result<OldAgreementTerms, sign::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}/sign",
@@ -189,7 +189,7 @@ pub mod marketplace_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AgreementTerms =
+                let rsp_value: OldAgreementTerms =
                     serde_json::from_slice(rsp_body).map_err(|source| sign::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -233,7 +233,7 @@ pub mod marketplace_agreements {
         publisher_id: &str,
         offer_id: &str,
         plan_id: &str,
-    ) -> std::result::Result<AgreementTerms, cancel::Error> {
+    ) -> std::result::Result<OldAgreementTerms, cancel::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}/cancel",
@@ -262,7 +262,7 @@ pub mod marketplace_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AgreementTerms =
+                let rsp_value: OldAgreementTerms =
                     serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -306,7 +306,7 @@ pub mod marketplace_agreements {
         publisher_id: &str,
         offer_id: &str,
         plan_id: &str,
-    ) -> std::result::Result<AgreementTerms, get_agreement::Error> {
+    ) -> std::result::Result<OldAgreementTerms, get_agreement::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}",
@@ -337,7 +337,7 @@ pub mod marketplace_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AgreementTerms =
+                let rsp_value: OldAgreementTerms =
                     serde_json::from_slice(rsp_body).map_err(|source| get_agreement::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -378,7 +378,7 @@ pub mod marketplace_agreements {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<Vec<AgreementTerms>, list::Error> {
+    ) -> std::result::Result<AgreementTermsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements",
@@ -403,7 +403,7 @@ pub mod marketplace_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<AgreementTerms> =
+                let rsp_value: AgreementTermsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }

@@ -778,11 +778,11 @@ pub struct DpmContainerExtendedInfo {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recommendations: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -868,7 +868,7 @@ pub struct InquiryValidation {
     pub status: Option<String>,
     #[serde(rename = "errorDetail", default, skip_serializing_if = "Option::is_none")]
     pub error_detail: Option<ErrorDetail>,
-    #[serde(rename = "additionalDetail", skip_serializing)]
+    #[serde(rename = "additionalDetail", default, skip_serializing_if = "Option::is_none")]
     pub additional_detail: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1033,7 +1033,7 @@ pub struct ProtectableContainer {
     pub friendly_name: Option<String>,
     #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
     pub backup_management_type: Option<protectable_container::BackupManagementType>,
-    #[serde(rename = "protectableContainerType", skip_serializing)]
+    #[serde(rename = "protectableContainerType", default, skip_serializing_if = "Option::is_none")]
     pub protectable_container_type: Option<protectable_container::ProtectableContainerType>,
     #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
     pub health_status: Option<String>,
@@ -1172,11 +1172,11 @@ pub struct RecoveryPoint {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,

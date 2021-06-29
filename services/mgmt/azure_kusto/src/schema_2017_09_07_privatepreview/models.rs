@@ -4,13 +4,13 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterProperties {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<cluster_properties::State>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<cluster_properties::ProvisioningState>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
-    #[serde(rename = "dataIngestionUri", skip_serializing)]
+    #[serde(rename = "dataIngestionUri", default, skip_serializing_if = "Option::is_none")]
     pub data_ingestion_uri: Option<String>,
     #[serde(rename = "trustedExternalTenants", default, skip_serializing_if = "Vec::is_empty")]
     pub trusted_external_tenants: Vec<TrustedExternalTenant>,
@@ -109,13 +109,13 @@ pub struct DatabaseStatistics {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<database_properties::ProvisioningState>,
     #[serde(rename = "softDeletePeriodInDays")]
     pub soft_delete_period_in_days: i64,
     #[serde(rename = "hotCachePeriodInDays", default, skip_serializing_if = "Option::is_none")]
     pub hot_cache_period_in_days: Option<i64>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub statistics: Option<DatabaseStatistics>,
 }
 pub mod database_properties {
@@ -165,7 +165,7 @@ pub mod event_hub_connection_properties {
 pub struct Cluster {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     pub sku: AzureSku,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -179,7 +179,7 @@ pub struct ClusterUpdate {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<AzureSku>,
@@ -190,7 +190,7 @@ pub struct ClusterUpdate {
 pub struct Database {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
@@ -201,7 +201,7 @@ pub struct DatabaseUpdate {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
@@ -395,11 +395,11 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

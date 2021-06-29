@@ -17,17 +17,17 @@ pub struct BlockchainMemberProperties {
     pub protocol: Option<blockchain_member_properties::Protocol>,
     #[serde(rename = "validatorNodesSku", default, skip_serializing_if = "Option::is_none")]
     pub validator_nodes_sku: Option<BlockchainMemberNodesSku>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<blockchain_member_properties::ProvisioningState>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dns: Option<String>,
-    #[serde(rename = "userName", skip_serializing)]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub consortium: Option<String>,
-    #[serde(rename = "consortiumManagementAccountAddress", skip_serializing)]
+    #[serde(rename = "consortiumManagementAccountAddress", default, skip_serializing_if = "Option::is_none")]
     pub consortium_management_account_address: Option<String>,
     #[serde(rename = "consortiumManagementAccountPassword", default, skip_serializing_if = "Option::is_none")]
     pub consortium_management_account_password: Option<String>,
@@ -35,9 +35,9 @@ pub struct BlockchainMemberProperties {
     pub consortium_role: Option<String>,
     #[serde(rename = "consortiumMemberDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub consortium_member_display_name: Option<String>,
-    #[serde(rename = "rootContractAddress", skip_serializing)]
+    #[serde(rename = "rootContractAddress", default, skip_serializing_if = "Option::is_none")]
     pub root_contract_address: Option<String>,
-    #[serde(rename = "publicKey", skip_serializing)]
+    #[serde(rename = "publicKey", default, skip_serializing_if = "Option::is_none")]
     pub public_key: Option<String>,
     #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
     pub firewall_rules: Vec<FirewallRule>,
@@ -258,13 +258,13 @@ pub struct TransactionNode {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransactionNodeProperties {
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<transaction_node_properties::ProvisioningState>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dns: Option<String>,
-    #[serde(rename = "publicKey", skip_serializing)]
+    #[serde(rename = "publicKey", default, skip_serializing_if = "Option::is_none")]
     pub public_key: Option<String>,
-    #[serde(rename = "userName", skip_serializing)]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
@@ -312,10 +312,10 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

@@ -208,13 +208,13 @@ pub mod operation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -225,7 +225,7 @@ pub struct Resource {
 pub struct GraphQueryListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GraphQueryResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -237,12 +237,12 @@ pub struct GraphQueryResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GraphQueryProperties {
-    #[serde(rename = "timeModified", skip_serializing)]
+    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub query: String,
-    #[serde(rename = "resultKind", skip_serializing)]
+    #[serde(rename = "resultKind", default, skip_serializing_if = "Option::is_none")]
     pub result_kind: Option<graph_query_properties::ResultKind>,
 }
 pub mod graph_query_properties {
