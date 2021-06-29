@@ -3,7 +3,7 @@ use crate::Error;
 use crate::KeyClient;
 
 use azure_core::TokenCredential;
-use chrono::serde::ts_seconds;
+use chrono::serde::{ts_seconds, ts_seconds_option};
 use chrono::{DateTime, Utc};
 use const_format::formatcp;
 use getset::Getters;
@@ -72,6 +72,8 @@ pub(crate) struct KeyVaultGetSecretResponse {
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultGetSecretResponseAttributes {
     enabled: bool,
+    #[serde(with = "ts_seconds_option")]
+    exp: Option<DateTime<Utc>>,
     #[serde(with = "ts_seconds")]
     created: DateTime<Utc>,
     #[serde(with = "ts_seconds")]
@@ -107,6 +109,7 @@ pub struct KeyVaultSecret {
     id: String,
     value: String,
     enabled: bool,
+    expiry: Option<DateTime<Utc>>,
     time_created: DateTime<Utc>,
     time_updated: DateTime<Utc>,
 }
@@ -179,6 +182,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
                 }
             })?;
         Ok(KeyVaultSecret {
+            expiry: response.attributes.exp,
             enabled: response.attributes.enabled,
             value: response.value,
             time_created: response.attributes.created,
