@@ -152,9 +152,11 @@ pub struct BlobProperties {
     #[serde(rename = "Content-Disposition")]
     pub content_disposition: Option<String>,
     #[serde(rename = "Content-MD5")]
+    #[serde(default)]
     #[serde(with = "md5_optional")]
     pub content_md5: Option<ConsistencyMD5>,
     #[serde(rename = "Content-CRC64")]
+    #[serde(default)]
     #[serde(with = "cr64_optional")]
     pub content_crc64: Option<ConsistencyCRC64>,
     #[serde(rename = "Cache-Control")]
