@@ -66,6 +66,52 @@ create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
+pub mod cr64_optional {
+    use serde::{self, Deserialize, Deserializer};
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<crate::ConsistencyCRC64>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: Option<String> = Option::deserialize(deserializer)?;
+        trace!("s == {:?}", s);
+
+        Ok(match s {
+            None => None,
+            Some(s) => match s.len() {
+                0 => None,
+                _ => Some(
+                    crate::ConsistencyCRC64::decode(s)
+                        .map_err(|e| serde::de::Error::custom(e.to_string()))?,
+                ),
+            },
+        })
+    }
+}
+
+pub mod md5_optional {
+    use serde::{self, Deserialize, Deserializer};
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<crate::ConsistencyMD5>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: Option<String> = Option::deserialize(deserializer)?;
+        trace!("s == {:?}", s);
+
+        Ok(match s {
+            None => None,
+            Some(s) => match s.len() {
+                0 => None,
+                _ => Some(
+                    crate::ConsistencyMD5::decode(s)
+                        .map_err(|e| serde::de::Error::custom(e.to_string()))?,
+                ),
+            },
+        })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Blob {
@@ -106,8 +152,10 @@ pub struct BlobProperties {
     #[serde(rename = "Content-Disposition")]
     pub content_disposition: Option<String>,
     #[serde(rename = "Content-MD5")]
+    #[serde(with = "md5_optional")]
     pub content_md5: Option<ConsistencyMD5>,
     #[serde(rename = "Content-CRC64")]
+    #[serde(with = "cr64_optional")]
     pub content_crc64: Option<ConsistencyCRC64>,
     #[serde(rename = "Cache-Control")]
     pub cache_control: Option<String>,
