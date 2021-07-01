@@ -1,6 +1,7 @@
 pub mod cargo_toml;
 mod codegen;
 mod codegen_models;
+mod codegen_operations;
 pub mod config_parser;
 pub mod identifier;
 pub mod lib_rs;
@@ -92,7 +93,7 @@ pub fn run(config: Config) -> Result<()> {
     write_file(&models_path, &models)?;
 
     // create api client from operations
-    let operations = cg.create_operations().map_err(|source| Error::CreateOperationsError { source })?;
+    let operations = codegen_operations::create_operations(cg).map_err(|source| Error::CreateOperationsError { source })?;
     let operations_path = path::join(&config.output_folder, "operations.rs").map_err(|source| Error::PathError { source })?;
     write_file(&operations_path, &operations)?;
 
