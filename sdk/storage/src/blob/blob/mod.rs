@@ -66,50 +66,33 @@ create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
-pub mod cr64_optional {
-    use serde::{self, Deserialize, Deserializer};
+use serde::{self, Deserialize, Deserializer};
+fn deserialize_crc64_optional<'de, D>(
+    deserializer: D,
+) -> Result<Option<crate::ConsistencyCRC64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: Option<String> = Option::deserialize(deserializer)?;
 
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<crate::ConsistencyCRC64>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s: Option<String> = Option::deserialize(deserializer)?;
-        trace!("s == {:?}", s);
-
-        Ok(match s {
-            None => None,
-            Some(s) => match s.len() {
-                0 => None,
-                _ => Some(
-                    crate::ConsistencyCRC64::decode(s)
-                        .map_err(|e| serde::de::Error::custom(e.to_string()))?,
-                ),
-            },
-        })
-    }
+    Ok(s.filter(|s| s.len() > 0)
+        .map(crate::ConsistencyCRC64::decode)
+        .transpose()
+        .map_err(serde::de::Error::custom)?)
 }
 
-pub mod md5_optional {
-    use serde::{self, Deserialize, Deserializer};
+fn deserialize_md5_optional<'de, D>(
+    deserializer: D,
+) -> Result<Option<crate::ConsistencyMD5>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: Option<String> = Option::deserialize(deserializer)?;
 
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<crate::ConsistencyMD5>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s: Option<String> = Option::deserialize(deserializer)?;
-        trace!("s == {:?}", s);
-
-        Ok(match s {
-            None => None,
-            Some(s) => match s.len() {
-                0 => None,
-                _ => Some(
-                    crate::ConsistencyMD5::decode(s)
-                        .map_err(|e| serde::de::Error::custom(e.to_string()))?,
-                ),
-            },
-        })
-    }
+    Ok(s.filter(|s| s.len() > 0)
+        .map(crate::ConsistencyMD5::decode)
+        .transpose()
+        .map_err(serde::de::Error::custom)?)
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -153,11 +136,11 @@ pub struct BlobProperties {
     pub content_disposition: Option<String>,
     #[serde(rename = "Content-MD5")]
     #[serde(default)]
-    #[serde(with = "md5_optional")]
+    #[serde(deserialize_with = "deserialize_md5_optional")]
     pub content_md5: Option<ConsistencyMD5>,
     #[serde(rename = "Content-CRC64")]
     #[serde(default)]
-    #[serde(with = "cr64_optional")]
+    #[serde(deserialize_with = "deserialize_crc64_optional")]
     pub content_crc64: Option<ConsistencyCRC64>,
     #[serde(rename = "Cache-Control")]
     pub cache_control: Option<String>,
