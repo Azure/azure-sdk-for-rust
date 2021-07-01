@@ -58,7 +58,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
 
     // all definitions from input_files
     for (doc_file, doc) in cg.spec.input_docs() {
-        let schemas = cg.spec.resolve_schema_map(doc_file, &doc.definitions).map_err(Error::SpecError)?;
+        let schemas = cg.spec.resolve_schema_map(doc_file, &doc.definitions).map_err(Error::Spec)?;
         for (name, schema) in schemas {
             all_schemas.insert(
                 RefKey {
@@ -105,7 +105,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
 
 // For create_models. Recursively adds schema refs.
 fn add_schema_refs(cg: &CodeGen, schemas: &mut IndexMap<RefKey, ResolvedSchema>, doc_file: &Path, schema_ref: Reference) -> Result<()> {
-    let schema = cg.spec.resolve_schema_ref(doc_file, schema_ref).map_err(Error::SpecError)?;
+    let schema = cg.spec.resolve_schema_ref(doc_file, schema_ref)?;
     if let Some(ref_key) = schema.ref_key.clone() {
         if !schemas.contains_key(&ref_key) {
             if !cg.spec.is_input_file(&ref_key.file_path) {
@@ -122,18 +122,10 @@ fn add_schema_refs(cg: &CodeGen, schemas: &mut IndexMap<RefKey, ResolvedSchema>,
 
 fn create_enum(namespace: &TokenStream, property_name: &str, property: &ResolvedSchema) -> Result<(TokenStream, TokenStream)> {
     let enum_values = enum_values_as_strings(&property.schema.common.enum_);
-    let id = ident(&property_name.to_camel_case()).map_err(|source| Error::IdentError {
-        source,
-        file: file!(),
-        line: line!(),
-    })?;
+    let id = ident(&property_name.to_camel_case()).map_err(Error::EnumName)?;
     let mut values = TokenStream::new();
     for name in enum_values {
-        let nm = name.to_camel_case_ident().map_err(|source| Error::CreateEnumIdentError {
-            source,
-            property_name: property_name.to_owned(),
-            enum_value: name.to_owned(),
-        })?;
+        let nm = name.to_camel_case_ident().map_err(Error::EnumValueName)?;
         let rename = if &nm.to_string() == name {
             quote! {}
         } else {
@@ -145,11 +137,7 @@ fn create_enum(namespace: &TokenStream, property_name: &str, property: &Resolved
         };
         values.extend(value);
     }
-    let nm = ident(&property_name.to_camel_case()).map_err(|source| Error::IdentError {
-        source,
-        file: file!(),
-        line: line!(),
-    })?;
+    let nm = ident(&property_name.to_camel_case()).map_err(Error::EnumName)?;
     let tp = quote! {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum #nm {
@@ -162,11 +150,7 @@ fn create_enum(namespace: &TokenStream, property_name: &str, property: &Resolved
 
 fn create_vec_alias(alias_name: &str, schema: &ResolvedSchema) -> Result<TokenStream> {
     let items = get_schema_array_items(&schema.schema.common)?;
-    let typ = ident(&alias_name.to_camel_case()).map_err(|source| Error::IdentError {
-        source,
-        file: file!(),
-        line: line!(),
-    })?;
+    let typ = ident(&alias_name.to_camel_case()).map_err(Error::VecAliasName)?;
     let items_typ = get_type_name_for_schema_ref(&items, AsReference::False)?;
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
@@ -176,41 +160,22 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
     let mut streams = Vec::new();
     let mut local_types = Vec::new();
     let mut props = TokenStream::new();
-    let ns = ident(&struct_name.to_snake_case()).map_err(|source| Error::IdentError {
-        source,
-        file: file!(),
-        line: line!(),
-    })?;
-    let nm = ident(&struct_name.to_camel_case()).map_err(|source| Error::IdentError {
-        source,
-        file: file!(),
-        line: line!(),
-    })?;
+    let ns = ident(&struct_name.to_snake_case()).map_err(Error::StructName)?;
+    let nm = ident(&struct_name.to_camel_case()).map_err(Error::StructName)?;
     let required: HashSet<&str> = schema.schema.required.iter().map(String::as_str).collect();
 
     for schema in &schema.schema.all_of {
         let type_name = get_type_name_for_schema_ref(schema, AsReference::False)?;
-        let field_name = ident(&type_name.to_string().to_snake_case()).map_err(|source| Error::IdentError {
-            source,
-            file: file!(),
-            line: line!(),
-        })?;
+        let field_name = ident(&type_name.to_string().to_snake_case()).map_err(Error::StructFieldName)?;
         props.extend(quote! {
             #[serde(flatten)]
             pub #field_name: #type_name,
         });
     }
 
-    let properties = cg
-        .spec
-        .resolve_schema_map(doc_file, &schema.schema.properties)
-        .map_err(Error::SpecError)?;
+    let properties = cg.spec.resolve_schema_map(doc_file, &schema.schema.properties)?;
     for (property_name, property) in &properties {
-        let nm = ident(&property_name.to_snake_case()).map_err(|source| Error::IdentError {
-            source,
-            file: file!(),
-            line: line!(),
-        })?;
+        let nm = ident(&property_name.to_snake_case()).map_err(Error::StructName)?;
         let (mut field_tp_name, field_tp) = create_struct_field_type(cg, doc_file, &ns, property_name, property)?;
         let is_required = required.contains(property_name.as_str());
         let is_vec = is_vec(&field_tp_name);
@@ -283,11 +248,7 @@ fn create_struct_field_type(
 ) -> Result<(TokenStream, Vec<TokenStream>)> {
     match &property.ref_key {
         Some(ref_key) => {
-            let tp = ident(&ref_key.name.to_camel_case()).map_err(|source| Error::IdentError {
-                source,
-                file: file!(),
-                line: line!(),
-            })?;
+            let tp = ident(&ref_key.name.to_camel_case()).map_err(Error::PropertyName)?;
             Ok((tp, Vec::new()))
         }
         None => {
@@ -295,11 +256,7 @@ fn create_struct_field_type(
                 let (tp_name, tp) = create_enum(namespace, property_name, property)?;
                 Ok((tp_name, vec![tp]))
             } else if is_local_struct(property) {
-                let id = ident(&property_name.to_camel_case()).map_err(|source| Error::IdentError {
-                    source,
-                    file: file!(),
-                    line: line!(),
-                })?;
+                let id = ident(&property_name.to_camel_case()).map_err(Error::PropertyName)?;
                 let tp_name = quote! {#namespace::#id};
                 let tps = create_struct(cg, doc_file, property_name, property)?;
                 // println!("creating local struct {:?} {}", tp_name, tps.len());

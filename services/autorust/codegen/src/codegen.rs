@@ -31,7 +31,7 @@ pub struct CodeGen {
 
 impl CodeGen {
     pub fn new(config: Config) -> Result<Self> {
-        let spec = Spec::read_files(&config.input_files).map_err(Error::SpecError)?;
+        let spec = Spec::read_files(&config.input_files).map_err(Error::Spec)?;
         Ok(Self { config, spec })
     }
 
@@ -56,23 +56,35 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("SpecError: {0}")]
-    SpecError(spec::Error),
+    Spec(#[from] spec::Error),
     #[error("ArrayExpectedToHaveItems")]
     ArrayExpectedToHaveItems,
     #[error("NoNameForRef")]
     NoNameForRef,
-    #[error("IdentError at {}:{} {} ", file, line, source)]
-    IdentError {
-        source: crate::identifier::Error,
-        file: &'static str,
-        line: u32,
-    },
-    #[error("CreateEnumIdentError {} {}: {}", property_name, enum_value, source)]
-    CreateEnumIdentError {
-        source: crate::identifier::Error,
-        property_name: String,
-        enum_value: String,
-    },
+    #[error("creating function name: {0}")]
+    FunctionName(#[source] crate::identifier::Error),
+    #[error("creating type name for schema ref: {0}")]
+    TypeNameForSchemaRef(#[source] crate::identifier::Error),
+    #[error("creating name for status code: {0}")]
+    StatusCodeName(#[source] crate::identifier::Error),
+    #[error("creating type name for response: {0}")]
+    ResponseTypeName(#[source] crate::identifier::Error),
+    #[error("creating name for param: {0}")]
+    ParamName(#[source] crate::identifier::Error),
+    #[error("creating name for property: {0}")]
+    PropertyName(#[source] crate::identifier::Error),
+    #[error("creating name for module: {0}")]
+    ModuleName(#[source] crate::identifier::Error),
+    #[error("creating name for enum: {0}")]
+    EnumName(#[source] crate::identifier::Error),
+    #[error("creating name for enum value: {0}")]
+    EnumValueName(#[source] crate::identifier::Error),
+    #[error("creating name for Vec alias: {0}")]
+    VecAliasName(#[source] crate::identifier::Error),
+    #[error("creating name for struct: {0}")]
+    StructName(#[source] crate::identifier::Error),
+    #[error("creating name for field in struct: {0}")]
+    StructFieldName(#[source] crate::identifier::Error),
 }
 
 /// Whether or not to pass a type is a reference.
@@ -185,11 +197,7 @@ pub fn get_type_name_for_schema_ref(schema: &ReferenceOr<Schema>, as_ref: AsRefe
     match schema {
         ReferenceOr::Reference { reference, .. } => {
             let name = &reference.name.as_ref().map_or(Err(Error::NoNameForRef), Ok)?;
-            let idt = ident(&name.to_camel_case()).map_err(|source| Error::IdentError {
-                source,
-                file: file!(),
-                line: line!(),
-            })?;
+            let idt = ident(&name.to_camel_case()).map_err(Error::TypeNameForSchemaRef)?;
             match as_ref {
                 AsReference::True => Ok(quote! { &#idt }),
                 AsReference::False => Ok(quote! { #idt }),

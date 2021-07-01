@@ -58,7 +58,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
         // only operations from listed input files
         // println!("doc_file {:?}", doc_file);
         if cg.spec.is_input_file(&doc_file) {
-            let paths = cg.spec.resolve_path_map(doc_file, &doc.paths).map_err(Error::SpecError)?;
+            let paths = cg.spec.resolve_path_map(doc_file, &doc.paths)?;
             for (path, item) in &paths {
                 for op in spec::path_item_operations(item) {
                     let (module_name, function_name) = op.function_name(path);
@@ -81,11 +81,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
     for (module_name, module) in modules {
         match module_name {
             Some(module_name) => {
-                let name = ident(&module_name).map_err(|source| Error::IdentError {
-                    source,
-                    file: file!(),
-                    line: line!(),
-                })?;
+                let name = ident(&module_name).map_err(Error::ModuleName)?;
                 file.extend(quote! {
                     pub mod #name {
                         use crate::models::*;
@@ -111,33 +107,20 @@ fn create_function(
     param_re: &Regex,
     function_name: &str,
 ) -> Result<TokenStream> {
-    let fname = ident(function_name).map_err(|source| Error::IdentError {
-        source,
-        file: file!(),
-        line: line!(),
-    })?;
+    let fname = ident(function_name).map_err(Error::FunctionName)?;
 
     let params = parse_params(param_re, path);
     // println!("path params {:#?}", params);
     let params: Result<Vec<_>> = params
         .iter()
-        .map(|s| {
-            Ok(ident(&s.to_snake_case()).map_err(|source| Error::IdentError {
-                source,
-                file: file!(),
-                line: line!(),
-            })?)
-        })
+        .map(|s| Ok(ident(&s.to_snake_case()).map_err(Error::ParamName)?))
         .collect();
     let params = params?;
     let url_str_args = quote! { #(#params),* };
 
     let fpath = format!("{{}}{}", &format_path(param_re, path));
 
-    let parameters: Vec<Parameter> = cg
-        .spec
-        .resolve_parameters(doc_file, &operation_verb.operation().parameters)
-        .map_err(Error::SpecError)?;
+    let parameters: Vec<Parameter> = cg.spec.resolve_parameters(doc_file, &operation_verb.operation().parameters)?;
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
     let has_param_api_version = param_names.contains("api-version");
     let mut skip = HashSet::new();
@@ -324,11 +307,7 @@ fn create_function(
                 Some(tp) => quote! { (#tp) },
                 None => quote! {},
             };
-            let enum_type_name = ident(&get_response_type_name(status_code)).map_err(|source| Error::IdentError {
-                source,
-                file: file!(),
-                line: line!(),
-            })?;
+            let enum_type_name = ident(&get_response_type_name(status_code)).map_err(Error::ResponseTypeName)?;
             success_responses_ts.extend(quote! { #enum_type_name#tp, })
         }
         response_enum.extend(quote! {
@@ -353,11 +332,7 @@ fn create_function(
                 DefaultResponse { status_code: http::StatusCode, #tp },
             });
         } else {
-            let response_type = ident(response_type).map_err(|source| Error::IdentError {
-                source,
-                file: file!(),
-                line: line!(),
-            })?;
+            let response_type = ident(response_type).map_err(Error::ResponseTypeName)?;
             error_responses_ts.extend(quote! {
                 #[error("Error response #response_type")]
                 #response_type { #tp },
@@ -376,16 +351,8 @@ fn create_function(
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
-                let status_code_name = ident(&get_status_code_name(status_code)).map_err(|source| Error::IdentError {
-                    source,
-                    file: file!(),
-                    line: line!(),
-                })?;
-                let response_type_name = ident(&get_response_type_name(status_code)).map_err(|source| Error::IdentError {
-                    source,
-                    file: file!(),
-                    line: line!(),
-                })?;
+                let status_code_name = ident(&get_status_code_name(status_code)).map_err(Error::StatusCodeName)?;
+                let response_type_name = ident(&get_response_type_name(status_code)).map_err(Error::ResponseTypeName)?;
                 if is_single_response {
                     match tp {
                         Some(tp) => {
@@ -433,16 +400,8 @@ fn create_function(
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
-                let status_code_name = ident(&get_status_code_name(status_code)).map_err(|source| Error::IdentError {
-                    source,
-                    file: file!(),
-                    line: line!(),
-                })?;
-                let response_type_name = ident(&get_response_type_name(status_code)).map_err(|source| Error::IdentError {
-                    source,
-                    file: file!(),
-                    line: line!(),
-                })?;
+                let status_code_name = ident(&get_status_code_name(status_code)).map_err(Error::StatusCodeName)?;
+                let response_type_name = ident(&get_response_type_name(status_code)).map_err(Error::ResponseTypeName)?;
                 match tp {
                     Some(tp) => {
                         match_status.extend(quote! {
@@ -564,11 +523,7 @@ fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Para
 }
 
 fn get_param_name(param: &Parameter) -> Result<TokenStream> {
-    ident(&param.name.to_snake_case()).map_err(|source| Error::IdentError {
-        source,
-        file: file!(),
-        line: line!(),
-    })
+    ident(&param.name.to_snake_case()).map_err(Error::ParamName)
 }
 
 fn get_param_type(param: &Parameter) -> Result<TokenStream> {
