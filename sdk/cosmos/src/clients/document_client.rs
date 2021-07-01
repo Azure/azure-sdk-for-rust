@@ -66,9 +66,28 @@ impl DocumentClient {
     }
 
     /// Delete a document
-    pub fn delete_document(&self) -> requests::DeleteDocumentBuilder<'_> {
-        requests::DeleteDocumentBuilder::new(self)
+    pub async fn delete_document(
+        &self,
+        mut ctx: Context,
+        options: DeleteDocumentOptions,
+    ) -> Result<DeleteDocumentResponse, create::Error> {
+        let mut request = self
+            .prepare_request_with_document_name(http::Method::DELETE)
+            .body(bytes::Bytes::new())
+            .unwrap()
+            .into();
+        options.decorate_request(&mut request);
+        let response = self
+            .pipeline()
+            .send(&mut ctx, &mut request)
+            .await
+            .map_err(crate::Errror::PolicyError)?
+            .validate(http::StatusCode::OK)
+            .await?;
     }
+    // pub fn delete_document(&self) -> requests::DeleteDocumentBuilder<'_> {
+    //     requests::DeleteDocumentBuilder::new(self)
+    // }
 
     /// List all attachments for a document
     pub fn list_attachments(&self) -> requests::ListAttachmentsBuilder<'_, '_> {

@@ -73,8 +73,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         client
             .clone()
             .into_document_client(id.clone(), &partition_key)?
-            .delete_document()
-            .execute()
+            .delete_document(Context::new(), DeleteDocumentOptions::default())
             .await?;
     }
 

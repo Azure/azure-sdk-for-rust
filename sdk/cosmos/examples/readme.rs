@@ -147,10 +147,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         collection_client
             .clone()
             .into_document_client(document.result.id.clone(), &document.result.a_number)?
-            .delete_document()
+            .delete_document(Context::new(), DeleteDocumentOptions::default())
             .consistency_level(session_token.clone())
             .if_match_condition(&document.document_attributes)
-            .execute()
             .await?;
     }
 
