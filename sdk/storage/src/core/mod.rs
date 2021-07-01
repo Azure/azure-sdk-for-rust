@@ -42,7 +42,7 @@ pub struct IPRange {
     pub end: std::net::IpAddr,
 }
 
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -75,6 +75,16 @@ impl AsRef<[u8; CRC64_BYTE_LENGTH]> for ConsistencyCRC64 {
     }
 }
 
+impl<'de> Deserialize<'de> for ConsistencyCRC64 {
+    fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let bytes = String::deserialize(deserializer)?;
+        Ok(ConsistencyCRC64::decode(bytes).map_err(serde::de::Error::custom)?)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConsistencyMD5(Bytes);
 
@@ -104,6 +114,16 @@ impl ConsistencyMD5 {
 impl AsRef<[u8; MD5_BYTE_LENGTH]> for ConsistencyMD5 {
     fn as_ref(&self) -> &[u8; MD5_BYTE_LENGTH] {
         self.as_slice()
+    }
+}
+
+impl<'de> Deserialize<'de> for ConsistencyMD5 {
+    fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let bytes = String::deserialize(deserializer)?;
+        Ok(ConsistencyMD5::decode(bytes).map_err(serde::de::Error::custom)?)
     }
 }
 
