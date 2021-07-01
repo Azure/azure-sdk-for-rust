@@ -146,8 +146,9 @@ fn is_keyword(word: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use heck::SnakeCase;
+
+    use super::*;
 
     #[test]
     fn test_odata_next_link() -> Result<()> {

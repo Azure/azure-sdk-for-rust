@@ -1,8 +1,13 @@
-use crate::{codegen::create_generated_by_header, identifier::ident, write_file};
+use std::path::Path;
+
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use std::path::Path;
+use crate::{
+    codegen::create_generated_by_header,
+    identifier::ident,
+    write_file,
+};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 

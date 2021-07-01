@@ -1,5 +1,6 @@
 pub mod cargo_toml;
 mod codegen;
+mod codegen_models;
 pub mod config_parser;
 pub mod identifier;
 pub mod lib_rs;
@@ -7,19 +8,32 @@ pub mod path;
 pub mod spec;
 mod status_codes;
 
-pub use self::{
-    codegen::{create_mod, CodeGen},
-    spec::{OperationVerb, ResolvedSchema, Spec},
+use std::{
+    collections::HashSet,
+    fs::{
+        self,
+        File,
+    },
+    io::prelude::*,
+    path::{
+        Path,
+        PathBuf,
+    },
 };
 
 use config_parser::Configuration;
 use proc_macro2::TokenStream;
 
-use std::{
-    collections::HashSet,
-    fs::{self, File},
-    io::prelude::*,
-    path::{Path, PathBuf},
+pub use self::{
+    codegen::{
+        create_mod,
+        CodeGen,
+    },
+    spec::{
+        OperationVerb,
+        ResolvedSchema,
+        Spec,
+    },
 };
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -70,7 +84,7 @@ pub fn run(config: Config) -> Result<()> {
     let cg = &CodeGen::new(config.clone()).map_err(|source| Error::CodeGenNewError { source })?;
 
     // create models from schemas
-    let models = cg.create_models().map_err(|source| Error::CreateModelsError {
+    let models = codegen_models::create_models(cg).map_err(|source| Error::CreateModelsError {
         source,
         config: config.clone(),
     })?;

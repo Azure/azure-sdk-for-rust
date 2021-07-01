@@ -2,15 +2,17 @@
 // These tests require cloning azure-rest-api-specs.
 // git clone git@github.com:Azure/azure-rest-api-specs.git ../azure-rest-api-specs
 
+use std::path::PathBuf;
+
 use autorust_codegen::*;
 use autorust_openapi::Reference;
 use spec::TypedReference;
-use std::path::PathBuf;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const COMMON_TYPES_SPEC: &str = "../../azure-rest-api-specs/specification/security/resource-manager/common/v1/types.json";
-const VMWARE_SPEC: &str = "../../azure-rest-api-specs/specification/vmware/resource-manager/Microsoft.AVS/stable/2020-03-20/vmware.json";
+const COMMON_TYPES_SPEC: &str = "../../../../azure-rest-api-specs/specification/security/resource-manager/common/v1/types.json";
+const VMWARE_SPEC: &str =
+    "../../../../azure-rest-api-specs/specification/vmware/resource-manager/Microsoft.AVS/stable/2020-03-20/vmware.json";
 
 #[test]
 fn refs_count_security_common() -> Result<()> {
@@ -42,7 +44,7 @@ fn read_spec_avs() -> Result<()> {
     let spec = &Spec::read_files(&[VMWARE_SPEC])?;
     assert_eq!(2, spec.docs().len());
     assert!(spec.docs().contains_key(std::path::Path::new(
-        "../../azure-rest-api-specs/specification/common-types/resource-management/v1/types.json"
+        "../../../../azure-rest-api-specs/specification/common-types/resource-management/v1/types.json"
     )));
     Ok(())
 }

@@ -1,6 +1,7 @@
 #![allow(dead_code)]
-use serde::Deserialize;
 use std::path::PathBuf;
+
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Configuration {
@@ -37,11 +38,19 @@ pub fn parse_configurations_from_autorest_config_file(config_file: &PathBuf) -> 
 }
 
 mod literate_config {
-    use super::*;
     use comrak::{
-        nodes::{AstNode, NodeCodeBlock, NodeHeading, NodeValue},
-        parse_document, Arena, ComrakOptions,
+        nodes::{
+            AstNode,
+            NodeCodeBlock,
+            NodeHeading,
+            NodeValue,
+        },
+        parse_document,
+        Arena,
+        ComrakOptions,
     };
+
+    use super::*;
 
     // Per the [Literage Configuration format](https://azure.github.io/autorest/user/literate-file-formats/configuration.html),
     // The configurations should all be contained under a "## Configuration" heading.
@@ -196,7 +205,10 @@ pub fn to_mod_name(feature_name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{literate_config::*, *};
+    use super::{
+        literate_config::*,
+        *,
+    };
 
     #[test]
     fn test_get_input_file_api_version() {

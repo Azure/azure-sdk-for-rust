@@ -1,12 +1,29 @@
-use crate::path;
-use autorust_openapi::{AdditionalProperties, OpenAPI, Operation, Parameter, PathItem, Reference, ReferenceOr, Schema};
-use heck::SnakeCase;
-use indexmap::{IndexMap, IndexSet};
 use std::{
     ffi::OsStr,
     fs,
-    path::{Path, PathBuf},
+    path::{
+        Path,
+        PathBuf,
+    },
 };
+
+use autorust_openapi::{
+    AdditionalProperties,
+    OpenAPI,
+    Operation,
+    Parameter,
+    PathItem,
+    Reference,
+    ReferenceOr,
+    Schema,
+};
+use heck::SnakeCase;
+use indexmap::{
+    IndexMap,
+    IndexSet,
+};
+
+use crate::path;
 
 /// An API specification
 #[derive(Clone, Debug)]

@@ -1,6 +1,11 @@
-use autorust_codegen::Config;
-use clap::{App, Arg, ArgMatches};
 use std::collections::HashSet;
+
+use autorust_codegen::Config;
+use clap::{
+    App,
+    Arg,
+    ArgMatches,
+};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 #[derive(Debug, thiserror::Error)]
@@ -73,9 +78,11 @@ fn new_app() -> App<'static> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use clap::ErrorKind;
     use std::path::PathBuf;
+
+    use clap::ErrorKind;
+
+    use super::*;
 
     pub type Error = Box<dyn std::error::Error + Send + Sync>;
     pub type Result<T> = std::result::Result<T, Error>;

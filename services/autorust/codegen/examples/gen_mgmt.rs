@@ -1,13 +1,26 @@
 // cargo run --example gen_mgmt --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/compute/resource-manager
+use std::{
+    collections::HashSet,
+    fs,
+    path::PathBuf,
+};
+
 use autorust_codegen::{
-    self, cargo_toml,
-    config_parser::{to_api_version, to_mod_name},
-    get_mgmt_configs, lib_rs, path, Config, PropertyName, SpecConfigs,
+    self,
+    cargo_toml,
+    config_parser::{
+        to_api_version,
+        to_mod_name,
+    },
+    get_mgmt_configs,
+    lib_rs,
+    path,
+    Config,
+    PropertyName,
+    SpecConfigs,
 };
 use heck::SnakeCase;
-
-use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
 

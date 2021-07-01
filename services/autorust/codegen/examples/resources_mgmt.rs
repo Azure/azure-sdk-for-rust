@@ -1,8 +1,9 @@
 // cargo run --example resources_mgmt
 // https://github.com/Azure/azure-rest-api-specs/tree/master/specification/resources/resource-manager
 
-use autorust_codegen::*;
 use std::collections::HashSet;
+
+use autorust_codegen::*;
 
 fn main() -> Result<()> {
     let api_version = "2020-06-01";
