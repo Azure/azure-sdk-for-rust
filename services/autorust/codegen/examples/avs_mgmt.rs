@@ -10,6 +10,7 @@ fn main() -> Result<()> {
     let input_files =
         ["../../../azure-rest-api-specs-pr/specification/vmware/resource-manager/Microsoft.AVS/stable/2020-03-20/vmware.json"];
     run(Config {
+        runs: vec![Runs::Models, Runs::Routes],
         api_version: Some(api_version.to_owned()),
         output_folder: output_folder.into(),
         input_files: input_files.iter().map(Into::into).collect(),

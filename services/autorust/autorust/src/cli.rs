@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use autorust_codegen::Config;
 use clap::{
     App,
@@ -41,12 +39,11 @@ fn config_try_new_from_matches(arg_matches: &ArgMatches) -> Result<Config> {
         .to_owned()
         .into();
     let api_version = arg_matches.value_of(API_VERSION).map(String::from);
-    let box_properties = HashSet::new();
     Ok(Config {
         input_files,
         output_folder,
         api_version,
-        box_properties,
+        ..Config::default()
     })
 }
 

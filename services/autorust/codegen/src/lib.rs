@@ -2,6 +2,7 @@ pub mod cargo_toml;
 mod codegen;
 mod codegen_models;
 mod codegen_operations;
+mod codegen_routes;
 pub mod config_parser;
 pub mod identifier;
 pub mod lib_rs;
@@ -58,7 +59,7 @@ pub enum Error {
     #[error("IoError")]
     IoError { source: std::io::Error },
     #[error("file name was not utf-8")]
-    FileNameNotUtf8Error {},
+    FileNameNotUtf8Error,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -68,12 +69,28 @@ pub struct PropertyName {
     pub property_name: String,
 }
 
+/// Different types of code generators to run
+#[derive(Clone, Debug, PartialEq)]
+pub enum Runs {
+    Models,
+    Operations,
+    Routes,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Config {
     pub input_files: Vec<PathBuf>,
     pub output_folder: PathBuf,
     pub api_version: Option<String>,
     pub box_properties: HashSet<PropertyName>,
+    pub runs: Vec<Runs>,
+    pub print_writing_file: bool,
+}
+
+impl Config {
+    pub fn should_run(&self, runs: &Runs) -> bool {
+        self.runs.contains(runs)
+    }
 }
 
 impl Default for Config {
@@ -83,6 +100,8 @@ impl Default for Config {
             output_folder: ".".into(),
             api_version: None,
             box_properties: HashSet::new(),
+            runs: vec![Runs::Models, Runs::Operations],
+            print_writing_file: true,
         }
     }
 }
@@ -96,29 +115,43 @@ pub fn run(config: Config) -> Result<()> {
     let cg = &CodeGen::new(config.clone()).map_err(|source| Error::CodeGenNewError { source })?;
 
     // create models from schemas
-    let models = codegen_models::create_models(cg).map_err(|source| Error::CreateModelsError {
-        source,
-        config: config.clone(),
-    })?;
-    let models_path = path::join(&config.output_folder, "models.rs").map_err(|source| Error::PathError { source })?;
-    write_file(&models_path, &models)?;
+    if config.should_run(&Runs::Models) {
+        let models = codegen_models::create_models(cg).map_err(|source| Error::CreateModelsError {
+            source,
+            config: config.clone(),
+        })?;
+        let models_path = path::join(&config.output_folder, "models.rs").map_err(|source| Error::PathError { source })?;
+        write_file(&models_path, &models, config.print_writing_file)?;
+    }
 
     // create api client from operations
-    let operations = codegen_operations::create_operations(cg).map_err(|source| Error::CreateOperationsError { source })?;
-    let operations_path = path::join(&config.output_folder, "operations.rs").map_err(|source| Error::PathError { source })?;
-    write_file(&operations_path, &operations)?;
+    if config.should_run(&Runs::Operations) {
+        let operations = codegen_operations::create_operations(cg).map_err(|source| Error::CreateOperationsError { source })?;
+        let operations_path = path::join(&config.output_folder, "operations.rs").map_err(|source| Error::PathError { source })?;
+        write_file(&operations_path, &operations, config.print_writing_file)?;
 
-    if let Some(api_version) = &config.api_version {
-        let operations = create_mod(api_version);
-        let operations_path = path::join(&config.output_folder, "mod.rs").map_err(|source| Error::PathError { source })?;
-        write_file(&operations_path, &operations)?;
+        if let Some(api_version) = &config.api_version {
+            let operations = create_mod(api_version);
+            let operations_path = path::join(&config.output_folder, "mod.rs").map_err(|source| Error::PathError { source })?;
+            write_file(&operations_path, &operations, config.print_writing_file)?;
+        }
     }
+
+    // create server-side routes
+    if config.should_run(&Runs::Routes) {
+        let routes = codegen_routes::create_routes(cg).map_err(|source| Error::CreateOperationsError { source })?;
+        let routes_path = path::join(&config.output_folder, "routes.rs").map_err(|source| Error::PathError { source })?;
+        write_file(&routes_path, &routes, config.print_writing_file)?;
+    }
+
     Ok(())
 }
 
-fn write_file<P: AsRef<Path>>(file: P, tokens: &TokenStream) -> Result<()> {
+fn write_file<P: AsRef<Path>>(file: P, tokens: &TokenStream, print_writing_file: bool) -> Result<()> {
     let file = file.as_ref();
-    // println!("writing file {}", &file.display());
+    if print_writing_file {
+        println!("writing file {}", &file.display());
+    }
     let code = tokens.to_string();
     let mut buffer = File::create(&file).map_err(|source| Error::CreateFileError { source, file: file.into() })?;
     buffer
@@ -137,7 +170,7 @@ fn get_spec_folders(spec_folder: &str) -> Result<Vec<String>, Error> {
         let path = path.map_err(|source| Error::IoError { source })?;
         if path.file_type().map_err(|source| Error::IoError { source })?.is_dir() {
             let file_name = path.file_name();
-            let spec_folder = file_name.to_str().map_or(Err(Error::FileNameNotUtf8Error {}), Ok)?;
+            let spec_folder = file_name.to_str().map_or(Err(Error::FileNameNotUtf8Error), Ok)?;
             spec_folders.push(spec_folder.to_owned());
         }
     }

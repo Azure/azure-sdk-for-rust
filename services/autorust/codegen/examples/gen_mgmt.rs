@@ -207,6 +207,8 @@ fn gen_crate(spec: &SpecConfigs) -> Result<()> {
                 output_folder: mod_output_folder.into(),
                 input_files,
                 box_properties: box_properties.clone(),
+                print_writing_file: false,
+                ..Config::default()
             })
             .map_err(|source| Error::CodegenError { source })?;
         }
