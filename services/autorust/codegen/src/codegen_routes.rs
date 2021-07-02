@@ -13,7 +13,7 @@ use heck::SnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
-use regex::Regex;
+use regex::Replacer;
 
 use crate::{
     codegen::{
@@ -22,9 +22,11 @@ use crate::{
         get_type_name_for_schema_ref,
         is_array,
         is_string,
+        parse_params,
         require,
         AsReference,
         Error,
+        PARAM_RE,
     },
     identifier::ident,
     spec,
@@ -49,7 +51,6 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
         use super::models::*;
 
     });
-    let param_re = Regex::new(r"\{(\w+)\}").unwrap();
     let mut modules: IndexMap<Option<String>, TokenStream> = IndexMap::new();
     // println!("input_files {:?}", cg.input_files());
     for (doc_file, doc) in cg.spec.docs() {
@@ -60,7 +61,7 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
             for (path, item) in &paths {
                 for op in spec::path_item_operations(item) {
                     let (module_name, function_name) = op.function_name(path);
-                    let function = create_function(cg, doc_file, path, &op, &param_re, &function_name)?;
+                    let function = create_function(cg, doc_file, path, &op, &function_name)?;
                     if modules.contains_key(&module_name) {}
                     match modules.get_mut(&module_name) {
                         Some(module) => {
@@ -100,12 +101,11 @@ fn create_function(
     doc_file: &Path,
     path: &str,
     operation_verb: &OperationVerb,
-    param_re: &Regex,
     function_name: &str,
 ) -> Result<TokenStream, Error> {
     let fname = ident(function_name).map_err(Error::FunctionName)?;
 
-    let params = parse_params(param_re, path);
+    let params = parse_params(path);
     // println!("path params {:#?}", params);
     let params: Result<Vec<_>, Error> = params
         .iter()
@@ -113,8 +113,6 @@ fn create_function(
         .collect();
     let params = params?;
     let _url_str_args = quote! { #(#params),* };
-
-    let fpath = format!("{{}}{}", &format_path(param_re, path));
 
     let parameters: Vec<Parameter> = cg.spec.resolve_parameters(doc_file, &operation_verb.operation().parameters)?;
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
@@ -446,7 +444,8 @@ fn create_function(
     };
 
     let api_version = cg.api_version().ok_or_else(|| Error::MissingApiVersion)?;
-    let path = format!("{}?api-version={}", fpath, api_version);
+    let route_path = route_path(path);
+    let path = format!("{}?api-version={}", route_path, api_version);
     let route = quote! { #verb (#path) };
     let func = quote! {
         #[#route]
@@ -458,15 +457,6 @@ fn create_function(
     Ok(TokenStream::from(func))
 }
 
-fn parse_params(param_re: &Regex, path: &str) -> Vec<String> {
-    // capture 0 is the whole match and 1 is the actual capture like other languages
-    param_re.captures_iter(path).into_iter().map(|c| c[1].to_string()).collect()
-}
-
-fn format_path(param_re: &Regex, path: &str) -> String {
-    param_re.replace_all(path, "{}").to_string()
-}
-
 fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Parameter>) -> Result<TokenStream, Error> {
     let mut params: Vec<TokenStream> = Vec::new();
     for param in parameters {
@@ -474,8 +464,6 @@ fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Para
         let tp = get_param_type(param)?;
         params.push(quote! { #name: #tp });
     }
-    let slf = quote! { operation_config: &crate::OperationConfig };
-    params.insert(0, slf);
     Ok(quote! { #(#params),* })
 }
 
@@ -502,5 +490,34 @@ fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>, Error> {
         Ok(Some(get_type_name_for_schema_ref(schema, AsReference::False)?))
     } else {
         Ok(None)
+    }
+}
+
+struct ParamReplacer {}
+
+impl regex::Replacer for ParamReplacer {
+    fn replace_append(&mut self, caps: &regex::Captures, dst: &mut String) {
+        let name = caps.get(1).unwrap().as_str();
+        let name = format!("<{}>", name.to_snake_case());
+        dst.push_str(name.as_str())
+    }
+}
+
+fn route_path(spec_path: &str) -> String {
+    let mut rep = ParamReplacer {};
+    PARAM_RE.replace_all(spec_path, rep.by_ref()).to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_route_path() {
+        let spec_path = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.AVS/privateClouds";
+        assert_eq!(
+            route_path(spec_path),
+            "/subscriptions/<subscription_id>/resourceGroups/<resource_group_name>/providers/Microsoft.AVS/privateClouds"
+        );
     }
 }

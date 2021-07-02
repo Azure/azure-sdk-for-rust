@@ -9,6 +9,7 @@ use autorust_openapi::{
 use heck::CamelCase;
 use http::StatusCode as HttpStatusCode;
 use indexmap::IndexMap;
+use once_cell::sync::Lazy;
 
 // for looking up the const names
 // https://github.com/hyperium/http/blob/master/src/status.rs
@@ -197,9 +198,7 @@ const STATUS_CODES: &[(u16, &str)] = &[
     (511, "NETWORK_AUTHENTICATION_REQUIRED"),
 ];
 
-lazy_static::lazy_static! {
-    static ref STATUS_CODE_MAP: HashMap<u16, &'static str> = STATUS_CODES.iter().cloned().collect();
-}
+static STATUS_CODE_MAP: Lazy<HashMap<u16, &'static str>> = Lazy::new(|| STATUS_CODES.iter().cloned().collect());
 
 fn get_status_code_name_u16(status_code: &u16) -> String {
     let name = STATUS_CODE_MAP.get(status_code);

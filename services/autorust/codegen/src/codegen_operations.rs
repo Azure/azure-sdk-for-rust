@@ -13,7 +13,6 @@ use heck::SnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
-use regex::Regex;
 
 use crate::{
     codegen::{
@@ -22,9 +21,11 @@ use crate::{
         get_type_name_for_schema_ref,
         is_array,
         is_string,
+        parse_params,
         require,
         AsReference,
         Error,
+        PARAM_RE,
     },
     identifier::ident,
     spec,
@@ -49,7 +50,6 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         use crate::models::*;
 
     });
-    let param_re = Regex::new(r"\{(\w+)\}").unwrap();
     let mut modules: IndexMap<Option<String>, TokenStream> = IndexMap::new();
     // println!("input_files {:?}", cg.input_files());
     for (doc_file, doc) in cg.spec.docs() {
@@ -60,7 +60,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
             for (path, item) in &paths {
                 for op in spec::path_item_operations(item) {
                     let (module_name, function_name) = op.function_name(path);
-                    let function = create_function(cg, doc_file, path, &op, &param_re, &function_name)?;
+                    let function = create_function(cg, doc_file, path, &op, &function_name)?;
                     if modules.contains_key(&module_name) {}
                     match modules.get_mut(&module_name) {
                         Some(module) => {
@@ -101,12 +101,11 @@ fn create_function(
     doc_file: &Path,
     path: &str,
     operation_verb: &OperationVerb,
-    param_re: &Regex,
     function_name: &str,
 ) -> Result<TokenStream, Error> {
     let fname = ident(function_name).map_err(Error::FunctionName)?;
 
-    let params = parse_params(param_re, path);
+    let params = parse_params(path);
     // println!("path params {:#?}", params);
     let params: Result<Vec<_>, Error> = params
         .iter()
@@ -115,7 +114,7 @@ fn create_function(
     let params = params?;
     let url_str_args = quote! { #(#params),* };
 
-    let fpath = format!("{{}}{}", &format_path(param_re, path));
+    let fpath = format!("{{}}{}", &format_path(path));
 
     let parameters: Vec<Parameter> = cg.spec.resolve_parameters(doc_file, &operation_verb.operation().parameters)?;
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
@@ -498,13 +497,8 @@ fn create_function(
     Ok(TokenStream::from(func))
 }
 
-fn parse_params(param_re: &Regex, path: &str) -> Vec<String> {
-    // capture 0 is the whole match and 1 is the actual capture like other languages
-    param_re.captures_iter(path).into_iter().map(|c| c[1].to_string()).collect()
-}
-
-fn format_path(param_re: &Regex, path: &str) -> String {
-    param_re.replace_all(path, "{}").to_string()
+fn format_path(path: &str) -> String {
+    PARAM_RE.replace_all(path, "{}").to_string()
 }
 
 fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Parameter>) -> Result<TokenStream, Error> {

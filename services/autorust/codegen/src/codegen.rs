@@ -10,8 +10,10 @@ use autorust_openapi::{
     SchemaCommon,
 };
 use heck::CamelCase;
+use once_cell::sync::Lazy;
 use proc_macro2::TokenStream;
 use quote::quote;
+use regex::Regex;
 use serde_json::Value;
 
 use crate::{
@@ -215,4 +217,11 @@ pub fn create_mod(api_version: &str) -> TokenStream {
         pub mod operations;
         pub const API_VERSION: &str = #api_version;
     }
+}
+
+pub static PARAM_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\{(\w+)\}").unwrap());
+
+pub fn parse_params(path: &str) -> Vec<String> {
+    // capture 0 is the whole match and 1 is the actual capture like other languages
+    PARAM_RE.captures_iter(path).into_iter().map(|c| c[1].to_string()).collect()
 }
