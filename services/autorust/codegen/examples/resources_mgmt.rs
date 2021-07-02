@@ -1,8 +1,6 @@
 // cargo run --example resources_mgmt
 // https://github.com/Azure/azure-rest-api-specs/tree/master/specification/resources/resource-manager
 
-use std::collections::HashSet;
-
 use autorust_codegen::*;
 
 fn main() -> Result<()> {
@@ -14,7 +12,7 @@ fn main() -> Result<()> {
         api_version: Some(api_version.to_owned()),
         output_folder: output_folder.into(),
         input_files: input_files.iter().map(Into::into).collect(),
-        box_properties: HashSet::new(),
+        ..Config::default()
     })?;
 
     Ok(())

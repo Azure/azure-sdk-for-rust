@@ -1,8 +1,6 @@
 // cargo run --example storage_mgmt
 // https://github.com/Azure/azure-rest-api-specs/tree/master/specification/storage/resource-manager
 
-use std::collections::HashSet;
-
 use autorust_codegen::*;
 
 fn main() -> Result<()> {
@@ -19,7 +17,7 @@ fn main() -> Result<()> {
         api_version: Some(api_version.to_owned()),
         output_folder: output_folder.into(),
         input_files: input_files.iter().map(Into::into).collect(),
-        box_properties: HashSet::new(),
+        ..Config::default()
     })?;
 
     let api_version = "2019-06-01";
@@ -35,7 +33,7 @@ fn main() -> Result<()> {
         api_version: Some(api_version.to_owned()),
         output_folder: output_folder.into(),
         input_files: input_files.iter().map(Into::into).collect(),
-        box_properties: HashSet::new(),
+        ..Config::default()
     })?;
 
     Ok(())

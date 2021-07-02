@@ -76,6 +76,17 @@ pub struct Config {
     pub box_properties: HashSet<PropertyName>,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            input_files: Vec::new(),
+            output_folder: ".".into(),
+            api_version: None,
+            box_properties: HashSet::new(),
+        }
+    }
+}
+
 pub fn run(config: Config) -> Result<()> {
     let directory = &config.output_folder;
     fs::create_dir_all(directory).map_err(|source| Error::CreateOutputDirectoryError {
