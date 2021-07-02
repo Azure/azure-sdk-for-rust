@@ -7,7 +7,6 @@ use autorust_openapi::{
     CollectionFormat,
     Parameter,
     ParameterType,
-    PathItem,
     Response,
 };
 use heck::SnakeCase;
@@ -26,7 +25,6 @@ use crate::{
         require,
         AsReference,
         Error,
-        Result,
     },
     identifier::ident,
     spec,
@@ -41,7 +39,7 @@ use crate::{
     OperationVerb,
 };
 
-pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
+pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
     let mut file = TokenStream::new();
     file.extend(create_generated_by_header());
     file.extend(quote! {
@@ -62,7 +60,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
             for (path, item) in &paths {
                 for op in spec::path_item_operations(item) {
                     let (module_name, function_name) = op.function_name(path);
-                    let function = create_function(cg, doc_file, path, item, &op, &param_re, &function_name)?;
+                    let function = create_function(cg, doc_file, path, &op, &param_re, &function_name)?;
                     if modules.contains_key(&module_name) {}
                     match modules.get_mut(&module_name) {
                         Some(module) => {
@@ -102,16 +100,15 @@ fn create_function(
     cg: &CodeGen,
     doc_file: &Path,
     path: &str,
-    _item: &PathItem,
     operation_verb: &OperationVerb,
     param_re: &Regex,
     function_name: &str,
-) -> Result<TokenStream> {
+) -> Result<TokenStream, Error> {
     let fname = ident(function_name).map_err(Error::FunctionName)?;
 
     let params = parse_params(param_re, path);
     // println!("path params {:#?}", params);
-    let params: Result<Vec<_>> = params
+    let params: Result<Vec<_>, Error> = params
         .iter()
         .map(|s| Ok(ident(&s.to_snake_case()).map_err(Error::ParamName)?))
         .collect();
@@ -510,7 +507,7 @@ fn format_path(param_re: &Regex, path: &str) -> String {
     param_re.replace_all(path, "{}").to_string()
 }
 
-fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Parameter>) -> Result<TokenStream> {
+fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Parameter>) -> Result<TokenStream, Error> {
     let mut params: Vec<TokenStream> = Vec::new();
     for param in parameters {
         let name = get_param_name(param)?;
@@ -522,11 +519,11 @@ fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Para
     Ok(quote! { #(#params),* })
 }
 
-fn get_param_name(param: &Parameter) -> Result<TokenStream> {
+fn get_param_name(param: &Parameter) -> Result<TokenStream, Error> {
     ident(&param.name.to_snake_case()).map_err(Error::ParamName)
 }
 
-fn get_param_type(param: &Parameter) -> Result<TokenStream> {
+fn get_param_type(param: &Parameter) -> Result<TokenStream, Error> {
     let is_required = param.required.unwrap_or(false);
     let is_array = is_array(&param.common);
     let tp = if let Some(_param_type) = &param.common.type_ {
@@ -540,7 +537,7 @@ fn get_param_type(param: &Parameter) -> Result<TokenStream> {
     Ok(require(is_required || is_array, tp))
 }
 
-fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>> {
+fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>, Error> {
     if let Some(schema) = &rsp.schema {
         Ok(Some(get_type_name_for_schema_ref(schema, AsReference::False)?))
     } else {

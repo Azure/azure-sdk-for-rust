@@ -170,7 +170,7 @@ fn get_spec_folders(spec_folder: &str) -> Result<Vec<String>, Error> {
         let path = path.map_err(|source| Error::IoError { source })?;
         if path.file_type().map_err(|source| Error::IoError { source })?.is_dir() {
             let file_name = path.file_name();
-            let spec_folder = file_name.to_str().map_or(Err(Error::FileNameNotUtf8Error), Ok)?;
+            let spec_folder = file_name.to_str().ok_or_else(|| Error::FileNameNotUtf8Error)?;
             spec_folders.push(spec_folder.to_owned());
         }
     }

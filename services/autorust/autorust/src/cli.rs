@@ -29,13 +29,12 @@ pub fn config_try_new() -> Result<Config> {
 fn config_try_new_from_matches(arg_matches: &ArgMatches) -> Result<Config> {
     let input_files = arg_matches
         .values_of(INPUT_FILE)
-        // .ok_or(INPUT_FILE)?
-        .map_or(Err(Error::InputFileIsRequired), Ok)?
+        .ok_or_else(|| Error::InputFileIsRequired)?
         .map(|s| s.into())
         .collect::<Vec<_>>();
     let output_folder = arg_matches
         .value_of(OUTPUT_FOLDER)
-        .map_or(Err(Error::OutputFolder), Ok)?
+        .ok_or_else(|| Error::OutputFolder)?
         .to_owned()
         .into();
     let api_version = arg_matches.value_of(API_VERSION).map(String::from);

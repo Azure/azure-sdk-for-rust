@@ -34,7 +34,6 @@ use crate::{
         require,
         AsReference,
         Error,
-        Result,
     },
     identifier::{
         ident,
@@ -46,7 +45,7 @@ use crate::{
     ResolvedSchema,
 };
 
-pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
+pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
     let mut file = TokenStream::new();
     file.extend(create_generated_by_header());
     file.extend(quote! {
@@ -104,7 +103,12 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
 }
 
 // For create_models. Recursively adds schema refs.
-fn add_schema_refs(cg: &CodeGen, schemas: &mut IndexMap<RefKey, ResolvedSchema>, doc_file: &Path, schema_ref: Reference) -> Result<()> {
+fn add_schema_refs(
+    cg: &CodeGen,
+    schemas: &mut IndexMap<RefKey, ResolvedSchema>,
+    doc_file: &Path,
+    schema_ref: Reference,
+) -> Result<(), Error> {
     let schema = cg.spec.resolve_schema_ref(doc_file, schema_ref)?;
     if let Some(ref_key) = schema.ref_key.clone() {
         if !schemas.contains_key(&ref_key) {
@@ -120,7 +124,7 @@ fn add_schema_refs(cg: &CodeGen, schemas: &mut IndexMap<RefKey, ResolvedSchema>,
     Ok(())
 }
 
-fn create_enum(namespace: &TokenStream, property_name: &str, property: &ResolvedSchema) -> Result<(TokenStream, TokenStream)> {
+fn create_enum(namespace: &TokenStream, property_name: &str, property: &ResolvedSchema) -> Result<(TokenStream, TokenStream), Error> {
     let enum_values = enum_values_as_strings(&property.schema.common.enum_);
     let id = ident(&property_name.to_camel_case()).map_err(Error::EnumName)?;
     let mut values = TokenStream::new();
@@ -148,14 +152,14 @@ fn create_enum(namespace: &TokenStream, property_name: &str, property: &Resolved
     Ok((tp_name, tp))
 }
 
-fn create_vec_alias(alias_name: &str, schema: &ResolvedSchema) -> Result<TokenStream> {
+fn create_vec_alias(alias_name: &str, schema: &ResolvedSchema) -> Result<TokenStream, Error> {
     let items = get_schema_array_items(&schema.schema.common)?;
     let typ = ident(&alias_name.to_camel_case()).map_err(Error::VecAliasName)?;
     let items_typ = get_type_name_for_schema_ref(&items, AsReference::False)?;
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
-fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &ResolvedSchema) -> Result<Vec<TokenStream>> {
+fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &ResolvedSchema) -> Result<Vec<TokenStream>, Error> {
     // println!("create_struct {} {}", doc_file.to_str().unwrap(), struct_name);
     let mut streams = Vec::new();
     let mut local_types = Vec::new();
@@ -245,7 +249,7 @@ fn create_struct_field_type(
     namespace: &TokenStream,
     property_name: &str,
     property: &ResolvedSchema,
-) -> Result<(TokenStream, Vec<TokenStream>)> {
+) -> Result<(TokenStream, Vec<TokenStream>), Error> {
     match &property.ref_key {
         Some(ref_key) => {
             let tp = ident(&ref_key.name.to_camel_case()).map_err(Error::PropertyName)?;

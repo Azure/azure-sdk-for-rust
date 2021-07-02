@@ -225,6 +225,7 @@ fn gen_crate(spec: &SpecConfigs) -> Result<()> {
     lib_rs::create(
         &feature_mod_names,
         &path::join(src_folder, "lib.rs").map_err(|source| Error::PathError { source })?,
+        false,
     )
     .map_err(|source| Error::LibRsError { source })?;
 

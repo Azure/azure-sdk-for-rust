@@ -19,8 +19,8 @@ pub enum Error {
     WriteFile(#[source] crate::Error),
 }
 
-pub fn create(feature_mod_names: &Vec<(String, String)>, path: &Path) -> Result<()> {
-    write_file(path, &create_body(feature_mod_names)?).map_err(Error::WriteFile)?;
+pub fn create(feature_mod_names: &Vec<(String, String)>, path: &Path, print_writing_file: bool) -> Result<()> {
+    write_file(path, &create_body(feature_mod_names)?, print_writing_file).map_err(Error::WriteFile)?;
     Ok(())
 }
 

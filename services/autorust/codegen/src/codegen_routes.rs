@@ -7,7 +7,6 @@ use autorust_openapi::{
     CollectionFormat,
     Parameter,
     ParameterType,
-    PathItem,
     Response,
 };
 use heck::SnakeCase;
@@ -26,7 +25,6 @@ use crate::{
         require,
         AsReference,
         Error,
-        Result,
     },
     identifier::ident,
     spec,
@@ -41,14 +39,14 @@ use crate::{
     OperationVerb,
 };
 
-pub fn create_routes(cg: &CodeGen) -> Result<TokenStream> {
+pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
     let mut file = TokenStream::new();
     file.extend(create_generated_by_header());
     file.extend(quote! {
         #![allow(unused_mut)]
         #![allow(unused_variables)]
         #![allow(unused_imports)]
-        use crate::models::*;
+        use super::models::*;
 
     });
     let param_re = Regex::new(r"\{(\w+)\}").unwrap();
@@ -62,7 +60,7 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream> {
             for (path, item) in &paths {
                 for op in spec::path_item_operations(item) {
                     let (module_name, function_name) = op.function_name(path);
-                    let function = create_function(cg, doc_file, path, item, &op, &param_re, &function_name)?;
+                    let function = create_function(cg, doc_file, path, &op, &param_re, &function_name)?;
                     if modules.contains_key(&module_name) {}
                     match modules.get_mut(&module_name) {
                         Some(module) => {
@@ -84,8 +82,7 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream> {
                 let name = ident(&module_name).map_err(Error::ModuleName)?;
                 file.extend(quote! {
                     pub mod #name {
-                        use crate::models::*;
-
+                        use super::models::*;
                         #module
                     }
                 });
@@ -102,21 +99,20 @@ fn create_function(
     cg: &CodeGen,
     doc_file: &Path,
     path: &str,
-    _item: &PathItem,
     operation_verb: &OperationVerb,
     param_re: &Regex,
     function_name: &str,
-) -> Result<TokenStream> {
+) -> Result<TokenStream, Error> {
     let fname = ident(function_name).map_err(Error::FunctionName)?;
 
     let params = parse_params(param_re, path);
     // println!("path params {:#?}", params);
-    let params: Result<Vec<_>> = params
+    let params: Result<Vec<_>, Error> = params
         .iter()
         .map(|s| Ok(ident(&s.to_snake_case()).map_err(Error::ParamName)?))
         .collect();
     let params = params?;
-    let url_str_args = quote! { #(#params),* };
+    let _url_str_args = quote! { #(#params),* };
 
     let fpath = format!("{{}}{}", &format_path(param_re, path));
 
@@ -135,21 +131,6 @@ fn create_function(
     // let fresponse = create_function_return(operation_verb)?;
 
     let mut ts_request_builder = TokenStream::new();
-
-    let mut is_post = false;
-    let req_verb = match operation_verb {
-        OperationVerb::Get(_) => quote! { req_builder = req_builder.method(http::Method::GET); },
-        OperationVerb::Post(_) => {
-            is_post = true;
-            quote! { req_builder = req_builder.method(http::Method::POST); }
-        }
-        OperationVerb::Put(_) => quote! { req_builder = req_builder.method(http::Method::PUT); },
-        OperationVerb::Patch(_) => quote! { req_builder = req_builder.method(http::Method::PATCH); },
-        OperationVerb::Delete(_) => quote! { req_builder = req_builder.method(http::Method::DELETE); },
-        OperationVerb::Options(_) => quote! { req_builder = req_builder.method(http::Method::OPTIONS); },
-        OperationVerb::Head(_) => quote! { req_builder = req_builder.method(http::Method::HEAD); },
-    };
-    ts_request_builder.extend(req_verb);
 
     // auth
     ts_request_builder.extend(quote! {
@@ -275,13 +256,6 @@ fn create_function(
     if !has_body_parameter {
         ts_request_builder.extend(quote! {
             let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        });
-    }
-
-    // if it is a post and there is no body, set the Content-Length to 0
-    if is_post && !has_body_parameter {
-        ts_request_builder.extend(quote! {
-            req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         });
     }
 
@@ -461,41 +435,24 @@ fn create_function(
         });
     }
 
+    let verb = match operation_verb {
+        OperationVerb::Get(_) => quote! { get },
+        OperationVerb::Post(_) => quote! { post },
+        OperationVerb::Put(_) => quote! { put },
+        OperationVerb::Patch(_) => quote! { patch },
+        OperationVerb::Delete(_) => quote! { delete },
+        OperationVerb::Options(_) => quote! { options },
+        OperationVerb::Head(_) => quote! { head },
+    };
+
+    let api_version = cg.api_version().ok_or_else(|| Error::MissingApiVersion)?;
+    let path = format!("{}?api-version={}", fpath, api_version);
+    let route = quote! { #verb (#path) };
     let func = quote! {
-        pub async fn #fname(#fparams) -> #fresponse {
-            let http_client = operation_config.http_client();
-            let url_str = &format!(#fpath, operation_config.base_path(), #url_str_args);
-            let mut url = url::Url::parse(url_str).map_err(#fname::Error::ParseUrlError)?;
-            let mut req_builder = http::request::Builder::new();
-            #ts_request_builder
-            req_builder = req_builder.uri(url.as_str());
-            let req = req_builder.body(req_body).map_err(#fname::Error::BuildRequestError)?;
-            let rsp = http_client.execute_request(req).await.map_err(#fname::Error::ExecuteRequestError)?;
-            match rsp.status() {
-                #match_status
-            }
+        #[#route]
+        pub fn #fname(#fparams) -> #fresponse {
         }
         pub mod #fname {
-            use crate::{models, models::*};
-
-            #response_enum
-
-            #[derive(Debug, thiserror::Error)]
-            pub enum Error {
-                #error_responses_ts
-                #[error("Failed to parse request URL: {0}")]
-                ParseUrlError(url::ParseError),
-                #[error("Failed to build request: {0}")]
-                BuildRequestError(http::Error),
-                #[error("Failed to execute request: {0}")]
-                ExecuteRequestError(azure_core::HttpError),
-                #[error("Failed to serialize request body: {0}")]
-                SerializeError(serde_json::Error),
-                #[error("Failed to deserialize response: {0}, body: {1:?}")]
-                DeserializeError(serde_json::Error, bytes::Bytes),
-                #[error("Failed to get access token: {0}")]
-                GetTokenError(azure_core::Error),
-            }
         }
     };
     Ok(TokenStream::from(func))
@@ -510,7 +467,7 @@ fn format_path(param_re: &Regex, path: &str) -> String {
     param_re.replace_all(path, "{}").to_string()
 }
 
-fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Parameter>) -> Result<TokenStream> {
+fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Parameter>) -> Result<TokenStream, Error> {
     let mut params: Vec<TokenStream> = Vec::new();
     for param in parameters {
         let name = get_param_name(param)?;
@@ -522,11 +479,11 @@ fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Para
     Ok(quote! { #(#params),* })
 }
 
-fn get_param_name(param: &Parameter) -> Result<TokenStream> {
+fn get_param_name(param: &Parameter) -> Result<TokenStream, Error> {
     ident(&param.name.to_snake_case()).map_err(Error::ParamName)
 }
 
-fn get_param_type(param: &Parameter) -> Result<TokenStream> {
+fn get_param_type(param: &Parameter) -> Result<TokenStream, Error> {
     let is_required = param.required.unwrap_or(false);
     let is_array = is_array(&param.common);
     let tp = if let Some(_param_type) = &param.common.type_ {
@@ -540,7 +497,7 @@ fn get_param_type(param: &Parameter) -> Result<TokenStream> {
     Ok(require(is_required || is_array, tp))
 }
 
-fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>> {
+fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>, Error> {
     if let Some(schema) = &rsp.schema {
         Ok(Some(get_type_name_for_schema_ref(schema, AsReference::False)?))
     } else {
