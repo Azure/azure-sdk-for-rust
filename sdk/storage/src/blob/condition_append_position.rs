@@ -10,14 +10,26 @@ impl ConditionAppendPosition {
     }
 }
 
+impl From<u64> for ConditionAppendPosition {
+    fn from(n: u64) -> Self {
+        Self(n)
+    }
+}
+
 impl AddAsHeader for ConditionAppendPosition {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header("x-ms-blob-condition-appendpos", &format!("{}", self.0))
     }
-}
 
-impl From<u64> for ConditionAppendPosition {
-    fn from(n: u64) -> Self {
-        Self(n)
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), http::header::InvalidHeaderValue> {
+        request.headers_mut().append(
+            "x-ms-blob-condition-appendpos",
+            http::header::HeaderValue::from_str(&self.0.to_string())?,
+        );
+
+        Ok(())
     }
 }

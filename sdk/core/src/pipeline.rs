@@ -1,7 +1,7 @@
 #[cfg(not(target_arch = "wasm32"))]
 use crate::policies::TransportPolicy;
 use crate::policies::{Policy, TelemetryPolicy};
-use crate::{ClientOptions, Context, Error, HttpClient, Request, Response};
+use crate::{ClientOptions, Error, HttpClient, PipelineContext, Request, Response};
 use std::sync::Arc;
 
 /// Execution pipeline.
@@ -24,12 +24,18 @@ use std::sync::Arc;
 /// cannot be enforced by code). All policies except Transport policy can assume there is another following policy (so
 /// self.pipeline[0] is always valid).
 #[derive(Debug, Clone)]
-pub struct Pipeline {
+pub struct Pipeline<R>
+where
+    R: Send + Sync,
+{
     http_client: Arc<dyn HttpClient>,
-    pipeline: Vec<Arc<dyn Policy>>,
+    pipeline: Vec<Arc<dyn Policy<R>>>,
 }
 
-impl Pipeline {
+impl<R> Pipeline<R>
+where
+    R: Send + Sync,
+{
     /// Creates a new pipeline given the client library crate name and version,
     /// alone with user-specified and client library-specified policies.
     ///
@@ -38,11 +44,11 @@ impl Pipeline {
     pub fn new(
         crate_name: Option<&'static str>,
         crate_version: Option<&'static str>,
-        options: &ClientOptions,
-        per_call_policies: Vec<Arc<dyn Policy>>,
-        per_retry_policies: Vec<Arc<dyn Policy>>,
+        options: &ClientOptions<R>,
+        per_call_policies: Vec<Arc<dyn Policy<R>>>,
+        per_retry_policies: Vec<Arc<dyn Policy<R>>>,
     ) -> Self {
-        let mut pipeline: Vec<Arc<dyn Policy>> = Vec::with_capacity(
+        let mut pipeline: Vec<Arc<dyn Policy<R>>> = Vec::with_capacity(
             options.per_call_policies.len()
                 + per_call_policies.len()
                 + options.per_retry_policies.len()
@@ -81,7 +87,11 @@ impl Pipeline {
         self.http_client.as_ref()
     }
 
-    pub async fn send(&self, ctx: &mut Context, request: &mut Request) -> Result<Response, Error> {
+    pub async fn send(
+        &self,
+        ctx: &mut PipelineContext<R>,
+        request: &mut Request,
+    ) -> Result<Response, Error> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await

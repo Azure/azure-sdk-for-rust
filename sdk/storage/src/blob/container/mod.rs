@@ -33,6 +33,24 @@ impl AddAsHeader for PublicAccess {
             PublicAccess::None => builder,
         }
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), http::header::InvalidHeaderValue> {
+        let (header_name, header_value) = match self {
+            PublicAccess::Blob => (BLOB_PUBLIC_ACCESS, "blob"),
+            PublicAccess::Container => (BLOB_PUBLIC_ACCESS, "container"),
+            PublicAccess::None => return Ok(()),
+        };
+
+        request.headers_mut().append(
+            header_name,
+            http::header::HeaderValue::from_str(&header_value)?,
+        );
+
+        Ok(())
+    }
 }
 
 pub(crate) fn public_access_from_header(

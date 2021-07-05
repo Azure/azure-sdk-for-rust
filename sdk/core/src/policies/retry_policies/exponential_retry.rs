@@ -1,5 +1,6 @@
-use crate::policies::{Context, Policy, PolicyResult, Request, Response};
+use crate::policies::{Policy, PolicyResult, Request, Response};
 use crate::sleep::sleep;
+use crate::PipelineContext;
 use chrono::{DateTime, Local};
 use std::sync::Arc;
 use std::time::Duration;
@@ -46,12 +47,15 @@ impl ExponentialRetryPolicy {
 }
 
 #[async_trait::async_trait]
-impl Policy for ExponentialRetryPolicy {
+impl<R> Policy<R> for ExponentialRetryPolicy
+where
+    R: Send + Sync,
+{
     async fn send(
         &self,
-        ctx: &mut Context,
+        ctx: &mut PipelineContext<R>,
         request: &mut Request,
-        next: &[Arc<dyn Policy>],
+        next: &[Arc<dyn Policy<R>>],
     ) -> PolicyResult<Response> {
         let mut first_retry_time = None;
         let mut current_retries = 0;

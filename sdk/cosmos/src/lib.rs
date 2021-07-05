@@ -105,6 +105,7 @@ pub mod requests;
 pub mod resources;
 pub mod responses;
 
+mod authorization_policy;
 mod consistency_level;
 mod cosmos_entity;
 mod errors;
@@ -112,6 +113,7 @@ mod headers;
 mod resource_quota;
 mod to_json_vector;
 
+pub(crate) use authorization_policy::AuthorizationPolicy;
 pub use consistency_level::ConsistencyLevel;
 pub use cosmos_entity::CosmosEntity;
 pub use resource_quota::ResourceQuota;

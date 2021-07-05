@@ -50,7 +50,7 @@ pub trait Resource {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ResourceType {
     Databases,
     Collections,

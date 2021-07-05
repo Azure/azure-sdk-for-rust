@@ -10,14 +10,26 @@ impl SequenceNumber {
     }
 }
 
+impl From<u64> for SequenceNumber {
+    fn from(max_results: u64) -> Self {
+        Self::new(max_results)
+    }
+}
+
 impl AddAsHeader for SequenceNumber {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(crate::BLOB_SEQUENCE_NUMBER, &format!("{}", self.0))
     }
-}
 
-impl From<u64> for SequenceNumber {
-    fn from(max_results: u64) -> Self {
-        Self::new(max_results)
+    fn add_as_header2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<(), http::header::InvalidHeaderValue> {
+        request.headers_mut().append(
+            crate::BLOB_SEQUENCE_NUMBER,
+            http::HeaderValue::from_str(&format!("{}", self.0))?,
+        );
+
+        Ok(())
     }
 }

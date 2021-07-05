@@ -28,6 +28,21 @@ impl AddAsHeader for ReturnEntity {
             },
         )
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), http::header::InvalidHeaderValue> {
+        request.headers_mut().append(
+            "Prefer",
+            http::header::HeaderValue::from_str(match self.0 {
+                true => "return-content",
+                false => "return-no-content",
+            })?,
+        );
+
+        Ok(())
+    }
 }
 
 impl From<bool> for ReturnEntity {

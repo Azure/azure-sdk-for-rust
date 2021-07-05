@@ -23,4 +23,21 @@ impl AddAsHeader for SequenceNumberCondition {
             }
         }
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<(), http::header::InvalidHeaderValue> {
+        let (header_name, val) = match self {
+            SequenceNumberCondition::Equal(val) => (IF_SEQUENCE_NUMBER_EQ, val),
+            SequenceNumberCondition::LessOrEqual(val) => (IF_SEQUENCE_NUMBER_LE, val),
+            SequenceNumberCondition::Less(val) => (IF_SEQUENCE_NUMBER_LT, val),
+        };
+
+        request
+            .headers_mut()
+            .append(header_name, http::HeaderValue::from_str(&val.to_string())?);
+
+        Ok(())
+    }
 }

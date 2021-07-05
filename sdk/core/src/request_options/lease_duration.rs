@@ -18,6 +18,22 @@ impl AddAsHeader for LeaseDuration {
             }
         }
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<(), http::header::InvalidHeaderValue> {
+        let (header_name, header_value) = match self {
+            LeaseDuration::Infinite => (LEASE_DURATION, -1),
+            LeaseDuration::Seconds(seconds) => (LEASE_DURATION, *seconds as i32),
+        };
+
+        request
+            .headers_mut()
+            .append(header_name, http::HeaderValue::from(header_value));
+
+        Ok(())
+    }
 }
 
 impl From<Duration> for LeaseDuration {

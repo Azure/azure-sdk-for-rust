@@ -59,4 +59,16 @@ impl AddAsHeader for RehydratePriority {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(headers::REHYDRATE_PRIORITY, &format!("{}", self))
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), http::header::InvalidHeaderValue> {
+        request.headers_mut().append(
+            headers::REHYDRATE_PRIORITY,
+            http::header::HeaderValue::from_str(&self.to_string())?,
+        );
+
+        Ok(())
+    }
 }

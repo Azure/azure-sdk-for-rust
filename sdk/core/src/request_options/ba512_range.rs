@@ -66,6 +66,18 @@ impl AddAsHeader for BA512Range {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(http::header::RANGE, &format!("{}", self))
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<(), http::header::InvalidHeaderValue> {
+        request.headers_mut().append(
+            http::header::RANGE,
+            http::HeaderValue::from_str(&self.to_string())?,
+        );
+
+        Ok(())
+    }
 }
 
 impl FromStr for BA512Range {

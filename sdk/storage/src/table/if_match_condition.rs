@@ -22,4 +22,21 @@ impl AddAsHeader for IfMatchCondition {
             IfMatchCondition::Any => builder.header(IF_MATCH, "*"),
         }
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), http::header::InvalidHeaderValue> {
+        let (header_name, header_value) = match self {
+            IfMatchCondition::Etag(etag) => (IF_MATCH, etag.as_ref()),
+            IfMatchCondition::Any => (IF_MATCH, "*"),
+        };
+
+        request.headers_mut().append(
+            header_name,
+            http::header::HeaderValue::from_str(&header_value)?,
+        );
+
+        Ok(())
+    }
 }
