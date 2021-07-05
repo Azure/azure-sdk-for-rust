@@ -26,7 +26,7 @@ async fn create_and_delete_container() {
 
     container
         .create()
-        .public_access(PublicAccess::Container)
+        .public_access(PublicAccess::None)
         .execute()
         .await
         .unwrap();
@@ -43,7 +43,7 @@ async fn create_and_delete_container() {
         .push(StoredAccessPolicy::new("pollo", dt_start, dt_end, "rwd"));
 
     let _result = container
-        .set_acl(PublicAccess::Blob)
+        .set_acl(PublicAccess::None)
         .stored_access_policy_list(&sapl)
         .execute()
         .await
@@ -52,7 +52,7 @@ async fn create_and_delete_container() {
     // now we get back the acess policy list and compare to the one created
     let result = container.get_acl().execute().await.unwrap();
 
-    assert!(result.public_access == PublicAccess::Blob);
+    assert!(result.public_access == PublicAccess::None);
     // we cannot compare the returned result because Azure will
     // trim the milliseconds
     // assert!(sapl == result.stored_access_policy_list);
@@ -67,7 +67,7 @@ async fn create_and_delete_container() {
     }
 
     let res = container.get_properties().execute().await.unwrap();
-    assert!(res.container.public_access == PublicAccess::Blob);
+    assert!(res.container.public_access == PublicAccess::None);
 
     let list = storage_client
         .list_containers()
@@ -116,7 +116,7 @@ async fn put_and_get_block_list() {
 
     container
         .create()
-        .public_access(PublicAccess::Container)
+        .public_access(PublicAccess::None)
         .execute()
         .await
         .expect("container already present");
@@ -248,7 +248,7 @@ async fn put_block_blob() {
     {
         container
             .create()
-            .public_access(PublicAccess::Blob)
+            .public_access(PublicAccess::None)
             .execute()
             .await
             .unwrap();
@@ -289,7 +289,7 @@ async fn copy_blob() {
     {
         container
             .create()
-            .public_access(PublicAccess::Blob)
+            .public_access(PublicAccess::None)
             .execute()
             .await
             .unwrap();
@@ -350,7 +350,7 @@ async fn put_block_blob_and_get_properties() {
     {
         container
             .create()
-            .public_access(PublicAccess::Blob)
+            .public_access(PublicAccess::None)
             .execute()
             .await
             .unwrap();

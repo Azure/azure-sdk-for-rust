@@ -38,7 +38,7 @@ async fn put_append_blob() {
     {
         container
             .create()
-            .public_access(PublicAccess::Blob)
+            .public_access(PublicAccess::None)
             .execute()
             .await
             .unwrap();

@@ -37,7 +37,7 @@ async fn code() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     {
         container
             .create()
-            .public_access(PublicAccess::Blob)
+            .public_access(PublicAccess::None)
             .execute()
             .await?;
     }
