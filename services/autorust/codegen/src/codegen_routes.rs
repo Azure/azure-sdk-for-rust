@@ -47,6 +47,7 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
         #![allow(unused_mut)]
         #![allow(unused_variables)]
         #![allow(unused_imports)]
+        use crate::read_example_body;
         use super::models::*;
         use rocket::serde::json::Json;
     });
@@ -423,14 +424,25 @@ fn create_function(
     let path = format!("{}?api-version={}", route_path, api_version);
     let route = quote! { #verb (#path) };
 
-    // Ok(PrivateCloudsListResponder::Ok200(Json(crate::read_example_body(path, 0)?)))
+    let first_response = responses.0.first().ok_or_else(|| Error::OperationMissingResponses)?;
+    let first_example_name = ident(&first_example.const_name()).map_err(Error::ExamplesName)?;
+    let status_code = first_response.status_code.ok_or_else(|| Error::StatusCodeRequired)?;
+    let response_type = ident(&get_response_type(status_code).map_err(Error::ResponseType)?).map_err(Error::ResponseTypeName)?;
+    let first_responder = match &first_response.body_type_name {
+        Some(_body) => quote! {
+            #responder_name::#response_type(Json(read_example_body(#examples_name::#first_example_name, 0)?))
+        },
+        None => quote! {
+            #responder_name::#response_type
+        },
+    };
 
     let func = quote! {
         #responder
         #examples_mod
         #[#route]
         pub fn #fname(#fparams) -> #fresponse {
-
+            Ok(#first_responder)
         }
     };
     Ok(TokenStream::from(func))
