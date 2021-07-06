@@ -83,6 +83,8 @@ pub enum Error {
     ExamplePathNotUtf8,
     #[error("status code required")]
     StatusCodeRequired,
+    #[error("creating name for examples")]
+    ExamplesName(#[source] crate::identifier::Error),
 }
 
 /// Whether or not to pass a type is a reference.

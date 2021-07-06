@@ -1,6 +1,7 @@
 use std::{collections::HashSet, path::Path};
 
 use autorust_openapi::{CollectionFormat, Parameter, ParameterType, ReferenceOr, Response, StatusCode};
+use heck::ShoutySnakeCase;
 use heck::{CamelCase, SnakeCase};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
@@ -262,8 +263,11 @@ fn create_function(
         });
     }
 
+    let function_name_camel_case = function_name.to_camel_case();
+    let examples_name = ident(&format!("{}Examples", function_name_camel_case)).map_err(Error::FunctionName)?;
     let examples = get_operation_examples(operation_verb);
-    let first_example = examples.first().ok_or_else(|| Error::OperationMissingExample)?;
+    let examples_mod = create_examples_mod(&examples_name, &examples)?;
+    let first_example = examples.0.first().ok_or_else(|| Error::OperationMissingExample)?;
 
     let responses = &operation_verb.operation().responses;
     let success_responses = get_success_responses(responses);
@@ -272,7 +276,7 @@ fn create_function(
     let has_default_response = has_default_response(responses);
 
     let responses = get_operation_responses(&operation_verb)?;
-    let responder_name = ident(&format!("{}Responder", function_name.to_camel_case())).map_err(Error::FunctionName)?;
+    let responder_name = ident(&format!("{}Responder", function_name_camel_case)).map_err(Error::FunctionName)?;
     let responder = create_responder(&responder_name, &responses)?;
 
     let fresponse = quote! { Result<#responder_name, crate::CloudErrorResponder> };
@@ -421,20 +425,33 @@ fn create_function(
 
     // Ok(PrivateCloudsListResponder::Ok200(Json(crate::read_example_body(path, 0)?)))
 
-    let example_path = path::join("../../../../azure-rest-api-specs-pr", &first_example.file).map_err(Error::ExamplePath)?;
-    let example_path = example_path.to_str().ok_or_else(|| Error::ExamplePathNotUtf8)?;
-    let example_path = example_path.replace("\\", "/");
-
     let func = quote! {
         #responder
-
+        #examples_mod
         #[#route]
         pub fn #fname(#fparams) -> #fresponse {
-            let example_path = #example_path;
 
         }
     };
     Ok(TokenStream::from(func))
+}
+
+fn create_examples_mod(name: &TokenStream, examples: &OperationExamples) -> Result<TokenStream, Error> {
+    let mut values = TokenStream::new();
+    for example in &examples.0 {
+        let name = ident(&example.const_name()).map_err(Error::ExamplesName)?;
+        let file = path::join("../../../../azure-rest-api-specs-pr", &example.file).map_err(Error::ExamplePath)?;
+        let file = file.to_str().ok_or_else(|| Error::ExamplePathNotUtf8)?;
+        let file = file.replace("\\", "/");
+        values.extend(quote! {
+            pub const #name: &str = #file;
+        });
+    }
+    Ok(quote! {
+        pub mod #name {
+            #values
+        }
+    })
 }
 
 fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Parameter>) -> Result<TokenStream, Error> {
@@ -494,7 +511,13 @@ struct OperationExample {
     file: String,
 }
 
-fn get_operation_examples(operation: &OperationVerb) -> Vec<OperationExample> {
+impl OperationExample {
+    pub fn const_name(&self) -> String {
+        self.name.to_shouty_snake_case()
+    }
+}
+
+fn get_operation_examples(operation: &OperationVerb) -> OperationExamples {
     let operation = operation.operation();
     let mut examples = Vec::new();
     for (name, example) in &operation.x_ms_examples {
@@ -510,8 +533,10 @@ fn get_operation_examples(operation: &OperationVerb) -> Vec<OperationExample> {
             ReferenceOr::Item(_) => {}
         }
     }
-    examples
+    OperationExamples(examples)
 }
+
+struct OperationExamples(pub Vec<OperationExample>);
 
 #[derive(Debug)]
 struct OperationResponse {
