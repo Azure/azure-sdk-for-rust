@@ -1,6 +1,6 @@
 use std::{collections::HashSet, path::Path};
 
-use autorust_openapi::{CollectionFormat, Parameter, ParameterType, ReferenceOr, Response};
+use autorust_openapi::{CollectionFormat, Parameter, ParameterType, ReferenceOr, Response, StatusCode};
 use heck::{CamelCase, SnakeCase};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
@@ -14,7 +14,9 @@ use crate::{
     },
     identifier::ident,
     path, spec,
-    status_codes::{get_error_responses, get_response_type_name, get_status_code_name, get_success_responses, has_default_response},
+    status_codes::{
+        get_error_responses, get_response_type, get_response_type_name, get_status_code_name, get_success_responses, has_default_response,
+    },
     CodeGen, OperationVerb,
 };
 
@@ -262,7 +264,6 @@ fn create_function(
 
     let examples = get_operation_examples(operation_verb);
     let first_example = examples.first().ok_or_else(|| Error::OperationMissingExample)?;
-    println!("first example name: {:?}", first_example);
 
     let responses = &operation_verb.operation().responses;
     let success_responses = get_success_responses(responses);
@@ -270,13 +271,11 @@ fn create_function(
     let is_single_response = success_responses.len() == 1;
     let has_default_response = has_default_response(responses);
 
-    let responder = ident(&format!("{}Responder", function_name.to_camel_case())).map_err(Error::FunctionName)?;
-    let fresponse = if is_single_response {
-        let tp = create_response_type(&success_responses[0])?.unwrap_or(quote! { () });
-        quote! { Result<Json<#tp>, crate::CloudErrorResponder> }
-    } else {
-        quote! { Result<#responder, crate::CloudErrorResponder> }
-    };
+    let responses = get_operation_responses(&operation_verb)?;
+    let responder_name = ident(&format!("{}Responder", function_name.to_camel_case())).map_err(Error::FunctionName)?;
+    let responder = create_responder(&responder_name, &responses)?;
+
+    let fresponse = quote! { Result<#responder_name, crate::CloudErrorResponder> };
 
     let mut response_enum = TokenStream::new();
     if !is_single_response {
@@ -404,42 +403,6 @@ fn create_function(
             autorust_openapi::StatusCode::Default => {}
         }
     }
-    // default must be last
-    if has_default_response {
-        for (status_code, rsp) in responses {
-            match status_code {
-                autorust_openapi::StatusCode::Code(_) => {}
-                autorust_openapi::StatusCode::Default => {
-                    let tp = create_response_type(rsp)?;
-                    match tp {
-                        Some(tp) => {
-                            match_status.extend(quote! {
-                                status_code => {
-                                    let rsp_body = rsp.body();
-                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
-                                    Err(#fname::Error::DefaultResponse{status_code, value: rsp_value})
-                                }
-                            });
-                        }
-                        None => {
-                            match_status.extend(quote! {
-                                status_code => {
-                                    Err(#fname::Error::DefaultResponse{status_code})
-                                }
-                            });
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        match_status.extend(quote! {
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(#fname::Error::UnexpectedResponse{status_code, body: rsp_body.clone()})
-            }
-        });
-    }
 
     let verb = match operation_verb {
         OperationVerb::Get(_) => quote! { get },
@@ -463,6 +426,8 @@ fn create_function(
     let example_path = example_path.replace("\\", "/");
 
     let func = quote! {
+        #responder
+
         #[#route]
         pub fn #fname(#fparams) -> #fresponse {
             let example_path = #example_path;
@@ -546,6 +511,57 @@ fn get_operation_examples(operation: &OperationVerb) -> Vec<OperationExample> {
         }
     }
     examples
+}
+
+#[derive(Debug)]
+struct OperationResponse {
+    status_code: Option<u16>,
+    body_type_name: Option<TokenStream>,
+}
+
+struct OperationRespones(pub Vec<OperationResponse>);
+
+fn get_operation_responses(operation: &OperationVerb) -> Result<OperationRespones, Error> {
+    let operation = operation.operation();
+    let mut responses = Vec::new();
+    for (status_code, response) in get_success_responses(&operation.responses) {
+        let body_type_name = response
+            .schema
+            .map(|ref schema| get_type_name_for_schema_ref(schema, AsReference::False))
+            .transpose()?;
+        let status_code = match status_code {
+            StatusCode::Code(status_code) => Some(status_code),
+            StatusCode::Default => None,
+        };
+        responses.push(OperationResponse {
+            status_code,
+            body_type_name,
+        });
+    }
+    Ok(OperationRespones(responses))
+}
+
+fn create_responder(name: &TokenStream, responses: &OperationRespones) -> Result<TokenStream, Error> {
+    let mut values = Vec::new();
+    for response in &responses.0 {
+        let status_code = &response.status_code;
+        let status_code = status_code.ok_or_else(|| Error::StatusCodeRequired)?;
+        let response_type = ident(&get_response_type(status_code).map_err(Error::ResponseType)?).map_err(Error::ResponseTypeName)?;
+        let body = match &response.body_type_name {
+            Some(body) => quote! { (Json<#body>) },
+            None => quote! {},
+        };
+        values.push(quote! {
+            #[response(status = #status_code)]
+            #response_type#body
+        });
+    }
+    Ok(quote! {
+        #[derive(Responder)]
+        pub enum #name {
+            #(#values),*
+        }
+    })
 }
 
 #[cfg(test)]

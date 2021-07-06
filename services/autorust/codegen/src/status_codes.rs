@@ -225,6 +225,17 @@ pub fn get_response_type_name(status_code: &StatusCode) -> String {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("invalid status code: {0}")]
+    InvalidStatusCode(#[from] http::status::InvalidStatusCode),
+}
+
+pub fn get_response_type(status_code: u16) -> Result<String, Error> {
+    let http_status_code = HttpStatusCode::from_u16(status_code)?;
+    Ok(get_response_name(&http_status_code))
+}
+
 fn is_success(status_code: &StatusCode) -> bool {
     match status_code {
         StatusCode::Code(status_code) => match HttpStatusCode::from_u16(*status_code) {

@@ -55,6 +55,8 @@ pub enum Error {
     StatusCodeName(#[source] crate::identifier::Error),
     #[error("creating type name for response: {0}")]
     ResponseTypeName(#[source] crate::identifier::Error),
+    #[error("creating type for response: {0}")]
+    ResponseType(#[source] crate::status_codes::Error),
     #[error("creating name for param: {0}")]
     ParamName(#[source] crate::identifier::Error),
     #[error("creating name for property: {0}")]
@@ -79,6 +81,8 @@ pub enum Error {
     ExamplePath(#[source] crate::path::Error),
     #[error("example path not utf8")]
     ExamplePathNotUtf8,
+    #[error("status code required")]
+    StatusCodeRequired,
 }
 
 /// Whether or not to pass a type is a reference.

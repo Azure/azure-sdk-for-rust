@@ -2,7 +2,6 @@ use heck::CamelCase;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
-pub type Result<T, E = Error> = std::result::Result<T, E>;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("ParseIdentError {} {}", text, source)]
@@ -10,11 +9,11 @@ pub enum Error {
 }
 
 pub trait CamelCaseIdent: ToOwned {
-    fn to_camel_case_ident(&self) -> Result<TokenStream>;
+    fn to_camel_case_ident(&self) -> Result<TokenStream, Error>;
 }
 
 impl CamelCaseIdent for str {
-    fn to_camel_case_ident(&self) -> Result<TokenStream> {
+    fn to_camel_case_ident(&self) -> Result<TokenStream, Error> {
         let mut txt = replace_chars_with_unicode_names(self);
         txt = replace_chars_with_underscore(&txt);
         txt = if starts_with_number(&txt) {
@@ -30,7 +29,7 @@ impl CamelCaseIdent for str {
     }
 }
 
-pub fn ident(text: &str) -> Result<TokenStream> {
+pub fn ident(text: &str) -> Result<TokenStream, Error> {
     let mut txt = replace_chars_with_underscore(text);
     txt = remove_spaces(&txt);
     txt = prefix_with_underscore_if_starts_with_number(&txt);
@@ -151,7 +150,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_odata_next_link() -> Result<()> {
+    fn test_odata_next_link() -> Result<(), Error> {
         let idt = "odata.nextLink".to_snake_case();
         assert_eq!(idt, "odata.next_link");
         let idt = ident(&idt)?;
@@ -160,21 +159,21 @@ mod tests {
     }
 
     #[test]
-    fn test_three_dot_two() -> Result<()> {
+    fn test_three_dot_two() -> Result<(), Error> {
         let idt = ident("3.2")?;
         assert_eq!(idt.to_string(), "_3_2");
         Ok(())
     }
 
     #[test]
-    fn test_asterisk() -> Result<()> {
+    fn test_asterisk() -> Result<(), Error> {
         assert_eq!("*".to_camel_case(), "");
         assert_eq!("*".to_camel_case_ident()?.to_string(), "Asterisk");
         Ok(())
     }
 
     #[test]
-    fn test_system_assigned_user_assigned() -> Result<()> {
+    fn test_system_assigned_user_assigned() -> Result<(), Error> {
         assert_eq!(
             "SystemAssigned, UserAssigned".to_camel_case_ident()?.to_string(),
             "SystemAssignedUserAssigned"
@@ -183,19 +182,19 @@ mod tests {
     }
 
     #[test]
-    fn test_gcm_aes_128() -> Result<()> {
+    fn test_gcm_aes_128() -> Result<(), Error> {
         assert_eq!("gcm-aes-128".to_camel_case_ident()?.to_string(), "GcmAes128");
         Ok(())
     }
 
     #[test]
-    fn test_5() -> Result<()> {
+    fn test_5() -> Result<(), Error> {
         assert_eq!("5".to_camel_case_ident()?.to_string(), "_5");
         Ok(())
     }
 
     #[test]
-    fn test_app_configuration() -> Result<()> {
+    fn test_app_configuration() -> Result<(), Error> {
         assert_eq!(
             "Microsoft.AppConfiguration/configurationStores".to_camel_case_ident()?.to_string(),
             "MicrosoftAppConfigurationConfigurationStores"
@@ -204,7 +203,7 @@ mod tests {
     }
 
     #[test]
-    fn test_microsoft_key_vault_vaults() -> Result<()> {
+    fn test_microsoft_key_vault_vaults() -> Result<(), Error> {
         assert_eq!(
             "Microsoft.KeyVault/vaults".to_camel_case_ident()?.to_string(),
             "MicrosoftKeyVaultVaults"
@@ -213,7 +212,7 @@ mod tests {
     }
 
     #[test]
-    fn test_azure_virtual_machine_best_practices() -> Result<()> {
+    fn test_azure_virtual_machine_best_practices() -> Result<(), Error> {
         assert_eq!(
             "Azure virtual machine best practices – Dev/Test".to_camel_case_ident()?.to_string(),
             "AzureVirtualMachineBestPracticesDevTest"
@@ -222,7 +221,7 @@ mod tests {
     }
 
     #[test]
-    fn test_1_0() -> Result<()> {
+    fn test_1_0() -> Result<(), Error> {
         assert_eq!("1.0".to_camel_case_ident()?.to_string(), "_1_0");
         Ok(())
     }
