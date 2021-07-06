@@ -12,30 +12,17 @@ mod status_codes;
 
 use std::{
     collections::HashSet,
-    fs::{
-        self,
-        File,
-    },
+    fs::{self, File},
     io::prelude::*,
-    path::{
-        Path,
-        PathBuf,
-    },
+    path::{Path, PathBuf},
 };
 
 use config_parser::Configuration;
 use proc_macro2::TokenStream;
 
 pub use self::{
-    codegen::{
-        create_mod,
-        CodeGen,
-    },
-    spec::{
-        OperationVerb,
-        ResolvedSchema,
-        Spec,
-    },
+    codegen::{create_mod, CodeGen},
+    spec::{OperationVerb, ResolvedSchema, Spec},
 };
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

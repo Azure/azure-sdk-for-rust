@@ -1,9 +1,6 @@
 use std::{
     fs::File,
-    io::{
-        prelude::*,
-        LineWriter,
-    },
+    io::{prelude::*, LineWriter},
     path::Path,
 };
 

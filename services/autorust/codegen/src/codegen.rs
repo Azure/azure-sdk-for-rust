@@ -1,14 +1,6 @@
-use std::path::{
-    Path,
-    PathBuf,
-};
+use std::path::{Path, PathBuf};
 
-use autorust_openapi::{
-    DataType,
-    ReferenceOr,
-    Schema,
-    SchemaCommon,
-};
+use autorust_openapi::{DataType, ReferenceOr, Schema, SchemaCommon};
 use heck::CamelCase;
 use once_cell::sync::Lazy;
 use proc_macro2::TokenStream;
@@ -16,14 +8,7 @@ use quote::quote;
 use regex::Regex;
 use serde_json::Value;
 
-use crate::{
-    identifier::ident,
-    spec,
-    Config,
-    PropertyName,
-    ResolvedSchema,
-    Spec,
-};
+use crate::{identifier::ident, spec, Config, PropertyName, ResolvedSchema, Spec};
 
 /// code generation context
 pub struct CodeGen {

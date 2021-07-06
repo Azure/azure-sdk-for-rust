@@ -1,9 +1,5 @@
 use autorust_codegen::Config;
-use clap::{
-    App,
-    Arg,
-    ArgMatches,
-};
+use clap::{App, Arg, ArgMatches};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 #[derive(Debug, thiserror::Error)]

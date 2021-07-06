@@ -39,15 +39,8 @@ pub fn parse_configurations_from_autorest_config_file(config_file: &PathBuf) -> 
 
 mod literate_config {
     use comrak::{
-        nodes::{
-            AstNode,
-            NodeCodeBlock,
-            NodeHeading,
-            NodeValue,
-        },
-        parse_document,
-        Arena,
-        ComrakOptions,
+        nodes::{AstNode, NodeCodeBlock, NodeHeading, NodeValue},
+        parse_document, Arena, ComrakOptions,
     };
 
     use super::*;
@@ -205,10 +198,7 @@ pub fn to_mod_name(feature_name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        literate_config::*,
-        *,
-    };
+    use super::{literate_config::*, *};
 
     #[test]
     fn test_get_input_file_api_version() {

@@ -1,48 +1,22 @@
 use std::{
     collections::HashSet,
-    path::{
-        Path,
-        PathBuf,
-    },
+    path::{Path, PathBuf},
 };
 
 use autorust_openapi::Reference;
-use heck::{
-    CamelCase,
-    SnakeCase,
-};
+use heck::{CamelCase, SnakeCase};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
-use spec::{
-    get_schema_schema_references,
-    openapi,
-    RefKey,
-};
+use spec::{get_schema_schema_references, openapi, RefKey};
 
 use crate::{
     codegen::{
-        create_generated_by_header,
-        enum_values_as_strings,
-        get_schema_array_items,
-        get_type_name_for_schema,
-        get_type_name_for_schema_ref,
-        is_array,
-        is_local_enum,
-        is_local_struct,
-        is_vec,
-        require,
-        AsReference,
-        Error,
+        create_generated_by_header, enum_values_as_strings, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref,
+        is_array, is_local_enum, is_local_struct, is_vec, require, AsReference, Error,
     },
-    identifier::{
-        ident,
-        CamelCaseIdent,
-    },
-    spec,
-    CodeGen,
-    PropertyName,
-    ResolvedSchema,
+    identifier::{ident, CamelCaseIdent},
+    spec, CodeGen, PropertyName, ResolvedSchema,
 };
 
 pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {

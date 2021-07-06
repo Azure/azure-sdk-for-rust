@@ -5,10 +5,7 @@
 use std::path::PathBuf;
 
 use autorust_codegen::{
-    spec::{
-        self,
-        TypedReference,
-    },
+    spec::{self, TypedReference},
     Spec,
 };
 
