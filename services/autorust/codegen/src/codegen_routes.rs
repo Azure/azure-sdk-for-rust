@@ -1,6 +1,6 @@
 use std::{collections::HashSet, path::Path};
 
-use autorust_openapi::{CollectionFormat, Parameter, ParameterType, Response};
+use autorust_openapi::{CollectionFormat, Parameter, ParameterType, ReferenceOr, Response};
 use heck::{CamelCase, SnakeCase};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
@@ -13,7 +13,7 @@ use crate::{
         AsReference, Error, PARAM_RE,
     },
     identifier::ident,
-    spec,
+    path, spec,
     status_codes::{get_error_responses, get_response_type_name, get_status_code_name, get_success_responses, has_default_response},
     CodeGen, OperationVerb,
 };
@@ -260,6 +260,10 @@ fn create_function(
         });
     }
 
+    let examples = get_operation_examples(operation_verb);
+    let first_example = examples.first().ok_or_else(|| Error::OperationMissingExample)?;
+    println!("first example name: {:?}", first_example);
+
     let responses = &operation_verb.operation().responses;
     let success_responses = get_success_responses(responses);
     let error_responses = get_error_responses(responses);
@@ -451,9 +455,18 @@ fn create_function(
     let route_path = route_path(path);
     let path = format!("{}?api-version={}", route_path, api_version);
     let route = quote! { #verb (#path) };
+
+    // Ok(PrivateCloudsListResponder::Ok200(Json(crate::read_example_body(path, 0)?)))
+
+    let example_path = path::join("../../../../azure-rest-api-specs-pr", &first_example.file).map_err(Error::ExamplePath)?;
+    let example_path = example_path.to_str().ok_or_else(|| Error::ExamplePathNotUtf8)?;
+    let example_path = example_path.replace("\\", "/");
+
     let func = quote! {
         #[#route]
         pub fn #fname(#fparams) -> #fresponse {
+            let example_path = #example_path;
+
         }
     };
     Ok(TokenStream::from(func))
@@ -508,6 +521,31 @@ impl regex::Replacer for ParamReplacer {
 fn route_path(spec_path: &str) -> String {
     let mut rep = ParamReplacer {};
     PARAM_RE.replace_all(spec_path, rep.by_ref()).to_string()
+}
+
+#[derive(Debug)]
+struct OperationExample {
+    name: String,
+    file: String,
+}
+
+fn get_operation_examples(operation: &OperationVerb) -> Vec<OperationExample> {
+    let operation = operation.operation();
+    let mut examples = Vec::new();
+    for (name, example) in &operation.x_ms_examples {
+        match example {
+            ReferenceOr::Reference { reference, .. } => match &reference.file {
+                Some(file) => {
+                    let name = name.to_owned();
+                    let file = file.to_owned();
+                    examples.push(OperationExample { name, file });
+                }
+                None => {}
+            },
+            ReferenceOr::Item(_) => {}
+        }
+    }
+    examples
 }
 
 #[cfg(test)]

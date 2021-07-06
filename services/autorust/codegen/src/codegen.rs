@@ -73,6 +73,12 @@ pub enum Error {
     StructFieldName(#[source] crate::identifier::Error),
     #[error("api-version is missing")]
     MissingApiVersion,
+    #[error("operation is missing an x-ms-examples")]
+    OperationMissingExample,
+    #[error("creating path for example {0}")]
+    ExamplePath(#[source] crate::path::Error),
+    #[error("example path not utf8")]
+    ExamplePathNotUtf8,
 }
 
 /// Whether or not to pass a type is a reference.
