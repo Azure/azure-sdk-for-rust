@@ -9,7 +9,10 @@ use autorust_openapi::{
     ParameterType,
     Response,
 };
-use heck::SnakeCase;
+use heck::{
+    CamelCase,
+    SnakeCase,
+};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -41,6 +44,25 @@ use crate::{
     OperationVerb,
 };
 
+/// Create a route call from the function name and to routes
+fn add_route(routes: &mut Vec<TokenStream>, module_name: Option<&str>, function_name: &str) -> Result<(), Error> {
+    let function_name = ident(function_name).map_err(Error::FunctionName)?;
+    match module_name {
+        Some(module_name) => {
+            let module_name = ident(module_name).map_err(Error::ModuleName)?;
+            routes.push(quote! {
+                #module_name::#function_name
+            });
+        }
+        None => {
+            routes.push(quote! {
+                #function_name
+            });
+        }
+    }
+    Ok(())
+}
+
 pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
     let mut file = TokenStream::new();
     file.extend(create_generated_by_header());
@@ -49,9 +71,10 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
         #![allow(unused_variables)]
         #![allow(unused_imports)]
         use super::models::*;
-
+        use rocket::serde::json::Json;
     });
     let mut modules: IndexMap<Option<String>, TokenStream> = IndexMap::new();
+    let mut routes = Vec::new();
     // println!("input_files {:?}", cg.input_files());
     for (doc_file, doc) in cg.spec.docs() {
         // only operations from listed input files
@@ -61,6 +84,7 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
             for (path, item) in &paths {
                 for op in spec::path_item_operations(item) {
                     let (module_name, function_name) = op.function_name(path);
+                    add_route(&mut routes, module_name.as_deref(), function_name.as_ref())?;
                     let function = create_function(cg, doc_file, path, &op, &function_name)?;
                     if modules.contains_key(&module_name) {}
                     match modules.get_mut(&module_name) {
@@ -83,7 +107,7 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
                 let name = ident(&module_name).map_err(Error::ModuleName)?;
                 file.extend(quote! {
                     pub mod #name {
-                        use super::models::*;
+                        use super::*;
                         #module
                     }
                 });
@@ -93,6 +117,11 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
             }
         }
     }
+    file.extend(quote! {
+        pub fn routes() -> Vec<rocket::Route> {
+            routes![#(#routes),*]
+        }
+    });
     Ok(file)
 }
 
@@ -263,11 +292,12 @@ fn create_function(
     let is_single_response = success_responses.len() == 1;
     let has_default_response = has_default_response(responses);
 
+    let responder = ident(&format!("{}Responder", function_name.to_camel_case())).map_err(Error::FunctionName)?;
     let fresponse = if is_single_response {
         let tp = create_response_type(&success_responses[0])?.unwrap_or(quote! { () });
-        quote! { std::result::Result<#tp, #fname::Error> }
+        quote! { Result<Json<#tp>, crate::CloudErrorResponder> }
     } else {
-        quote! { std::result::Result<#fname::Response, #fname::Error> }
+        quote! { Result<#responder, crate::CloudErrorResponder> }
     };
 
     let mut response_enum = TokenStream::new();
@@ -450,8 +480,6 @@ fn create_function(
     let func = quote! {
         #[#route]
         pub fn #fname(#fparams) -> #fresponse {
-        }
-        pub mod #fname {
         }
     };
     Ok(TokenStream::from(func))
