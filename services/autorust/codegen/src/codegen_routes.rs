@@ -202,7 +202,8 @@ fn create_function(
 
     let examples_name = ident(&format!("{}_examples", function_name.to_snake_case())).map_err(Error::FunctionName)?;
     let examples = get_operation_examples(operation_verb);
-    let examples_mod = create_examples_mod(&examples_name, &examples)?;
+    let base_path = doc_file.clone();
+    let examples_mod = create_examples_mod(base_path, &examples_name, &examples)?;
     let first_example = examples.0.first().ok_or_else(|| Error::OperationMissingExample)?;
 
     let responses = &operation_verb.operation().responses;
@@ -392,11 +393,12 @@ fn create_function(
     Ok(TokenStream::from(func))
 }
 
-fn create_examples_mod(name: &TokenStream, examples: &OperationExamples) -> Result<TokenStream, Error> {
+fn create_examples_mod(base_path: &Path, name: &TokenStream, examples: &OperationExamples) -> Result<TokenStream, Error> {
     let mut values = TokenStream::new();
     for example in &examples.0 {
         let name = ident(&example.const_name()).map_err(Error::ExamplesName)?;
-        let file = path::join("../../../../azure-rest-api-specs-pr", &example.file).map_err(Error::ExamplePath)?;
+        let file = path::join(base_path, &example.file).map_err(Error::ExamplePath)?;
+        let file = path::join("../", file).map_err(Error::ExamplePath)?; // TODO add to config
         let file = file.to_str().ok_or_else(|| Error::ExamplePathNotUtf8)?;
         let file = file.replace("\\", "/");
         values.extend(quote! {
