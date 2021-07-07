@@ -200,8 +200,7 @@ fn create_function(
 
     let fparams = create_function_params(&parameters)?;
 
-    let function_name_camel_case = function_name.to_camel_case();
-    let examples_name = ident(&format!("{}Examples", function_name_camel_case)).map_err(Error::FunctionName)?;
+    let examples_name = ident(&format!("{}_examples", function_name.to_snake_case())).map_err(Error::FunctionName)?;
     let examples = get_operation_examples(operation_verb);
     let examples_mod = create_examples_mod(&examples_name, &examples)?;
     let first_example = examples.0.first().ok_or_else(|| Error::OperationMissingExample)?;
@@ -213,7 +212,7 @@ fn create_function(
     let has_default_response = has_default_response(responses);
 
     let responses = get_operation_responses(&operation_verb)?;
-    let responder_name = ident(&format!("{}Responder", function_name_camel_case)).map_err(Error::FunctionName)?;
+    let responder_name = ident(&format!("{}Responder", function_name.to_camel_case())).map_err(Error::FunctionName)?;
     let responder = create_responder(&responder_name, &responses)?;
 
     let fresponse = quote! { Result<#responder_name, crate::CloudErrorResponder> };
