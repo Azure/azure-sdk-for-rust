@@ -1,17 +1,17 @@
-use std::{collections::HashSet, path::Path};
-
-use autorust_openapi::{CollectionFormat, Parameter, ParameterType, ReferenceOr, Response, StatusCode};
+#![allow(dead_code)]
+use autorust_openapi::{ParameterType, ReferenceOr, Response, StatusCode};
 use heck::ShoutySnakeCase;
 use heck::{CamelCase, SnakeCase};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
 use regex::Replacer;
+use std::path::Path;
 
 use crate::{
     codegen::{
-        create_generated_by_header, get_type_name_for_schema, get_type_name_for_schema_ref, is_array, is_string, parse_params, require,
-        AsReference, Error, PARAM_RE,
+        create_generated_by_header, get_type_name_for_schema, get_type_name_for_schema_ref, is_array, parse_params, AsReference, Error,
+        PARAM_RE,
     },
     identifier::ident,
     path, spec,
@@ -103,6 +103,81 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
     Ok(file)
 }
 
+pub struct OperationParameters(Vec<OperationParameter>);
+
+pub struct OperationParameter {
+    name: String,
+    in_: ParameterType,
+    type_: TokenStream,
+    is_required: bool,
+    is_array: bool,
+}
+
+impl OperationParameter {
+    pub fn snake_case_name(&self) -> String {
+        self.name.to_snake_case()
+    }
+    pub fn snake_case_name_ident(&self) -> Result<TokenStream, Error> {
+        ident(&self.snake_case_name()).map_err(Error::ParamName)
+    }
+    pub fn in_body(&self) -> bool {
+        self.in_ == ParameterType::Body
+    }
+    pub fn in_path(&self) -> bool {
+        self.in_ == ParameterType::Path
+    }
+    pub fn in_query(&self) -> bool {
+        self.in_ == ParameterType::Query
+    }
+    pub fn in_header(&self) -> bool {
+        self.in_ == ParameterType::Header
+    }
+    pub fn in_form(&self) -> bool {
+        self.in_ == ParameterType::Form
+    }
+}
+
+impl OperationParameters {
+    pub fn create(cg: &CodeGen, doc_file: &Path, operation: &OperationVerb) -> Result<OperationParameters, Error> {
+        let parameters = cg.spec.resolve_parameters(doc_file, &operation.operation().parameters)?;
+        let mut v = Vec::new();
+        for param in &parameters {
+            let name = param.name.to_owned();
+            let in_ = param.in_.to_owned();
+            if name != "api-version" {
+                let type_ = {
+                    if let Some(_param_type) = &param.common.type_ {
+                        get_type_name_for_schema(&param.common, AsReference::True)?
+                    } else if let Some(schema) = &param.schema {
+                        get_type_name_for_schema_ref(schema, AsReference::False)?
+                    } else {
+                        eprintln!("WARN unknown param type for {}", &param.name);
+                        quote! { &serde_json::Value }
+                    }
+                };
+                let is_required = param.required.unwrap_or(false);
+                let is_array = is_array(&param.common);
+                v.push(OperationParameter {
+                    name,
+                    in_,
+                    type_,
+                    is_required,
+                    is_array,
+                })
+            }
+        }
+        Ok(OperationParameters(v))
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<OperationParameter> {
+        self.0.iter()
+    }
+
+    pub fn get_body(&self) -> Option<&OperationParameter> {
+        self.iter().find(|param| param.in_body())
+    }
+}
+
 fn create_function(
     cg: &CodeGen,
     doc_file: &Path,
@@ -121,148 +196,9 @@ fn create_function(
     let params = params?;
     let _url_str_args = quote! { #(#params),* };
 
-    let parameters: Vec<Parameter> = cg.spec.resolve_parameters(doc_file, &operation_verb.operation().parameters)?;
-    let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
-    let has_param_api_version = param_names.contains("api-version");
-    let mut skip = HashSet::new();
-    if cg.api_version().is_some() {
-        skip.insert("api-version");
-    }
-    let parameters = parameters.into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
+    let parameters = OperationParameters::create(cg, doc_file, &operation_verb)?;
 
-    let fparams = create_function_params(cg, doc_file, &parameters)?;
-
-    // see if there is a body parameter
-    // let fresponse = create_function_return(operation_verb)?;
-
-    let mut ts_request_builder = TokenStream::new();
-
-    // auth
-    ts_request_builder.extend(quote! {
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource()).await
-                .map_err(#fname::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-    });
-
-    // api-version param
-    if has_param_api_version {
-        if let Some(_api_version) = cg.api_version() {
-            ts_request_builder.extend(quote! {
-                url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-            });
-        }
-    }
-
-    // params
-    let mut has_body_parameter = false;
-    for param in &parameters {
-        let param_name = &param.name;
-        let param_name_var = get_param_name(&param)?;
-        let required = param.required.unwrap_or(false);
-        match param.in_ {
-            ParameterType::Path => {} // handled above
-            ParameterType::Query => {
-                let is_array = is_array(&param.common);
-                let query_body = if is_array {
-                    let collection_format = param.collection_format.as_ref().unwrap_or(&CollectionFormat::Csv);
-                    match collection_format {
-                        CollectionFormat::Multi => Some(
-                            if is_string(&param.common){
-                                quote! {
-                                    for value in #param_name_var {
-                                        url.query_pairs_mut().append_pair(#param_name, value);
-                                    }
-                                }
-                            } else {
-                                quote! {
-                                    for value in #param_name_var {
-                                        url.query_pairs_mut().append_pair(#param_name, value.to_string().as_str());
-                                    }
-                                }
-                            }
-                        ),
-                        CollectionFormat::Csv | // TODO #71
-                        CollectionFormat::Ssv |
-                        CollectionFormat::Tsv |
-                        CollectionFormat::Pipes => None,
-                    }
-                } else {
-                    Some(if is_string(&param.common) {
-                        quote! {
-                            url.query_pairs_mut().append_pair(#param_name, #param_name_var);
-                        }
-                    } else {
-                        quote! {
-                            url.query_pairs_mut().append_pair(#param_name, #param_name_var.to_string().as_str());
-                        }
-                    })
-                };
-                if let Some(query_body) = query_body {
-                    if required || is_array {
-                        ts_request_builder.extend(query_body);
-                    } else {
-                        ts_request_builder.extend(quote! {
-                            if let Some(#param_name_var) = #param_name_var {
-                                #query_body
-                            }
-                        });
-                    }
-                }
-            }
-            ParameterType::Header => {
-                if required {
-                    ts_request_builder.extend(quote! {
-                        req_builder = req_builder.header(#param_name, #param_name_var);
-                    });
-                } else {
-                    ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = #param_name_var {
-                            req_builder = req_builder.header(#param_name, #param_name_var);
-                        }
-                    });
-                }
-            }
-            ParameterType::Body => {
-                has_body_parameter = true;
-                if required {
-                    ts_request_builder.extend(quote! {
-                        let req_body = azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?;
-                    });
-                } else {
-                    ts_request_builder.extend(quote! {
-                        let req_body =
-                            if let Some(#param_name_var) = #param_name_var {
-                                azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?
-                            } else {
-                                bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-                            };
-                    });
-                }
-            }
-            ParameterType::Form => {
-                if required {
-                    ts_request_builder.extend(quote! {
-                        req_builder = req_builder.form(#param_name_var);
-                    });
-                } else {
-                    ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = #param_name_var {
-                            req_builder = req_builder.form(#param_name_var);
-                        }
-                    });
-                }
-            }
-        }
-    }
-
-    if !has_body_parameter {
-        ts_request_builder.extend(quote! {
-            let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        });
-    }
+    let fparams = create_function_params(&parameters)?;
 
     let function_name_camel_case = function_name.to_camel_case();
     let examples_name = ident(&format!("{}Examples", function_name_camel_case)).map_err(Error::FunctionName)?;
@@ -421,8 +357,17 @@ fn create_function(
 
     let api_version = cg.api_version().ok_or_else(|| Error::MissingApiVersion)?;
     let route_path = route_path(path);
+    let mut verb_parts = Vec::new();
     let path = format!("{}?api-version={}", route_path, api_version);
-    let route = quote! { #verb (#path) };
+    verb_parts.push(quote! { #path });
+    match parameters.get_body() {
+        Some(param) => {
+            let data = format!("<{}>", param.snake_case_name());
+            verb_parts.push(quote! { data = #data });
+        }
+        None => {}
+    }
+    let route = quote! { #verb (#(#verb_parts),*) };
 
     let first_response = responses.0.first().ok_or_else(|| Error::OperationMissingResponses)?;
     let first_example_name = ident(&first_example.const_name()).map_err(Error::ExamplesName)?;
@@ -433,7 +378,7 @@ fn create_function(
             #responder_name::#response_type(Json(read_example_body(#examples_name::#first_example_name, 0)?))
         },
         None => quote! {
-            #responder_name::#response_type
+            #responder_name::#response_type(None)
         },
     };
 
@@ -466,32 +411,18 @@ fn create_examples_mod(name: &TokenStream, examples: &OperationExamples) -> Resu
     })
 }
 
-fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Parameter>) -> Result<TokenStream, Error> {
+fn create_function_params(parameters: &OperationParameters) -> Result<TokenStream, Error> {
     let mut params: Vec<TokenStream> = Vec::new();
-    for param in parameters {
-        let name = get_param_name(param)?;
-        let tp = get_param_type(param)?;
+    for param in parameters.iter() {
+        let name = param.snake_case_name_ident()?;
+        let mut tp = &param.type_;
+        let body_tp = quote! { Json<#tp> };
+        if param.in_body() {
+            tp = &body_tp;
+        }
         params.push(quote! { #name: #tp });
     }
     Ok(quote! { #(#params),* })
-}
-
-fn get_param_name(param: &Parameter) -> Result<TokenStream, Error> {
-    ident(&param.name.to_snake_case()).map_err(Error::ParamName)
-}
-
-fn get_param_type(param: &Parameter) -> Result<TokenStream, Error> {
-    let is_required = param.required.unwrap_or(false);
-    let is_array = is_array(&param.common);
-    let tp = if let Some(_param_type) = &param.common.type_ {
-        get_type_name_for_schema(&param.common, AsReference::True)?
-    } else if let Some(schema) = &param.schema {
-        get_type_name_for_schema_ref(schema, AsReference::True)?
-    } else {
-        eprintln!("WARN unkown param type for {}", &param.name);
-        quote! { &serde_json::Value }
-    };
-    Ok(require(is_required || is_array, tp))
 }
 
 fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>, Error> {
@@ -586,7 +517,7 @@ fn create_responder(name: &TokenStream, responses: &OperationRespones) -> Result
         let response_type = ident(&get_response_type(status_code).map_err(Error::ResponseType)?).map_err(Error::ResponseTypeName)?;
         let body = match &response.body_type_name {
             Some(body) => quote! { (Json<#body>) },
-            None => quote! {},
+            None => quote! { (Option<serde_json::Value>) },
         };
         values.push(quote! {
             #[response(status = #status_code)]
