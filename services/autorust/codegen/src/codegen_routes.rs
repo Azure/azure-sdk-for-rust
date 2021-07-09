@@ -40,16 +40,6 @@ fn add_route(routes: &mut Vec<TokenStream>, module_name: Option<&str>, function_
 }
 
 pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
-    let mut file = TokenStream::new();
-    file.extend(create_generated_by_header());
-    file.extend(quote! {
-        #![allow(unused_mut)]
-        #![allow(unused_variables)]
-        #![allow(unused_imports)]
-        use crate::read_example_body;
-        use super::models::*;
-        use rocket::serde::json::Json;
-    });
     let mut modules: IndexMap<Option<String>, TokenStream> = IndexMap::new();
     let mut routes = Vec::new();
     // println!("input_files {:?}", cg.input_files());
@@ -78,6 +68,22 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
             }
         }
     }
+
+    let mut file = TokenStream::new();
+    file.extend(create_generated_by_header());
+    file.extend(quote! {
+        #![allow(unused_mut)]
+        #![allow(unused_variables)]
+        #![allow(unused_imports)]
+        use crate::read_example_body;
+        use super::models::*;
+        use rocket::serde::json::Json;
+    });
+    file.extend(quote! {
+        pub fn routes() -> Vec<rocket::Route> {
+            routes![#(#routes),*]
+        }
+    });
     for (module_name, module) in modules {
         match module_name {
             Some(module_name) => {
@@ -94,11 +100,6 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
             }
         }
     }
-    file.extend(quote! {
-        pub fn routes() -> Vec<rocket::Route> {
-            routes![#(#routes),*]
-        }
-    });
     Ok(file)
 }
 
