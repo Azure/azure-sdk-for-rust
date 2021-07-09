@@ -19,6 +19,20 @@ fn main() -> Result<()> {
     });
 
     configs.push(MainConfig {
+        api_version: "2020-07-17-preview",
+        input_file:
+            "../../../azure-rest-api-specs-pr/specification/vmware/resource-manager/Microsoft.AVS/preview/2020-07-17-preview/vmware.json",
+        output_folder: "../../../avs/src/fct/mock_api/src/v2020_07_17_preview",
+    });
+
+    configs.push(MainConfig {
+        api_version: "2021-01-01-preview",
+        input_file:
+            "../../../azure-rest-api-specs-pr/specification/vmware/resource-manager/Microsoft.AVS/preview/2021-01-01-preview/vmware.json",
+        output_folder: "../../../avs/src/fct/mock_api/src/v2021_01_01_preview",
+    });
+
+    configs.push(MainConfig {
         api_version: "2021-06-01",
         input_file: "../../../azure-rest-api-specs-pr/specification/vmware/resource-manager/Microsoft.AVS/stable/2021-06-01/vmware.json",
         output_folder: "../../../avs/src/fct/mock_api/src/v2021_06_01",
