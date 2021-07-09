@@ -87,6 +87,8 @@ pub enum Error {
     StatusCodeRequired,
     #[error("creating name for examples")]
     ExamplesName(#[source] crate::identifier::Error),
+    #[error("status code: {0}")]
+    StatusCode(#[from] crate::status_codes::Error),
 }
 
 /// Whether or not to pass a type is a reference.

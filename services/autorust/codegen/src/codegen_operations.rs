@@ -13,7 +13,10 @@ use crate::{
     },
     identifier::ident,
     spec,
-    status_codes::{get_error_responses, get_response_type_name, get_status_code_name, get_success_responses, has_default_response},
+    status_codes::{
+        get_error_responses, get_response_type_ident, get_response_type_name, get_status_code_ident, get_status_code_name,
+        get_success_responses, has_default_response,
+    },
     CodeGen, OperationVerb,
 };
 
@@ -280,7 +283,7 @@ fn create_function(
                 Some(tp) => quote! { (#tp) },
                 None => quote! {},
             };
-            let enum_type_name = ident(&get_response_type_name(status_code)).map_err(Error::ResponseTypeName)?;
+            let enum_type_name = get_response_type_ident(status_code)?;
             success_responses_ts.extend(quote! { #enum_type_name#tp, })
         }
         response_enum.extend(quote! {
@@ -298,7 +301,7 @@ fn create_function(
             Some(tp) => quote! { value: models::#tp, },
             None => quote! {},
         };
-        let response_type = &get_response_type_name(status_code);
+        let response_type = &get_response_type_name(status_code)?;
         if response_type == "DefaultResponse" {
             error_responses_ts.extend(quote! {
                 #[error("HTTP status code {}", status_code)]
@@ -324,8 +327,8 @@ fn create_function(
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
-                let status_code_name = ident(&get_status_code_name(status_code)).map_err(Error::StatusCodeName)?;
-                let response_type_name = ident(&get_response_type_name(status_code)).map_err(Error::ResponseTypeName)?;
+                let status_code_name = get_status_code_ident(status_code)?;
+                let response_type_name = get_response_type_name(status_code)?;
                 if is_single_response {
                     match tp {
                         Some(tp) => {
@@ -373,8 +376,8 @@ fn create_function(
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
-                let status_code_name = ident(&get_status_code_name(status_code)).map_err(Error::StatusCodeName)?;
-                let response_type_name = ident(&get_response_type_name(status_code)).map_err(Error::ResponseTypeName)?;
+                let status_code_name = ident(get_status_code_name(status_code)?).map_err(Error::StatusCodeName)?;
+                let response_type_name = ident(&get_response_type_name(status_code)?).map_err(Error::ResponseTypeName)?;
                 match tp {
                     Some(tp) => {
                         match_status.extend(quote! {

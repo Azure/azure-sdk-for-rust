@@ -8,6 +8,7 @@ use quote::quote;
 use regex::Replacer;
 use std::path::Path;
 
+use crate::status_codes::{get_response_type_ident, get_status_code_ident};
 use crate::{
     codegen::{
         create_generated_by_header, get_type_name_for_schema, get_type_name_for_schema_ref, is_array, parse_params, AsReference, Error,
@@ -15,9 +16,7 @@ use crate::{
     },
     identifier::ident,
     path, spec,
-    status_codes::{
-        get_error_responses, get_response_type, get_response_type_name, get_status_code_name, get_success_responses, has_default_response,
-    },
+    status_codes::{get_error_responses, get_response_type_name, get_status_code_name, get_success_responses, has_default_response},
     CodeGen, OperationVerb,
 };
 
@@ -227,7 +226,7 @@ fn create_function(
                 Some(tp) => quote! { (#tp) },
                 None => quote! {},
             };
-            let enum_type_name = ident(&get_response_type_name(status_code)).map_err(Error::ResponseTypeName)?;
+            let enum_type_name = get_response_type_name(status_code)?;
             success_responses_ts.extend(quote! { #enum_type_name#tp, })
         }
         response_enum.extend(quote! {
@@ -245,7 +244,7 @@ fn create_function(
             Some(tp) => quote! { value: models::#tp, },
             None => quote! {},
         };
-        let response_type = &get_response_type_name(status_code);
+        let response_type = &get_response_type_name(status_code)?;
         if response_type == "DefaultResponse" {
             error_responses_ts.extend(quote! {
                 #[error("HTTP status code {}", status_code)]
@@ -271,8 +270,8 @@ fn create_function(
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
-                let status_code_name = ident(&get_status_code_name(status_code)).map_err(Error::StatusCodeName)?;
-                let response_type_name = ident(&get_response_type_name(status_code)).map_err(Error::ResponseTypeName)?;
+                let status_code_name = get_status_code_ident(status_code)?;
+                let response_type_name = get_response_type_name(status_code)?;
                 if is_single_response {
                     match tp {
                         Some(tp) => {
@@ -320,8 +319,8 @@ fn create_function(
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
-                let status_code_name = ident(&get_status_code_name(status_code)).map_err(Error::StatusCodeName)?;
-                let response_type_name = ident(&get_response_type_name(status_code)).map_err(Error::ResponseTypeName)?;
+                let status_code_name = ident(get_status_code_name(status_code)?).map_err(Error::StatusCodeName)?;
+                let response_type_name = get_response_type_name(status_code)?;
                 match tp {
                     Some(tp) => {
                         match_status.extend(quote! {
@@ -372,13 +371,13 @@ fn create_function(
     let first_response = responses.0.first().ok_or_else(|| Error::OperationMissingResponses)?;
     let first_example_name = ident(&first_example.const_name()).map_err(Error::ExamplesName)?;
     let status_code = first_response.status_code.ok_or_else(|| Error::StatusCodeRequired)?;
-    let response_type = ident(&get_response_type(status_code).map_err(Error::ResponseType)?).map_err(Error::ResponseTypeName)?;
+    let response_type = get_response_type_ident(&StatusCode::Code(status_code))?;
     let first_responder = match &first_response.body_type_name {
         Some(_body) => quote! {
-            #responder_name::#response_type(Json(read_example_body(#examples_name::#first_example_name, 0)?))
+            #responder_name::#response_type(read_example_body(#examples_name::#first_example_name, 0)?)
         },
         None => quote! {
-            #responder_name::#response_type(None)
+            #responder_name::#response_type
         },
     };
 
@@ -512,23 +511,37 @@ fn get_operation_responses(operation: &OperationVerb) -> Result<OperationRespone
 
 fn create_responder(name: &TokenStream, responses: &OperationRespones) -> Result<TokenStream, Error> {
     let mut values = Vec::new();
+    let mut respond_tos = Vec::new();
     for response in &responses.0 {
         let status_code = &response.status_code;
-        let status_code = status_code.ok_or_else(|| Error::StatusCodeRequired)?;
-        let response_type = ident(&get_response_type(status_code).map_err(Error::ResponseType)?).map_err(Error::ResponseTypeName)?;
-        let body = match &response.body_type_name {
-            Some(body) => quote! { (Json<#body>) },
-            None => quote! { (Option<serde_json::Value>) },
+        let status_code = &StatusCode::Code(status_code.ok_or_else(|| Error::StatusCodeRequired)?);
+        let status_code_name = get_status_code_ident(status_code)?;
+        let response_type = get_response_type_ident(status_code)?;
+        match &response.body_type_name {
+            Some(body) => {
+                values.push(quote! { #response_type(#body) });
+                respond_tos.push(quote! {
+                    Self::#response_type(v) => (rocket::http::Status::#status_code_name, Json(v)).respond_to(request)
+                });
+            }
+            None => {
+                values.push(quote! { #response_type });
+                respond_tos.push(quote! {
+                    Self::#response_type => rocket::http::Status::#status_code_name.respond_to(request)
+                });
+            }
         };
-        values.push(quote! {
-            #[response(status = #status_code)]
-            #response_type#body
-        });
     }
     Ok(quote! {
-        #[derive(Responder)]
         pub enum #name {
             #(#values),*
+        }
+        impl<'r> rocket::response::Responder<'r, 'static> for #name {
+            fn respond_to(self, request: &'r rocket::Request<'_>) -> rocket::response::Result<'static> {
+                match self {
+                    #(#respond_tos),*
+                }
+            }
         }
     })
 }
