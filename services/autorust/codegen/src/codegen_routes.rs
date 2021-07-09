@@ -75,7 +75,7 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
         #![allow(unused_mut)]
         #![allow(unused_variables)]
         #![allow(unused_imports)]
-        use crate::read_example_body;
+        use crate::read_example_response_body;
         use super::models::*;
         use rocket::serde::json::Json;
     });
@@ -371,11 +371,12 @@ fn create_function(
 
     let first_response = responses.0.first().ok_or_else(|| Error::OperationMissingResponses)?;
     let first_example_name = ident(&first_example.const_name()).map_err(Error::ExamplesName)?;
-    let status_code = first_response.status_code.ok_or_else(|| Error::StatusCodeRequired)?;
-    let response_type = get_response_type_ident(&StatusCode::Code(status_code))?;
+    let status_code = &StatusCode::Code(first_response.status_code.ok_or_else(|| Error::StatusCodeRequired)?);
+    let status_code_name = get_status_code_ident(status_code)?;
+    let response_type = get_response_type_ident(status_code)?;
     let first_responder = match &first_response.body_type_name {
         Some(_body) => quote! {
-            #responder_name::#response_type(read_example_body(#examples_name::#first_example_name, 0)?)
+            #responder_name::#response_type(read_example_response_body(#examples_name::#first_example_name, &rocket::http::Status::#status_code_name)?)
         },
         None => quote! {
             #responder_name::#response_type
