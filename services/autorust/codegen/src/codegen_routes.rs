@@ -213,10 +213,10 @@ fn create_function(
     let has_default_response = has_default_response(responses);
 
     let responses = get_operation_responses(&operation_verb)?;
-    let responder_name = ident(&format!("{}Responder", function_name.to_camel_case())).map_err(Error::FunctionName)?;
+    let responder_name = ident(&format!("{}Response", function_name.to_camel_case())).map_err(Error::FunctionName)?;
     let responder = create_responder(&responder_name, &responses)?;
 
-    let fresponse = quote! { Result<#responder_name, crate::CloudErrorResponder> };
+    let fresponse = quote! { Result<#responder_name, crate::CloudErrorResponse> };
 
     let mut response_enum = TokenStream::new();
     if !is_single_response {
