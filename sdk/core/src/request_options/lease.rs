@@ -25,4 +25,15 @@ impl AddAsHeader for LeaseId {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(LEASE_ID, &format!("{}", self.0))
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
+        request
+            .headers_mut()
+            .append(LEASE_ID, http::HeaderValue::from_str(&self.0.to_string())?);
+
+        Ok(())
+    }
 }

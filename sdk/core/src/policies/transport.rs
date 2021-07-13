@@ -3,7 +3,7 @@ use crate::policies::{Policy, PolicyResult};
 #[allow(unused_imports)]
 use crate::TransportOptions;
 #[allow(unused_imports)]
-use crate::{Context, HttpClient, Request, Response};
+use crate::{Context, HttpClient, PipelineContext, Request, Response};
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -22,12 +22,15 @@ impl TransportPolicy {
 
 #[async_trait::async_trait]
 #[cfg(not(target_arch = "wasm32"))]
-impl Policy for TransportPolicy {
+impl<C> Policy<C> for TransportPolicy
+where
+    C: Send + Sync,
+{
     async fn send(
         &self,
-        _ctx: &mut Context,
+        _ctx: &mut PipelineContext<C>,
         request: &mut Request,
-        next: &[Arc<dyn Policy>],
+        next: &[Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response> {
         // there must be no more policies
         assert_eq!(0, next.len());

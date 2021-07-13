@@ -91,7 +91,7 @@ impl fmt::Display for Range {
 
 impl<'a> AddAsHeader for Range {
     // here we ask for the CRC64 value if we can (that is,
-    // the range is smaller than 4MB).
+    // if the range is smaller than 4MB).
     fn add_as_header(&self, builder: Builder) -> Builder {
         let builder = builder.header("x-ms-range", &format!("{}", self));
         if self.len() < 1024 * 1024 * 4 {
@@ -99,6 +99,25 @@ impl<'a> AddAsHeader for Range {
         } else {
             builder
         }
+    }
+
+    fn add_as_header2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
+        request.headers_mut().append(
+            "x-ms-range",
+            http::HeaderValue::from_str(&format!("{}", self))?,
+        );
+
+        if self.len() < 1024 * 1024 * 4 {
+            request.headers_mut().append(
+                "x-ms-range-get-content-crc64",
+                http::HeaderValue::from_str("true")?,
+            );
+        }
+
+        Ok(())
     }
 }
 

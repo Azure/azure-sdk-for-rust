@@ -10,14 +10,26 @@ impl ConditionMaxSize {
     }
 }
 
+impl From<u64> for ConditionMaxSize {
+    fn from(n: u64) -> Self {
+        Self(n)
+    }
+}
+
 impl AddAsHeader for ConditionMaxSize {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header("x-ms-blob-condition-maxsize", &format!("{}", self.0))
     }
-}
 
-impl From<u64> for ConditionMaxSize {
-    fn from(n: u64) -> Self {
-        Self(n)
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), azure_core::HTTPHeaderError> {
+        request.headers_mut().append(
+            "x-ms-blob-condition-maxsize",
+            http::header::HeaderValue::from(self.0),
+        );
+
+        Ok(())
     }
 }

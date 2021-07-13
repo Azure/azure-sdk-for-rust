@@ -23,7 +23,7 @@ impl GetDatabaseOptions {
     }
 
     pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> Result<(), crate::Error> {
-        azure_core::headers::add_optional_header2(&self.consistency_level, request);
+        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
         request.set_body(bytes::Bytes::from_static(&[]).into());
 
         Ok(())

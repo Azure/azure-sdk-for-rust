@@ -14,4 +14,15 @@ impl AddAsHeader for Continuation<'_> {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(headers::CONTINUATION, self.0)
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
+        request
+            .headers_mut()
+            .append(headers::CONTINUATION, http::HeaderValue::from_str(self.0)?);
+
+        Ok(())
+    }
 }

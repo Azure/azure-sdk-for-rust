@@ -27,7 +27,7 @@ async fn put_page_blob() {
     {
         container
             .create()
-            .public_access(PublicAccess::Blob)
+            .public_access(PublicAccess::None)
             .execute()
             .await
             .unwrap();
