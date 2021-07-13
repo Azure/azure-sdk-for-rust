@@ -22,7 +22,7 @@ impl AddAsHeader for LeaseDuration {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
         let (header_name, header_value) = match self {
             LeaseDuration::Infinite => (LEASE_DURATION, -1),
             LeaseDuration::Seconds(seconds) => (LEASE_DURATION, *seconds as i32),

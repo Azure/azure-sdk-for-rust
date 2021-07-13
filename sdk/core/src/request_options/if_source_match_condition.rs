@@ -19,7 +19,7 @@ impl<'a> AddAsHeader for IfSourceMatchCondition<'a> {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
         let (header_name, header_value) = match self {
             IfSourceMatchCondition::Match(etag) => (SOURCE_IF_MATCH, etag),
             IfSourceMatchCondition::NotMatch(etag) => (SOURCE_IF_NONE_MATCH, etag),

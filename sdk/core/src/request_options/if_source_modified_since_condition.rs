@@ -24,7 +24,7 @@ impl AddAsHeader for IfSourceModifiedSinceCondition {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
         let (header_name, header_value) = match self {
             IfSourceModifiedSinceCondition::Modified(date) => {
                 (SOURCE_IF_MODIFIED_SINCE, date.to_rfc2822())

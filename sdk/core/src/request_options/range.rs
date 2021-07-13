@@ -104,7 +104,7 @@ impl<'a> AddAsHeader for Range {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
         request.headers_mut().append(
             "x-ms-range",
             http::HeaderValue::from_str(&format!("{}", self))?,

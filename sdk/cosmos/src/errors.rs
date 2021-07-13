@@ -16,7 +16,7 @@ pub enum Error {
     #[error("error parsing permission token: {0}")]
     PermissionTokenParsing(#[from] crate::resources::permission::PermissionTokenParsingError),
     #[error("error writing the header value: {0}")]
-    InvalidHeaderValue(#[from] http::header::InvalidHeaderValue),
+    InvalidHeaderValue(#[from] azure_core::HTTPHeaderError),
 }
 
 impl From<serde_json::Error> for Error {

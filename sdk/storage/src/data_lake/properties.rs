@@ -51,20 +51,20 @@ impl<'a, 'b> AddAsHeader for Properties<'a, 'b> {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), azure_core::HTTPHeaderError> {
         // the header is a comma separated list of key=base64(value) see
         // [https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers](https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers)
-        let mut s = String::new();
-        self.0.iter().for_each(|(k, v)| {
-            s.push_str(&format!("{}={},", k.as_ref(), base64::encode(v.as_ref())));
-        });
 
-        // since we added a comma to the last entry, we will strip it to the exported header (this
-        // is safe since we know that comma is 1 byte in UTF8):
-        request.headers_mut().append(
-            HEADER,
-            http::header::HeaderValue::from_str(&s[..s.len() - 1])?,
-        );
+        let s = self
+            .0
+            .iter()
+            .map(|(k, v)| format!("{}={}", k.as_ref(), base64::encode(v.as_ref())))
+            .collect::<Vec<_>>()
+            .join(",");
+
+        request
+            .headers_mut()
+            .append(HEADER, http::header::HeaderValue::from_str(&s)?);
 
         Ok(())
     }

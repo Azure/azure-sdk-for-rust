@@ -32,7 +32,7 @@ impl AddAsHeader for ReturnEntity {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), azure_core::HTTPHeaderError> {
         request.headers_mut().append(
             "Prefer",
             http::header::HeaderValue::from_str(match self.0 {

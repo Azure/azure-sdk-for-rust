@@ -24,7 +24,7 @@ impl AddAsHeader for ConditionMaxSize {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), azure_core::HTTPHeaderError> {
         request.headers_mut().append(
             "x-ms-blob-condition-maxsize",
             http::header::HeaderValue::from(self.0),

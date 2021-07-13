@@ -11,15 +11,15 @@ pub struct NoRetryPolicy {
 }
 
 #[async_trait::async_trait]
-impl<R> Policy<R> for NoRetryPolicy
+impl<C> Policy<C> for NoRetryPolicy
 where
-    R: Send + Sync,
+    C: Send + Sync,
 {
     async fn send(
         &self,
-        ctx: &mut PipelineContext<R>,
+        ctx: &mut PipelineContext<C>,
         request: &mut Request,
-        next: &[Arc<dyn Policy<R>>],
+        next: &[Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response> {
         // just call the following policies and bubble up the error
         next[0].send(ctx, request, &next[1..]).await

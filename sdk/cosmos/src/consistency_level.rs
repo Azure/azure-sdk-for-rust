@@ -125,7 +125,7 @@ impl AddAsHeader for ConsistencyLevel {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), azure_core::HTTPHeaderError> {
         request.headers_mut().append(
             headers::HEADER_CONSISTENCY_LEVEL,
             http::header::HeaderValue::from_str(self.to_consistency_level_header())?,

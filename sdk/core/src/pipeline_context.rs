@@ -5,36 +5,39 @@ use crate::Context;
 /// During a pipeline execution, context will be passed from the function
 /// starting the pipeline down to each pipeline policy. This struct it the
 /// one that will actually passed down a pipeline. It's the pipeline
-/// responsibility to specify the BAG generics: it can be anything as
+/// responsibility to specify the C generic data type: it can be anything as
 /// long as it's Send and Sync. For example, Cosmos uses the
 /// PipelineContext to pass the ResourceType down to its
 /// AuthorizationPolicy.
-pub struct PipelineContext<BAG>
+pub struct PipelineContext<C>
 where
-    BAG: Send + Sync,
+    C: Send + Sync,
 {
     inner_context: Context,
-    bag: BAG,
+    contents: C,
 }
 
-impl<BAG> PipelineContext<BAG>
+impl<C> PipelineContext<C>
 where
-    BAG: Send + Sync,
+    C: Send + Sync,
 {
-    pub fn new(inner_context: Context, bag: BAG) -> Self {
-        Self { inner_context, bag }
+    pub fn new(inner_context: Context, contents: C) -> Self {
+        Self {
+            inner_context,
+            contents,
+        }
     }
 
-    pub fn set_bag(&mut self, bag: BAG) {
-        self.bag = bag;
+    pub fn set_contents(&mut self, contents: C) {
+        self.contents = contents;
     }
 
-    pub fn get_bag(&self) -> &BAG {
-        &self.bag
+    pub fn get_contents(&self) -> &C {
+        &self.contents
     }
 
-    pub fn get_bag_mut(&mut self) -> &mut BAG {
-        &mut self.bag
+    pub fn get_contents_mut(&mut self) -> &mut C {
+        &mut self.contents
     }
 
     pub fn set_inner_context(&mut self, inner_context: Context) {

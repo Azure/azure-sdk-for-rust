@@ -11,7 +11,7 @@ impl AddAsHeader for DeleteSnapshotsMethod {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), azure_core::HTTPHeaderError> {
         request.headers_mut().append(
             azure_core::headers::DELETE_SNAPSHOTS,
             http::header::HeaderValue::from_str(&self.to_string())?,

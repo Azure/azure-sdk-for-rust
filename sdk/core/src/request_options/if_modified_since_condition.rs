@@ -24,7 +24,7 @@ impl AddAsHeader for IfModifiedSinceCondition {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
         match self {
             IfModifiedSinceCondition::Modified(date) => {
                 request.headers_mut().append(

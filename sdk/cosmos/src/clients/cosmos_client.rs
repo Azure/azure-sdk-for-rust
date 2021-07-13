@@ -4,7 +4,7 @@ use crate::headers::*;
 use crate::operations::*;
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
-use crate::{requests, ReadonlyString};
+use crate::{requests, ReadonlyString, TimeNonce};
 use azure_core::pipeline::Pipeline;
 use azure_core::HttpClient;
 use azure_core::Request;
@@ -20,7 +20,6 @@ pub const EMULATOR_ACCOUNT_KEY: &str =
     "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
 
 const AZURE_VERSION: &str = "2018-12-31";
-const TIME_FORMAT: &str = "%a, %d %h %Y %T GMT";
 
 /// A plain Cosmos client.
 #[derive(Debug, Clone)]
@@ -55,7 +54,7 @@ fn new_pipeline_from_options(
     let auth_policy: Arc<dyn azure_core::Policy<CosmosContext>> =
         Arc::new(crate::AuthorizationPolicy::new(authorization_token));
 
-    let mut per_retry_policies = Vec::with_capacity(1);
+    let mut per_retry_policies = Vec::new();
     // take care of adding the AuthorizationPolicy as **last** retry policy.
     // Policies can change the url and/or the headers and the AuthorizationPolicy
     // must be able to inspect them or the resulting token will be invalid.
@@ -184,7 +183,7 @@ impl CosmosClient {
         http_method: http::Method,
         resource_type: ResourceType,
     ) -> RequestBuilder {
-        let time = format!("{}", chrono::Utc::now().format(TIME_FORMAT));
+        let time = TimeNonce::default();
 
         let auth = {
             let resource_link = generate_resource_link(&uri_path);
@@ -197,10 +196,10 @@ impl CosmosClient {
                 &http_method,
                 &resource_type,
                 resource_link,
-                &time,
+                time,
             )
         };
-        self.prepare_request_with_signature(uri_path, http_method, &time, &auth)
+        self.prepare_request_with_signature(uri_path, http_method, time, &auth)
     }
 
     /// Prepares' an `azure_core::Request`. This function will
@@ -233,7 +232,7 @@ impl CosmosClient {
         &self,
         uri_path: &str,
         http_method: http::Method,
-        time: &str,
+        time_nonce: TimeNonce,
         signature: &str,
     ) -> RequestBuilder {
         trace!("prepare_request::auth == {:?}", signature);
@@ -246,7 +245,7 @@ impl CosmosClient {
         RequestBuilder::new()
             .method(http_method)
             .uri(uri)
-            .header(HEADER_DATE, time)
+            .header(HEADER_DATE, time_nonce.to_string())
             .header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION))
             .header(header::AUTHORIZATION, signature)
     }

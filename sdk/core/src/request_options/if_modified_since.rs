@@ -19,7 +19,7 @@ impl AddAsHeader for IfModifiedSince<'_> {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
         request.headers_mut().append(
             headers::IF_MODIFIED_SINCE,
             http::HeaderValue::from_str(&self.0.to_rfc2822())?,

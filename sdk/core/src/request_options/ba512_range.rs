@@ -70,7 +70,7 @@ impl AddAsHeader for BA512Range {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
         request.headers_mut().append(
             http::header::RANGE,
             http::HeaderValue::from_str(&self.to_string())?,

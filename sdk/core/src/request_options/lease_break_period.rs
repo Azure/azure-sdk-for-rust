@@ -20,7 +20,7 @@ impl AddAsHeader for LeaseBreakPeriod {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
         request.headers_mut().append(
             LEASE_BREAK_PERIOD,
             http::HeaderValue::from(self.0.as_secs()),

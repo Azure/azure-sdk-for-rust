@@ -46,15 +46,15 @@ impl FixedRetryPolicy {
 }
 
 #[async_trait::async_trait]
-impl<R> Policy<R> for FixedRetryPolicy
+impl<C> Policy<C> for FixedRetryPolicy
 where
-    R: Send + Sync,
+    C: Send + Sync,
 {
     async fn send(
         &self,
-        ctx: &mut PipelineContext<R>,
+        ctx: &mut PipelineContext<C>,
         request: &mut Request,
-        next: &[Arc<dyn Policy<R>>],
+        next: &[Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response> {
         let mut first_retry_time = None;
         let mut current_retries = 0;

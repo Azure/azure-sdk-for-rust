@@ -34,7 +34,7 @@ impl AddAsHeader for ExpirySeconds {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), azure_core::HTTPHeaderError> {
         request.headers_mut().append(
             headers::HEADER_DOCUMENTDB_EXPIRY_SECONDS,
             http::header::HeaderValue::from(self.0),

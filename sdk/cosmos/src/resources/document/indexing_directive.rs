@@ -62,7 +62,7 @@ impl azure_core::AddAsHeader for IndexingDirective {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), azure_core::HTTPHeaderError> {
         let (header_name, header_value) = match self {
             IndexingDirective::Default => return Ok(()),
             IndexingDirective::Exclude => (headers::HEADER_INDEXING_DIRECTIVE, "Exclude"),

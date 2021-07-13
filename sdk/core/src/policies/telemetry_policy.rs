@@ -53,20 +53,20 @@ impl<'a> TelemetryPolicy {
             ),
         };
 
-        TelemetryPolicy { header: header }
+        TelemetryPolicy { header }
     }
 }
 
 #[async_trait::async_trait]
-impl<R> Policy<R> for TelemetryPolicy
+impl<C> Policy<C> for TelemetryPolicy
 where
-    R: Send + Sync,
+    C: Send + Sync,
 {
     async fn send(
         &self,
-        ctx: &mut PipelineContext<R>,
+        ctx: &mut PipelineContext<C>,
         request: &mut Request,
-        next: &[Arc<dyn Policy<R>>],
+        next: &[Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response> {
         request
             .headers_mut()

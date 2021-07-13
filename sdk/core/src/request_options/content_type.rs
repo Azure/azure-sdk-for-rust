@@ -31,7 +31,7 @@ impl<'a> AddAsHeader for ContentType<'a> {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), http::header::InvalidHeaderValue> {
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
         request.headers_mut().append(
             http::header::CONTENT_TYPE,
             http::HeaderValue::from_str(self.0)?,
