@@ -181,9 +181,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         client
             .clone()
             .into_document_client(id.clone(), &id)?
-            .delete_document()
+            .delete_document(Context::new(), DeleteDocumentOptions::default())
             .consistency_level(&response)
-            .execute()
             .await?;
     }
     println!("Cleaned up");
