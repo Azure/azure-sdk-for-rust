@@ -7,8 +7,7 @@ edition = "2018"
 [lib]
 
 [dependencies]
-autorust_openapi = { git = "https://github.com/ctaggart/autorust_openapi" }
-# autorust_openapi = { path = "../autorust_openapi" }
+autorust_openapi = { path = "../openapi" }
 quote = "*"
 proc-macro2 = { version = "*", default-features = false }
 serde_json = "*"

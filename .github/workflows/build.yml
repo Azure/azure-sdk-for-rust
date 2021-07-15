@@ -134,3 +134,26 @@ jobs:
       run: df -h /
       if: ${{ always() }}
 
+  autorust:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: git clone
+      uses: actions/checkout@v2
+    - name: install rust nightly
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+        components: rustfmt
+    - name: fmt check
+      run: cargo fmt --manifest-path services/autorust/Cargo.toml --all -- --check
+    - name: unit tests
+      run: cargo test --manifest-path services/autorust/Cargo.toml --lib
+    - name: git clone Azure/azure-rest-api-specs
+      uses: actions/checkout@v2
+      with:
+        repository: Azure/azure-rest-api-specs
+        path: services/azure-rest-api-specs
+    - name: integration tests azure_rest_api_specs
+      run: cargo test --manifest-path services/autorust/Cargo.toml --test azure_rest_api_specs

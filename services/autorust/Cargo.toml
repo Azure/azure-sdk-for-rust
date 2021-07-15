@@ -2,4 +2,5 @@
 members = [
   "autorust",
   "codegen",
+  "openapi",
 ]
