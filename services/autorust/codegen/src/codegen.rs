@@ -75,8 +75,8 @@ pub enum Error {
     StructFieldName(#[source] crate::identifier::Error),
     #[error("api-version is missing")]
     MissingApiVersion,
-    #[error("operation is missing an x-ms-examples")]
-    OperationMissingExample,
+    #[error("operation {0} is missing an x-ms-examples")]
+    OperationMissingExample(String),
     #[error("operation is missing responses")]
     OperationMissingResponses,
     #[error("creating path for example {0}")]

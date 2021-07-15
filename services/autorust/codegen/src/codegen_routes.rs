@@ -204,7 +204,7 @@ fn create_function(
     let examples = get_operation_examples(operation_verb);
     let base_path = doc_file.clone();
     let examples_mod = create_examples_mod(base_path, &examples_name, &examples)?;
-    let first_example = examples.0.first().ok_or_else(|| Error::OperationMissingExample)?;
+    let first_example = examples.0.first();
 
     let responses = &operation_verb.operation().responses;
     let success_responses = get_success_responses(responses);
@@ -370,15 +370,17 @@ fn create_function(
     let route = quote! { #verb (#(#verb_parts),*) };
 
     let first_response = responses.0.first().ok_or_else(|| Error::OperationMissingResponses)?;
-    let first_example_name = ident(&first_example.const_name()).map_err(Error::ExamplesName)?;
     let status_code = &StatusCode::Code(first_response.status_code.ok_or_else(|| Error::StatusCodeRequired)?);
     let status_code_name = get_status_code_ident(status_code)?;
     let response_type = get_response_type_ident(status_code)?;
-    let first_responder = match &first_response.body_type_name {
-        Some(_body) => quote! {
-            #responder_name::#response_type(read_example_response_body(#examples_name::#first_example_name, &rocket::http::Status::#status_code_name)?)
-        },
-        None => quote! {
+    let first_responder = match (&first_example, &first_response.body_type_name) {
+        (Some(first_example), Some(_body)) => {
+            let first_example_name = ident(&first_example.const_name()).map_err(Error::ExamplesName)?;
+            quote! {
+                #responder_name::#response_type(read_example_response_body(#examples_name::#first_example_name, &rocket::http::Status::#status_code_name)?)
+            }
+        }
+        _ => quote! {
             #responder_name::#response_type
         },
     };

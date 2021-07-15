@@ -12,6 +12,12 @@ struct MainConfig {
 fn main() -> Result<()> {
     let mut configs = Vec::new();
 
+    // configs.push(MainConfig {
+    //     api_version: "2020-10-01",
+    //     input_file: "../../../azure-rest-api-specs-pr/specification/resources/resource-manager/Microsoft.Resources/stable/2020-10-01/resources.json",
+    //     output_folder: "../../../avs/src/fct/mock_api/src/resources_v2020_10_01",
+    // });
+
     configs.push(MainConfig {
         api_version: "2020-03-20",
         input_file: "../../../azure-rest-api-specs-pr/specification/vmware/resource-manager/Microsoft.AVS/stable/2020-03-20/vmware.json",
