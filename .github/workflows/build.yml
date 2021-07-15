@@ -156,4 +156,6 @@ jobs:
         repository: Azure/azure-rest-api-specs
         path: services/azure-rest-api-specs
     - name: integration tests azure_rest_api_specs
-      run: cargo test --manifest-path services/autorust/Cargo.toml --test azure_rest_api_specs
+      run: |
+        cd services/autorust
+        cargo test --test azure_rest_api_specs
