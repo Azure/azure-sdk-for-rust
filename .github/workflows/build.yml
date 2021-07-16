@@ -154,7 +154,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: Azure/azure-rest-api-specs
-        path: services/azure-rest-api-specs
     - name: integration tests
       run: |
         cd services/autorust
