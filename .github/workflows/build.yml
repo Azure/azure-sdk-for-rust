@@ -139,7 +139,9 @@ jobs:
     steps:
     - name: git clone
       uses: actions/checkout@v2
-    - name: install rust nightly
+      with:
+        path: azure-sdk-for-rust
+    - name: install rust
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
@@ -147,17 +149,19 @@ jobs:
         override: true
         components: rustfmt
     - name: fmt check
-      run: cargo fmt --manifest-path services/autorust/Cargo.toml --all -- --check
+      run: |
+        cd azure-sdk-for-rust/services/autorust
+        cargo fmt --all -- --check
     - name: unit tests
-      run: cargo test --manifest-path services/autorust/Cargo.toml --lib
+      run:  |
+        cd azure-sdk-for-rust/services/autorust
+        cargo test --lib
     - name: git clone Azure/azure-rest-api-specs
       uses: actions/checkout@v2
       with:
         repository: Azure/azure-rest-api-specs
+        path: azure-rest-api-specs
     - name: integration tests
       run: |
-        echo $PWD
-        echo $GITHUB_WORKSPACE
-        ls
-        cd $GITHUB_WORKSPACE/services/autorust
+        cd azure-sdk-for-rust/services/autorust
         cargo test --package autorust_codegen --test azure_rest_api_specs
