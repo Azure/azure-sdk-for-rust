@@ -156,5 +156,8 @@ jobs:
         repository: Azure/azure-rest-api-specs
     - name: integration tests
       run: |
+        echo pwd
+        echo $GITHUB_WORKSPACE
+        ls
         cd $GITHUB_WORKSPACE/services/autorust
         cargo test --package autorust_codegen --test azure_rest_api_specs

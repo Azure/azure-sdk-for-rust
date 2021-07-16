@@ -29,8 +29,5 @@ jobs:
         path: azure-rest-api-specs
     - name: integration tests azure_rest_api_specs
       run: |
-        echo pwd
-        echo $GITHUB_WORKSPACE
-        ls
         cd $GITHUB_WORKSPACE/autorust
         cargo test --test azure_rest_api_specs
