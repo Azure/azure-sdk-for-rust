@@ -134,7 +134,8 @@ jobs:
       run: df -h /
       if: ${{ always() }}
 
-  AutoRust:
+  test-autorust:
+    name: test AutoRust
     runs-on: ubuntu-20.04
     steps:
     - name: git clone
