@@ -155,7 +155,7 @@ jobs:
       with:
         repository: Azure/azure-rest-api-specs
         path: services/azure-rest-api-specs
-    - name: integration tests azure_rest_api_specs
+    - name: integration tests
       run: |
         cd services/autorust
-        cargo test --test azure_rest_api_specs
+        cargo test --package autorust_codegen --test azure_rest_api_specs
