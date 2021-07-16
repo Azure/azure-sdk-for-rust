@@ -6,11 +6,11 @@ mod common;
 use common::*;
 
 const PATHS: &[&str] = &[
-    "../OpenAPI-Specification/examples/v2.0/json/petstore-minimal.json",
-    "../OpenAPI-Specification/examples/v2.0/json/petstore.json",
-    "../OpenAPI-Specification/examples/v2.0/json/petstore-simple.json",
-    "../OpenAPI-Specification/examples/v2.0/json/petstore-with-external-docs.json",
-    "../OpenAPI-Specification/examples/v2.0/json/uber.json",
+    "../../../../OpenAPI-Specification/examples/v2.0/json/petstore-minimal.json",
+    "../../../../OpenAPI-Specification/examples/v2.0/json/petstore.json",
+    "../../../../OpenAPI-Specification/examples/v2.0/json/petstore-simple.json",
+    "../../../../OpenAPI-Specification/examples/v2.0/json/petstore-with-external-docs.json",
+    "../../../../OpenAPI-Specification/examples/v2.0/json/uber.json",
 ];
 
 #[test]
