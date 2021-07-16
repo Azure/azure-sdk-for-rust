@@ -164,4 +164,5 @@ jobs:
     - name: integration tests
       run: |
         cd azure-sdk-for-rust/services/autorust
+        cargo test --package autorust_openapi --test azure_rest_api_specs
         cargo test --package autorust_codegen --test azure_rest_api_specs
