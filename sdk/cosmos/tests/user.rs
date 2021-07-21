@@ -2,6 +2,7 @@
 
 use azure_core::Context;
 use azure_cosmos::prelude::*;
+use futures::stream::StreamExt;
 
 mod setup;
 
@@ -68,8 +69,10 @@ async fn users() {
         .execute()
         .await
         .unwrap();
-    let _databases = client
-        .list_databases(Context::new(), ListDatabasesOptions::new())
+
+    let _databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+        .next()
         .await
+        .unwrap()
         .unwrap();
 }
