@@ -1,8 +1,6 @@
-use azure_core::prelude::*;
+use azure_core::Context;
 use azure_cosmos::prelude::*;
-
 use futures::stream::StreamExt;
-
 use std::error::Error;
 
 #[tokio::main]
@@ -40,11 +38,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("list_databases_response = {:#?}", list_databases_response);
 
     let db = client
-        .create_database(
-            azure_core::Context::new(),
-            &database_name,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(Context::new(), &database_name, CreateDatabaseOptions::new())
         .await?;
     println!("created database = {:#?}", db);
 

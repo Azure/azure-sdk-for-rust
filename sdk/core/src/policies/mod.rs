@@ -2,7 +2,7 @@ mod retry_policies;
 mod telemetry_policy;
 mod transport;
 
-use crate::{Context, Request, Response};
+use crate::{PipelineContext, Request, Response};
 pub use retry_policies::*;
 use std::error::Error;
 use std::sync::Arc;
@@ -17,12 +17,16 @@ pub type PolicyResult<T> = Result<T, Box<dyn Error + Send + Sync>>;
 /// Policies can then inspect the response, potentially signaling failure.
 /// The only runtime enforced check is that the last policy must be a Transport policy. It's up to
 /// the implementer to call the following policy.
+/// The `C` generic represents the *contents* of the AuthorizationPolicy specific of this pipeline.
 #[async_trait::async_trait]
-pub trait Policy: Send + Sync + std::fmt::Debug {
+pub trait Policy<C>: Send + Sync + std::fmt::Debug
+where
+    C: Send + Sync,
+{
     async fn send(
         &self,
-        ctx: &mut Context,
+        ctx: &mut PipelineContext<C>,
         request: &mut Request,
-        next: &[Arc<dyn Policy>],
+        next: &[Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response>;
 }

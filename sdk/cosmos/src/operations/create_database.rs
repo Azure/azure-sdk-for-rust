@@ -35,7 +35,7 @@ impl CreateDatabaseOptions {
         }
         let req = CreateDatabaseRequest { id: database_name };
 
-        azure_core::headers::add_optional_header2(&self.consistency_level, request);
+        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
         request.set_body(bytes::Bytes::from(serde_json::to_string(&req)?).into());
         Ok(())
     }
