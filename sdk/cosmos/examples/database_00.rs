@@ -1,3 +1,4 @@
+use azure_core::Context;
 use azure_cosmos::prelude::*;
 use serde_json::Value;
 use std::error::Error;
@@ -40,10 +41,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 }"#;
                 let document: Value = serde_json::from_str(data)?;
 
-                let resp = collection_client
-                    .create_document()
+                let options = CreateDocumentOptions::new()
                     .is_upsert(true)
-                    .execute_with_partition_key(&document, &43u32)
+                    .partition_key(&43u32)
+                    .unwrap();
+                let resp = collection_client
+                    .create_document(Context::new(), &document, options)
                     .await?;
 
                 println!("resp == {:?}", resp);

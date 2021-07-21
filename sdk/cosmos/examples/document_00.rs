@@ -130,7 +130,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // The method create_document will return, upon success,
     // the document attributes.
 
-    let create_document_response = collection_client.create_document().execute(&doc).await?;
+    let create_document_response = collection_client
+        .create_document(Context::new(), &doc, CreateDocumentOptions::new())
+        .await?;
     println!(
         "create_document_response == {:#?}",
         create_document_response

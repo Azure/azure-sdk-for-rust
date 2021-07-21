@@ -1,4 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
+use azure_core::Context;
+use azure_cosmos::prelude::CreateDocumentOptions;
 use serde::{Deserialize, Serialize};
 
 mod setup;
@@ -67,8 +69,7 @@ async fn create_and_delete_document() {
         hello: 42,
     };
     collection_client
-        .create_document()
-        .execute(&document_data)
+        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
         .await
         .unwrap();
 
@@ -156,8 +157,7 @@ async fn query_documents() {
         hello: 42,
     };
     collection_client
-        .create_document()
-        .execute(&document_data)
+        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
         .await
         .unwrap();
 
@@ -231,8 +231,7 @@ async fn replace_document() {
         hello: 42,
     };
     collection_client
-        .create_document()
-        .execute(&document_data)
+        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
         .await
         .unwrap();
 

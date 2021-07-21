@@ -1,9 +1,10 @@
 use super::{DatabaseClient, UserDefinedFunctionClient};
 use crate::clients::*;
+use crate::operations::*;
 use crate::requests;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
-use azure_core::HttpClient;
+use azure_core::{pipeline::Pipeline, Context, HttpClient};
 use serde::Serialize;
 
 /// A client for Cosmos collection resources.
@@ -60,8 +61,24 @@ impl CollectionClient {
     }
 
     /// create a document in a collection
-    pub fn create_document(&self) -> requests::CreateDocumentBuilder<'_, '_> {
-        requests::CreateDocumentBuilder::new(self)
+    pub async fn create_document<D: Serialize>(
+        &self,
+        ctx: Context,
+        document: &D,
+        options: CreateDocumentOptions<'_>,
+    ) -> Result<CreateDocumentResponse, crate::Error> {
+        let request = self.prepare_request_with_collection_name(http::Method::POST);
+        let mut request = request.body(bytes::Bytes::new()).unwrap().into();
+        let mut ctx = ctx.clone();
+        options.decorate_request(&mut request, document)?;
+        let response = self
+            .pipeline()
+            .send(&mut ctx, &mut request)
+            .await?
+            .validate(http::StatusCode::CREATED)
+            .await?;
+
+        Ok(CreateDocumentResponse::try_from(response).await?)
     }
 
     /// query documents in a collection
@@ -136,5 +153,9 @@ impl CollectionClient {
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
         self.cosmos_client().http_client()
+    }
+
+    pub(crate) fn pipeline(&self) -> &Pipeline {
+        self.cosmos_client().pipeline()
     }
 }

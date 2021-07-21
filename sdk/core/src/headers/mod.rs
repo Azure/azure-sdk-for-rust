@@ -83,6 +83,10 @@ pub fn add_mandatory_header<T: AddAsHeader>(item: &T, builder: Builder) -> Build
     item.add_as_header(builder)
 }
 
+pub fn add_mandatory_header2<T: AddAsHeader>(item: &T, request: &mut crate::Request) {
+    item.add_as_header2(request);
+}
+
 pub const SERVER: &str = "server";
 pub const SOURCE_IF_MODIFIED_SINCE: &str = "x-ms-source-if-modified-since";
 pub const SOURCE_IF_UNMODIFIED_SINCE: &str = "x-ms-source-if-unmodified-since";

@@ -1,4 +1,5 @@
 use crate::headers;
+use azure_core::Request as HttpRequest;
 use http::request::Builder;
 use serde::Serialize;
 
@@ -18,20 +19,6 @@ pub(crate) fn serialize_partition_key<PK: Serialize>(pk: &PK) -> Result<String, 
     serde_json::to_string(&[pk])
 }
 
-// Here we do not implement add_as_header because the trait does not support errors and serializing
-// with serde_json returns a Result. I am not sure why a serialization could fail (memory
-// allocation)? In case we are confident that no errors should arise we can implement the trait and just
-// unwrap the result of serde_json::to_string.
-pub(crate) fn add_as_partition_key_header<'a, P: CosmosEntity<'a>>(
-    pk: &'a P,
-    builder: Builder,
-) -> Result<Builder, serde_json::Error> {
-    Ok(builder.header(
-        headers::HEADER_DOCUMENTDB_PARTITIONKEY,
-        &serialize_partition_key(&pk.partition_key())?,
-    ))
-}
-
 pub(crate) fn add_as_partition_key_header_serialized(
     partition_key_serialized: &str,
     builder: Builder,
@@ -40,4 +27,14 @@ pub(crate) fn add_as_partition_key_header_serialized(
         headers::HEADER_DOCUMENTDB_PARTITIONKEY,
         partition_key_serialized,
     )
+}
+
+pub(crate) fn add_as_partition_key_header_serialized2(
+    partition_key_serialized: &str,
+    request: &mut HttpRequest,
+) {
+    request.headers_mut().insert(
+        headers::HEADER_DOCUMENTDB_PARTITIONKEY,
+        http::header::HeaderValue::from_str(partition_key_serialized).unwrap(),
+    );
 }
