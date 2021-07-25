@@ -1,3 +1,4 @@
+use azure_core::Context;
 use azure_cosmos::prelude::*;
 use std::error::Error;
 
@@ -36,7 +37,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let get_collection_response = collection_client.get_collection().execute().await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
-    let create_user_response = user_client.create_user().execute().await?;
+    let create_user_response = user_client
+        .create_user(Context::new(), CreateUserOptions::default())
+        .await?;
     println!("create_user_response == {:#?}", create_user_response);
 
     // test list documents

@@ -54,7 +54,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         get_collection2_response
     );
 
-    let create_user_response = user_client.create_user().execute().await?;
+    let create_user_response = user_client
+        .create_user(Context::new(), CreateUserOptions::default())
+        .await?;
     println!("create_user_response == {:#?}", create_user_response);
 
     // create the first permission!
