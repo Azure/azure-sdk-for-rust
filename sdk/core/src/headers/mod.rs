@@ -83,8 +83,11 @@ pub fn add_mandatory_header<T: AddAsHeader>(item: &T, builder: Builder) -> Build
     item.add_as_header(builder)
 }
 
-pub fn add_mandatory_header2<T: AddAsHeader>(item: &T, request: &mut crate::Request) {
-    item.add_as_header2(request);
+pub fn add_mandatory_header2<T: AddAsHeader>(
+    item: &T,
+    request: &mut crate::Request,
+) -> Result<(), crate::errors::HTTPHeaderError> {
+    item.add_as_header2(request)
 }
 
 pub const SERVER: &str = "server";

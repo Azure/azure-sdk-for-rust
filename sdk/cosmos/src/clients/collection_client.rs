@@ -1,9 +1,11 @@
 use super::{DatabaseClient, UserDefinedFunctionClient};
+use crate::authorization_policy::CosmosContext;
 use crate::clients::*;
 use crate::operations::*;
 use crate::requests;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
+use azure_core::PipelineContext;
 use azure_core::{pipeline::Pipeline, Context, HttpClient};
 use serde::Serialize;
 
@@ -67,13 +69,15 @@ impl CollectionClient {
         document: &D,
         options: CreateDocumentOptions<'_>,
     ) -> Result<CreateDocumentResponse, crate::Error> {
-        let request = self.prepare_request_with_collection_name(http::Method::POST);
-        let mut request = request.body(bytes::Bytes::new()).unwrap().into();
-        let mut ctx = ctx.clone();
+        let mut request = self
+            .cosmos_client()
+            .prepare_request_pipeline("collection", http::Method::POST);
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
+
         options.decorate_request(&mut request, document)?;
         let response = self
             .pipeline()
-            .send(&mut ctx, &mut request)
+            .send(&mut pipeline_context, &mut request)
             .await?
             .validate(http::StatusCode::CREATED)
             .await?;
@@ -155,7 +159,7 @@ impl CollectionClient {
         self.cosmos_client().http_client()
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline {
+    pub(crate) fn pipeline(&self) -> &Pipeline<CosmosContext> {
         self.cosmos_client().pipeline()
     }
 }

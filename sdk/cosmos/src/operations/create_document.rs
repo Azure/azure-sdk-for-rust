@@ -68,12 +68,12 @@ impl<'a> CreateDocumentOptions<'a> {
             .unwrap_or_else(|| serialize_partition_key(document).unwrap());
 
         add_as_partition_key_header_serialized2(&partition_key, req);
-        azure_core::headers::add_optional_header2(&self.if_match_condition, req);
-        azure_core::headers::add_optional_header2(&self.if_modified_since, req);
-        azure_core::headers::add_optional_header2(&self.consistency_level, req);
-        azure_core::headers::add_mandatory_header2(&self.is_upsert, req);
-        azure_core::headers::add_mandatory_header2(&self.indexing_directive, req);
-        azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, req);
+        azure_core::headers::add_optional_header2(&self.if_match_condition, req)?;
+        azure_core::headers::add_optional_header2(&self.if_modified_since, req)?;
+        azure_core::headers::add_optional_header2(&self.consistency_level, req)?;
+        azure_core::headers::add_mandatory_header2(&self.is_upsert, req)?;
+        azure_core::headers::add_mandatory_header2(&self.indexing_directive, req)?;
+        azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, req)?;
 
         req.set_body(bytes::Bytes::from(serialized).into());
         Ok(())
