@@ -290,7 +290,7 @@ impl Display for EncryptionAlgorithm {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DecryptParameters {
-    decrypt_parameters_encryption: DecryptParametersEncryption,
+    pub decrypt_parameters_encryption: DecryptParametersEncryption,
     #[serde(serialize_with = "ser_base64", deserialize_with = "deser_base64")]
     pub ciphertext: Vec<u8>,
 }
