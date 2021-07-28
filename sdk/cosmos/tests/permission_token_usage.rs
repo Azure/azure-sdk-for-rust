@@ -1,5 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::prelude::*;
+use azure_core::Context;
 use azure_cosmos::prelude::*;
 use collection::*;
 use serde::{Deserialize, Serialize};
@@ -60,7 +60,10 @@ async fn permission_token_usage() {
         .unwrap();
 
     let user_client = database_client.clone().into_user_client(USER_NAME);
-    user_client.create_user().execute().await.unwrap();
+    user_client
+        .create_user(Context::new(), CreateUserOptions::new())
+        .await
+        .unwrap();
 
     // create the RO permission
     let permission_client = user_client.into_permission_client(PERMISSION);
