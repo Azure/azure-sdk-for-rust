@@ -248,7 +248,6 @@ impl Display for SignatureAlgorithm {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
 pub enum EncryptionAlgorithm {
     #[serde(rename = "A128CBC")]
     A128Cbc,
@@ -609,7 +608,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             DecryptParametersEncryption::Rsa15(Rsa15Parameters { algorithm: alg })
             | DecryptParametersEncryption::RsaOaep(RsaOaepParameters { algorithm: alg })
             | DecryptParametersEncryption::RsaOaep256(RsaOaep256Parameters { algorithm: alg }) => {
-                request_body.insert("alg".to_owned(), Value::String(alg.to_string()));
+                request_body.insert("alg".to_owned(), serde_json::to_value(&alg).unwrap());
                 alg
             }
             DecryptParametersEncryption::A128Gcm(A128GcmParameters {
@@ -624,14 +623,14 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
                 algorithm: alg,
                 parameters: params,
             }) => {
-                request_body.insert("alg".to_owned(), Value::String(alg.to_string()));
-                request_body.insert("iv".to_owned(), Value::String(base64::encode(params.iv)));
+                request_body.insert("alg".to_owned(), serde_json::to_value(&alg).unwrap());
+                request_body.insert("iv".to_owned(), serde_json::to_value(params.iv).unwrap());
                 request_body.insert(
                     "tag".to_owned(),
-                    Value::String(base64::encode(params.authentication_tag)),
+                    serde_json::to_value(params.authentication_tag).unwrap(),
                 );
                 if let Some(aad) = params.additional_authenticated_data {
-                    request_body.insert("aad".to_owned(), Value::String(base64::encode(aad)));
+                    request_body.insert("aad".to_owned(), serde_json::to_value(aad).unwrap());
                 };
                 alg
             }
@@ -659,8 +658,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
                 algorithm: alg,
                 parameters: params,
             }) => {
-                request_body.insert("alg".to_owned(), Value::String(alg.to_string()));
-                request_body.insert("iv".to_owned(), Value::String(base64::encode(params.iv)));
+                request_body.insert("alg".to_owned(), serde_json::to_value(&alg).unwrap());
+                request_body.insert("iv".to_owned(), serde_json::to_value(params.iv).unwrap());
                 alg
             }
         };
