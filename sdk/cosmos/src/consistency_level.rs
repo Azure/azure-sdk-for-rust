@@ -1,4 +1,5 @@
 use crate::headers;
+use crate::operations::CreateUserResponse;
 use crate::responses::*;
 use azure_core::AddAsHeader;
 use http::request;

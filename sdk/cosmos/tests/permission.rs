@@ -1,5 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::prelude::*;
+use azure_core::Context;
 use azure_cosmos::prelude::*;
 
 mod setup;
@@ -29,9 +29,15 @@ async fn permissions() {
 
     // create two users
     let user1_client = database_client.clone().into_user_client(USER_NAME1);
-    let _create_user_response = user1_client.create_user().execute().await.unwrap();
+    let _create_user_response = user1_client
+        .create_user(Context::new(), CreateUserOptions::new())
+        .await
+        .unwrap();
     let user2_client = database_client.clone().into_user_client(USER_NAME2);
-    let _create_user_response = user2_client.create_user().execute().await.unwrap();
+    let _create_user_response = user2_client
+        .create_user(Context::new(), CreateUserOptions::new())
+        .await
+        .unwrap();
 
     // create a temp collection
     let create_collection_response = database_client
