@@ -12,6 +12,13 @@ pub trait CosmosEntity<'a> {
     fn partition_key(&'a self) -> Self::Entity;
 }
 
+impl<'a> CosmosEntity<'a> for serde_json::Value {
+    type Entity = &'a Self;
+    fn partition_key(&'a self) -> Self::Entity {
+        self
+    }
+}
+
 /// Serialize the partition key in the format CosmosDB expects.
 pub(crate) fn serialize_partition_key<PK: Serialize>(pk: &PK) -> Result<String, serde_json::Error> {
     // this must be serialized as an array even tough CosmosDB supports only a sigle
