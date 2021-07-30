@@ -1,6 +1,7 @@
 use crate::client::API_VERSION_PARAM;
 use crate::Error;
 use crate::KeyClient;
+use crate::RecoveryLevel;
 
 use azure_core::TokenCredential;
 use chrono::serde::{ts_seconds, ts_seconds_option};
@@ -10,35 +11,11 @@ use getset::Getters;
 use reqwest::Url;
 use serde::Deserialize;
 use serde_json::{Map, Value};
-use std::fmt;
 
 const DEFAULT_MAX_RESULTS: usize = 25;
 
 const API_VERSION_MAX_RESULTS_PARAM: &str =
     formatcp!("{}&maxresults={}", API_VERSION_PARAM, DEFAULT_MAX_RESULTS);
-
-/// Reflects the deletion recovery level currently in effect for keys in the current Key Vault.
-/// If it contains 'Purgeable' the key can be permanently deleted by a privileged user;
-/// otherwise, only the system can purge the key, at the end of the retention interval.
-pub enum RecoveryLevel {
-    Purgeable,
-    Recoverable,
-    RecoverableAndProtectedSubscription,
-    RecoverableAndPurgeable,
-}
-
-impl fmt::Display for RecoveryLevel {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            RecoveryLevel::Purgeable => write!(f, "Purgeable"),
-            RecoveryLevel::Recoverable => write!(f, "Recoverable"),
-            RecoveryLevel::RecoverableAndProtectedSubscription => {
-                write!(f, "Recoverable+ProtectedSubscription")
-            }
-            RecoveryLevel::RecoverableAndPurgeable => write!(f, "Recoverable+Purgeable"),
-        }
-    }
-}
 
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultSecretBaseIdentifierAttributedRaw {
@@ -183,7 +160,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
                 }
             })?;
         Ok(KeyVaultSecret {
-            expires_on: response.attributes.exp,
+            expiry: response.attributes.exp,
             enabled: response.attributes.enabled,
             value: response.value,
             time_created: response.attributes.created,
