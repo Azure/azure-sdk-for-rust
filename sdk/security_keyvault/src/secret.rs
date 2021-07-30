@@ -51,7 +51,7 @@ pub(crate) struct KeyVaultGetSecretResponseAttributes {
     enabled: bool,
     #[serde(default)]
     #[serde(with = "ts_seconds_option")]
-    exp: Option<DateTime<Utc>>,
+    expires_on: Option<DateTime<Utc>>,
     #[serde(with = "ts_seconds")]
     created: DateTime<Utc>,
     #[serde(with = "ts_seconds")]
@@ -160,7 +160,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
                 }
             })?;
         Ok(KeyVaultSecret {
-            expiry: response.attributes.exp,
+            expiry: response.attributes.expires_on,
             enabled: response.attributes.enabled,
             value: response.value,
             time_created: response.attributes.created,
