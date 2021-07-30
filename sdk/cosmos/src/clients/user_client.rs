@@ -1,6 +1,7 @@
 use super::*;
 use crate::authorization_policy::CosmosContext;
 use crate::prelude::*;
+use crate::resources::user::UserResponse;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 use azure_core::PipelineContext;
@@ -44,7 +45,7 @@ impl UserClient {
         &self,
         ctx: Context,
         options: CreateUserOptions,
-    ) -> Result<CreateUserResponse, crate::Error> {
+    ) -> Result<UserResponse, crate::Error> {
         let mut request = self.cosmos_client().prepare_request_pipeline(
             &format!("dbs/{}/users", self.database_client.database_name()),
             http::Method::POST,
@@ -59,7 +60,7 @@ impl UserClient {
             .validate(http::StatusCode::CREATED)
             .await?;
 
-        Ok(CreateUserResponse::try_from(response).await?)
+        Ok(UserResponse::try_from(response).await?)
     }
 
     /// Get the user
@@ -67,7 +68,7 @@ impl UserClient {
         &self,
         ctx: Context,
         options: GetUserOptions,
-    ) -> Result<GetUserResponse, crate::Error> {
+    ) -> Result<UserResponse, crate::Error> {
         let mut request = self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/users/{}",
@@ -86,7 +87,7 @@ impl UserClient {
             .validate(http::StatusCode::OK)
             .await?;
 
-        Ok(GetUserResponse::try_from(response).await?)
+        Ok(UserResponse::try_from(response).await?)
     }
 
     /// Replace the user
@@ -95,7 +96,7 @@ impl UserClient {
         ctx: Context,
         user_name: S,
         options: ReplaceUserOptions,
-    ) -> Result<ReplaceUserResponse, crate::Error> {
+    ) -> Result<UserResponse, crate::Error> {
         let mut request = self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/users/{}",
@@ -114,12 +115,34 @@ impl UserClient {
             .validate(http::StatusCode::OK)
             .await?;
 
-        Ok(ReplaceUserResponse::try_from(response).await?)
+        Ok(UserResponse::try_from(response).await?)
     }
 
     /// Delete the user
-    pub fn delete_user(&self) -> requests::DeleteUserBuilder<'_, '_> {
-        requests::DeleteUserBuilder::new(self)
+    pub async fn delete_user(
+        &self,
+        ctx: Context,
+        options: DeleteUserOptions,
+    ) -> Result<DeleteUserResponse, crate::Error> {
+        let mut request = self.cosmos_client().prepare_request_pipeline(
+            &format!(
+                "dbs/{}/users/{}",
+                self.database_client.database_name(),
+                self.user_name
+            ),
+            http::Method::DELETE,
+        );
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
+
+        options.decorate_request(&mut request)?;
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::NO_CONTENT)
+            .await?;
+
+        Ok(DeleteUserResponse::try_from(response).await?)
     }
 
     /// List the user's permissions
@@ -133,21 +156,6 @@ impl UserClient {
         permission_name: S,
     ) -> PermissionClient {
         PermissionClient::new(self, permission_name)
-    }
-
-    pub(crate) fn prepare_request_with_user_name(
-        &self,
-        method: http::Method,
-    ) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
-            &format!(
-                "dbs/{}/users/{}",
-                self.database_client().database_name(),
-                self.user_name()
-            ),
-            method,
-            ResourceType::Users,
-        )
     }
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {

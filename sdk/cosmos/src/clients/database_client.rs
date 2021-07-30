@@ -91,8 +91,26 @@ impl DatabaseClient {
     }
 
     /// List users
-    pub fn list_users(&self) -> requests::ListUsersBuilder<'_, '_> {
-        requests::ListUsersBuilder::new(self)
+    pub async fn list_users(
+        &self,
+        ctx: Context,
+        options: ListUsersOptions<'_>,
+    ) -> Result<ListUsersResponse, crate::Error> {
+        let mut request = self.cosmos_client().prepare_request_pipeline(
+            &format!("dbs/{}/users", self.database_name()),
+            http::Method::GET,
+        );
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
+
+        options.decorate_request(&mut request)?;
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
+            .await?;
+
+        Ok(ListUsersResponse::try_from(response).await?)
     }
 
     /// Convert into a [`CollectionClient`]

@@ -33,7 +33,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("create_user_response == {:#?}", create_user_response);
 
-    let list_users_response = database_client.list_users().execute().await?;
+    let list_users_response = database_client
+        .list_users(Context::new(), ListUsersOptions::new())
+        .await?;
     println!("list_users_response == {:#?}", list_users_response);
 
     let get_user_response = user_client
@@ -50,7 +52,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let user_client = database_client.into_user_client(new_user);
 
-    let delete_user_response = user_client.delete_user().execute().await?;
+    let delete_user_response = user_client
+        .delete_user(Context::new(), DeleteUserOptions::new())
+        .await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 
     Ok(())

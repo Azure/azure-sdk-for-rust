@@ -164,7 +164,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     println!("Cleaning up user.");
-    let delete_user_response = user_client.delete_user().execute().await?;
+    let delete_user_response = user_client
+        .delete_user(Context::new(), DeleteUserOptions::new())
+        .await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 
     Ok(())
