@@ -4,9 +4,10 @@ use crate::clients::*;
 use crate::operations::*;
 use crate::requests;
 use crate::resources::ResourceType;
+use crate::CosmosEntity;
 use crate::ReadonlyString;
 use azure_core::PipelineContext;
-use azure_core::{pipeline::Pipeline, Context, HttpClient};
+use azure_core::{pipeline::Pipeline, Context, HttpClient, Request};
 use serde::Serialize;
 
 /// A client for Cosmos collection resources.
@@ -63,16 +64,14 @@ impl CollectionClient {
     }
 
     /// create a document in a collection
-    pub async fn create_document<D: Serialize>(
+    pub async fn create_document<'a, D: Serialize + CosmosEntity<'a>>(
         &self,
         ctx: Context,
-        document: &D,
+        document: &'a D,
         options: CreateDocumentOptions<'_>,
     ) -> Result<CreateDocumentResponse, crate::Error> {
-        let mut request = self
-            .cosmos_client()
-            .prepare_request_pipeline("collection", http::Method::POST);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
+        let mut request = self.prepare_request_pipeline(http::Method::POST);
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
 
         options.decorate_request(&mut request, document)?;
         let response = self
@@ -161,5 +160,15 @@ impl CollectionClient {
 
     pub(crate) fn pipeline(&self) -> &Pipeline<CosmosContext> {
         self.cosmos_client().pipeline()
+    }
+
+    fn prepare_request_pipeline(&self, http_method: http::Method) -> Request {
+        let path = &format!(
+            "dbs/{}/colls/{}",
+            self.database_client().database_name(),
+            self.collection_name()
+        );
+        self.cosmos_client()
+            .prepare_request_pipeline(&path, http_method)
     }
 }

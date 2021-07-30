@@ -59,13 +59,13 @@ impl<'a> CreateDocumentOptions<'a> {
         document: &'b DOC,
     ) -> Result<(), crate::Error>
     where
-        DOC: Serialize,
+        DOC: Serialize + CosmosEntity<'b>,
     {
         let serialized = serde_json::to_string(document)?;
         let partition_key = self
             .partition_key
             .clone()
-            .unwrap_or_else(|| serialize_partition_key(document).unwrap());
+            .unwrap_or_else(|| serialize_partition_key(&document.partition_key()).unwrap());
 
         add_as_partition_key_header_serialized2(&partition_key, req);
         azure_core::headers::add_optional_header2(&self.if_match_condition, req)?;
