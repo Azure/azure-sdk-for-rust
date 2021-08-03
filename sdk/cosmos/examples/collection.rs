@@ -33,7 +33,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
-    let databases = client.list_databases().execute().await?;
+    let databases = client
+        .list_databases(Context::new(), ListDatabasesOptions::new())
+        .await?;
 
     println!(
         "Account {} has {} database(s)",

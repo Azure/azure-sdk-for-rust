@@ -34,7 +34,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
 
-    let list_databases_response = client.list_databases().execute().await?;
+    let list_databases_response = client
+        .list_databases(Context::new(), ListDatabasesOptions::new())
+        .await?;
     println!("list_databases_response = {:#?}", list_databases_response);
 
     let db = client

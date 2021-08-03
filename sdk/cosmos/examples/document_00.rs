@@ -58,8 +58,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // specific azure_cosmos::Error. In this example we will look for a specific database
     // so we chain a filter operation.
     let db = client
-        .list_databases()
-        .execute()
+        .list_databases(Context::new(), ListDatabasesOptions::new())
         .await?
         .databases
         .into_iter()
