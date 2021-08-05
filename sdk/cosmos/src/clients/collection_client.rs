@@ -70,7 +70,7 @@ impl CollectionClient {
         document: &'a D,
         options: CreateDocumentOptions<'_>,
     ) -> Result<CreateDocumentResponse, crate::Error> {
-        let mut request = self.prepare_request_pipeline(http::Method::POST);
+        let mut request = self.prepare_doc_request_pipeline(http::Method::POST);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
 
         options.decorate_request(&mut request, document)?;
@@ -162,9 +162,9 @@ impl CollectionClient {
         self.cosmos_client().pipeline()
     }
 
-    fn prepare_request_pipeline(&self, http_method: http::Method) -> Request {
+    fn prepare_doc_request_pipeline(&self, http_method: http::Method) -> Request {
         let path = &format!(
-            "dbs/{}/colls/{}",
+            "dbs/{}/colls/{}/docs",
             self.database_client().database_name(),
             self.collection_name()
         );
