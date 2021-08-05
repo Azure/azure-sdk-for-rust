@@ -134,7 +134,16 @@ impl CosmosClient {
 
     /// Set the auth token used
     pub fn auth_token(&mut self, auth_token: AuthorizationToken) {
-        self.auth_token = auth_token;
+        // TODO: To remove once everything uses the AutorizationPolicy
+        self.auth_token = auth_token.clone();
+
+        // we replace the AuthorizationPolicy. This is
+        // the last-1 policy by construction.
+        let auth_policy: Arc<dyn azure_core::Policy<CosmosContext>> =
+            Arc::new(crate::AuthorizationPolicy::new(auth_token));
+
+        self.pipeline
+            .replace_policy(auth_policy, self.pipeline.policies().len() - 2);
     }
 
     /// Create a database
