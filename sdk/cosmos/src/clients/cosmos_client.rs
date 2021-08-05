@@ -4,7 +4,7 @@ use crate::headers::*;
 use crate::operations::*;
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
-use crate::{requests, ReadonlyString, TimeNonce};
+use crate::{ReadonlyString, TimeNonce};
 use azure_core::pipeline::Pipeline;
 use azure_core::HttpClient;
 use azure_core::Request;
@@ -163,8 +163,23 @@ impl CosmosClient {
     }
 
     /// List all databases
-    pub fn list_databases(&self) -> requests::ListDatabasesBuilder<'_> {
-        requests::ListDatabasesBuilder::new(self)
+    pub async fn list_databases(
+        &self,
+        ctx: Context,
+        options: ListDatabasesOptions,
+    ) -> Result<ListDatabasesResponse, crate::Error> {
+        let mut request = self.prepare_request_pipeline("dbs", http::Method::GET);
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+
+        options.decorate_request(&mut request).await?;
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
+            .await?;
+
+        Ok(ListDatabasesResponse::try_from(response).await?)
     }
 
     /// Convert into a [`DatabaseClient`]
