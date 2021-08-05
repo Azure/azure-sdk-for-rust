@@ -42,7 +42,7 @@ impl<'a, 'b> CreateSlugAttachmentBuilder<'a, 'b> {
     pub async fn execute<B: Into<Bytes>>(
         &self,
         body: B,
-    ) -> Result<CreateSlugAttachmentResponse, crate::Error> {
+    ) -> crate::Result<CreateSlugAttachmentResponse> {
         let body = body.into();
         let mut req = self.attachment_client.prepare_request(http::Method::POST);
 

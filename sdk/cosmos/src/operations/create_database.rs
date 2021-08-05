@@ -28,7 +28,7 @@ impl CreateDatabaseOptions {
         &self,
         request: &mut HttpRequest,
         database_name: &str,
-    ) -> Result<(), crate::Error> {
+    ) -> crate::Result<()> {
         #[derive(Serialize)]
         struct CreateDatabaseRequest<'a> {
             pub id: &'a str,
@@ -60,7 +60,7 @@ pub struct CreateDatabaseResponse {
 }
 
 impl CreateDatabaseResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

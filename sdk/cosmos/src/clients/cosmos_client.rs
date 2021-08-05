@@ -182,7 +182,7 @@ impl CosmosClient {
         ctx: Context,
         database_name: S,
         options: CreateDatabaseOptions,
-    ) -> Result<CreateDatabaseResponse, crate::Error> {
+    ) -> crate::Result<CreateDatabaseResponse> {
         let mut request = self.prepare_request_pipeline("dbs", http::Method::POST);
 
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());

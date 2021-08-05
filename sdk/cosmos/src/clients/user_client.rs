@@ -45,7 +45,7 @@ impl UserClient {
         &self,
         ctx: Context,
         options: CreateUserOptions,
-    ) -> Result<UserResponse, crate::Error> {
+    ) -> crate::Result<UserResponse> {
         let mut request = self.cosmos_client().prepare_request_pipeline(
             &format!("dbs/{}/users", self.database_client.database_name()),
             http::Method::POST,
