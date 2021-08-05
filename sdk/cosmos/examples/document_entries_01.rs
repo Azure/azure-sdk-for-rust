@@ -1,3 +1,4 @@
+use azure_core::Context;
 use azure_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -49,9 +50,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // let's add an entity.
     let create_document_response = client
-        .create_document()
-        .is_upsert(true)
-        .execute(&doc)
+        .create_document(
+            Context::new(),
+            &doc,
+            CreateDocumentOptions::new().is_upsert(true),
+        )
         .await?;
 
     println!(

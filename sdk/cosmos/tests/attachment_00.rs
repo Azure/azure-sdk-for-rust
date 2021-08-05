@@ -1,5 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::prelude::*;
+use azure_core::Context;
 use azure_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -91,8 +91,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
 
     // let's add an entity.
     let session_token: ConsistencyLevel = collection_client
-        .create_document()
-        .execute(&doc)
+        .create_document(Context::new(), &doc, CreateDocumentOptions::new())
         .await?
         .into();
 
