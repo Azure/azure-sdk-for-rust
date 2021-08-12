@@ -590,11 +590,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/decrypt?api-version=7.2
 
         let mut uri = self.vault_url.clone();
-        let path = if let Some(ver) = key_version {
-            format!("keys/{}/{}/decrypt", key_name, ver)
-        } else {
-            format!("keys/{}/decrypt", key_name)
-        };
+        let path = format!("keys/{}/{}/decrypt", key_name, key_version);
+
         uri.set_path(&path);
         uri.set_query(Some(API_VERSION_PARAM));
 
