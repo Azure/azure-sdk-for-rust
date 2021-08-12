@@ -297,17 +297,17 @@ pub struct DecryptParameters {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum DecryptParametersEncryption {
-    Rsa(RsaParameters),
-    AesGcm(AesGcmParameters),
-    AesCbc(AesCbcParameters),
+    Rsa(RsaDecryptParameters),
+    AesGcm(AesGcmDecryptParameters),
+    AesCbc(AesCbcDecryptParameters),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RsaParameters {
+pub struct RsaDecryptParameters {
     algorithm: EncryptionAlgorithm,
 }
 
-impl RsaParameters {
+impl RsaDecryptParameters {
     pub fn new(algorithm: EncryptionAlgorithm) -> Result<Self, Error> {
         match algorithm {
             EncryptionAlgorithm::Rsa15
@@ -319,7 +319,7 @@ impl RsaParameters {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AesGcmParameters {
+pub struct AesGcmDecryptParameters {
     algorithm: EncryptionAlgorithm,
     #[serde(serialize_with = "ser_base64", deserialize_with = "deser_base64")]
     pub iv: Vec<u8>,
@@ -332,7 +332,7 @@ pub struct AesGcmParameters {
     pub additional_authenticated_data: Option<Vec<u8>>,
 }
 
-impl AesGcmParameters {
+impl AesGcmDecryptParameters {
     pub fn new(
         algorithm: EncryptionAlgorithm,
         iv: Vec<u8>,
@@ -354,13 +354,13 @@ impl AesGcmParameters {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AesCbcParameters {
+pub struct AesCbcDecryptParameters {
     algorithm: EncryptionAlgorithm,
     #[serde(serialize_with = "ser_base64", deserialize_with = "deser_base64")]
     pub iv: Vec<u8>,
 }
 
-impl AesCbcParameters {
+impl AesCbcDecryptParameters {
     pub fn new(algorithm: EncryptionAlgorithm, iv: Vec<u8>) -> Result<Self, Error> {
         match algorithm {
             EncryptionAlgorithm::A128Cbc
@@ -472,11 +472,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         );
 
         let algorithm = match decrypt_parameters.decrypt_parameters_encryption {
-            DecryptParametersEncryption::Rsa(RsaParameters { algorithm }) => {
+            DecryptParametersEncryption::Rsa(RsaDecryptParameters { algorithm }) => {
                 request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
                 algorithm
             }
-            DecryptParametersEncryption::AesGcm(AesGcmParameters {
+            DecryptParametersEncryption::AesGcm(AesGcmDecryptParameters {
                 algorithm,
                 iv,
                 authentication_tag,
@@ -493,7 +493,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
                 };
                 algorithm
             }
-            DecryptParametersEncryption::AesCbc(AesCbcParameters { algorithm, iv }) => {
+            DecryptParametersEncryption::AesCbc(AesCbcDecryptParameters { algorithm, iv }) => {
                 request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
                 request_body.insert("iv".to_owned(), serde_json::to_value(iv).unwrap());
                 algorithm
@@ -672,7 +672,7 @@ mod tests {
         let decrypt_parameters = DecryptParameters {
             ciphertext: base64::decode("dvDmrSBpjRjtYg").unwrap(),
             decrypt_parameters_encryption: DecryptParametersEncryption::Rsa(
-                RsaParameters::new(EncryptionAlgorithm::RsaOaep256).unwrap(),
+                RsaDecryptParameters::new(EncryptionAlgorithm::RsaOaep256).unwrap(),
             ),
         };
 
