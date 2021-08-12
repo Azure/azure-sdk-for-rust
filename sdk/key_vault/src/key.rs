@@ -297,196 +297,30 @@ pub struct DecryptParameters {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum DecryptParametersEncryption {
-    Rsa15(Rsa15Parameters),
-    RsaOaep(RsaOaepParameters),
-    RsaOaep256(RsaOaep256Parameters),
-    A128Gcm(A128GcmParameters),
-    A192Gcm(A192GcmParameters),
-    A256Gcm(A256GcmParameters),
-    A128Cbc(A128CbcParameters),
-    A192Cbc(A192CbcParameters),
-    A256Cbc(A256CbcParameters),
-    A128CbcPad(A128CbcPadParameters),
-    A192CbcPad(A192CbcPadParameters),
-    A256CbcPad(A256CbcPadParameters),
+    Rsa(RsaParameters),
+    AesGcm(AesGcmParameters),
+    AesCbc(AesCbcParameters),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Rsa15Parameters {
+pub struct RsaParameters {
     algorithm: EncryptionAlgorithm,
 }
 
-impl Rsa15Parameters {
-    pub fn new() -> Self {
-        Self {
-            algorithm: EncryptionAlgorithm::Rsa15,
+impl RsaParameters {
+    pub fn new(algorithm: EncryptionAlgorithm) -> Result<Self, Error> {
+        match algorithm {
+            EncryptionAlgorithm::Rsa15
+            | EncryptionAlgorithm::RsaOaep
+            | EncryptionAlgorithm::RsaOaep256 => Ok(Self { algorithm }),
+            _ => Err(Error::EncryptionAlgorithmMismatch),
         }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RsaOaepParameters {
+pub struct AesGcmParameters {
     algorithm: EncryptionAlgorithm,
-}
-
-impl RsaOaepParameters {
-    pub fn new() -> Self {
-        Self {
-            algorithm: EncryptionAlgorithm::RsaOaep,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct RsaOaep256Parameters {
-    algorithm: EncryptionAlgorithm,
-}
-
-impl RsaOaep256Parameters {
-    pub fn new() -> Self {
-        Self {
-            algorithm: EncryptionAlgorithm::RsaOaep256,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct A128GcmParameters {
-    algorithm: EncryptionAlgorithm,
-    parameters: AesGcmDecryptParameters,
-}
-
-impl A128GcmParameters {
-    pub fn new(parameters: AesGcmDecryptParameters) -> Self {
-        Self {
-            algorithm: EncryptionAlgorithm::A128Gcm,
-            parameters,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct A192GcmParameters {
-    algorithm: EncryptionAlgorithm,
-    parameters: AesGcmDecryptParameters,
-}
-
-impl A192GcmParameters {
-    pub fn new(parameters: AesGcmDecryptParameters) -> Self {
-        Self {
-            algorithm: EncryptionAlgorithm::A192Gcm,
-            parameters,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct A256GcmParameters {
-    algorithm: EncryptionAlgorithm,
-    parameters: AesGcmDecryptParameters,
-}
-
-impl A256GcmParameters {
-    pub fn new(parameters: AesGcmDecryptParameters) -> Self {
-        Self {
-            algorithm: EncryptionAlgorithm::A256Gcm,
-            parameters,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct A128CbcParameters {
-    algorithm: EncryptionAlgorithm,
-    parameters: AesCbcDecryptParameters,
-}
-
-impl A128CbcParameters {
-    pub fn new(parameters: AesCbcDecryptParameters) -> Self {
-        Self {
-            algorithm: EncryptionAlgorithm::A128Cbc,
-            parameters,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct A192CbcParameters {
-    algorithm: EncryptionAlgorithm,
-    parameters: AesCbcDecryptParameters,
-}
-
-impl A192CbcParameters {
-    pub fn new(parameters: AesCbcDecryptParameters) -> Self {
-        Self {
-            algorithm: EncryptionAlgorithm::A192Cbc,
-            parameters,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct A256CbcParameters {
-    algorithm: EncryptionAlgorithm,
-    parameters: AesCbcDecryptParameters,
-}
-
-impl A256CbcParameters {
-    pub fn new(parameters: AesCbcDecryptParameters) -> Self {
-        Self {
-            algorithm: EncryptionAlgorithm::A256Cbc,
-            parameters,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct A128CbcPadParameters {
-    algorithm: EncryptionAlgorithm,
-    parameters: AesCbcDecryptParameters,
-}
-
-impl A128CbcPadParameters {
-    pub fn new(parameters: AesCbcDecryptParameters) -> Self {
-        Self {
-            algorithm: EncryptionAlgorithm::A128CbcPad,
-            parameters,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct A192CbcPadParameters {
-    algorithm: EncryptionAlgorithm,
-    parameters: AesCbcDecryptParameters,
-}
-
-impl A192CbcPadParameters {
-    pub fn new(parameters: AesCbcDecryptParameters) -> Self {
-        Self {
-            algorithm: EncryptionAlgorithm::A192CbcPad,
-            parameters,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct A256CbcPadParameters {
-    algorithm: EncryptionAlgorithm,
-    parameters: AesCbcDecryptParameters,
-}
-
-impl A256CbcPadParameters {
-    pub fn new(parameters: AesCbcDecryptParameters) -> Self {
-        Self {
-            algorithm: EncryptionAlgorithm::A256CbcPad,
-            parameters,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AesGcmDecryptParameters {
     #[serde(serialize_with = "ser_base64", deserialize_with = "deser_base64")]
     pub iv: Vec<u8>,
     #[serde(serialize_with = "ser_base64", deserialize_with = "deser_base64")]
@@ -498,10 +332,46 @@ pub struct AesGcmDecryptParameters {
     pub additional_authenticated_data: Option<Vec<u8>>,
 }
 
+impl AesGcmParameters {
+    pub fn new(
+        algorithm: EncryptionAlgorithm,
+        iv: Vec<u8>,
+        authentication_tag: Vec<u8>,
+        additional_authenticated_data: Option<Vec<u8>>,
+    ) -> Result<Self, Error> {
+        match algorithm {
+            EncryptionAlgorithm::A128Gcm
+            | EncryptionAlgorithm::A192Gcm
+            | EncryptionAlgorithm::A256Gcm => Ok(Self {
+                algorithm,
+                iv,
+                authentication_tag,
+                additional_authenticated_data,
+            }),
+            _ => Err(Error::EncryptionAlgorithmMismatch),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AesCbcDecryptParameters {
+pub struct AesCbcParameters {
+    algorithm: EncryptionAlgorithm,
     #[serde(serialize_with = "ser_base64", deserialize_with = "deser_base64")]
     pub iv: Vec<u8>,
+}
+
+impl AesCbcParameters {
+    pub fn new(algorithm: EncryptionAlgorithm, iv: Vec<u8>) -> Result<Self, Error> {
+        match algorithm {
+            EncryptionAlgorithm::A128Cbc
+            | EncryptionAlgorithm::A192Cbc
+            | EncryptionAlgorithm::A256Cbc
+            | EncryptionAlgorithm::A128CbcPad
+            | EncryptionAlgorithm::A192CbcPad
+            | EncryptionAlgorithm::A256CbcPad => Ok(Self { algorithm, iv }),
+            _ => Err(Error::EncryptionAlgorithmMismatch),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Getters)]
@@ -590,7 +460,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/decrypt?api-version=7.2
 
         let mut uri = self.vault_url.clone();
-        let path = format!("keys/{}/{}/decrypt", key_name, key_version);
+        let path = format!("keys/{}/{}/decrypt", key_name, key_version.unwrap_or(""));
 
         uri.set_path(&path);
         uri.set_query(Some(API_VERSION_PARAM));
@@ -602,62 +472,31 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         );
 
         let algorithm = match decrypt_parameters.decrypt_parameters_encryption {
-            DecryptParametersEncryption::Rsa15(Rsa15Parameters { algorithm: alg })
-            | DecryptParametersEncryption::RsaOaep(RsaOaepParameters { algorithm: alg })
-            | DecryptParametersEncryption::RsaOaep256(RsaOaep256Parameters { algorithm: alg }) => {
-                request_body.insert("alg".to_owned(), serde_json::to_value(&alg).unwrap());
-                alg
+            DecryptParametersEncryption::Rsa(RsaParameters { algorithm }) => {
+                request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
+                algorithm
             }
-            DecryptParametersEncryption::A128Gcm(A128GcmParameters {
-                algorithm: alg,
-                parameters: params,
-            })
-            | DecryptParametersEncryption::A192Gcm(A192GcmParameters {
-                algorithm: alg,
-                parameters: params,
-            })
-            | DecryptParametersEncryption::A256Gcm(A256GcmParameters {
-                algorithm: alg,
-                parameters: params,
+            DecryptParametersEncryption::AesGcm(AesGcmParameters {
+                algorithm,
+                iv,
+                authentication_tag,
+                additional_authenticated_data,
             }) => {
-                request_body.insert("alg".to_owned(), serde_json::to_value(&alg).unwrap());
-                request_body.insert("iv".to_owned(), serde_json::to_value(params.iv).unwrap());
+                request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
+                request_body.insert("iv".to_owned(), serde_json::to_value(iv).unwrap());
                 request_body.insert(
                     "tag".to_owned(),
-                    serde_json::to_value(params.authentication_tag).unwrap(),
+                    serde_json::to_value(authentication_tag).unwrap(),
                 );
-                if let Some(aad) = params.additional_authenticated_data {
+                if let Some(aad) = additional_authenticated_data {
                     request_body.insert("aad".to_owned(), serde_json::to_value(aad).unwrap());
                 };
-                alg
+                algorithm
             }
-            DecryptParametersEncryption::A128Cbc(A128CbcParameters {
-                algorithm: alg,
-                parameters: params,
-            })
-            | DecryptParametersEncryption::A192Cbc(A192CbcParameters {
-                algorithm: alg,
-                parameters: params,
-            })
-            | DecryptParametersEncryption::A256Cbc(A256CbcParameters {
-                algorithm: alg,
-                parameters: params,
-            })
-            | DecryptParametersEncryption::A128CbcPad(A128CbcPadParameters {
-                algorithm: alg,
-                parameters: params,
-            })
-            | DecryptParametersEncryption::A192CbcPad(A192CbcPadParameters {
-                algorithm: alg,
-                parameters: params,
-            })
-            | DecryptParametersEncryption::A256CbcPad(A256CbcPadParameters {
-                algorithm: alg,
-                parameters: params,
-            }) => {
-                request_body.insert("alg".to_owned(), serde_json::to_value(&alg).unwrap());
-                request_body.insert("iv".to_owned(), serde_json::to_value(params.iv).unwrap());
-                alg
+            DecryptParametersEncryption::AesCbc(AesCbcParameters { algorithm, iv }) => {
+                request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
+                request_body.insert("iv".to_owned(), serde_json::to_value(iv).unwrap());
+                algorithm
             }
         };
 
@@ -832,8 +671,8 @@ mod tests {
 
         let decrypt_parameters = DecryptParameters {
             ciphertext: base64::decode("dvDmrSBpjRjtYg").unwrap(),
-            decrypt_parameters_encryption: DecryptParametersEncryption::RsaOaep256(
-                RsaOaep256Parameters::new(),
+            decrypt_parameters_encryption: DecryptParametersEncryption::Rsa(
+                RsaParameters::new(EncryptionAlgorithm::RsaOaep256).unwrap(),
             ),
         };
 

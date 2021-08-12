@@ -38,6 +38,9 @@ pub enum Error {
         secret_name: String,
         response_body: String,
     },
+
+    #[error("Encryption algorithm mismatch")]
+    EncryptionAlgorithmMismatch,
 }
 
 #[cfg(test)]
