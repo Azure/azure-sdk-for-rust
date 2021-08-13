@@ -12,7 +12,10 @@ async fn create_and_delete_database() {
     let client = setup::initialize().unwrap();
 
     // list existing databases and remember their number
-    let databases = client.list_databases().execute().await.unwrap();
+    let databases = client
+        .list_databases(Context::new(), ListDatabasesOptions::new())
+        .await
+        .unwrap();
     let database_count_before = databases.databases.len();
 
     // create a new database and check if the number of DBs increased
@@ -24,7 +27,12 @@ async fn create_and_delete_database() {
         )
         .await
         .unwrap();
-    let databases = client.list_databases().execute().await.unwrap();
+
+    let databases = client
+        .list_databases(Context::new(), ListDatabasesOptions::new())
+        .await
+        .unwrap();
+
     assert!(databases.databases.len() == database_count_before + 1);
 
     // get the previously created database
@@ -44,6 +52,9 @@ async fn create_and_delete_database() {
         .execute()
         .await
         .unwrap();
-    let databases = client.list_databases().execute().await.unwrap();
+    let databases = client
+        .list_databases(Context::new(), ListDatabasesOptions::new())
+        .await
+        .unwrap();
     assert!(databases.databases.len() == database_count_before);
 }

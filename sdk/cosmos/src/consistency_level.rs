@@ -1,4 +1,5 @@
 use crate::headers;
+use crate::operations::*;
 use crate::resources::user::UserResponse;
 use crate::responses::*;
 use azure_core::AddAsHeader;

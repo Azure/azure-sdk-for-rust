@@ -6,7 +6,6 @@
 
 #![allow(missing_docs)]
 
-mod create_document_builder;
 mod create_or_replace_trigger_builder;
 mod create_or_replace_user_defined_function_builder;
 mod create_permission_builder;
@@ -29,7 +28,6 @@ mod get_partition_key_ranges_builder;
 mod get_permission_builer;
 mod list_attachments_builder;
 mod list_collections_builder;
-mod list_databases_builder;
 mod list_documents_builder;
 mod list_permissions_builder;
 mod list_stored_procedures_builder;
@@ -43,7 +41,6 @@ mod replace_reference_attachment_builder;
 mod replace_slug_attachment_builder;
 mod replace_stored_procedure_builder;
 
-pub use create_document_builder::CreateDocumentBuilder;
 pub use create_or_replace_trigger_builder::CreateOrReplaceTriggerBuilder;
 pub use create_or_replace_user_defined_function_builder::CreateOrReplaceUserDefinedFunctionBuilder;
 pub use create_permission_builder::CreatePermissionBuilder;
@@ -66,7 +63,6 @@ pub use get_partition_key_ranges_builder::GetPartitionKeyRangesBuilder;
 pub use get_permission_builer::GetPermissionBuilder;
 pub use list_attachments_builder::ListAttachmentsBuilder;
 pub use list_collections_builder::ListCollectionsBuilder;
-pub use list_databases_builder::ListDatabasesBuilder;
 pub use list_documents_builder::ListDocumentsBuilder;
 pub use list_permissions_builder::ListPermissionsBuilder;
 pub use list_stored_procedures_builder::ListStoredProceduresBuilder;

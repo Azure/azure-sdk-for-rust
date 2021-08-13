@@ -3,7 +3,6 @@
 #![allow(missing_docs)]
 
 mod create_collection_response;
-mod create_document_response;
 mod create_permission_response;
 mod create_reference_attachment_response;
 mod create_slug_attachment_response;
@@ -26,7 +25,6 @@ mod get_partition_key_ranges_response;
 mod get_permission_response;
 mod list_attachments_response;
 mod list_collections_response;
-mod list_databases_response;
 mod list_documents_response;
 mod list_permissions_response;
 mod list_stored_procedures_response;
@@ -39,7 +37,6 @@ mod replace_reference_attachment_response;
 mod replace_stored_procedure_response;
 
 pub use create_collection_response::CreateCollectionResponse;
-pub use create_document_response::CreateDocumentResponse;
 pub use create_permission_response::CreatePermissionResponse;
 pub use create_reference_attachment_response::CreateReferenceAttachmentResponse;
 pub use create_slug_attachment_response::CreateSlugAttachmentResponse;
@@ -62,7 +59,6 @@ pub use get_partition_key_ranges_response::GetPartitionKeyRangesResponse;
 pub use get_permission_response::GetPermissionResponse;
 pub use list_attachments_response::ListAttachmentsResponse;
 pub use list_collections_response::ListCollectionsResponse;
-pub use list_databases_response::ListDatabasesResponse;
 pub use list_documents_response::{
     ListDocumentsResponse, ListDocumentsResponseAttributes, ListDocumentsResponseEntities,
 };

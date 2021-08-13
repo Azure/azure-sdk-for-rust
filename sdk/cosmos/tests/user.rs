@@ -126,5 +126,8 @@ async fn users() {
         .execute()
         .await
         .unwrap();
-    let _databases = client.list_databases().execute().await.unwrap();
+    let _databases = client
+        .list_databases(Context::new(), ListDatabasesOptions::new())
+        .await
+        .unwrap();
 }
