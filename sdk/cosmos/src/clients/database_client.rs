@@ -4,7 +4,10 @@ use crate::operations::*;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 use azure_core::pipeline::Pipeline;
-use azure_core::{Context, HttpClient, PipelineContext};
+use azure_core::prelude::Continuation;
+use azure_core::{AddAsHeader, Context, HttpClient, PipelineContext};
+use futures::stream::unfold;
+use futures::Stream;
 
 /// A client for Cosmos database resources.
 #[derive(Debug, Clone)]
@@ -91,26 +94,85 @@ impl DatabaseClient {
     }
 
     /// List users
-    pub async fn list_users(
+    pub fn list_users(
         &self,
         ctx: Context,
-        options: ListUsersOptions<'_>,
-    ) -> Result<ListUsersResponse, crate::Error> {
-        let mut request = self.cosmos_client().prepare_request_pipeline(
-            &format!("dbs/{}/users", self.database_name()),
-            http::Method::GET,
-        );
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
+        options: ListUsersOptions,
+    ) -> impl Stream<Item = Result<ListUsersResponse, crate::Error>> + '_ {
+        macro_rules! r#try {
+            ($expr:expr $(,)?) => {
+                match $expr {
+                    Result::Ok(val) => val,
+                    Result::Err(err) => {
+                        return Some((Err(err.into()), State::Done));
+                    }
+                }
+            };
+        }
 
-        options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
-            .await?;
+        #[derive(Debug, Clone, PartialEq)]
+        enum State {
+            Init,
+            Continuation(String),
+            Done,
+        }
 
-        Ok(ListUsersResponse::try_from(response).await?)
+        unfold(State::Init, move |state: State| {
+            let this = self.clone();
+            let ctx = ctx.clone();
+            let options = options.clone();
+            async move {
+                let response = match state {
+                    State::Init => {
+                        let mut request = this.cosmos_client().prepare_request_pipeline(
+                            &format!("dbs/{}/users", this.database_name()),
+                            http::Method::GET,
+                        );
+                        let mut pipeline_context =
+                            PipelineContext::new(ctx.clone(), ResourceType::Users.into());
+
+                        r#try!(options.decorate_request(&mut request));
+                        let response = r#try!(
+                            this.pipeline()
+                                .send(&mut pipeline_context, &mut request)
+                                .await
+                        );
+                        let response = r#try!(response.validate(http::StatusCode::OK).await);
+                        ListUsersResponse::try_from(response).await
+                    }
+                    State::Continuation(continuation_token) => {
+                        let continuation = Continuation::new(continuation_token.as_str());
+                        let mut request = this.cosmos_client().prepare_request_pipeline(
+                            &format!("dbs/{}/users", self.database_name()),
+                            http::Method::GET,
+                        );
+                        let mut pipeline_context =
+                            PipelineContext::new(ctx.clone(), ResourceType::Users.into());
+
+                        r#try!(options.decorate_request(&mut request));
+                        r#try!(continuation.add_as_header2(&mut request));
+                        let response = r#try!(
+                            this.pipeline()
+                                .send(&mut pipeline_context, &mut request)
+                                .await
+                        );
+                        let response = r#try!(response.validate(http::StatusCode::OK).await);
+                        ListUsersResponse::try_from(response).await
+                    }
+                    State::Done => return None,
+                };
+
+                let response = r#try!(response);
+
+                let next_state = response
+                    .continuation_token
+                    .clone()
+                    .map(|ct| State::Continuation(ct))
+                    .unwrap_or_else(|| State::Done);
+
+                Some((Ok(response), next_state))
+            }
+        })
     }
 
     /// Convert into a [`CollectionClient`]

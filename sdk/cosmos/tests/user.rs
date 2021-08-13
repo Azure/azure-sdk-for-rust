@@ -2,11 +2,9 @@
 
 use std::assert_eq;
 
-use azure_core::{
-    request_options::{Continuation, MaxItemCount},
-    Context,
-};
+use azure_core::Context;
 use azure_cosmos::prelude::*;
+use futures::stream::StreamExt;
 
 mod setup;
 
@@ -14,7 +12,6 @@ mod setup;
 async fn users() {
     const DATABASE_NAME: &str = "cosmos-test-db-users";
     const USER_NAME: &str = "someone@cool.net";
-    const SECOND_USER_NAME: &str = "another.someone@coo.net";
     const USER_NAME_REPLACED: &str = "someone.else@cool.net";
 
     let client = setup::initialize().unwrap();
@@ -37,10 +34,13 @@ async fn users() {
         .await
         .unwrap();
 
-    let list_users_response = database_client
-        .list_users(Context::new(), ListUsersOptions::new())
-        .await
-        .unwrap();
+    let list_users_response =
+        Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
+            .next()
+            .await
+            .unwrap()
+            .unwrap();
+
     assert_eq!(list_users_response.users.len(), 1);
 
     let get_user_response = user_client
@@ -59,63 +59,27 @@ async fn users() {
         .await
         .unwrap();
 
-    let list_users_response = database_client
-        .list_users(Context::new(), ListUsersOptions::new())
-        .await
-        .unwrap();
+    let list_users_response =
+        Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
+            .next()
+            .await
+            .unwrap()
+            .unwrap();
     assert_eq!(list_users_response.users.len(), 1);
 
     let user_client = database_client.clone().into_user_client(USER_NAME_REPLACED);
-
-    // Testing MaxItemCount and Continuation
-    let second_user_client = database_client.clone().into_user_client(SECOND_USER_NAME);
-    let _second_create_user_response = second_user_client
-        .create_user(Context::new(), CreateUserOptions::new())
-        .await
-        .unwrap();
-
-    let list_multiple_users_response = database_client
-        .list_users(Context::new(), ListUsersOptions::new())
-        .await
-        .unwrap();
-
-    assert_eq!(list_multiple_users_response.users.len(), 2);
-
-    let list_users_max_1_response = database_client
-        .list_users(
-            Context::new(),
-            ListUsersOptions::new().max_item_count(MaxItemCount::new(1)),
-        )
-        .await
-        .unwrap();
-
-    let continuation = list_users_max_1_response.continuation_token.unwrap();
-
-    let list_users_continuation_response = database_client
-        .list_users(
-            Context::new(),
-            ListUsersOptions::new().continuation(Continuation::new(&continuation)),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(list_users_continuation_response.users.len(), 1);
-    assert_eq!(list_users_continuation_response.continuation_token, None);
 
     let _delete_user_response = user_client
         .delete_user(Context::new(), DeleteUserOptions::new())
         .await
         .unwrap();
 
-    let _delete_second_user_response = second_user_client
-        .delete_user(Context::new(), DeleteUserOptions::new())
-        .await
-        .unwrap();
-
-    let list_users_response = database_client
-        .list_users(Context::new(), ListUsersOptions::new())
-        .await
-        .unwrap();
+    let list_users_response =
+        Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
+            .next()
+            .await
+            .unwrap()
+            .unwrap();
     assert_eq!(list_users_response.users.len(), 0);
 
     // delete the database
