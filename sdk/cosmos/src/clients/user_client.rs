@@ -4,8 +4,8 @@ use crate::prelude::*;
 use crate::resources::user::UserResponse;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
-use azure_core::PipelineContext;
 use azure_core::{pipeline::Pipeline, Context, HttpClient};
+use azure_core::{PipelineContext, Request};
 
 /// A client for Cosmos user resources.
 #[derive(Debug, Clone)]
@@ -69,14 +69,7 @@ impl UserClient {
         ctx: Context,
         options: GetUserOptions,
     ) -> Result<UserResponse, crate::Error> {
-        let mut request = self.cosmos_client().prepare_request_pipeline(
-            &format!(
-                "dbs/{}/users/{}",
-                self.database_client.database_name(),
-                self.user_name
-            ),
-            http::Method::GET,
-        );
+        let mut request = self.prepare_request_with_user_name(http::Method::GET);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
 
         options.decorate_request(&mut request)?;
@@ -97,14 +90,7 @@ impl UserClient {
         user_name: S,
         options: ReplaceUserOptions,
     ) -> Result<UserResponse, crate::Error> {
-        let mut request = self.cosmos_client().prepare_request_pipeline(
-            &format!(
-                "dbs/{}/users/{}",
-                self.database_client.database_name(),
-                self.user_name
-            ),
-            http::Method::PUT,
-        );
+        let mut request = self.prepare_request_with_user_name(http::Method::PUT);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
 
         options.decorate_request(&mut request, user_name.as_ref())?;
@@ -124,14 +110,7 @@ impl UserClient {
         ctx: Context,
         options: DeleteUserOptions,
     ) -> Result<DeleteUserResponse, crate::Error> {
-        let mut request = self.cosmos_client().prepare_request_pipeline(
-            &format!(
-                "dbs/{}/users/{}",
-                self.database_client.database_name(),
-                self.user_name
-            ),
-            http::Method::DELETE,
-        );
+        let mut request = self.prepare_request_with_user_name(http::Method::DELETE);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
 
         options.decorate_request(&mut request)?;
@@ -156,6 +135,17 @@ impl UserClient {
         permission_name: S,
     ) -> PermissionClient {
         PermissionClient::new(self, permission_name)
+    }
+
+    pub(crate) fn prepare_request_with_user_name(&self, method: http::Method) -> Request {
+        self.cosmos_client().prepare_request_pipeline(
+            &format!(
+                "dbs/{}/users/{}",
+                self.database_client().database_name(),
+                self.user_name()
+            ),
+            method,
+        )
     }
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
