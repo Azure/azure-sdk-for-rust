@@ -1,21 +1,14 @@
 use crate::client::API_VERSION_PARAM;
 use crate::Error;
 use crate::KeyClient;
-use crate::RecoveryLevel;
 
 use azure_core::TokenCredential;
 use chrono::serde::{ts_seconds, ts_seconds_option};
 use chrono::{DateTime, Utc};
-use const_format::formatcp;
 use getset::Getters;
 use reqwest::Url;
 use serde::Deserialize;
 use serde_json::{Map, Value};
-
-const DEFAULT_MAX_RESULTS: usize = 25;
-
-const API_VERSION_MAX_RESULTS_PARAM: &str =
-    formatcp!("{}&maxresults={}", API_VERSION_PARAM, DEFAULT_MAX_RESULTS);
 
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultCertificateBaseIdentifierAttributedRaw {
@@ -136,17 +129,29 @@ pub struct KeyVaultCertificateBaseIdentifier {
 #[derive(Debug, Getters)]
 #[getset(get = "pub")]
 pub struct KeyVaultCertificate {
-    id: String,
-    kid: String,
-    sid: String,
+    key_id: String,
+    secret_id: String,
     x5t: String,
     cer: String,
     content_type: String,
-    enabled: bool,
+    properties: CertificateProperties,
+}
+
+#[derive(Debug, Getters)]
+#[getset(get = "pub")]
+pub struct CertificateProperties {
+    id: String,
+    name: String,
+    version: String,
     not_before: Option<DateTime<Utc>>,
-    expiries_on: Option<DateTime<Utc>>,
-    time_created: DateTime<Utc>,
-    time_updated: DateTime<Utc>,
+    expires_on: Option<DateTime<Utc>>,
+    created_on: DateTime<Utc>,
+    updated_on: DateTime<Utc>,
+    enabled: bool,
+}
+
+pub struct CertificateBackupResult {
+    pub backup: Vec<u8>,
 }
 
 impl<'a, T: TokenCredential> KeyClient<'a, T> {
@@ -172,13 +177,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn get_certificate(
-        &mut self,
-        certificate_name: &'a str,
-    ) -> Result<KeyVaultCertificate, Error> {
-        Ok(self
-            .get_certificate_with_version(certificate_name, "")
-            .await?)
+    pub async fn get_certificate(&mut self, name: &'a str) -> Result<KeyVaultCertificate, Error> {
+        Ok(self.get_certificate_with_version(name, "").await?)
     }
 
     /// Gets a certificate from the Key Vault with a specific version.
@@ -205,35 +205,36 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// ```
     pub async fn get_certificate_with_version(
         &mut self,
-        certificate_name: &'a str,
-        certificate_version_name: &'a str,
+        name: &'a str,
+        version: &'a str,
     ) -> Result<KeyVaultCertificate, Error> {
         let mut uri = self.vault_url.clone();
-        uri.set_path(&format!(
-            "certificates/{}/{}",
-            certificate_name, certificate_version_name
-        ));
+        uri.set_path(&format!("certificates/{}/{}", name, version));
         uri.set_query(Some(API_VERSION_PARAM));
 
         let response_body = self.get_authed(uri.to_string()).await?;
         let response = serde_json::from_str::<KeyVaultGetCertificateResponse>(&response_body)
             .map_err(|error| Error::BackupCertificateParseError {
                 error,
-                certificate_name: certificate_name.to_string(),
+                certificate_name: name.to_string(),
                 response_body,
             })?;
         Ok(KeyVaultCertificate {
-            id: response.id,
-            kid: response.kid,
-            sid: response.sid,
+            key_id: response.kid,
+            secret_id: response.sid,
             x5t: response.x5t,
             cer: response.cer,
             content_type: response.policy.secret_props.content_type,
-            enabled: response.attributes.enabled,
-            not_before: response.attributes.nbf,
-            expiries_on: response.attributes.exp,
-            time_created: response.attributes.created,
-            time_updated: response.attributes.updated,
+            properties: CertificateProperties {
+                id: response.id,
+                name: name.to_string(),
+                version: version.to_string(),
+                enabled: response.attributes.enabled,
+                not_before: response.attributes.nbf,
+                expires_on: response.attributes.exp,
+                created_on: response.attributes.created,
+                updated_on: response.attributes.updated,
+            },
         })
     }
 
@@ -256,14 +257,21 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn list_certificates(
+    pub async fn list_properties_of_certificates(
         &mut self,
-    ) -> Result<Vec<KeyVaultCertificateBaseIdentifier>, Error> {
-        let mut certificates = Vec::<KeyVaultCertificateBaseIdentifier>::new();
+        max_results: Option<usize>,
+    ) -> Result<Vec<CertificateProperties>, Error> {
+        let max_results = format!(
+            "{}&maxresults={}",
+            API_VERSION_PARAM,
+            max_results.unwrap_or(25).clamp(0, 25)
+        );
+
+        let mut certificates = Vec::<CertificateProperties>::new();
 
         let mut uri = self.vault_url.clone();
         uri.set_path("certificates");
-        uri.set_query(Some(API_VERSION_MAX_RESULTS_PARAM));
+        uri.set_query(Some(&max_results));
 
         loop {
             let resp_body = self.get_authed(uri.to_string()).await?;
@@ -274,14 +282,17 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
                 response
                     .value
                     .into_iter()
-                    .map(|s| KeyVaultCertificateBaseIdentifier {
+                    .map(|s| CertificateProperties {
                         id: s.id.to_owned(),
-                        name: s.id.split('/').last().unwrap().to_owned(),
+                        name: s.id.split('/').collect::<Vec<_>>()[4].to_string(),
+                        version: s.id.split('/').collect::<Vec<_>>()[5].to_string(),
                         enabled: s.attributes.enabled,
-                        time_created: s.attributes.created,
-                        time_updated: s.attributes.updated,
+                        created_on: s.attributes.created,
+                        updated_on: s.attributes.updated,
+                        not_before: s.attributes.nbf,
+                        expires_on: s.attributes.exp,
                     })
-                    .collect::<Vec<KeyVaultCertificateBaseIdentifier>>(),
+                    .collect::<Vec<CertificateProperties>>(),
             );
 
             match response.next_link {
@@ -314,15 +325,22 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn get_certificate_versions(
+    pub async fn list_properties_of_certificate_versions(
         &mut self,
-        certificate_name: &'a str,
-    ) -> Result<Vec<KeyVaultCertificateBaseIdentifier>, Error> {
-        let mut certificate_versions = Vec::<KeyVaultCertificateBaseIdentifier>::new();
+        name: &'a str,
+        max_results: Option<usize>,
+    ) -> Result<Vec<CertificateProperties>, Error> {
+        let max_results = format!(
+            "{}&maxresults={}",
+            API_VERSION_PARAM,
+            max_results.unwrap_or(25).clamp(0, 25)
+        );
+
+        let mut versions = Vec::<CertificateProperties>::new();
 
         let mut uri = self.vault_url.clone();
-        uri.set_path(&format!("certificates/{}/versions", certificate_name));
-        uri.set_query(Some(API_VERSION_MAX_RESULTS_PARAM));
+        uri.set_path(&format!("certificates/{}/versions", name));
+        uri.set_query(Some(&max_results));
 
         loop {
             let resp_body = self.get_authed(uri.to_string()).await?;
@@ -330,18 +348,21 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             let response =
                 serde_json::from_str::<KeyVaultGetCertificatesResponse>(&resp_body).unwrap();
 
-            certificate_versions.extend(
+            versions.extend(
                 response
                     .value
                     .into_iter()
-                    .map(|s| KeyVaultCertificateBaseIdentifier {
+                    .map(|s| CertificateProperties {
                         id: s.id.to_owned(),
-                        name: s.id.split('/').last().unwrap().to_owned(),
+                        name: name.to_string(),
+                        version: s.id.split('/').collect::<Vec<_>>()[5].to_string(),
                         enabled: s.attributes.enabled,
-                        time_created: s.attributes.created,
-                        time_updated: s.attributes.updated,
+                        created_on: s.attributes.created,
+                        updated_on: s.attributes.updated,
+                        not_before: s.attributes.nbf,
+                        expires_on: s.attributes.exp,
                     })
-                    .collect::<Vec<KeyVaultCertificateBaseIdentifier>>(),
+                    .collect::<Vec<CertificateProperties>>(),
             );
             match response.next_link {
                 None => break,
@@ -350,161 +371,36 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         }
 
         // Return the certificate versions sorted by the time modified in descending order.
-        certificate_versions.sort_by(|a, b| {
-            if a.time_updated > b.time_updated {
+        versions.sort_by(|a, b| {
+            if a.updated_on > b.updated_on {
                 std::cmp::Ordering::Less
             } else {
                 std::cmp::Ordering::Greater
             }
         });
-        Ok(certificate_versions)
+        Ok(versions)
     }
 
-    /// Updates whether a certificate version is enabled or not.
-    ///
-    /// # Arguments
-    ///
-    /// * `certificate_name` - Name of the certificate
-    /// * `certificate_version` - Version of the certificate. Use an empty string for the latest version
-    /// * `enabled` - New `enabled` value of the certificate
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use azure_key_vault::KeyClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
-    /// use tokio::runtime::Runtime;
-    ///
-    /// async fn example() {
-    ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::new(
-    ///         &"KEYVAULT_URL",
-    ///         &creds,
-    ///     ).unwrap();
-    ///     client.update_certificate_enabled(&"CERTIFICATE_NAME", &"", true).await.unwrap();
-    /// }
-    ///
-    /// Runtime::new().unwrap().block_on(example());
-    /// ```
-    pub async fn update_certificate_enabled(
+    pub async fn update_certificate_attributes(
         &mut self,
-        certificate_name: &'a str,
-        certificate_version: &'a str,
-        enabled: bool,
-    ) -> Result<(), Error> {
-        let mut attributes = Map::new();
-        attributes.insert("enabled".to_owned(), Value::Bool(enabled));
-
-        self.update_certificate_attributes(certificate_name, certificate_version, attributes)
-            .await?;
-
-        Ok(())
-    }
-
-    /// Updates the [`RecoveryLevel`](RecoveryLevel) of a certificate version.
-    ///
-    /// # Arguments
-    ///
-    /// * `certificate_name` - Name of the certificate
-    /// * `certificate_version` - Version of the certificate. Use an empty string for the latest version
-    /// * `recovery_level` - New `RecoveryLevel`(RecoveryLevel) value of the certificate
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use azure_key_vault::{KeyClient, RecoveryLevel};
-    /// use azure_identity::token_credentials::DefaultCredential;
-    /// use tokio::runtime::Runtime;
-    ///
-    /// async fn example() {
-    ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::new(
-    ///         &"KEYVAULT_URL",
-    ///         &creds,
-    ///     ).unwrap();
-    ///     client.update_certificate_recovery_level(&"CERTIFICATE_NAME", &"", RecoveryLevel::Purgeable).await.unwrap();
-    /// }
-    ///
-    /// Runtime::new().unwrap().block_on(example());
-    /// ```
-    pub async fn update_certificate_recovery_level(
-        &mut self,
-        certificate_name: &'a str,
-        certificate_version: &'a str,
-        recovery_level: RecoveryLevel,
-    ) -> Result<(), Error> {
-        let mut attributes = Map::new();
-        attributes.insert(
-            "enabled".to_owned(),
-            Value::String(recovery_level.to_string()),
-        );
-
-        self.update_certificate_attributes(certificate_name, certificate_version, attributes)
-            .await?;
-
-        Ok(())
-    }
-
-    /// Updates the expiration time of a certificate version.
-    ///
-    /// # Arguments
-    ///
-    /// * `certificate_name` - Name of the certificate
-    /// * `certificate_version` - Version of the certificate. Use an empty string for the latest version
-    /// * `expiration_time - New expiration time of the certificate
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use azure_key_vault::{KeyClient, RecoveryLevel};
-    /// use azure_identity::token_credentials::DefaultCredential;
-    /// use tokio::runtime::Runtime;
-    /// use chrono::{Utc, Duration};
-    ///
-    /// async fn example() {
-    ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::new(
-    ///         &"KEYVAULT_URL",
-    ///         &creds,
-    ///     ).unwrap();
-    ///     client.update_certificate_expiration_time(&"CERTIFICATE_NAME", &"", Utc::now() + Duration::days(14)).await.unwrap();
-    /// }
-    ///
-    /// Runtime::new().unwrap().block_on(example());
-    /// ```
-    pub async fn update_certificate_expiration_time(
-        &mut self,
-        certificate_name: &'a str,
-        certificate_version: &'a str,
-        expiration_time: DateTime<Utc>,
-    ) -> Result<(), Error> {
-        let mut attributes = Map::new();
-        attributes.insert(
-            "exp".to_owned(),
-            Value::Number(serde_json::Number::from(expiration_time.timestamp())),
-        );
-
-        self.update_certificate_attributes(certificate_name, certificate_version, attributes)
-            .await?;
-
-        Ok(())
-    }
-
-    async fn update_certificate_attributes(
-        &mut self,
-        certificate_name: &'a str,
-        certificate_version: &'a str,
-        attributes: Map<String, Value>,
+        properties: CertificateProperties,
     ) -> Result<(), Error> {
         let mut uri = self.vault_url.clone();
         uri.set_path(&format!(
             "certificates/{}/{}",
-            certificate_name, certificate_version
+            properties.name, properties.version
         ));
         uri.set_query(Some(API_VERSION_PARAM));
 
         let mut request_body = Map::new();
-        request_body.insert("attributes".to_owned(), Value::Object(attributes));
+        request_body.insert(
+            "attributes".to_string(),
+            serde_json::json!({
+                "enabled": properties.enabled,
+                "nbf": properties.not_before,
+                "exp": properties.expires_on,
+            }),
+        );
 
         self.patch_authed(uri.to_string(), Value::Object(request_body).to_string())
             .await?;
@@ -514,11 +410,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
 
     async fn _update_certificate_policy(
         &mut self,
-        certificate_name: &'a str,
+        name: &'a str,
         policy: Map<String, Value>,
     ) -> Result<(), Error> {
         let mut uri = self.vault_url.clone();
-        uri.set_path(&format!("certificates/{}/policy", certificate_name));
+        uri.set_path(&format!("certificates/{}/policy", name));
         uri.set_query(Some(API_VERSION_PARAM));
 
         self.patch_authed(uri.to_string(), Value::Object(policy).to_string())
@@ -548,13 +444,13 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn restore_certificate(&mut self, backup_blob: &'a str) -> Result<(), Error> {
+    pub async fn restore_certificate(&mut self, backup: &[u8]) -> Result<(), Error> {
         let mut uri = self.vault_url.clone();
         uri.set_path("certificates/restore");
         uri.set_query(Some(API_VERSION_PARAM));
 
         let mut request_body = Map::new();
-        request_body.insert("value".to_owned(), Value::String(backup_blob.to_owned()));
+        request_body.insert("value".to_owned(), Value::String(base64::encode(backup)));
 
         self.post_authed(
             uri.to_string(),
@@ -588,10 +484,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// ```
     pub async fn backup_certificate(
         &mut self,
-        certificate_name: &'a str,
-    ) -> Result<KeyVaultCertificateBackupBlob, Error> {
+        name: &'a str,
+    ) -> Result<CertificateBackupResult, Error> {
         let mut uri = self.vault_url.clone();
-        uri.set_path(&format!("certificates/{}/backup", certificate_name));
+        uri.set_path(&format!("certificates/{}/backup", name));
         uri.set_query(Some(API_VERSION_PARAM));
 
         let response_body = self.post_authed(uri.to_string(), None).await?;
@@ -600,12 +496,12 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         )
         .map_err(|error| Error::BackupCertificateParseError {
             error,
-            certificate_name: certificate_name.to_string(),
+            certificate_name: name.to_string(),
             response_body,
         })?;
 
-        Ok(KeyVaultCertificateBackupBlob {
-            value: backup_blob.value,
+        Ok(CertificateBackupResult {
+            backup: base64::decode(backup_blob.value)?,
         })
     }
 
@@ -613,7 +509,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// # Arguments
     ///
-    /// * `certificate_name` - Name of the certificate
+    /// * `name` - Name of the certificate
     ///
     /// # Example
     ///
@@ -633,14 +529,16 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn delete_certificate(&mut self, certificate_name: &'a str) -> Result<(), Error> {
-        let mut uri = self.vault_url.clone();
-        uri.set_path(&format!("certificates/{}", certificate_name));
-        uri.set_query(Some(API_VERSION_PARAM));
+    pub async fn delete_certificate(&mut self, _name: &'a str) -> Result<(), Error> {
+        // let mut uri = self.vault_url.clone();
+        // uri.set_path(&format!("certificates/{}", certificate_name));
+        // uri.set_query(Some(API_VERSION_PARAM));
 
-        self.delete_authed(uri.to_string()).await?;
+        // self.delete_authed(uri.to_string()).await?;
 
-        Ok(())
+        // Ok(())
+
+        todo!("See issue #174 at: https://github.com/Azure/azure-sdk-for-rust/issues/174.")
     }
 }
 
@@ -793,7 +691,7 @@ mod tests {
         let mut client = mock_client!(&"test-keyvault", &creds,);
 
         let certificate_versions = client
-            .get_certificate_versions(&"test-certificate")
+            .get_certificate_versions(&"test-certificate", None)
             .await
             .unwrap();
 

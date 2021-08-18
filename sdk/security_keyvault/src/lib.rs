@@ -47,6 +47,9 @@ pub enum Error {
     #[error("Key Vault Error: {0}")]
     General(String),
 
+    #[error("Base64 Decode Error: {0}")]
+    Base64(#[from] base64::DecodeError),
+
     #[error("Failed to parse response from Key Vault: {0}")]
     SerdeParse(#[from] serde_json::Error),
 
@@ -68,6 +71,9 @@ pub enum Error {
         certificate_name: String,
         response_body: String,
     },
+
+    #[error("Maximum Query results is 25, given {0}.")]
+    MaxQueryTooHigh(usize),
 }
 
 #[cfg(test)]
