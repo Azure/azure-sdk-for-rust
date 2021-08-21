@@ -7,6 +7,7 @@ extern crate serde_derive;
 #[macro_use]
 mod macros;
 
+mod bytes_response;
 mod bytes_stream;
 mod constants;
 mod context;
@@ -14,6 +15,7 @@ mod errors;
 pub mod headers;
 mod http_client;
 pub mod incompletevector;
+pub mod mock_transport;
 mod models;
 mod options;
 pub mod parsing;
