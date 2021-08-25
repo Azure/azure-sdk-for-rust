@@ -59,10 +59,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let permission_mode = get_collection_response.collection.read_permission();
 
     let create_permission_response = permission_client
-        .create_permission()
-        .expiry_seconds(18000u64) // 5 hours, max!
-        .execute(&permission_mode)
-        .await?;
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
+            &permission_mode,
+        )
+        .await
+        .unwrap();
     println!(
         "create_permission_response == {:#?}",
         create_permission_response
@@ -129,15 +132,20 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Err(error) => println!("Insert failed: {:#?}", error),
     }
 
-    permission_client.delete_permission().execute().await?;
+    permission_client
+        .delete_permission(Context::new(), DeletePermissionOptions::new())
+        .await?;
 
     // All includes read and write.
     let permission_mode = get_collection_response.collection.all_permission();
     let create_permission_response = permission_client
-        .create_permission()
-        .expiry_seconds(18000u64) // 5 hours, max!
-        .execute(&permission_mode)
-        .await?;
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
+            &permission_mode,
+        )
+        .await
+        .unwrap();
     println!(
         "create_permission_response == {:#?}",
         create_permission_response
