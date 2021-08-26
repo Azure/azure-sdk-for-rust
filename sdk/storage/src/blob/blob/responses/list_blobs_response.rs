@@ -95,6 +95,7 @@ mod tests {
                 <LeaseState>available</LeaseState>
                 <ServerEncrypted>true</ServerEncrypted>
             </Properties>
+            <Metadata><userkey>uservalue</userkey></Metadata>
             <OrMetadata />
         </Blob>
         <Blob>
