@@ -371,8 +371,8 @@ pub mod test_pipeline_table_client {
     }
 
     fn public_table_client() -> PipelineTableClient {
-        let account = "prediction305development".to_string();
-        let key = "ZysMxgxYUgFRwAHn96SREy/YbZUjlsLxyQHj3aRmyjdc+Fz6nHEygGMub9AOJA/G/Sw/2b9jCedK2HrnRPm9oA==";
+        let account = "".to_string();
+        let key = "";
         let auth_token = AuthorizationToken::SharedKeyToken {
             account: account.clone(),
             key: key.to_string(),
