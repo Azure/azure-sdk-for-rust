@@ -208,6 +208,12 @@ mod integration_tests {
 //////////////////////// pipeline table client ////////////////////////
 //////////////////////////////////////////////////////////////////////
 
+const PORT: u16 = 10002;
+const ADDRESS: &'static str = "127.0.0.1";
+const EMULATOR_ACCOUNT: &'static str = "devstoreaccount1";
+const EMULATOR_KEY: &'static str =
+    "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
+
 /// The cloud with which you want to interact.
 #[derive(Debug, Clone)]
 enum CloudTableLocation {
@@ -242,11 +248,11 @@ pub struct TableOptions {
 }
 
 /// Create a Pipeline from TableOptions
-fn new_pipeline_from_options(
+fn pipeline_from_options(
     options: TableOptions,
-    authorization_token: AuthorizationToken,
+    token: AuthorizationToken,
 ) -> Pipeline<TableContext> {
-    let policy = AuthorizationPolicy::new(authorization_token);
+    let policy = AuthorizationPolicy::new(token);
     let policy: Arc<dyn Policy<TableContext>> = Arc::new(policy);
     let per_retry_policies: Vec<Arc<dyn Policy<TableContext>>> = vec![policy];
     Pipeline::new(
@@ -268,36 +274,35 @@ impl PipelineTableClient {
     pub fn new(account: String, auth_token: AuthorizationToken, options: TableOptions) -> Self {
         Self {
             cloud_location: CloudTableLocation::Public(account),
-            pipeline: new_pipeline_from_options(options, auth_token),
+            pipeline: pipeline_from_options(options, auth_token),
         }
     }
 
     /// Create a new `TableClient` for Azure storage emulator
     pub fn emulator(options: TableOptions) -> Self {
-        // emulator connection details;
-        const PORT: u16 = 10002;
-        const ADDRESS: &'static str = "127.0.0.1";
-        const EMULATOR_ACCOUNT: &'static str = "devstoreaccount1";
-        const EMULATOR_KEY: &'static str = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
-
         let auth_token = AuthorizationToken::SharedKeyToken {
-            account: EMULATOR_ACCOUNT.to_string(),
-            key: EMULATOR_KEY.to_string(),
+            account: self::EMULATOR_ACCOUNT.to_string(),
+            key: self::EMULATOR_KEY.to_string(),
         };
 
         Self {
             cloud_location: CloudTableLocation::Custom {
-                account: EMULATOR_ACCOUNT.to_string(),
-                url: format!("http://{}:{}/{}", ADDRESS, PORT, EMULATOR_ACCOUNT),
+                account: self::EMULATOR_ACCOUNT.to_string(),
+                url: format!(
+                    "http://{}:{}/{}",
+                    self::ADDRESS,
+                    self::PORT,
+                    self::EMULATOR_ACCOUNT
+                ),
             },
-            pipeline: new_pipeline_from_options(options, auth_token),
+            pipeline: pipeline_from_options(options, auth_token),
         }
     }
 
     pub async fn list_tables(
         &self,
         ctx: Context,
-        options: ListTablesOptions,
+        options: ListTablesOptions<'_>,
     ) -> Result<ListTablesResponse, Error> {
         let mut request = self.prepare_pipeline_request("Tables", Method::GET);
 
@@ -379,33 +384,38 @@ impl PipelineTableClient {
 pub mod test_pipeline_table_client {
     use super::{PipelineTableClient, TableOptions};
     use crate::{
-        authorization::AuthorizationToken,
         operations::{
             create_table::CreateTableOptions, delete_table::DeleteTableOptions,
-            list_tables::ListTablesOptions,
+            list_tables::ListTablesOptions, OdataMetadataLevel,
         },
+        Filter, Top,
     };
     use azure_core::Context;
 
     #[tokio::test]
     async fn test_list_tables() {
-        println!(
-            "{:#?}",
-            emulator_table_client()
-                .list_tables(Context::new(), ListTablesOptions::default())
-                .await
-        );
-        println!(
-            "{:#?}",
-            public_table_client()
-                .list_tables(Context::new(), ListTablesOptions::default())
-                .await
-        );
+        let response = emulator_table_client()
+            .list_tables(
+                Context::new(),
+                ListTablesOptions::default()
+                    .odata_metadata_level(OdataMetadataLevel::FullMetadata)
+                    .filter(Filter::new("TableName gt 'emails'"))
+                    .top(Top::new(2)),
+            )
+            .await
+            .and_then(|ok_response| {
+                ok_response
+                    .tables
+                    .iter()
+                    .for_each(|table| println!("{:?}", table.odata_link));
+                Ok(())
+            });
+        println!("{:?}", response);
     }
 
     #[tokio::test]
     async fn test_delete_table() {
-        let response = public_table_client()
+        let response = emulator_table_client()
             .delete_table(
                 Context::new(),
                 "TableForTest",
@@ -417,7 +427,7 @@ pub mod test_pipeline_table_client {
 
     #[tokio::test]
     async fn test_create_table() {
-        let response = public_table_client()
+        let response = emulator_table_client()
             .create_table(
                 Context::new(),
                 "TableForTest",
@@ -425,16 +435,6 @@ pub mod test_pipeline_table_client {
             )
             .await;
         println!("{:#?}", response);
-    }
-
-    fn public_table_client() -> PipelineTableClient {
-        let account = "".to_string();
-        let key = "";
-        let auth_token = AuthorizationToken::SharedKeyToken {
-            account: account.clone(),
-            key: key.to_string(),
-        };
-        PipelineTableClient::new(account, auth_token, TableOptions::default())
     }
 
     fn emulator_table_client() -> PipelineTableClient {

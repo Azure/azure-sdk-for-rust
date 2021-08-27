@@ -1,17 +1,21 @@
+use std::str::FromStr;
+
+use crate::{Filter, Top};
+
 use super::{header_value, ApiVersion, OdataMetadataLevel};
-use azure_core::{Error, HTTPHeaderError, Request, Response};
+use azure_core::{AppendToUrlQuery, Error, HTTPHeaderError, Request, Response};
 use chrono::Utc;
 use http::HeaderValue;
 
 #[derive(Debug, Clone)]
-pub struct ListTablesOptions {
-    top: Option<i32>,
-    filter: Option<String>,
+pub struct ListTablesOptions<'a> {
+    top: Option<Top>,
+    filter: Option<Filter<'a>>,
     api_version: Option<ApiVersion>,
     odata_metadata_level: Option<OdataMetadataLevel>,
 }
 
-impl Default for ListTablesOptions {
+impl Default for ListTablesOptions<'_> {
     fn default() -> Self {
         Self {
             top: Default::default(),
@@ -22,10 +26,10 @@ impl Default for ListTablesOptions {
     }
 }
 
-impl ListTablesOptions {
+impl<'a> ListTablesOptions<'a> {
     setters! {
-        top: i32 => Some(top),
-        filter: String => Some(filter),
+        top: Top => Some(top),
+        filter: Filter<'a> => Some(filter),
         api_version: ApiVersion => Some(api_version),
         odata_metadata_level: OdataMetadataLevel  => Some(odata_metadata_level),
     }
@@ -55,6 +59,23 @@ impl ListTablesOptions {
                     .as_str(),
             )?,
         );
+
+        if let Some(top) = self.top.as_ref() {
+            let mut url = url::Url::from_str(request.uri().to_string().as_str()).unwrap();
+            top.append_to_url_query(&mut url);
+            let url_as_string = url.to_string();
+            let uri = http::Uri::from_str(url_as_string.as_str()).unwrap();
+            request.set_uri(uri);
+        };
+
+        if let Some(filter) = self.filter.as_ref() {
+            let mut url = url::Url::from_str(request.uri().to_string().as_str()).unwrap();
+            filter.append_to_url_query(&mut url);
+            let url_as_string = url.to_string();
+            let uri = http::Uri::from_str(url_as_string.as_str()).unwrap();
+            request.set_uri(uri);
+        }
+
         Ok(())
     }
 }

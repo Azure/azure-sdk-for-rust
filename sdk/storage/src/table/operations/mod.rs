@@ -62,10 +62,10 @@ pub fn header_value<T: AsRef<str>>(value: &Option<T>) -> Result<HeaderValue, HTT
     HeaderValue::from_str(
         value
             .as_ref()
-            .ok_or(azure_core::HTTPHeaderError::HeaderValidationError(
-                "header value was none".into(),
-            ))?
+            .ok_or_else(|| {
+                azure_core::HTTPHeaderError::HeaderValidationError("header value was none".into())
+            })?
             .as_ref(),
     )
-    .map_err(|e| azure_core::HTTPHeaderError::InvalidHeaderValue(e))
+    .map_err(azure_core::HTTPHeaderError::InvalidHeaderValue)
 }
