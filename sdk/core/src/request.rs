@@ -8,6 +8,12 @@ pub enum Body {
     SeekableStream(Box<dyn SeekableStream>),
 }
 
+impl Body {
+    pub fn empty() -> Body {
+        Self::Bytes(bytes::Bytes::from_static(&[]))
+    }
+}
+
 impl From<bytes::Bytes> for Body {
     fn from(bytes: bytes::Bytes) -> Self {
         Self::Bytes(bytes)
@@ -33,6 +39,15 @@ pub struct Request {
 }
 
 impl Request {
+    pub fn new(uri: Uri, method: Method) -> Self {
+        Self {
+            uri,
+            method,
+            body: Body::empty(),
+            headers: HeaderMap::default(),
+        }
+    }
+
     pub fn uri(&self) -> &Uri {
         &self.uri
     }

@@ -1,9 +1,17 @@
-use crate::core::clients::StorageAccountClient;
-use crate::table::clients::TableServiceClient;
-use crate::table::requests::*;
+use crate::operations::list_tables::{ListTablesOptions, ListTablesResponse};
+use crate::{
+    authorization::{authorization_policy::AuthorizationPolicy, AuthorizationToken},
+    core::clients::StorageAccountClient,
+};
+use crate::{
+    table::{clients::TableServiceClient, requests::*},
+    table_context::TableContext,
+};
+use azure_core::{pipeline::Pipeline, ClientOptions, Context, Error, PipelineContext, Policy};
 use bytes::Bytes;
-use http::method::Method;
 use http::request::{Builder, Request};
+use http::{method::Method, Uri};
+use std::str::FromStr;
 use std::sync::Arc;
 
 pub trait AsTableClient<S: Into<String>> {
@@ -191,5 +199,188 @@ mod integration_tests {
             .expect("the insert operation should succeed");
 
         // TODO: Validate that the entity was inserted
+    }
+}
+
+///////////////////////////////////////////////////////////////////////
+//////////////////////// pipeline table client ////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+/// The cloud with which you want to interact.
+#[derive(Debug, Clone)]
+enum CloudTableLocation {
+    /// Azure public cloud
+    Public(String),
+    /// Azure China cloud
+    China(String),
+    // TODO: Other govt clouds?
+    /// A custom base URL
+    Custom { account: String, url: String },
+}
+
+impl CloudTableLocation {
+    /// the base URL for a given cloud location
+    fn url(&self) -> String {
+        match self {
+            CloudTableLocation::China(account) => {
+                format!("https://{}.table.core.chinacloudapi.cn", account)
+            }
+            CloudTableLocation::Public(account) => {
+                format!("https://{}.table.core.windows.net", account)
+            }
+            CloudTableLocation::Custom { url, account } => url.clone(),
+        }
+    }
+}
+
+/// Options for specifying how a Table client will behave
+#[derive(Debug, Clone, Default)]
+pub struct TableOptions {
+    options: ClientOptions<TableContext>,
+}
+
+/// Create a Pipeline from TableOptions
+fn new_pipeline_from_options(
+    options: TableOptions,
+    authorization_token: AuthorizationToken,
+) -> Pipeline<TableContext> {
+    let policy = AuthorizationPolicy::new(authorization_token);
+    let policy: Arc<dyn Policy<TableContext>> = Arc::new(policy);
+    let per_retry_policies: Vec<Arc<dyn Policy<TableContext>>> = vec![policy];
+    Pipeline::new(
+        option_env!("CARGO_PKG_NAME"),
+        option_env!("CARGO_PKG_VERSION"),
+        &options.options,
+        per_retry_policies,
+        Vec::new(),
+    )
+}
+
+pub struct PipelineTableClient {
+    cloud_location: CloudTableLocation,
+    pipeline: Pipeline<TableContext>,
+}
+
+impl PipelineTableClient {
+    /// Create a new `TableClient`
+    pub fn new(account: String, auth_token: AuthorizationToken, options: TableOptions) -> Self {
+        Self {
+            cloud_location: CloudTableLocation::Public(account),
+            pipeline: new_pipeline_from_options(options, auth_token),
+        }
+    }
+
+    /// Create a new `TableClient` for Azure storage emulator
+    pub fn emulator(options: TableOptions) -> Self {
+        // emulator_key
+        const emulator_account: &'static str = "devstoreaccount1";
+        const emulator_key: &'static str = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
+        let auth_token = AuthorizationToken::SharedKeyToken {
+            account: emulator_account.to_string(),
+            key: emulator_key.to_string(),
+        };
+
+        // emulator uri;
+        const port: u16 = 10002;
+        const address: &'static str = "127.0.0.1";
+        Self {
+            cloud_location: CloudTableLocation::Custom {
+                account: emulator_account.to_string(),
+                url: format!("http://{}:{}/{}", address, port, emulator_account),
+            },
+            pipeline: new_pipeline_from_options(options, auth_token),
+        }
+    }
+
+    pub async fn list_tables(
+        &self,
+        ctx: Context,
+        options: ListTablesOptions,
+    ) -> Result<ListTablesResponse, Error> {
+        let mut request = self.prepare_pipeline_request("Tables", Method::GET);
+
+        // add basic request properties
+        options.decorate_request(&mut request)?;
+        trace!("request after decoration: {:#?}", request);
+
+        // start passing the request in the pipeline
+        let mut pipeline_context = PipelineContext::new(ctx, TableContext::default());
+        let response = self
+            .pipeline
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
+            .await?;
+
+        //
+        Ok(ListTablesResponse::try_from(response).await?)
+    }
+
+    /*
+       pub async fn create_table<N: AsRef<str>>(
+           &self,
+           ctx: Context,
+           table_name: N,
+           options: CreateTableOptions,
+       ) -> Result<CreateTableResponse, Error> {
+           todo!()
+       }
+
+       pub async fn delete_table<N: AsRef<str>>(
+           &self,
+           ctx: Context,
+           table_name: N,
+           options: DeleteTableOptions,
+       ) -> Result<(), Error> {
+           todo!()
+       }
+    */
+
+    fn prepare_pipeline_request(
+        &self,
+        uri_path: &str,
+        http_method: http::Method,
+    ) -> azure_core::Request {
+        let uri = format!("{}/{}", self.cloud_location.url(), uri_path);
+        let uri = Uri::from_str(uri.as_str()).unwrap();
+        azure_core::Request::new(uri, http_method)
+    }
+}
+
+#[cfg(test)]
+pub mod test_pipeline_table_client {
+    use super::{PipelineTableClient, TableOptions};
+    use crate::{authorization::AuthorizationToken, operations::list_tables::ListTablesOptions};
+    use azure_core::Context;
+
+    #[tokio::test]
+    async fn test_list_tables() {
+        println!(
+            "{:#?}",
+            emulator_table_client()
+                .list_tables(Context::new(), ListTablesOptions::default())
+                .await
+        );
+
+        println!(
+            "{:#?}",
+            public_table_client()
+                .list_tables(Context::new(), ListTablesOptions::default())
+                .await
+        );
+    }
+
+    fn public_table_client() -> PipelineTableClient {
+        let account = "prediction305development".to_string();
+        let key = "ZysMxgxYUgFRwAHn96SREy/YbZUjlsLxyQHj3aRmyjdc+Fz6nHEygGMub9AOJA/G/Sw/2b9jCedK2HrnRPm9oA==";
+        let auth_token = AuthorizationToken::SharedKeyToken {
+            account: account.clone(),
+            key: key.to_string(),
+        };
+        PipelineTableClient::new(account, auth_token, TableOptions::default())
+    }
+
+    fn emulator_table_client() -> PipelineTableClient {
+        PipelineTableClient::new_emulator(TableOptions::default())
     }
 }

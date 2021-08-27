@@ -1,3 +1,6 @@
+pub mod authorization;
+pub mod table_context;
+pub mod operations;
 pub mod clients;
 mod continuation_next_partition_and_row_key;
 mod continuation_next_table_name;

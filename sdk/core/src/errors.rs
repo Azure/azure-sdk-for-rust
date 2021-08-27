@@ -300,6 +300,8 @@ pub async fn check_status_extract_body_2(
     resp: hyper::Response<Body>,
     expected_status: StatusCode,
 ) -> Result<String, Error> {
+    use log::debug;
+
     let received_status = resp.status();
     let body = body::to_bytes(resp.into_body())
         .await

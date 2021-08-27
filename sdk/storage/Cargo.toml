@@ -13,6 +13,7 @@ categories = ["api-bindings"]
 edition = "2018"
 
 [dependencies]
+async-trait = "0.1"
 azure_core = { path = "../core", version = "0.1.0" }
 ring = "0.16"
 base64 = "0.13"
@@ -23,7 +24,7 @@ log = "0.4"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-serde-xml-rs = "0.4"
+serde-xml-rs = "0.5"
 url = "2.2"
 uuid = { version = "0.8", features = ["v4"] }
 bytes = "1.0"
@@ -34,7 +35,7 @@ once_cell = "1.7"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros"] }
-env_logger = "0.8"
+env_logger = "0.9"
 azure_identity = { path = "../identity" }
 reqwest = "0.11"
 
@@ -51,101 +52,101 @@ data_lake = []
 
 # This section specifies the required features for the examples.
 [[example]]
-name="table_00"
+name = "table_00"
 required-features = ["table"]
 [[example]]
-name="account00"
+name = "account00"
 required-features = ["account"]
 [[example]]
-name="blob_00"
-required-features=["blob"]
+name = "blob_00"
+required-features = ["blob"]
 [[example]]
-name="blob_01"
-required-features=["blob"]
+name = "blob_01"
+required-features = ["blob"]
 [[example]]
-name="blob_02_bearer_token"
-required-features=["blob"]
+name = "blob_02_bearer_token"
+required-features = ["blob"]
 [[example]]
-name="blob_04"
-required-features=["blob"]
+name = "blob_04"
+required-features = ["blob"]
 [[example]]
-name="blob_05_default_credential"
-required-features=["blob"]
+name = "blob_05_default_credential"
+required-features = ["blob"]
 [[example]]
-name="blob_range"
-required-features=["blob"]
+name = "blob_range"
+required-features = ["blob"]
 [[example]]
-name="connection_string_builder"
-required-features=["blob"]
+name = "connection_string_builder"
+required-features = ["blob"]
 [[example]]
-name="connection_string"
-required-features=["blob"]
+name = "connection_string"
+required-features = ["blob"]
 [[example]]
-name="container_00"
-required-features=["blob"]
+name = "container_00"
+required-features = ["blob"]
 [[example]]
-name="container_01"
-required-features=["blob"]
+name = "container_01"
+required-features = ["blob"]
 [[example]]
-name="container_and_blob"
-required-features=["blob"]
+name = "container_and_blob"
+required-features = ["blob"]
 [[example]]
-name="copy_blob_from_url"
-required-features=["blob"]
+name = "copy_blob_from_url"
+required-features = ["blob"]
 [[example]]
-name="copy_blob"
-required-features=["blob"]
+name = "copy_blob"
+required-features = ["blob"]
 [[example]]
-name="count_blobs"
-required-features=["blob"]
+name = "count_blobs"
+required-features = ["blob"]
 [[example]]
-name="emulator_00"
-required-features=["blob"]
+name = "emulator_00"
+required-features = ["blob"]
 [[example]]
-name="list_blobs_00"
-required-features=["blob"]
+name = "list_blobs_00"
+required-features = ["blob"]
 [[example]]
-name="list_blobs_01"
-required-features=["blob"]
+name = "list_blobs_01"
+required-features = ["blob"]
 [[example]]
-name="list_containers2"
-required-features=["blob"]
+name = "list_containers2"
+required-features = ["blob"]
 [[example]]
-name="put_append_blob_00"
-required-features=["blob"]
+name = "put_append_blob_00"
+required-features = ["blob"]
 [[example]]
-name="put_block_blob_00"
-required-features=["blob"]
+name = "put_block_blob_00"
+required-features = ["blob"]
 [[example]]
-name="put_page_blob_00"
-required-features=["blob"]
+name = "put_page_blob_00"
+required-features = ["blob"]
 [[example]]
-name="shared_access_signature"
-required-features=["blob"]
+name = "shared_access_signature"
+required-features = ["blob"]
 [[example]]
-name="stream_blob_00"
-required-features=["blob"]
+name = "stream_blob_00"
+required-features = ["blob"]
 [[example]]
-name="stream_blob_01"
-required-features=["blob"]
+name = "stream_blob_01"
+required-features = ["blob"]
 [[example]]
-name="list_queues"
-required-features=["queue"]
+name = "list_queues"
+required-features = ["queue"]
 [[example]]
-name="queue_create"
-required-features=["queue"]
+name = "queue_create"
+required-features = ["queue"]
 [[example]]
-name="get_messages"
-required-features=["queue"]
+name = "get_messages"
+required-features = ["queue"]
 [[example]]
-name="peek_messages"
-required-features=["queue"]
+name = "peek_messages"
+required-features = ["queue"]
 [[example]]
-name="delete_message"
-required-features=["queue"]
+name = "delete_message"
+required-features = ["queue"]
 [[example]]
-name="put_message"
-required-features=["queue"]
+name = "put_message"
+required-features = ["queue"]
 [[example]]
-name="data_lake_00"
-required-features=["data_lake"]
+name = "data_lake_00"
+required-features = ["data_lake"]
