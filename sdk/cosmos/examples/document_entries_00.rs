@@ -59,7 +59,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         };
 
         // let's add an entity.
-        response = Some(client.create_document().execute(&doc).await?);
+        response = Some(
+            client
+                .create_document(Context::new(), &doc, CreateDocumentOptions::new())
+                .await?,
+        );
     }
 
     println!("Created 5 documents.");

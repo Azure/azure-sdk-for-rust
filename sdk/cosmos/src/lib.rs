@@ -10,6 +10,7 @@ should also be possible with this crate.
 ```no_run
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos DB.
 use azure_cosmos::prelude::*;
+use azure_core::Context;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -75,9 +76,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
         // insert it
         collection_client
-            .create_document()
-            .is_upsert(true) // this option will overwrite a preexisting document (if any)
-            .execute(&document_to_insert)
+            .create_document(
+                Context::new(),
+                &document_to_insert,
+                CreateDocumentOptions::new().is_upsert(true),
+            )
             .await?;
     }
     // wow that was easy and fast, wasn't it? :)
@@ -105,16 +108,20 @@ pub mod requests;
 pub mod resources;
 pub mod responses;
 
+mod authorization_policy;
 mod consistency_level;
 mod cosmos_entity;
 mod errors;
 mod headers;
 mod resource_quota;
+mod time_nonce;
 mod to_json_vector;
 
+pub(crate) use authorization_policy::AuthorizationPolicy;
 pub use consistency_level::ConsistencyLevel;
 pub use cosmos_entity::CosmosEntity;
 pub use resource_quota::ResourceQuota;
+pub(crate) use time_nonce::TimeNonce;
 
 pub use errors::Error;
 

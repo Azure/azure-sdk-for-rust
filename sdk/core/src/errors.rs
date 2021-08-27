@@ -3,10 +3,26 @@ use http::StatusCode;
 use hyper::{self, body, Body};
 use std::cmp::PartialEq;
 
+#[derive(Debug, thiserror::Error)]
+pub enum PipelineError {
+    #[error("invalid pipeline: last policy is not a TransportPolicy: {0:?}")]
+    InvalidTailPolicy(String),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum HTTPHeaderError {
+    #[error("{0}")]
+    InvalidHeaderValue(#[from] http::header::InvalidHeaderValue),
+    #[error("{0}")]
+    InvalidHeaderName(#[from] http::header::InvalidHeaderName),
+}
+
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Policy error: {0}")]
+    #[error("pipeline error: {0}")]
+    PipelineError(#[from] PipelineError),
+    #[error("policy error: {0}")]
     PolicyError(Box<dyn std::error::Error + Send + Sync>),
     #[error("parsing error: {0}")]
     ParsingError(#[from] ParsingError),
@@ -109,7 +125,7 @@ pub enum HttpError {
     #[error("Failed to serialize request body as json: {0}")]
     BodySerializationError(serde_json::Error),
     #[error(
-        "Unexpected HTTP result (expected: {:?}, received: {:?}, body: {:?})",
+        "unexpected HTTP result (expected: {:?}, received: {:?}, body: {:?})",
         expected,
         received,
         body
@@ -121,23 +137,23 @@ pub enum HttpError {
     },
     #[error("UTF8 conversion error: {0}")]
     Utf8Error(#[from] std::str::Utf8Error),
-    #[error("From UTF8 conversion error: {0}")]
+    #[error("from UTF8 conversion error: {0}")]
     FromUtf8Error(#[from] std::string::FromUtf8Error),
-    #[error("Failed to build request: {0}")]
+    #[error("failed to build request: {0}")]
     BuildRequestError(http::Error),
-    #[error("Failed to build request: {0}")]
+    #[error("failed to build request: {0}")]
     BuildClientRequestError(HttpClientError),
-    #[error("Failed to execute request: {0}")]
+    #[error("failed to execute request: {0}")]
     ExecuteRequestError(HttpClientError),
-    #[error("Failed to read response as bytes: {0}")]
+    #[error("failed to read response as bytes: {0}")]
     ReadBytesError(HttpClientError),
-    #[error("Failed to read response as stream: {0}")]
+    #[error("failed to read response as stream: {0}")]
     ReadStreamError(HttpClientError),
-    #[error("Failed to build response: {0}")]
+    #[error("failed to build response: {0}")]
     BuildResponseError(http::Error),
     #[error("to str error: {0}")]
     ToStrError(#[from] http::header::ToStrError),
-    #[error("Failed to reset stream: {0}")]
+    #[error("failed to reset stream: {0}")]
     StreamResetError(StreamError),
 }
 
@@ -204,19 +220,19 @@ pub enum TraversingError {
     MultipleNode(String),
     #[error("Enumeration not matched: {0}")]
     EnumerationNotMatched(String),
-    #[error("Input string cannot be converted in boolean: {0}")]
+    #[error("input string cannot be converted in boolean: {0}")]
     BooleanNotMatched(String),
-    #[error("Unexpected node type received: expected {0}")]
+    #[error("unexpected node type received: expected {0}")]
     UnexpectedNodeTypeError(String),
     #[error("DateTime parse error: {0}")]
     DateTimeParseError(#[from] chrono::format::ParseError),
-    #[error("Text not found")]
+    #[error("text not found")]
     TextNotFound,
-    #[error("Parse int error: {0}")]
+    #[error("parse int error: {0}")]
     ParseIntError(#[from] std::num::ParseIntError),
-    #[error("Generic parse error: {0}")]
+    #[error("generic parse error: {0}")]
     GenericParseError(String),
-    #[error("Parsing error: {0:?}")]
+    #[error("parsing error: {0:?}")]
     ParsingError(#[from] ParsingError),
 }
 

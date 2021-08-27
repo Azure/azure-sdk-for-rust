@@ -1,4 +1,5 @@
-use crate::policies::{Context, Policy, PolicyResult, Request, Response};
+use crate::policies::{Policy, PolicyResult, Request, Response};
+use crate::PipelineContext;
 use std::sync::Arc;
 
 /// Retry policy that does not retry.
@@ -10,12 +11,15 @@ pub struct NoRetryPolicy {
 }
 
 #[async_trait::async_trait]
-impl Policy for NoRetryPolicy {
+impl<C> Policy<C> for NoRetryPolicy
+where
+    C: Send + Sync,
+{
     async fn send(
         &self,
-        ctx: &mut Context,
+        ctx: &mut PipelineContext<C>,
         request: &mut Request,
-        next: &[Arc<dyn Policy>],
+        next: &[Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response> {
         // just call the following policies and bubble up the error
         next[0].send(ctx, request, &next[1..]).await

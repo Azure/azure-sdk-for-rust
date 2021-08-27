@@ -51,6 +51,14 @@ impl std::convert::TryFrom<Response<bytes::Bytes>> for DocumentAttributes {
     }
 }
 
+impl std::convert::TryFrom<bytes::Bytes> for DocumentAttributes {
+    type Error = crate::Error;
+
+    fn try_from(body: bytes::Bytes) -> Result<Self, Self::Error> {
+        Ok(serde_json::from_slice(&body)?)
+    }
+}
+
 impl<'a> std::convert::From<&'a DocumentAttributes> for IfMatchCondition<'a> {
     fn from(document_attributes: &'a DocumentAttributes) -> Self {
         IfMatchCondition::Match(&document_attributes.etag)
