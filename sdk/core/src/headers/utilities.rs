@@ -136,7 +136,7 @@ pub async fn perform_http_request(
     req: Request<Body>,
     expected_status: StatusCode,
 ) -> Result<String, Error> {
-    debug!("req == {:?}", req);
+    log::debug!("req == {:?}", req);
     let res = client
         .request(req)
         .await

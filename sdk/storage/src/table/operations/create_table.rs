@@ -1,51 +1,51 @@
-use super::{header_value, ApiVersion, OdataMetadataLevel};
+use super::{ApiVersion, OdataMetadataLevel};
+use crate::operations::{EchoContent, header_value};
 use azure_core::{Error, HTTPHeaderError, Request, Response};
 use chrono::Utc;
 use http::HeaderValue;
 
 #[derive(Debug, Clone)]
-pub struct ListTablesOptions {
-    top: Option<i32>,
-    filter: Option<String>,
+pub struct CreateTableOptions {
     api_version: Option<ApiVersion>,
+    echo_content: Option<EchoContent>,
     odata_metadata_level: Option<OdataMetadataLevel>,
 }
 
-impl Default for ListTablesOptions {
+impl Default for CreateTableOptions {
     fn default() -> Self {
         Self {
-            top: Default::default(),
-            filter: Default::default(),
             api_version: Some(ApiVersion::default()),
+            echo_content: Some(EchoContent::ReturnContent),
             odata_metadata_level: Some(OdataMetadataLevel::FullMetadata),
         }
     }
 }
 
-impl ListTablesOptions {
+impl CreateTableOptions {
     setters! {
-        top: i32 => Some(top),
-        filter: String => Some(filter),
         api_version: ApiVersion => Some(api_version),
+        echo_content: EchoContent => Some(echo_content),
         odata_metadata_level: OdataMetadataLevel  => Some(odata_metadata_level),
     }
 
-    pub fn decorate_request(&self, request: &mut Request) -> Result<(), HTTPHeaderError> {
+    pub fn decorate_request(
+        &self,
+        request: &mut Request,
+        table_name: &str,
+    ) -> Result<(), HTTPHeaderError> {
         let headers = request.headers_mut();
 
-        //if &self.odata_metadata_level. == OdataMetadataLevel::NoMetadata {
-        //  return Err(HTTPHeaderError::HeaderValidationError(
-        //       "List table operation can not include NoMetadata as the Accept header value".into(),
-        //    ));
-        //}
-        headers.append(
-            "Accept",
-            header_value::<OdataMetadataLevel>(&self.odata_metadata_level)?,
-        );
+        headers.append("Content-Type", HeaderValue::from_static("application/json"));
+        headers.append("Prefer", header_value::<EchoContent>(&self.echo_content)?);
         headers.append(
             "x-ms-version",
             header_value::<ApiVersion>(&self.api_version)?,
         );
+        headers.append(
+            "Accept",
+            header_value::<OdataMetadataLevel>(&self.odata_metadata_level)?,
+        );
+
         headers.append(
             "x-ms-date",
             HeaderValue::from_str(
@@ -55,33 +55,41 @@ impl ListTablesOptions {
                     .as_str(),
             )?,
         );
+
+        #[derive(serde::Serialize)]
+        struct CreateTableRequest<'a> {
+            #[serde(rename = "TableName")]
+            pub table_name: &'a str,
+        }
+        let body = CreateTableRequest { table_name };
+        let bytes = bytes::Bytes::from(serde_json::to_string(&body).unwrap());
+        headers.append("Content-Length", HeaderValue::from(bytes.len()));
+
+        let md5 = base64::encode(&md5::compute(bytes.as_ref())[..]);
+        headers.append("Content-MD5", HeaderValue::from_str(md5.as_str()).unwrap());
+
+        *request.body_mut() = bytes.into();
+
         Ok(())
     }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Table {
+pub struct CreateTableResponse {
+    #[serde(rename = "odata.metadata")]
+    pub odata_metadata: Option<String>,
     #[serde(rename = "odata.type")]
     pub odata_type: Option<String>,
     #[serde(rename = "odata.id")]
     pub odata_id: Option<String>,
     #[serde(rename = "odata.editLink")]
-    pub odata_link: Option<String>,
+    pub odata_edit_link: Option<String>,
     #[serde(rename = "TableName")]
     pub table_name: String,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ListTablesResponse {
-    #[serde(rename = "odata.metadata")]
-    pub odata_metadata: Option<String>,
-    #[serde(rename = "value")]
-    pub tables: Vec<Table>,
-}
-
-impl ListTablesResponse {
+impl CreateTableResponse {
     pub(crate) async fn try_from(response: Response) -> Result<Self, Error> {
         let body = azure_core::collect_pinned_stream(response.deconstruct().2).await?;
         let response = serde_json::from_slice(&body)?;

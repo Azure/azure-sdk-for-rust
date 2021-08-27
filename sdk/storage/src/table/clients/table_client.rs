@@ -1,3 +1,5 @@
+use crate::operations::create_table::{CreateTableOptions, CreateTableResponse};
+use crate::operations::delete_table::DeleteTableOptions;
 use crate::operations::list_tables::{ListTablesOptions, ListTablesResponse};
 use crate::{
     authorization::{authorization_policy::AuthorizationPolicy, AuthorizationToken},
@@ -272,21 +274,21 @@ impl PipelineTableClient {
 
     /// Create a new `TableClient` for Azure storage emulator
     pub fn emulator(options: TableOptions) -> Self {
-        // emulator_key
-        const emulator_account: &'static str = "devstoreaccount1";
-        const emulator_key: &'static str = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
+        // emulator connection details;
+        const PORT: u16 = 10002;
+        const ADDRESS: &'static str = "127.0.0.1";
+        const EMULATOR_ACCOUNT: &'static str = "devstoreaccount1";
+        const EMULATOR_KEY: &'static str = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
+
         let auth_token = AuthorizationToken::SharedKeyToken {
-            account: emulator_account.to_string(),
-            key: emulator_key.to_string(),
+            account: EMULATOR_ACCOUNT.to_string(),
+            key: EMULATOR_KEY.to_string(),
         };
 
-        // emulator uri;
-        const port: u16 = 10002;
-        const address: &'static str = "127.0.0.1";
         Self {
             cloud_location: CloudTableLocation::Custom {
-                account: emulator_account.to_string(),
-                url: format!("http://{}:{}/{}", address, port, emulator_account),
+                account: EMULATOR_ACCOUNT.to_string(),
+                url: format!("http://{}:{}/{}", ADDRESS, PORT, EMULATOR_ACCOUNT),
             },
             pipeline: new_pipeline_from_options(options, auth_token),
         }
@@ -316,25 +318,51 @@ impl PipelineTableClient {
         Ok(ListTablesResponse::try_from(response).await?)
     }
 
-    /*
-       pub async fn create_table<N: AsRef<str>>(
-           &self,
-           ctx: Context,
-           table_name: N,
-           options: CreateTableOptions,
-       ) -> Result<CreateTableResponse, Error> {
-           todo!()
-       }
+    pub async fn create_table<N: AsRef<str>>(
+        &self,
+        ctx: Context,
+        table_name: N,
+        options: CreateTableOptions,
+    ) -> Result<CreateTableResponse, Error> {
+        let mut request = self.prepare_pipeline_request("Tables", Method::POST);
 
-       pub async fn delete_table<N: AsRef<str>>(
-           &self,
-           ctx: Context,
-           table_name: N,
-           options: DeleteTableOptions,
-       ) -> Result<(), Error> {
-           todo!()
-       }
-    */
+        let mut pipeline_context = PipelineContext::new(ctx, TableContext::default());
+        options.decorate_request(&mut request, table_name.as_ref())?;
+
+        let response = self
+            .pipeline
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::CREATED)
+            .await?;
+
+        Ok(CreateTableResponse::try_from(response).await?)
+    }
+
+    pub async fn delete_table<N: AsRef<str>>(
+        &self,
+        ctx: Context,
+        table_name: N,
+        options: DeleteTableOptions,
+    ) -> Result<(), Error> {
+        let mut request = self.prepare_pipeline_request(
+            format!("Tables('{}')", table_name.as_ref()).as_str(),
+            Method::DELETE,
+        );
+
+        options.decorate_request(&mut request)?;
+        let table_context = TableContext::default();
+        let mut pipeline_context = PipelineContext::new(ctx, table_context);
+
+        let _ = self
+            .pipeline
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::NO_CONTENT)
+            .await?;
+
+        Ok(())
+    }
 
     fn prepare_pipeline_request(
         &self,
@@ -350,7 +378,13 @@ impl PipelineTableClient {
 #[cfg(test)]
 pub mod test_pipeline_table_client {
     use super::{PipelineTableClient, TableOptions};
-    use crate::{authorization::AuthorizationToken, operations::list_tables::ListTablesOptions};
+    use crate::{
+        authorization::AuthorizationToken,
+        operations::{
+            create_table::CreateTableOptions, delete_table::DeleteTableOptions,
+            list_tables::ListTablesOptions,
+        },
+    };
     use azure_core::Context;
 
     #[tokio::test]
@@ -361,13 +395,36 @@ pub mod test_pipeline_table_client {
                 .list_tables(Context::new(), ListTablesOptions::default())
                 .await
         );
-
         println!(
             "{:#?}",
             public_table_client()
                 .list_tables(Context::new(), ListTablesOptions::default())
                 .await
         );
+    }
+
+    #[tokio::test]
+    async fn test_delete_table() {
+        let response = public_table_client()
+            .delete_table(
+                Context::new(),
+                "TableForTest",
+                DeleteTableOptions::default(),
+            )
+            .await;
+        println!("{:#?}", response);
+    }
+
+    #[tokio::test]
+    async fn test_create_table() {
+        let response = public_table_client()
+            .create_table(
+                Context::new(),
+                "TableForTest",
+                CreateTableOptions::default(),
+            )
+            .await;
+        println!("{:#?}", response);
     }
 
     fn public_table_client() -> PipelineTableClient {
@@ -381,6 +438,6 @@ pub mod test_pipeline_table_client {
     }
 
     fn emulator_table_client() -> PipelineTableClient {
-        PipelineTableClient::new_emulator(TableOptions::default())
+        PipelineTableClient::emulator(TableOptions::default())
     }
 }

@@ -76,6 +76,11 @@ impl Request {
     pub fn clone_body(&self) -> Body {
         self.body.clone()
     }
+
+    /// Get a mutable reference to the request's body.
+    pub fn body_mut(&mut self) -> &mut Body {
+        &mut self.body
+    }
 }
 
 /// Temporary hack to convert preexisting requests into the new format. It

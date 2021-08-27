@@ -3,20 +3,6 @@ use http::StatusCode;
 use hyper::{self, body, Body};
 use std::cmp::PartialEq;
 
-#[derive(Debug, thiserror::Error)]
-pub enum PipelineError {
-    #[error("invalid pipeline: last policy is not a TransportPolicy: {0:?}")]
-    InvalidTailPolicy(String),
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum HTTPHeaderError {
-    #[error("{0}")]
-    InvalidHeaderValue(#[from] http::header::InvalidHeaderValue),
-    #[error("{0}")]
-    InvalidHeaderName(#[from] http::header::InvalidHeaderName),
-}
-
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -51,12 +37,30 @@ pub enum Error {
     StreamError(#[from] StreamError),
     #[error("JSON error: {0}")]
     JsonError(#[from] serde_json::Error),
+    #[error("error append headers")]
+    InvalidHeaderError(#[from] HTTPHeaderError),
 }
 
 #[cfg(feature = "enable_hyper")]
 type HttpClientError = hyper::Error;
 #[cfg(feature = "enable_reqwest")]
 type HttpClientError = reqwest::Error;
+
+#[derive(Debug, thiserror::Error)]
+pub enum PipelineError {
+    #[error("invalid pipeline: last policy is not a TransportPolicy: {0:?}")]
+    InvalidTailPolicy(String),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum HTTPHeaderError {
+    #[error("{0}")]
+    HeaderValidationError(String),
+    #[error("{0}")]
+    InvalidHeaderName(#[from] http::header::InvalidHeaderName),
+    #[error("{0}")]
+    InvalidHeaderValue(#[from] http::header::InvalidHeaderValue),
+}
 
 #[non_exhaustive]
 #[derive(Debug, PartialEq, thiserror::Error)]
