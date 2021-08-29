@@ -1,10 +1,19 @@
+use crate::operations::get_entity::GetEntityOptions;
+use crate::operations::get_entity::TableEntity;
 use crate::table::prelude::*;
 use crate::table::requests::*;
+use crate::table_context::TableContext;
+use azure_core::Context;
+use azure_core::Error;
+use azure_core::PipelineContext;
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
+use std::borrow::Cow;
 use std::sync::Arc;
 use url::Url;
+
+use super::table_client::PipelineTableClient;
 
 pub trait AsEntityClient<RK: Into<String>> {
     fn as_entity_client(&self, row_key: RK) -> Result<Arc<EntityClient>, url::ParseError>;
@@ -98,6 +107,7 @@ impl EntityClient {
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
     ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
+        //
         self.partition_key_client
             .prepare_request(url, method, http_header_adder, request_body)
     }
@@ -351,5 +361,87 @@ mod integration_tests {
             .expect("the insert or merge operation should complete");
 
         // TODO: Confirm that the entity was merged
+    }
+}
+
+pub struct PipelineEntityClient {
+    table_name: Cow<'static, str>,
+    table_client: PipelineTableClient,
+}
+
+impl PipelineEntityClient {
+    pub fn new<S: Into<Cow<'static, str>>>(
+        table_client: PipelineTableClient,
+        table_name: S,
+    ) -> Self {
+        Self {
+            table_client,
+            table_name: table_name.into(),
+        }
+    }
+
+    pub async fn get_entity(
+        &self,
+        ctx: Context,
+        partition_key: &str,
+        row_key: &str,
+        options: GetEntityOptions<'_>,
+    ) -> Result<TableEntity, Error> {
+        let mut request = self.table_client.prepare_pipeline_request(
+            format!(
+                "{}(PartitionKey='{}',RowKey='{}')",
+                self.table_name, partition_key, row_key
+            )
+            .as_str(),
+            Method::GET,
+        );
+
+        options.decorate_request(&mut request)?;
+
+        let table_context = TableContext::default();
+        let mut pipeline_context = PipelineContext::new(ctx, table_context);
+
+        let response = self
+            .table_client
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
+            .await?;
+
+        Ok(TableEntity::try_from(response).await?)
+    }
+}
+
+#[cfg(test)]
+pub mod test_pipeline_table_client {
+    use super::PipelineTableClient;
+    use crate::{
+        operations::{
+            create_table::CreateTableOptions, delete_table::DeleteTableOptions,
+            get_entity::GetEntityOptions, list_tables::ListTablesOptions, OdataMetadataLevel,
+        },
+        table::clients::table_client::TableOptions,
+        Filter, Top,
+    };
+    use azure_core::Context;
+
+    #[tokio::test]
+    async fn get_entity_test() {
+        let email_table_client = emulator_table_client()
+            .into_entity_client("emails")
+            .get_entity(
+                Context::new(),
+                "shay@gmail.com",
+                "2021-08-03T03:41:54.221695200Z",
+                GetEntityOptions::default(),
+            )
+            .await;
+
+        println!("{:#?}", email_table_client);
+    }
+
+    fn emulator_table_client() -> PipelineTableClient {
+        PipelineTableClient::emulator(TableOptions::default())
     }
 }

@@ -13,8 +13,11 @@ use azure_core::{pipeline::Pipeline, ClientOptions, Context, Error, PipelineCont
 use bytes::Bytes;
 use http::request::{Builder, Request};
 use http::{method::Method, Uri};
+use std::borrow::Cow;
 use std::str::FromStr;
 use std::sync::Arc;
+
+use super::entity_client::PipelineEntityClient;
 
 pub trait AsTableClient<S: Into<String>> {
     fn as_table_client(&self, s: S) -> Arc<TableClient>;
@@ -323,10 +326,10 @@ impl PipelineTableClient {
         Ok(ListTablesResponse::try_from(response).await?)
     }
 
-    pub async fn create_table<N: AsRef<str>>(
+    pub async fn create_table(
         &self,
         ctx: Context,
-        table_name: N,
+        table_name: impl AsRef<str>,
         options: CreateTableOptions,
     ) -> Result<CreateTableResponse, Error> {
         let mut request = self.prepare_pipeline_request("Tables", Method::POST);
@@ -369,7 +372,14 @@ impl PipelineTableClient {
         Ok(())
     }
 
-    fn prepare_pipeline_request(
+    pub fn into_entity_client<S: Into<Cow<'static, str>>>(
+        self,
+        table_name: S,
+    ) -> PipelineEntityClient {
+        PipelineEntityClient::new(self, table_name)
+    }
+
+    pub(crate) fn prepare_pipeline_request(
         &self,
         uri_path: &str,
         http_method: http::Method,
@@ -377,6 +387,11 @@ impl PipelineTableClient {
         let uri = format!("{}/{}", self.cloud_location.url(), uri_path);
         let uri = Uri::from_str(uri.as_str()).unwrap();
         azure_core::Request::new(uri, http_method)
+    }
+
+    /// Get a reference to the pipeline table client's pipeline.
+    pub(crate) fn pipeline(&self) -> &Pipeline<TableContext> {
+        &self.pipeline
     }
 }
 

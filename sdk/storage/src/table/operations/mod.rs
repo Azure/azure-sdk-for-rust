@@ -1,7 +1,9 @@
 use azure_core::HTTPHeaderError;
 use http::HeaderValue;
+
 pub mod create_table;
 pub mod delete_table;
+pub mod get_entity;
 pub mod list_tables;
 
 /// api version enum
