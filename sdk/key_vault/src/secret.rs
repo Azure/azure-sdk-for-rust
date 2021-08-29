@@ -138,7 +138,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn get_secret(&mut self, secret_name: &'a str) -> Result<KeyVaultSecret, Error> {
+    pub async fn get_secret<'b>(&mut self, secret_name: &'b str) -> Result<KeyVaultSecret, Error> {
         Ok(self.get_secret_with_version(secret_name, "").await?)
     }
 
@@ -164,10 +164,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn get_secret_with_version(
+    pub async fn get_secret_with_version<'b>(
         &mut self,
-        secret_name: &'a str,
-        secret_version_name: &'a str,
+        secret_name: &'b str,
+        secret_version_name: &'b str,
     ) -> Result<KeyVaultSecret, Error> {
         let mut uri = self.vault_url.clone();
         uri.set_path(&format!("secrets/{}/{}", secret_name, secret_version_name));
@@ -266,9 +266,9 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn get_secret_versions(
+    pub async fn get_secret_versions<'b>(
         &mut self,
-        secret_name: &'a str,
+        secret_name: &'b str,
     ) -> Result<Vec<KeyVaultSecretBaseIdentifier>, Error> {
         let mut secret_versions = Vec::<KeyVaultSecretBaseIdentifier>::new();
 
@@ -330,10 +330,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn set_secret(
+    pub async fn set_secret<'b>(
         &mut self,
-        secret_name: &'a str,
-        new_secret_value: &'a str,
+        secret_name: &'b str,
+        new_secret_value: &'b str,
     ) -> Result<(), Error> {
         let mut uri = self.vault_url.clone();
         uri.set_path(&format!("secrets/{}", secret_name));
@@ -377,10 +377,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn update_secret_enabled(
+    pub async fn update_secret_enabled<'b>(
         &mut self,
-        secret_name: &'a str,
-        secret_version: &'a str,
+        secret_name: &'b str,
+        secret_version: &'b str,
         enabled: bool,
     ) -> Result<(), Error> {
         let mut attributes = Map::new();
@@ -418,10 +418,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn update_secret_recovery_level(
+    pub async fn update_secret_recovery_level<'b>(
         &mut self,
-        secret_name: &'a str,
-        secret_version: &'a str,
+        secret_name: &'b str,
+        secret_version: &'b str,
         recovery_level: RecoveryLevel,
     ) -> Result<(), Error> {
         let mut attributes = Map::new();
@@ -463,10 +463,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn update_secret_expiration_time(
+    pub async fn update_secret_expiration_time<'b>(
         &mut self,
-        secret_name: &'a str,
-        secret_version: &'a str,
+        secret_name: &'b str,
+        secret_version: &'b str,
         expiration_time: DateTime<Utc>,
     ) -> Result<(), Error> {
         let mut attributes = Map::new();
@@ -481,10 +481,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         Ok(())
     }
 
-    async fn update_secret(
+    async fn update_secret<'b>(
         &mut self,
-        secret_name: &'a str,
-        secret_version: &'a str,
+        secret_name: &'b str,
+        secret_version: &'b str,
         attributes: Map<String, Value>,
     ) -> Result<(), Error> {
         let mut uri = self.vault_url.clone();
@@ -521,7 +521,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn restore_secret(&mut self, backup_blob: &'a str) -> Result<(), Error> {
+    pub async fn restore_secret<'b>(&mut self, backup_blob: &'b str) -> Result<(), Error> {
         let mut uri = self.vault_url.clone();
         uri.set_path("secrets/restore");
         uri.set_query(Some(API_VERSION_PARAM));
@@ -559,9 +559,9 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn backup_secret(
+    pub async fn backup_secret<'b>(
         &mut self,
-        secret_name: &'a str,
+        secret_name: &'b str,
     ) -> Result<KeyVaultSecretBackupBlob, Error> {
         let mut uri = self.vault_url.clone();
         uri.set_path(&format!("secrets/{}/backup", secret_name));
@@ -604,7 +604,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn delete_secret(&mut self, secret_name: &'a str) -> Result<(), Error> {
+    pub async fn delete_secret<'b>(&mut self, secret_name: &'b str) -> Result<(), Error> {
         let mut uri = self.vault_url.clone();
         uri.set_path(&format!("secrets/{}", secret_name));
         uri.set_query(Some(API_VERSION_PARAM));
