@@ -229,12 +229,13 @@ impl CosmosClient {
 
                 let response = r#try!(response);
 
-                let continuation_token = response
+                let next_state = response
                     .continuation_token
                     .clone()
-                    .map(|ct| State::Continuation(ct))?;
+                    .map(|ct| State::Continuation(ct))
+                    .unwrap_or(State::Done);
 
-                Some((Ok(response), continuation_token))
+                Some((Ok(response), next_state))
             }
         })
     }
