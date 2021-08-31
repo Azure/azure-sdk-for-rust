@@ -3,11 +3,13 @@
 //! You can learn more about how the system works [here](https://docs.microsoft.com/rest/api/cosmos-db/permissions).
 mod authorization_token;
 mod permission;
+mod permission_response;
 mod permission_token;
 
 pub use authorization_token::AuthorizationToken;
 pub use authorization_token::AuthorizationTokenParsingError;
 pub use permission::{Permission, PermissionMode};
+pub(crate) use permission_response::PermissionResponse;
 pub use permission_token::PermissionToken;
 pub use permission_token::PermissionTokenParsingError;
 
@@ -29,5 +31,16 @@ impl ExpirySeconds {
 impl AddAsHeader for ExpirySeconds {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(headers::HEADER_DOCUMENTDB_EXPIRY_SECONDS, self.0)
+    }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), azure_core::HTTPHeaderError> {
+        request.headers_mut().append(
+            headers::HEADER_DOCUMENTDB_EXPIRY_SECONDS,
+            http::header::HeaderValue::from(self.0),
+        );
+        Ok(())
     }
 }

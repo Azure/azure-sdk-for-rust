@@ -15,7 +15,7 @@ async fn lease() {
 
     container
         .create()
-        .public_access(PublicAccess::Container)
+        .public_access(PublicAccess::None)
         .execute()
         .await
         .unwrap();
@@ -43,7 +43,7 @@ async fn break_lease() {
 
     container
         .create()
-        .public_access(PublicAccess::Container)
+        .public_access(PublicAccess::None)
         .execute()
         .await
         .unwrap();

@@ -34,8 +34,8 @@ impl CreateCollectionOptions {
         request: &mut HttpRequest,
         collection_name: &str,
     ) -> Result<(), crate::Error> {
-        azure_core::headers::add_optional_header2(&self.offer, request);
-        azure_core::headers::add_optional_header2(&self.consistency_level, request);
+        azure_core::headers::add_optional_header2(&self.offer, request)?;
+        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
 
         let collection = CreateCollectionBody {
             id: collection_name.as_ref(),

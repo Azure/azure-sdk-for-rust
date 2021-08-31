@@ -99,15 +99,7 @@ pub fn delete_type_permanent_from_headers(headers: &HeaderMap) -> Result<bool, E
 
 #[cfg(feature = "azurite_workaround")]
 pub fn delete_type_permanent_from_headers(headers: &HeaderMap) -> Result<Option<bool>, Error> {
-    let delete_type_permanent = headers
-        .get(DELETE_TYPE_PERMANENT)
-        .map(|delete_type_permanent| -> Result<_, Error> {
-            Ok(delete_type_permanent.to_str()?.parse::<bool>()?)
-        })
-        .transpose()?;
-
-    trace!("delete_type_permanent == {:?}", delete_type_permanent);
-    Ok(delete_type_permanent)
+    get_option_from_headers(headers, DELETE_TYPE_PERMANENT)
 }
 
 pub fn sequence_number_from_headers(headers: &HeaderMap) -> Result<u64, Error> {

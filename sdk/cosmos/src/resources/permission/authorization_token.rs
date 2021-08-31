@@ -4,7 +4,7 @@ use std::fmt;
 /// Authorization tokens for accessing Cosmos.
 ///
 /// Learn more about the different types of tokens [here](https://docs.microsoft.com/azure/cosmos-db/secure-access-to-data).
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Eq)]
 pub enum AuthorizationToken {
     /// Used for administrative resources: database accounts, databases, users, and permissions
     Primary(Vec<u8>),
