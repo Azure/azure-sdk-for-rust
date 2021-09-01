@@ -72,6 +72,7 @@ pub mod account_properties {
         SoftDeleted,
         Failed,
         Succeeded,
+        Canceled,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {

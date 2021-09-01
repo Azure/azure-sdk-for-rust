@@ -2,7 +2,6 @@
 // https://github.com/Azure/azure-rest-api-specs/tree/master/specification/storage/resource-manager
 
 use autorust_codegen::*;
-use std::collections::HashSet;
 
 fn main() -> Result<()> {
     let api_version = "2020-08-01-preview";
@@ -18,7 +17,7 @@ fn main() -> Result<()> {
         api_version: Some(api_version.to_owned()),
         output_folder: output_folder.into(),
         input_files: input_files.iter().map(Into::into).collect(),
-        box_properties: HashSet::new(),
+        ..Config::default()
     })?;
 
     let api_version = "2019-06-01";
@@ -34,7 +33,7 @@ fn main() -> Result<()> {
         api_version: Some(api_version.to_owned()),
         output_folder: output_folder.into(),
         input_files: input_files.iter().map(Into::into).collect(),
-        box_properties: HashSet::new(),
+        ..Config::default()
     })?;
 
     Ok(())

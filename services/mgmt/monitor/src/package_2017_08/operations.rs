@@ -12,7 +12,7 @@ pub mod autoscale_settings {
     ) -> std::result::Result<AutoscaleSettingResourceCollection, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/autoscalesettings",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/autoscalesettings",
             operation_config.base_path(),
             subscription_id,
             resource_group_name
@@ -86,7 +86,7 @@ pub mod autoscale_settings {
     ) -> std::result::Result<AutoscaleSettingResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/autoscalesettings/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/autoscalesettings/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -157,7 +157,7 @@ pub mod autoscale_settings {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/autoscalesettings/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/autoscalesettings/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -242,7 +242,7 @@ pub mod autoscale_settings {
     ) -> std::result::Result<AutoscaleSettingResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/autoscalesettings/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/autoscalesettings/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -312,7 +312,7 @@ pub mod autoscale_settings {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/autoscalesettings/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/autoscalesettings/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -381,7 +381,7 @@ pub mod autoscale_settings {
     ) -> std::result::Result<AutoscaleSettingResourceCollection, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/autoscalesettings",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/autoscalesettings",
             operation_config.base_path(),
             subscription_id
         );
@@ -449,7 +449,7 @@ pub mod operations {
     use crate::models::*;
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
-        let url_str = &format!("{}/providers/microsoft.insights/operations", operation_config.base_path(),);
+        let url_str = &format!("{}/providers/Microsoft.Insights/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
@@ -1107,7 +1107,7 @@ pub mod log_profiles {
     ) -> std::result::Result<LogProfileResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/logprofiles/{}",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
             operation_config.base_path(),
             subscription_id,
             log_profile_name
@@ -1176,7 +1176,7 @@ pub mod log_profiles {
     ) -> std::result::Result<LogProfileResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/logprofiles/{}",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
             operation_config.base_path(),
             subscription_id,
             log_profile_name
@@ -1243,7 +1243,7 @@ pub mod log_profiles {
     ) -> std::result::Result<LogProfileResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/logprofiles/{}",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
             operation_config.base_path(),
             subscription_id,
             log_profile_name
@@ -1311,7 +1311,7 @@ pub mod log_profiles {
     ) -> std::result::Result<(), delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/logprofiles/{}",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
             operation_config.base_path(),
             subscription_id,
             log_profile_name
@@ -1368,7 +1368,7 @@ pub mod log_profiles {
     ) -> std::result::Result<LogProfileCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/logprofiles",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles",
             operation_config.base_path(),
             subscription_id
         );
@@ -1433,7 +1433,7 @@ pub mod diagnostic_settings {
     ) -> std::result::Result<DiagnosticSettingsResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/diagnosticSettings/{}",
+            "{}/{}/providers/Microsoft.Insights/diagnosticSettings/{}",
             operation_config.base_path(),
             resource_uri,
             name
@@ -1502,7 +1502,7 @@ pub mod diagnostic_settings {
     ) -> std::result::Result<DiagnosticSettingsResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/diagnosticSettings/{}",
+            "{}/{}/providers/Microsoft.Insights/diagnosticSettings/{}",
             operation_config.base_path(),
             resource_uri,
             name
@@ -1573,7 +1573,7 @@ pub mod diagnostic_settings {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/diagnosticSettings/{}",
+            "{}/{}/providers/Microsoft.Insights/diagnosticSettings/{}",
             operation_config.base_path(),
             resource_uri,
             name
@@ -1641,7 +1641,7 @@ pub mod diagnostic_settings {
     ) -> std::result::Result<DiagnosticSettingsResourceCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/diagnosticSettings",
+            "{}/{}/providers/Microsoft.Insights/diagnosticSettings",
             operation_config.base_path(),
             resource_uri
         );
@@ -1711,7 +1711,7 @@ pub mod diagnostic_settings_category {
     ) -> std::result::Result<DiagnosticSettingsCategoryResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/diagnosticSettingsCategories/{}",
+            "{}/{}/providers/Microsoft.Insights/diagnosticSettingsCategories/{}",
             operation_config.base_path(),
             resource_uri,
             name
@@ -1778,7 +1778,7 @@ pub mod diagnostic_settings_category {
     ) -> std::result::Result<DiagnosticSettingsCategoryResourceCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/diagnosticSettingsCategories",
+            "{}/{}/providers/Microsoft.Insights/diagnosticSettingsCategories",
             operation_config.base_path(),
             resource_uri
         );

@@ -1183,10 +1183,23 @@ pub mod settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
+        Anomalies,
         EyesOn,
         EntityAnalytics,
         Ueba,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Anomalies {
+    #[serde(flatten)]
+    pub settings: Settings,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AnomaliesSettingsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AnomaliesSettingsProperties {
+    #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EyesOn {
@@ -2540,33 +2553,19 @@ pub struct MetadataParentId {}
 pub struct MetadataVersion {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MetadataKind {
-    #[serde(rename = "dataConnector")]
     DataConnector,
-    #[serde(rename = "dataType")]
     DataType,
-    #[serde(rename = "workbook")]
     Workbook,
-    #[serde(rename = "workbookTemplate")]
     WorkbookTemplate,
-    #[serde(rename = "playbook")]
     Playbook,
-    #[serde(rename = "playbookTemplate")]
     PlaybookTemplate,
-    #[serde(rename = "analyticRuleTemplate")]
-    AnalyticRuleTemplate,
-    #[serde(rename = "analyticRule")]
-    AnalyticRule,
-    #[serde(rename = "huntingQuery")]
+    AnalyticsRuleTemplate,
+    AnalyticsRule,
     HuntingQuery,
-    #[serde(rename = "investigationQuery")]
     InvestigationQuery,
-    #[serde(rename = "parser")]
     Parser,
-    #[serde(rename = "watchlist")]
     Watchlist,
-    #[serde(rename = "watchlistTemplate")]
     WatchlistTemplate,
-    #[serde(rename = "solution")]
     Solution,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2581,13 +2580,9 @@ pub mod metadata_source {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
-        #[serde(rename = "localWorkspace")]
         LocalWorkspace,
-        #[serde(rename = "community")]
         Community,
-        #[serde(rename = "solution")]
         Solution,
-        #[serde(rename = "sourceRepository")]
         SourceRepository,
     }
 }
@@ -2614,11 +2609,8 @@ pub mod metadata_support {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
-        #[serde(rename = "microsoft")]
         Microsoft,
-        #[serde(rename = "developer")]
-        Developer,
-        #[serde(rename = "community")]
+        Partner,
         Community,
     }
 }
@@ -2649,8 +2641,8 @@ pub mod metadata_dependencies {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataProperties {
-    #[serde(rename = "contentId")]
-    pub content_id: MetadataContentId,
+    #[serde(rename = "contentId", default, skip_serializing_if = "Option::is_none")]
+    pub content_id: Option<MetadataContentId>,
     #[serde(rename = "parentId")]
     pub parent_id: MetadataParentId,
     #[serde(default, skip_serializing_if = "Option::is_none")]

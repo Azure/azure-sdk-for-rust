@@ -1,6 +1,5 @@
 [workspace]
 members = [
-  "autorust",
   "codegen",
   "openapi",
 ]
