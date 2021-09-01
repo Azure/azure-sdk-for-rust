@@ -67,18 +67,20 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_document_client(doc.id.clone(), &doc.id)?;
 
     let get_document_response = document_client
-        .get_document()
-        .consistency_level(&create_document_response)
-        .execute::<serde_json::Value>()
+        .get_document::<serde_json::Value>(
+            Context::new(),
+            GetDocumentOptions::new(&document_client).consistency_level(&create_document_response),
+        )
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 
     let document_client = client.clone().into_document_client("ciccia", &doc.id)?;
 
     let get_document_response = document_client
-        .get_document()
-        .consistency_level(&get_document_response)
-        .execute::<serde_json::Value>()
+        .get_document::<serde_json::Value>(
+            Context::new(),
+            GetDocumentOptions::new(&document_client).consistency_level(&create_document_response),
+        )
         .await?;
     println!(
         "get_document_response == {:#?}\n\n\n",
