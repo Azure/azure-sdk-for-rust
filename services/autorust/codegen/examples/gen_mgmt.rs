@@ -16,10 +16,13 @@ const ONLY_SERVICES: &[&str] = &[
     // "cosmos-db",
     // "databricks",
     // "marketplace",
+    // "dataprotection",
+    // "databox",
 ];
 
 const SKIP_SERVICES: &[&str] = &[
-    "automation",                 // TODO #81 DataType::File
+    "automation", // TODO #81 DataType::File
+    "datamigration",
     "deploymentmanager",          // TODO #80 path parameters
     "deviceprovisioningservices", // TODO #82 certificate_name used as parameter more than once
     "dnc",                        // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
@@ -40,11 +43,14 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("analysisservices", "package-2017-08"),
     ("authorization", "package-2018-05-01-preview"),
     ("authorization", "package-2021-03-01-preview-only"),
+    ("authorization", "package-2021-07-01-preview-only"),
     ("azureactivedirectory", "package-preview-2020-07"),
     ("compute", "package-2020-10-01-preview"),      // TODO #81 DataType::File
     ("compute", "package-2020-10-01-preview-only"), // TODO #81 DataType::File
     ("compute", "package-2021-03-01"),              // TODO #81 DataType::File
     ("compute", "package-2021-03-01-only"),         // TODO #81 DataType::File
+    ("compute", "package-2021-04-01"),              // TODO #81 DataType::File
+    ("compute", "package-2021-07-01"),              // TODO #81 DataType::File
     ("consumption", "package-2019-11"),             // ReservationRecommendationDetails_Get has a path and query param both named "scope"
     ("consumption", "package-2021-05"),
     ("cosmos-db", "package-2021-06"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14996
@@ -56,6 +62,7 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("datamigration", "package-2018-03-31-preview"),
     ("datamigration", "package-2018-03-15-preview"),
     ("datamigration", "package-2017-11-15-preview"),
+    ("datamigration", "package-2021-06"),
     ("mediaservices", "package-2019-05-preview"), // invalid unicode character of a dash instead of a hyphen https://github.com/Azure/azure-rest-api-specs/pull/11576
     ("marketplace", "package-2020-01-01"),
     ("marketplace", "package-2020-12-01"),
@@ -83,8 +90,11 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2020-11-01/databox.json", "transferAllDetails", "include"),
     ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-03-01/databox.json", "transferFilterDetails", "include"),
     ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-03-01/databox.json", "transferAllDetails", "include"),
+    ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-05-01/databox.json", "transferFilterDetails", "include"),
+    ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-05-01/databox.json", "transferAllDetails", "include"),
     // dataprotection
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-01-01/dataprotection.json", "InnerError", "embeddedInnerError"),
+    ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-07-01/dataprotection.json", "InnerError", "embeddedInnerError"),
     // hardwaresecuritymodels
     ("../../../azure-rest-api-specs/specification/hardwaresecuritymodules/resource-manager/Microsoft.HardwareSecurityModules/preview/2018-10-31-preview/dedicatedhsm.json", "Error", "innererror"),
     // logic
