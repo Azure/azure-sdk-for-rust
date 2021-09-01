@@ -70,11 +70,9 @@ fn new_app() -> App<'static> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
-    use clap::ErrorKind;
-
     use super::*;
+    use clap::ErrorKind;
+    use std::path::PathBuf;
 
     pub type Error = Box<dyn std::error::Error + Send + Sync>;
     pub type Result<T> = std::result::Result<T, Error>;
