@@ -203,6 +203,7 @@ fn create_function(
 
     let examples_name = ident(&format!("{}_examples", function_name.to_snake_case())).map_err(Error::FunctionName)?;
     let examples = get_operation_examples(operation_verb);
+    // TODO make configurable
     let base_path = doc_file.clone();
     let examples_mod = create_examples_mod(base_path, &examples_name, &examples)?;
     let first_example = examples.0.first();
@@ -368,6 +369,13 @@ fn create_function(
         }
         None => {}
     }
+    // Use operationId as the route name
+    match &operation_verb.operation().operation_id {
+        Some(operation_id) => {
+            verb_parts.push(quote! { name = #operation_id });
+        }
+        None => {}
+    }
     let route = quote! { #verb (#(#verb_parts),*) };
 
     let first_response = responses.0.first().ok_or_else(|| Error::OperationMissingResponses)?;
@@ -401,8 +409,8 @@ fn create_examples_mod(base_path: &Path, name: &TokenStream, examples: &Operatio
     let mut values = TokenStream::new();
     for example in &examples.0 {
         let name = ident(&example.const_name()).map_err(Error::ExamplesName)?;
-        let file = path::join(base_path, &example.file).map_err(Error::ExamplePath)?;
-        let file = path::join("../", file).map_err(Error::ExamplePath)?; // TODO add to config
+        let trim = "../../../azure-rest-api-specs-pr/specification/";
+        let file = path::join(&base_path.to_str().unwrap()[trim.len()..], &example.file).map_err(Error::ExamplePath)?;
         let file = file.to_str().ok_or_else(|| Error::ExamplePathNotUtf8)?;
         let file = file.replace("\\", "/");
         values.extend(quote! {
