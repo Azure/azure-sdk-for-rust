@@ -1,8 +1,10 @@
 use crate::{identifier::ident, spec, Config, PropertyName, ResolvedSchema, Spec};
 use autorust_openapi::{DataType, ReferenceOr, Schema, SchemaCommon};
 use heck::CamelCase;
+use once_cell::sync::Lazy;
 use proc_macro2::TokenStream;
 use quote::quote;
+use regex::Regex;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 
@@ -51,6 +53,8 @@ pub enum Error {
     StatusCodeName(#[source] crate::identifier::Error),
     #[error("creating type name for response: {0}")]
     ResponseTypeName(#[source] crate::identifier::Error),
+    #[error("creating type for response: {0}")]
+    ResponseType(#[source] crate::status_codes::Error),
     #[error("creating name for param: {0}")]
     ParamName(#[source] crate::identifier::Error),
     #[error("creating name for property: {0}")]
@@ -69,6 +73,20 @@ pub enum Error {
     StructFieldName(#[source] crate::identifier::Error),
     #[error("api-version is missing")]
     MissingApiVersion,
+    #[error("operation {0} is missing an x-ms-examples")]
+    OperationMissingExample(String),
+    #[error("operation is missing responses")]
+    OperationMissingResponses,
+    #[error("creating path for example {0}")]
+    ExamplePath(#[source] crate::path::Error),
+    #[error("example path not utf8")]
+    ExamplePathNotUtf8,
+    #[error("status code required")]
+    StatusCodeRequired,
+    #[error("creating name for examples")]
+    ExamplesName(#[source] crate::identifier::Error),
+    #[error("status code: {0}")]
+    StatusCode(#[from] crate::status_codes::Error),
 }
 
 /// Whether or not to pass a type is a reference.
@@ -198,4 +216,11 @@ pub fn create_mod(api_version: &str) -> TokenStream {
         pub mod operations;
         pub const API_VERSION: &str = #api_version;
     }
+}
+
+pub static PARAM_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\{(\w+)\}").unwrap());
+
+pub fn parse_params(path: &str) -> Vec<String> {
+    // capture 0 is the whole match and 1 is the actual capture like other languages
+    PARAM_RE.captures_iter(path).into_iter().map(|c| c[1].to_string()).collect()
 }

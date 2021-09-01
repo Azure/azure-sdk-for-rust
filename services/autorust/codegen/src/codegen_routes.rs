@@ -1,33 +1,46 @@
+use crate::status_codes::{get_response_type_ident, get_status_code_ident};
 use crate::{
     codegen::{
-        create_generated_by_header, get_type_name_for_schema, get_type_name_for_schema_ref, is_array, is_string, require, AsReference,
-        Error,
+        create_generated_by_header, get_type_name_for_schema, get_type_name_for_schema_ref, is_array, parse_params, AsReference, Error,
+        PARAM_RE,
     },
     identifier::ident,
-    spec,
+    path, spec,
     status_codes::{get_error_responses, get_response_type_name, get_status_code_name, get_success_responses, has_default_response},
     CodeGen, OperationVerb,
 };
-use autorust_openapi::{CollectionFormat, Parameter, ParameterType, Response};
+use autorust_openapi::{ParameterType, ReferenceOr, Response, StatusCode};
+use heck::CamelCase;
+use heck::ShoutySnakeCase;
 use heck::SnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
-use regex::Regex;
-use std::{collections::HashSet, path::Path};
+use regex::Replacer;
+use std::path::Path;
+
+/// Create a route call from the function name and to routes
+fn add_route(routes: &mut Vec<TokenStream>, module_name: Option<&str>, function_name: &str) -> Result<(), Error> {
+    let function_name = ident(function_name).map_err(Error::FunctionName)?;
+    match module_name {
+        Some(module_name) => {
+            let module_name = ident(module_name).map_err(Error::ModuleName)?;
+            routes.push(quote! {
+                #module_name::#function_name
+            });
+        }
+        None => {
+            routes.push(quote! {
+                #function_name
+            });
+        }
+    }
+    Ok(())
+}
 
 pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
-    let mut file = TokenStream::new();
-    file.extend(create_generated_by_header());
-    file.extend(quote! {
-        #![allow(unused_mut)]
-        #![allow(unused_variables)]
-        #![allow(unused_imports)]
-        use super::models::*;
-
-    });
-    let param_re = Regex::new(r"\{(\w+)\}").unwrap();
     let mut modules: IndexMap<Option<String>, TokenStream> = IndexMap::new();
+    let mut routes = Vec::new();
     // println!("input_files {:?}", cg.input_files());
     for (doc_file, doc) in cg.spec.docs() {
         // only operations from listed input files
@@ -37,7 +50,8 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
             for (path, item) in &paths {
                 for op in spec::path_item_operations(item) {
                     let (module_name, function_name) = op.function_name(path);
-                    let function = create_function(cg, doc_file, path, &op, &param_re, &function_name)?;
+                    add_route(&mut routes, module_name.as_deref(), function_name.as_ref())?;
+                    let function = create_function(cg, doc_file, path, &op, &function_name)?;
                     if modules.contains_key(&module_name) {}
                     match modules.get_mut(&module_name) {
                         Some(module) => {
@@ -53,13 +67,29 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
             }
         }
     }
+
+    let mut file = TokenStream::new();
+    file.extend(create_generated_by_header());
+    file.extend(quote! {
+        #![allow(unused_mut)]
+        #![allow(unused_variables)]
+        #![allow(unused_imports)]
+        use crate::read_example_response_body;
+        use super::models::*;
+        use rocket::serde::json::Json;
+    });
+    file.extend(quote! {
+        pub fn routes() -> Vec<rocket::Route> {
+            routes![#(#routes),*]
+        }
+    });
     for (module_name, module) in modules {
         match module_name {
             Some(module_name) => {
                 let name = ident(&module_name).map_err(Error::ModuleName)?;
                 file.extend(quote! {
                     pub mod #name {
-                        use super::models::*;
+                        use super::*;
                         #module
                     }
                 });
@@ -72,17 +102,93 @@ pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
     Ok(file)
 }
 
+pub struct OperationParameters(Vec<OperationParameter>);
+
+#[allow(dead_code)]
+pub struct OperationParameter {
+    name: String,
+    in_: ParameterType,
+    type_: TokenStream,
+    is_required: bool,
+    is_array: bool,
+}
+
+#[allow(dead_code)]
+impl OperationParameter {
+    pub fn snake_case_name(&self) -> String {
+        self.name.to_snake_case()
+    }
+    pub fn snake_case_name_ident(&self) -> Result<TokenStream, Error> {
+        ident(&self.snake_case_name()).map_err(Error::ParamName)
+    }
+    pub fn in_body(&self) -> bool {
+        self.in_ == ParameterType::Body
+    }
+    pub fn in_path(&self) -> bool {
+        self.in_ == ParameterType::Path
+    }
+    pub fn in_query(&self) -> bool {
+        self.in_ == ParameterType::Query
+    }
+    pub fn in_header(&self) -> bool {
+        self.in_ == ParameterType::Header
+    }
+    pub fn in_form(&self) -> bool {
+        self.in_ == ParameterType::Form
+    }
+}
+
+impl OperationParameters {
+    pub fn create(cg: &CodeGen, doc_file: &Path, operation: &OperationVerb) -> Result<OperationParameters, Error> {
+        let parameters = cg.spec.resolve_parameters(doc_file, &operation.operation().parameters)?;
+        let mut v = Vec::new();
+        for param in &parameters {
+            let name = param.name.to_owned();
+            let in_ = param.in_.to_owned();
+            if name != "api-version" {
+                let type_ = {
+                    if let Some(_param_type) = &param.common.type_ {
+                        get_type_name_for_schema(&param.common, AsReference::True)?
+                    } else if let Some(schema) = &param.schema {
+                        get_type_name_for_schema_ref(schema, AsReference::False)?
+                    } else {
+                        eprintln!("WARN unknown param type for {}", &param.name);
+                        quote! { &serde_json::Value }
+                    }
+                };
+                let is_required = param.required.unwrap_or(false);
+                let is_array = is_array(&param.common);
+                v.push(OperationParameter {
+                    name,
+                    in_,
+                    type_,
+                    is_required,
+                    is_array,
+                })
+            }
+        }
+        Ok(OperationParameters(v))
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<OperationParameter> {
+        self.0.iter()
+    }
+
+    pub fn get_body(&self) -> Option<&OperationParameter> {
+        self.iter().find(|param| param.in_body())
+    }
+}
+
 fn create_function(
     cg: &CodeGen,
     doc_file: &Path,
     path: &str,
     operation_verb: &OperationVerb,
-    param_re: &Regex,
     function_name: &str,
 ) -> Result<TokenStream, Error> {
     let fname = ident(function_name).map_err(Error::FunctionName)?;
 
-    let params = parse_params(param_re, path);
+    let params = parse_params(path);
     // println!("path params {:#?}", params);
     let params: Result<Vec<_>, Error> = params
         .iter()
@@ -91,150 +197,15 @@ fn create_function(
     let params = params?;
     let _url_str_args = quote! { #(#params),* };
 
-    let fpath = format!("{{}}{}", &format_path(param_re, path));
+    let parameters = OperationParameters::create(cg, doc_file, &operation_verb)?;
 
-    let parameters: Vec<Parameter> = cg.spec.resolve_parameters(doc_file, &operation_verb.operation().parameters)?;
-    let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
-    let has_param_api_version = param_names.contains("api-version");
-    let mut skip = HashSet::new();
-    if cg.api_version().is_some() {
-        skip.insert("api-version");
-    }
-    let parameters = parameters.into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
+    let fparams = create_function_params(&parameters)?;
 
-    let fparams = create_function_params(cg, doc_file, &parameters)?;
-
-    // see if there is a body parameter
-    // let fresponse = create_function_return(operation_verb)?;
-
-    let mut ts_request_builder = TokenStream::new();
-
-    // auth
-    ts_request_builder.extend(quote! {
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource()).await
-                .map_err(#fname::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-    });
-
-    // api-version param
-    if has_param_api_version {
-        if let Some(_api_version) = cg.api_version() {
-            ts_request_builder.extend(quote! {
-                url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-            });
-        }
-    }
-
-    // params
-    let mut has_body_parameter = false;
-    for param in &parameters {
-        let param_name = &param.name;
-        let param_name_var = get_param_name(&param)?;
-        let required = param.required.unwrap_or(false);
-        match param.in_ {
-            ParameterType::Path => {} // handled above
-            ParameterType::Query => {
-                let is_array = is_array(&param.common);
-                let query_body = if is_array {
-                    let collection_format = param.collection_format.as_ref().unwrap_or(&CollectionFormat::Csv);
-                    match collection_format {
-                        CollectionFormat::Multi => Some(
-                            if is_string(&param.common){
-                                quote! {
-                                    for value in #param_name_var {
-                                        url.query_pairs_mut().append_pair(#param_name, value);
-                                    }
-                                }
-                            } else {
-                                quote! {
-                                    for value in #param_name_var {
-                                        url.query_pairs_mut().append_pair(#param_name, value.to_string().as_str());
-                                    }
-                                }
-                            }
-                        ),
-                        CollectionFormat::Csv | // TODO #71
-                        CollectionFormat::Ssv |
-                        CollectionFormat::Tsv |
-                        CollectionFormat::Pipes => None,
-                    }
-                } else {
-                    Some(if is_string(&param.common) {
-                        quote! {
-                            url.query_pairs_mut().append_pair(#param_name, #param_name_var);
-                        }
-                    } else {
-                        quote! {
-                            url.query_pairs_mut().append_pair(#param_name, #param_name_var.to_string().as_str());
-                        }
-                    })
-                };
-                if let Some(query_body) = query_body {
-                    if required || is_array {
-                        ts_request_builder.extend(query_body);
-                    } else {
-                        ts_request_builder.extend(quote! {
-                            if let Some(#param_name_var) = #param_name_var {
-                                #query_body
-                            }
-                        });
-                    }
-                }
-            }
-            ParameterType::Header => {
-                if required {
-                    ts_request_builder.extend(quote! {
-                        req_builder = req_builder.header(#param_name, #param_name_var);
-                    });
-                } else {
-                    ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = #param_name_var {
-                            req_builder = req_builder.header(#param_name, #param_name_var);
-                        }
-                    });
-                }
-            }
-            ParameterType::Body => {
-                has_body_parameter = true;
-                if required {
-                    ts_request_builder.extend(quote! {
-                        let req_body = azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?;
-                    });
-                } else {
-                    ts_request_builder.extend(quote! {
-                        let req_body =
-                            if let Some(#param_name_var) = #param_name_var {
-                                azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?
-                            } else {
-                                bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-                            };
-                    });
-                }
-            }
-            ParameterType::Form => {
-                if required {
-                    ts_request_builder.extend(quote! {
-                        req_builder = req_builder.form(#param_name_var);
-                    });
-                } else {
-                    ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = #param_name_var {
-                            req_builder = req_builder.form(#param_name_var);
-                        }
-                    });
-                }
-            }
-        }
-    }
-
-    if !has_body_parameter {
-        ts_request_builder.extend(quote! {
-            let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        });
-    }
+    let examples_name = ident(&format!("{}_examples", function_name.to_snake_case())).map_err(Error::FunctionName)?;
+    let examples = get_operation_examples(operation_verb);
+    let base_path = doc_file.clone();
+    let examples_mod = create_examples_mod(base_path, &examples_name, &examples)?;
+    let first_example = examples.0.first();
 
     let responses = &operation_verb.operation().responses;
     let success_responses = get_success_responses(responses);
@@ -242,12 +213,11 @@ fn create_function(
     let is_single_response = success_responses.len() == 1;
     let has_default_response = has_default_response(responses);
 
-    let fresponse = if is_single_response {
-        let tp = create_response_type(&success_responses[0])?.unwrap_or(quote! { () });
-        quote! { std::result::Result<#tp, #fname::Error> }
-    } else {
-        quote! { std::result::Result<#fname::Response, #fname::Error> }
-    };
+    let responses = get_operation_responses(&operation_verb)?;
+    let responder_name = ident(&format!("{}Response", function_name.to_camel_case())).map_err(Error::FunctionName)?;
+    let responder = create_responder(&responder_name, &responses)?;
+
+    let fresponse = quote! { Result<#responder_name, crate::CloudErrorResponse> };
 
     let mut response_enum = TokenStream::new();
     if !is_single_response {
@@ -258,7 +228,7 @@ fn create_function(
                 Some(tp) => quote! { (#tp) },
                 None => quote! {},
             };
-            let enum_type_name = ident(&get_response_type_name(status_code)).map_err(Error::ResponseTypeName)?;
+            let enum_type_name = get_response_type_name(status_code)?;
             success_responses_ts.extend(quote! { #enum_type_name#tp, })
         }
         response_enum.extend(quote! {
@@ -276,7 +246,7 @@ fn create_function(
             Some(tp) => quote! { value: models::#tp, },
             None => quote! {},
         };
-        let response_type = &get_response_type_name(status_code);
+        let response_type = &get_response_type_name(status_code)?;
         if response_type == "DefaultResponse" {
             error_responses_ts.extend(quote! {
                 #[error("HTTP status code {}", status_code)]
@@ -302,8 +272,8 @@ fn create_function(
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
-                let status_code_name = ident(&get_status_code_name(status_code)).map_err(Error::StatusCodeName)?;
-                let response_type_name = ident(&get_response_type_name(status_code)).map_err(Error::ResponseTypeName)?;
+                let status_code_name = get_status_code_ident(status_code)?;
+                let response_type_name = get_response_type_name(status_code)?;
                 if is_single_response {
                     match tp {
                         Some(tp) => {
@@ -351,8 +321,8 @@ fn create_function(
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
-                let status_code_name = ident(&get_status_code_name(status_code)).map_err(Error::StatusCodeName)?;
-                let response_type_name = ident(&get_response_type_name(status_code)).map_err(Error::ResponseTypeName)?;
+                let status_code_name = ident(get_status_code_name(status_code)?).map_err(Error::StatusCodeName)?;
+                let response_type_name = get_response_type_name(status_code)?;
                 match tp {
                     Some(tp) => {
                         match_status.extend(quote! {
@@ -375,42 +345,6 @@ fn create_function(
             autorust_openapi::StatusCode::Default => {}
         }
     }
-    // default must be last
-    if has_default_response {
-        for (status_code, rsp) in responses {
-            match status_code {
-                autorust_openapi::StatusCode::Code(_) => {}
-                autorust_openapi::StatusCode::Default => {
-                    let tp = create_response_type(rsp)?;
-                    match tp {
-                        Some(tp) => {
-                            match_status.extend(quote! {
-                                status_code => {
-                                    let rsp_body = rsp.body();
-                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
-                                    Err(#fname::Error::DefaultResponse{status_code, value: rsp_value})
-                                }
-                            });
-                        }
-                        None => {
-                            match_status.extend(quote! {
-                                status_code => {
-                                    Err(#fname::Error::DefaultResponse{status_code})
-                                }
-                            });
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        match_status.extend(quote! {
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(#fname::Error::UnexpectedResponse{status_code, body: rsp_body.clone()})
-            }
-        });
-    }
 
     let verb = match operation_verb {
         OperationVerb::Get(_) => quote! { get },
@@ -423,55 +357,77 @@ fn create_function(
     };
 
     let api_version = cg.api_version().ok_or_else(|| Error::MissingApiVersion)?;
-    let path = format!("{}?api-version={}", fpath, api_version);
-    let route = quote! { #verb (#path) };
+    let route_path = route_path(path);
+    let mut verb_parts = Vec::new();
+    let path = format!("{}?api-version={}", route_path, api_version);
+    verb_parts.push(quote! { #path });
+    match parameters.get_body() {
+        Some(param) => {
+            let data = format!("<{}>", param.snake_case_name());
+            verb_parts.push(quote! { data = #data });
+        }
+        None => {}
+    }
+    let route = quote! { #verb (#(#verb_parts),*) };
+
+    let first_response = responses.0.first().ok_or_else(|| Error::OperationMissingResponses)?;
+    let status_code = &StatusCode::Code(first_response.status_code.ok_or_else(|| Error::StatusCodeRequired)?);
+    let status_code_name = get_status_code_ident(status_code)?;
+    let response_type = get_response_type_ident(status_code)?;
+    let first_responder = match (&first_example, &first_response.body_type_name) {
+        (Some(first_example), Some(_body)) => {
+            let first_example_name = ident(&first_example.const_name()).map_err(Error::ExamplesName)?;
+            quote! {
+                #responder_name::#response_type(read_example_response_body(#examples_name::#first_example_name, &rocket::http::Status::#status_code_name)?)
+            }
+        }
+        _ => quote! {
+            #responder_name::#response_type
+        },
+    };
+
     let func = quote! {
+        #responder
+        #examples_mod
         #[#route]
         pub fn #fname(#fparams) -> #fresponse {
-        }
-        pub mod #fname {
+            Ok(#first_responder)
         }
     };
     Ok(TokenStream::from(func))
 }
 
-fn parse_params(param_re: &Regex, path: &str) -> Vec<String> {
-    // capture 0 is the whole match and 1 is the actual capture like other languages
-    param_re.captures_iter(path).into_iter().map(|c| c[1].to_string()).collect()
+fn create_examples_mod(base_path: &Path, name: &TokenStream, examples: &OperationExamples) -> Result<TokenStream, Error> {
+    let mut values = TokenStream::new();
+    for example in &examples.0 {
+        let name = ident(&example.const_name()).map_err(Error::ExamplesName)?;
+        let file = path::join(base_path, &example.file).map_err(Error::ExamplePath)?;
+        let file = path::join("../", file).map_err(Error::ExamplePath)?; // TODO add to config
+        let file = file.to_str().ok_or_else(|| Error::ExamplePathNotUtf8)?;
+        let file = file.replace("\\", "/");
+        values.extend(quote! {
+            pub const #name: &str = #file;
+        });
+    }
+    Ok(quote! {
+        pub mod #name {
+            #values
+        }
+    })
 }
 
-fn format_path(param_re: &Regex, path: &str) -> String {
-    param_re.replace_all(path, "{}").to_string()
-}
-
-fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Parameter>) -> Result<TokenStream, Error> {
+fn create_function_params(parameters: &OperationParameters) -> Result<TokenStream, Error> {
     let mut params: Vec<TokenStream> = Vec::new();
-    for param in parameters {
-        let name = get_param_name(param)?;
-        let tp = get_param_type(param)?;
+    for param in parameters.iter() {
+        let name = param.snake_case_name_ident()?;
+        let mut tp = &param.type_;
+        let body_tp = quote! { Json<#tp> };
+        if param.in_body() {
+            tp = &body_tp;
+        }
         params.push(quote! { #name: #tp });
     }
-    let slf = quote! { operation_config: &crate::OperationConfig };
-    params.insert(0, slf);
     Ok(quote! { #(#params),* })
-}
-
-fn get_param_name(param: &Parameter) -> Result<TokenStream, Error> {
-    ident(&param.name.to_snake_case()).map_err(Error::ParamName)
-}
-
-fn get_param_type(param: &Parameter) -> Result<TokenStream, Error> {
-    let is_required = param.required.unwrap_or(false);
-    let is_array = is_array(&param.common);
-    let tp = if let Some(_param_type) = &param.common.type_ {
-        get_type_name_for_schema(&param.common, AsReference::True)?
-    } else if let Some(schema) = &param.schema {
-        get_type_name_for_schema_ref(schema, AsReference::True)?
-    } else {
-        eprintln!("WARN unkown param type for {}", &param.name);
-        quote! { &serde_json::Value }
-    };
-    Ok(require(is_required || is_array, tp))
 }
 
 fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>, Error> {
@@ -479,5 +435,132 @@ fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>, Error> {
         Ok(Some(get_type_name_for_schema_ref(schema, AsReference::False)?))
     } else {
         Ok(None)
+    }
+}
+
+struct ParamReplacer {}
+
+impl regex::Replacer for ParamReplacer {
+    fn replace_append(&mut self, caps: &regex::Captures, dst: &mut String) {
+        let name = caps.get(1).unwrap().as_str();
+        let name = format!("<{}>", name.to_snake_case());
+        dst.push_str(name.as_str())
+    }
+}
+
+fn route_path(spec_path: &str) -> String {
+    let mut rep = ParamReplacer {};
+    PARAM_RE.replace_all(spec_path, rep.by_ref()).to_string()
+}
+
+#[derive(Debug)]
+struct OperationExample {
+    name: String,
+    file: String,
+}
+
+impl OperationExample {
+    pub fn const_name(&self) -> String {
+        self.name.to_shouty_snake_case()
+    }
+}
+
+fn get_operation_examples(operation: &OperationVerb) -> OperationExamples {
+    let operation = operation.operation();
+    let mut examples = Vec::new();
+    for (name, example) in &operation.x_ms_examples {
+        match example {
+            ReferenceOr::Reference { reference, .. } => match &reference.file {
+                Some(file) => {
+                    let name = name.to_owned();
+                    let file = file.to_owned();
+                    examples.push(OperationExample { name, file });
+                }
+                None => {}
+            },
+            ReferenceOr::Item(_) => {}
+        }
+    }
+    OperationExamples(examples)
+}
+
+struct OperationExamples(pub Vec<OperationExample>);
+
+#[derive(Debug)]
+struct OperationResponse {
+    status_code: Option<u16>,
+    body_type_name: Option<TokenStream>,
+}
+
+struct OperationRespones(pub Vec<OperationResponse>);
+
+fn get_operation_responses(operation: &OperationVerb) -> Result<OperationRespones, Error> {
+    let operation = operation.operation();
+    let mut responses = Vec::new();
+    for (status_code, response) in get_success_responses(&operation.responses) {
+        let body_type_name = response
+            .schema
+            .map(|ref schema| get_type_name_for_schema_ref(schema, AsReference::False))
+            .transpose()?;
+        let status_code = match status_code {
+            StatusCode::Code(status_code) => Some(status_code),
+            StatusCode::Default => None,
+        };
+        responses.push(OperationResponse {
+            status_code,
+            body_type_name,
+        });
+    }
+    Ok(OperationRespones(responses))
+}
+
+fn create_responder(name: &TokenStream, responses: &OperationRespones) -> Result<TokenStream, Error> {
+    let mut values = Vec::new();
+    let mut respond_tos = Vec::new();
+    for response in &responses.0 {
+        let status_code = &response.status_code;
+        let status_code = &StatusCode::Code(status_code.ok_or_else(|| Error::StatusCodeRequired)?);
+        let status_code_name = get_status_code_ident(status_code)?;
+        let response_type = get_response_type_ident(status_code)?;
+        match &response.body_type_name {
+            Some(body) => {
+                values.push(quote! { #response_type(#body) });
+                respond_tos.push(quote! {
+                    Self::#response_type(v) => (rocket::http::Status::#status_code_name, Json(v)).respond_to(request)
+                });
+            }
+            None => {
+                values.push(quote! { #response_type });
+                respond_tos.push(quote! {
+                    Self::#response_type => rocket::http::Status::#status_code_name.respond_to(request)
+                });
+            }
+        };
+    }
+    Ok(quote! {
+        pub enum #name {
+            #(#values),*
+        }
+        impl<'r> rocket::response::Responder<'r, 'static> for #name {
+            fn respond_to(self, request: &'r rocket::Request<'_>) -> rocket::response::Result<'static> {
+                match self {
+                    #(#respond_tos),*
+                }
+            }
+        }
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_route_path() {
+        let spec_path = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.AVS/privateClouds";
+        assert_eq!(
+            route_path(spec_path),
+            "/subscriptions/<subscription_id>/resourceGroups/<resource_group_name>/providers/Microsoft.AVS/privateClouds"
+        );
     }
 }

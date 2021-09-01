@@ -50,8 +50,7 @@ fn new_app() -> App<'static> {
                 .about("OpenAPI file to use as input (use this setting repeatedly to pass multiple files at once)")
                 .long(INPUT_FILE)
                 .required(true)
-                .takes_value(true)
-                .multiple(true),
+                .takes_value(true), // .multiple(true),
         )
         .arg(
             Arg::new(OUTPUT_FOLDER)
