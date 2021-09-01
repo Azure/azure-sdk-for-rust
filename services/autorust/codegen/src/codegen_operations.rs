@@ -6,7 +6,7 @@ use crate::{
     codegen::{parse_params, PARAM_RE},
     identifier::ident,
     spec,
-    status_codes::{get_error_responses, get_response_type_name, get_status_code_name, get_success_responses, has_default_response},
+    status_codes::{get_error_responses, get_response_type_name, get_success_responses, has_default_response},
     status_codes::{get_response_type_ident, get_status_code_ident},
     CodeGen, OperationVerb,
 };
@@ -325,7 +325,7 @@ fn create_function(
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
                 let status_code_name = get_status_code_ident(status_code)?;
-                let response_type_name = get_response_type_name(status_code)?;
+                let response_type_name = get_response_type_ident(status_code)?;
                 if is_single_response {
                     match tp {
                         Some(tp) => {
@@ -373,8 +373,8 @@ fn create_function(
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
-                let status_code_name = ident(get_status_code_name(status_code)?).map_err(Error::StatusCodeName)?;
-                let response_type_name = ident(&get_response_type_name(status_code)?).map_err(Error::ResponseTypeName)?;
+                let status_code_name = get_status_code_ident(status_code)?;
+                let response_type_name = get_response_type_ident(status_code)?;
                 match tp {
                     Some(tp) => {
                         match_status.extend(quote! {

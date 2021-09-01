@@ -2,7 +2,7 @@
 
 use crate::identifier::ident;
 use autorust_openapi::{Response, StatusCode};
-use heck::CamelCase;
+use heck::{CamelCase, SnakeCase};
 use http::StatusCode as HttpStatusCode;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
@@ -36,9 +36,16 @@ pub fn get_status_code_name(status_code: &StatusCode) -> Result<&'static str, Er
     }
 }
 
+/// The canonical name.
+/// examples: OK, CREATED, LOOP_DETECTED
+pub fn get_status_code_ident(status_code: &StatusCode) -> Result<TokenStream, Error> {
+    ident(&get_status_code_name(status_code)?.to_snake_case().to_uppercase()).map_err(Error::StatusCodeName)
+}
+
+#[allow(dead_code)]
 /// The canonical name in camel case.
 /// examples: Ok, Created, LoopDetected
-pub fn get_status_code_ident(status_code: &StatusCode) -> Result<TokenStream, Error> {
+pub fn get_status_code_ident_camel_case(status_code: &StatusCode) -> Result<TokenStream, Error> {
     ident(&get_status_code_name(status_code)?.to_camel_case()).map_err(Error::StatusCodeName)
 }
 
