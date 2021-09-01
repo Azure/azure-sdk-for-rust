@@ -1,5 +1,6 @@
 use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
+use futures::stream::StreamExt;
 use std::error::Error;
 
 #[tokio::main]
@@ -33,9 +34,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
-    let databases = client
-        .list_databases(Context::new(), ListDatabasesOptions::new())
-        .await?;
+    let databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+        .next()
+        .await
+        .unwrap()?;
 
     println!(
         "Account {} has {} database(s)",

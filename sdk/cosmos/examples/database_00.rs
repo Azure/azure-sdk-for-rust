@@ -1,5 +1,6 @@
 use azure_core::Context;
 use azure_cosmos::prelude::*;
+use futures::stream::StreamExt;
 use serde_json::Value;
 use std::error::Error;
 
@@ -15,9 +16,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
 
-    let dbs = client
-        .list_databases(Context::new(), ListDatabasesOptions::new())
-        .await?;
+    let dbs = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+        .next()
+        .await
+        .unwrap()?;
 
     for db in dbs.databases {
         println!("database == {:?}", db);
