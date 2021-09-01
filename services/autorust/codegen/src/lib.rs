@@ -2,7 +2,6 @@ pub mod cargo_toml;
 mod codegen;
 mod codegen_models;
 mod codegen_operations;
-mod codegen_routes;
 pub mod config_parser;
 pub mod identifier;
 pub mod lib_rs;
@@ -59,7 +58,6 @@ pub struct PropertyName {
 pub enum Runs {
     Models,
     Operations,
-    Routes,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -120,13 +118,6 @@ pub fn run(config: Config) -> Result<()> {
             let operations_path = path::join(&config.output_folder, "mod.rs").map_err(Error::Path)?;
             write_file(&operations_path, &operations, config.print_writing_file)?;
         }
-    }
-
-    // create server-side routes
-    if config.should_run(&Runs::Routes) {
-        let routes = codegen_routes::create_routes(cg).map_err(Error::CreateOperations)?;
-        let routes_path = path::join(&config.output_folder, "routes.rs").map_err(Error::Path)?;
-        write_file(&routes_path, &routes, config.print_writing_file)?;
     }
 
     Ok(())
