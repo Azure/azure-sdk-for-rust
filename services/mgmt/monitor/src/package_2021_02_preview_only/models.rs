@@ -38,7 +38,7 @@ pub struct ScheduledQueryRuleProperties {
     #[serde(rename = "muteActionsDuration", default, skip_serializing_if = "Option::is_none")]
     pub mute_actions_duration: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub actions: Option<serde_json::Value>,
+    pub actions: Option<Actions>,
     #[serde(rename = "isWorkspaceAlertsStorageConfigured", default, skip_serializing_if = "Option::is_none")]
     pub is_workspace_alerts_storage_configured: Option<bool>,
     #[serde(rename = "checkWorkspaceAlertsStorageConfigured", default, skip_serializing_if = "Option::is_none")]

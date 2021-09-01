@@ -45,6 +45,12 @@ pub mod marketplace_agreements {
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
+            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
+                let rsp_body = rsp.body();
+                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get::Error::UnsupportedMediaType415 { value: rsp_value })
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
@@ -60,6 +66,8 @@ pub mod marketplace_agreements {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("Error response #response_type")]
+            UnsupportedMediaType415 { value: models::UnsupportedMediaTypeErrorResponse },
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
@@ -120,6 +128,12 @@ pub mod marketplace_agreements {
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
+            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
+                let rsp_body = rsp.body();
+                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(create::Error::UnsupportedMediaType415 { value: rsp_value })
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
@@ -135,6 +149,8 @@ pub mod marketplace_agreements {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("Error response #response_type")]
+            UnsupportedMediaType415 { value: models::UnsupportedMediaTypeErrorResponse },
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
@@ -193,6 +209,12 @@ pub mod marketplace_agreements {
                     serde_json::from_slice(rsp_body).map_err(|source| sign::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
+            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
+                let rsp_body = rsp.body();
+                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| sign::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(sign::Error::UnsupportedMediaType415 { value: rsp_value })
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
@@ -208,6 +230,8 @@ pub mod marketplace_agreements {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("Error response #response_type")]
+            UnsupportedMediaType415 { value: models::UnsupportedMediaTypeErrorResponse },
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
@@ -266,6 +290,12 @@ pub mod marketplace_agreements {
                     serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
+            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
+                let rsp_body = rsp.body();
+                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(cancel::Error::UnsupportedMediaType415 { value: rsp_value })
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
@@ -281,6 +311,8 @@ pub mod marketplace_agreements {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("Error response #response_type")]
+            UnsupportedMediaType415 { value: models::UnsupportedMediaTypeErrorResponse },
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
@@ -341,6 +373,12 @@ pub mod marketplace_agreements {
                     serde_json::from_slice(rsp_body).map_err(|source| get_agreement::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
+            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
+                let rsp_body = rsp.body();
+                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| get_agreement::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get_agreement::Error::UnsupportedMediaType415 { value: rsp_value })
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
@@ -356,6 +394,8 @@ pub mod marketplace_agreements {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("Error response #response_type")]
+            UnsupportedMediaType415 { value: models::UnsupportedMediaTypeErrorResponse },
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
@@ -407,6 +447,12 @@ pub mod marketplace_agreements {
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
+            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
+                let rsp_body = rsp.body();
+                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list::Error::UnsupportedMediaType415 { value: rsp_value })
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
@@ -422,6 +468,8 @@ pub mod marketplace_agreements {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("Error response #response_type")]
+            UnsupportedMediaType415 { value: models::UnsupportedMediaTypeErrorResponse },
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
@@ -472,6 +520,12 @@ pub mod operations {
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
+            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
+                let rsp_body = rsp.body();
+                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list::Error::UnsupportedMediaType415 { value: rsp_value })
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
@@ -487,6 +541,8 @@ pub mod operations {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
+            #[error("Error response #response_type")]
+            UnsupportedMediaType415 { value: models::UnsupportedMediaTypeErrorResponse },
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,

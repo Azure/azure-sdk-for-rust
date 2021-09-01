@@ -13,7 +13,7 @@ pub mod servers {
     ) -> std::result::Result<Server, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -84,7 +84,7 @@ pub mod servers {
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -168,7 +168,7 @@ pub mod servers {
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -244,7 +244,7 @@ pub mod servers {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -316,7 +316,7 @@ pub mod servers {
     ) -> std::result::Result<ServerListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers",
             operation_config.base_path(),
             subscription_id,
             resource_group_name
@@ -388,7 +388,7 @@ pub mod servers {
     ) -> std::result::Result<ServerListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.DBForMariaDB/servers",
+            "{}/subscriptions/{}/providers/Microsoft.DBforMariaDB/servers",
             operation_config.base_path(),
             subscription_id
         );
@@ -456,7 +456,7 @@ pub mod servers {
     ) -> std::result::Result<restart::Response, restart::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/restart",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/restart",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -678,7 +678,7 @@ pub mod replicas {
     ) -> std::result::Result<ServerListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/replicas",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/replicas",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -755,7 +755,7 @@ pub mod firewall_rules {
     ) -> std::result::Result<FirewallRule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/firewallRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/firewallRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -828,7 +828,7 @@ pub mod firewall_rules {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/firewallRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/firewallRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -916,7 +916,7 @@ pub mod firewall_rules {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/firewallRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/firewallRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -990,7 +990,7 @@ pub mod firewall_rules {
     ) -> std::result::Result<FirewallRuleListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/firewallRules",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/firewallRules",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1067,7 +1067,7 @@ pub mod virtual_network_rules {
     ) -> std::result::Result<VirtualNetworkRule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/virtualNetworkRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/virtualNetworkRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1129,7 +1129,7 @@ pub mod virtual_network_rules {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/virtualNetworkRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/virtualNetworkRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1206,7 +1206,7 @@ pub mod virtual_network_rules {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/virtualNetworkRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/virtualNetworkRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1269,7 +1269,7 @@ pub mod virtual_network_rules {
     ) -> std::result::Result<VirtualNetworkRuleListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/virtualNetworkRules",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/virtualNetworkRules",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1335,7 +1335,7 @@ pub mod databases {
     ) -> std::result::Result<Database, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/databases/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/databases/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1408,7 +1408,7 @@ pub mod databases {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/databases/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/databases/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1496,7 +1496,7 @@ pub mod databases {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/databases/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/databases/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1570,7 +1570,7 @@ pub mod databases {
     ) -> std::result::Result<DatabaseListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/databases",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/databases",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1647,7 +1647,7 @@ pub mod configurations {
     ) -> std::result::Result<Configuration, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/configurations/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/configurations/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1720,7 +1720,7 @@ pub mod configurations {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/configurations/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/configurations/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1800,7 +1800,7 @@ pub mod configurations {
     ) -> std::result::Result<ConfigurationListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/configurations",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/configurations",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1877,7 +1877,7 @@ pub mod server_parameters {
     ) -> std::result::Result<list_update_configurations::Response, list_update_configurations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/updateConfigurations",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/updateConfigurations",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1961,7 +1961,7 @@ pub mod log_files {
     ) -> std::result::Result<LogFileListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/logFiles",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/logFiles",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2037,7 +2037,7 @@ pub mod recoverable_servers {
     ) -> std::result::Result<RecoverableServerResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/recoverableServers",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/recoverableServers",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2110,7 +2110,7 @@ pub mod server_based_performance_tier {
     ) -> std::result::Result<PerformanceTierListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMariaDB/servers/{}/performanceTiers",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMariaDB/servers/{}/performanceTiers",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2182,7 +2182,7 @@ pub mod location_based_performance_tier {
     ) -> std::result::Result<PerformanceTierListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.DBForMariaDB/locations/{}/performanceTiers",
+            "{}/subscriptions/{}/providers/Microsoft.DBforMariaDB/locations/{}/performanceTiers",
             operation_config.base_path(),
             subscription_id,
             location_name
@@ -2253,7 +2253,7 @@ pub mod check_name_availability {
     ) -> std::result::Result<NameAvailability, execute::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.DBForMariaDB/checkNameAvailability",
+            "{}/subscriptions/{}/providers/Microsoft.DBforMariaDB/checkNameAvailability",
             operation_config.base_path(),
             subscription_id
         );
@@ -2321,7 +2321,7 @@ pub mod operations {
     use crate::models::*;
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
-        let url_str = &format!("{}/providers/Microsoft.DBForMariaDB/operations", operation_config.base_path(),);
+        let url_str = &format!("{}/providers/Microsoft.DBforMariaDB/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);

@@ -153,11 +153,26 @@ pub struct Disk {
     pub lun: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SapSystemId {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gid: Option<String>,
+    #[serde(rename = "memoryAllocation", default, skip_serializing_if = "Option::is_none")]
+    pub memory_allocation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sid: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uid: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageProfile {
     #[serde(rename = "nfsIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub nfs_ip_address: Option<String>,
     #[serde(rename = "osDisks", default, skip_serializing_if = "Vec::is_empty")]
     pub os_disks: Vec<Disk>,
+    #[serde(rename = "hanaSids", default, skip_serializing_if = "Vec::is_empty")]
+    pub hana_sids: Vec<SapSystemId>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OsProfile {
@@ -193,6 +208,8 @@ pub struct Operation {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<Display>,
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Display {

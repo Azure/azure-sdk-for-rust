@@ -4527,7 +4527,7 @@ pub mod component_linked_storage_accounts {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorResponseLinkedStorage =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -4543,7 +4543,7 @@ pub mod component_linked_storage_accounts {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorResponseLinkedStorage,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -4603,7 +4603,7 @@ pub mod component_linked_storage_accounts {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: ErrorResponseLinkedStorage = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_and_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_and_update::Error::DefaultResponse {
                     status_code,
@@ -4619,7 +4619,7 @@ pub mod component_linked_storage_accounts {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorResponseLinkedStorage,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -4676,7 +4676,7 @@ pub mod component_linked_storage_accounts {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorResponseLinkedStorage =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -4692,7 +4692,7 @@ pub mod component_linked_storage_accounts {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorResponseLinkedStorage,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -4744,7 +4744,7 @@ pub mod component_linked_storage_accounts {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorResponseLinkedStorage =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -4765,7 +4765,7 @@ pub mod component_linked_storage_accounts {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorResponseLinkedStorage,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),

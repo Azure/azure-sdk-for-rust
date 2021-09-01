@@ -1616,6 +1616,21 @@ pub struct ParameterContract {
     pub schema_id: Option<String>,
     #[serde(rename = "typeName", default, skip_serializing_if = "Option::is_none")]
     pub type_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub examples: Option<ParameterExamplesContract>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ParameterExamplesContract {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ParameterExampleContract {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
+    #[serde(rename = "externalValue", default, skip_serializing_if = "Option::is_none")]
+    pub external_value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineDiagnosticSettings {
@@ -2051,8 +2066,6 @@ pub struct ReportRecordContract {
 pub struct RepresentationContract {
     #[serde(rename = "contentType")]
     pub content_type: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sample: Option<String>,
     #[serde(rename = "schemaId", default, skip_serializing_if = "Option::is_none")]
     pub schema_id: Option<String>,
     #[serde(rename = "typeName", default, skip_serializing_if = "Option::is_none")]
@@ -3206,6 +3219,8 @@ pub struct ApiManagementServiceUpdateParameters {
     pub identity: Option<ApiManagementServiceIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiManagementServiceListResult {

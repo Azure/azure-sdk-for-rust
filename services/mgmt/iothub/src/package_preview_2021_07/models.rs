@@ -16,6 +16,8 @@ pub struct CertificateListDescription {
 pub struct CertificateBodyDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub certificate: Option<String>,
+    #[serde(rename = "isVerified", default, skip_serializing_if = "Option::is_none")]
+    pub is_verified: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateDescription {
@@ -574,6 +576,7 @@ pub mod route_properties {
         DeviceJobLifecycleEvents,
         DigitalTwinChangeEvents,
         DeviceConnectionStateEvents,
+        MqttBrokerMessages,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -946,6 +949,7 @@ pub mod test_all_routes_input {
         DeviceJobLifecycleEvents,
         DigitalTwinChangeEvents,
         DeviceConnectionStateEvents,
+        MqttBrokerMessages,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

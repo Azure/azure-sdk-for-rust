@@ -826,6 +826,21 @@ pub enum PublicNetworkAccessType {
     Disabled,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponseLinkedStorage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<error_response_linked_storage::Error>,
+}
+pub mod error_response_linked_storage {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Error {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub code: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub message: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentLinkedStorageAccounts {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,

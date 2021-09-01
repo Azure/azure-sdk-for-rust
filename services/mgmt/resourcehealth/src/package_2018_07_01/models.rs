@@ -53,6 +53,10 @@ pub mod event {
         pub is_hir: Option<bool>,
         #[serde(rename = "enableMicrosoftSupport", default, skip_serializing_if = "Option::is_none")]
         pub enable_microsoft_support: Option<bool>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+        #[serde(rename = "platformInitiated", default, skip_serializing_if = "Option::is_none")]
+        pub platform_initiated: Option<bool>,
         #[serde(rename = "enableChatWithUs", default, skip_serializing_if = "Option::is_none")]
         pub enable_chat_with_us: Option<bool>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -71,6 +75,8 @@ pub mod event {
             HealthAdvisory,
             #[serde(rename = "RCA")]
             Rca,
+            EmergingIssues,
+            SecurityAdvisory,
         }
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum EventSource {
@@ -90,6 +96,7 @@ pub mod event {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum EventLevel {
             Critical,
+            Error,
             Warning,
             Informational,
         }

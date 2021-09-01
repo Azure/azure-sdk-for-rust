@@ -5,7 +5,7 @@
 use crate::models::*;
 pub mod operations {
     use crate::models::*;
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListValue, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Addons/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +26,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationList =
+                let rsp_value: OperationListValue =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }

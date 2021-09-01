@@ -504,6 +504,8 @@ pub struct InvoiceSectionProperties {
     pub state: Option<invoice_section_properties::State>,
     #[serde(rename = "systemId", default, skip_serializing_if = "Option::is_none")]
     pub system_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
     #[serde(rename = "targetCloud", default, skip_serializing_if = "Option::is_none")]
     pub target_cloud: Option<TargetCloud>,
 }
@@ -762,6 +764,8 @@ pub mod document {
 pub struct ProductsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Product>,
+    #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
+    pub total_count: Option<f64>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -920,6 +924,8 @@ pub struct BillingSubscriptionProperties {
     pub sku_id: Option<String>,
     #[serde(rename = "skuDescription", default, skip_serializing_if = "Option::is_none")]
     pub sku_description: Option<String>,
+    #[serde(rename = "suspensionReasons", default, skip_serializing_if = "Vec::is_empty")]
+    pub suspension_reasons: Vec<String>,
 }
 pub mod billing_subscription_properties {
     use super::*;
