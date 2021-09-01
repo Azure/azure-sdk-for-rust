@@ -1,5 +1,4 @@
 mod cli;
-
 use autorust_codegen::run;
 use cli::config_try_new;
 

@@ -1,43 +1,20 @@
-use std::{
-    collections::HashSet,
-    path::Path,
+use crate::{
+    codegen::{
+        create_generated_by_header, get_type_name_for_schema, get_type_name_for_schema_ref, is_array, is_string, require, AsReference,
+        Error,
+    },
+    identifier::ident,
+    spec,
+    status_codes::{get_error_responses, get_response_type_name, get_status_code_name, get_success_responses, has_default_response},
+    CodeGen, OperationVerb,
 };
-
-use autorust_openapi::{
-    CollectionFormat,
-    Parameter,
-    ParameterType,
-    Response,
-};
+use autorust_openapi::{CollectionFormat, Parameter, ParameterType, Response};
 use heck::SnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
 use regex::Regex;
-
-use crate::{
-    codegen::{
-        create_generated_by_header,
-        get_type_name_for_schema,
-        get_type_name_for_schema_ref,
-        is_array,
-        is_string,
-        require,
-        AsReference,
-        Error,
-    },
-    identifier::ident,
-    spec,
-    status_codes::{
-        get_error_responses,
-        get_response_type_name,
-        get_status_code_name,
-        get_success_responses,
-        has_default_response,
-    },
-    CodeGen,
-    OperationVerb,
-};
+use std::{collections::HashSet, path::Path};
 
 pub fn create_routes(cg: &CodeGen) -> Result<TokenStream, Error> {
     let mut file = TokenStream::new();

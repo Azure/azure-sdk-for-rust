@@ -1,14 +1,10 @@
 #![allow(unused_doc_comments)]
 
-use std::collections::HashMap;
-
-use autorust_openapi::{
-    Response,
-    StatusCode,
-};
+use autorust_openapi::{Response, StatusCode};
 use heck::CamelCase;
 use http::StatusCode as HttpStatusCode;
 use indexmap::IndexMap;
+use std::collections::HashMap;
 
 // for looking up the const names
 // https://github.com/hyperium/http/blob/master/src/status.rs

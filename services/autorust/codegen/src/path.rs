@@ -1,9 +1,5 @@
-use std::path::{
-    Path,
-    PathBuf,
-};
-
 use path_abs::PathMut;
+use std::path::{Path, PathBuf};
 
 type Result<T, E = Error> = std::result::Result<T, E>;
 #[derive(Debug, thiserror::Error)]

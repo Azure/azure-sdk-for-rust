@@ -1,27 +1,10 @@
-use std::path::{
-    Path,
-    PathBuf,
-};
-
-use autorust_openapi::{
-    DataType,
-    ReferenceOr,
-    Schema,
-    SchemaCommon,
-};
+use crate::{identifier::ident, spec, Config, PropertyName, ResolvedSchema, Spec};
+use autorust_openapi::{DataType, ReferenceOr, Schema, SchemaCommon};
 use heck::CamelCase;
 use proc_macro2::TokenStream;
 use quote::quote;
 use serde_json::Value;
-
-use crate::{
-    identifier::ident,
-    spec,
-    Config,
-    PropertyName,
-    ResolvedSchema,
-    Spec,
-};
+use std::path::{Path, PathBuf};
 
 /// code generation context
 pub struct CodeGen {

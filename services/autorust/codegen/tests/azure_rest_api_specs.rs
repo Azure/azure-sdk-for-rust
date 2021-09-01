@@ -2,11 +2,10 @@
 // These tests require cloning azure-rest-api-specs.
 // git clone git@github.com:Azure/azure-rest-api-specs.git ../azure-rest-api-specs
 
-use std::path::PathBuf;
-
 use autorust_codegen::*;
 use autorust_openapi::Reference;
 use spec::TypedReference;
+use std::path::PathBuf;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 

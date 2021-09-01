@@ -9,33 +9,18 @@ pub mod lib_rs;
 pub mod path;
 pub mod spec;
 mod status_codes;
-
-use std::{
-    collections::HashSet,
-    fs::{
-        self,
-        File,
-    },
-    io::prelude::*,
-    path::{
-        Path,
-        PathBuf,
-    },
-};
-
 use config_parser::Configuration;
 use proc_macro2::TokenStream;
+use std::{
+    collections::HashSet,
+    fs::{self, File},
+    io::prelude::*,
+    path::{Path, PathBuf},
+};
 
 pub use self::{
-    codegen::{
-        create_mod,
-        CodeGen,
-    },
-    spec::{
-        OperationVerb,
-        ResolvedSchema,
-        Spec,
-    },
+    codegen::{create_mod, CodeGen},
+    spec::{OperationVerb, ResolvedSchema, Spec},
 };
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

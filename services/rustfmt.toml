@@ -3,6 +3,6 @@ max_width = 140
 newline_style = "Unix"
 
 # these require nightly
-imports_granularity = "Crate"
-imports_layout = "Vertical"
-group_imports = "StdExternalCrate"
+# imports_granularity = "Crate"
+# imports_layout = "Vertical"
+# group_imports = "StdExternalCrate"
