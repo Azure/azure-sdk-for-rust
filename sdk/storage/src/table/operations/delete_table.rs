@@ -29,7 +29,6 @@ impl DeleteTableOptions {
             "x-ms-version",
             header_value::<ApiVersion>(&self.api_version)?,
         );
-
         headers.append(
             "x-ms-date",
             HeaderValue::from_str(

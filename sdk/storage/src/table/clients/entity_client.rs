@@ -13,7 +13,7 @@ use std::borrow::Cow;
 use std::sync::Arc;
 use url::Url;
 
-use super::table_client::PipelineTableClient;
+use super::table_client::TableClient;
 
 pub trait AsEntityClient<RK: Into<String>> {
     fn as_entity_client(&self, row_key: RK) -> Result<Arc<EntityClient>, url::ParseError>;
@@ -117,10 +117,7 @@ impl EntityClient {
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
-    use crate::{
-        core::prelude::*,
-        table::clients::{AsTableClient, AsTableServiceClient},
-    };
+    use crate::{core::prelude::*, table::clients::AsTableServiceClient};
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     struct TestEntity {
@@ -366,14 +363,11 @@ mod integration_tests {
 
 pub struct PipelineEntityClient {
     table_name: Cow<'static, str>,
-    table_client: PipelineTableClient,
+    table_client: TableClient,
 }
 
 impl PipelineEntityClient {
-    pub fn new<S: Into<Cow<'static, str>>>(
-        table_client: PipelineTableClient,
-        table_name: S,
-    ) -> Self {
+    pub fn new<S: Into<Cow<'static, str>>>(table_client: TableClient, table_name: S) -> Self {
         Self {
             table_client,
             table_name: table_name.into(),
@@ -387,7 +381,7 @@ impl PipelineEntityClient {
         row_key: &str,
         options: GetEntityOptions<'_>,
     ) -> Result<TableEntity, Error> {
-        let mut request = self.table_client.prepare_pipeline_request(
+        let mut request = self.table_client.prepare_table_request(
             format!(
                 "{}(PartitionKey='{}',RowKey='{}')",
                 self.table_name, partition_key, row_key
@@ -415,7 +409,7 @@ impl PipelineEntityClient {
 
 #[cfg(test)]
 pub mod test_pipeline_table_client {
-    use super::PipelineTableClient;
+    use super::TableClient;
     use crate::{
         operations::{
             create_table::CreateTableOptions, delete_table::DeleteTableOptions,
@@ -441,7 +435,7 @@ pub mod test_pipeline_table_client {
         println!("{:#?}", email_table_client);
     }
 
-    fn emulator_table_client() -> PipelineTableClient {
-        PipelineTableClient::emulator(TableOptions::default())
+    fn emulator_table_client() -> TableClient {
+        TableClient::emulator(TableOptions::default())
     }
 }
