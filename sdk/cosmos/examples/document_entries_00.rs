@@ -125,13 +125,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let id = format!("unique_id{}", 3);
     let partition_key = &id;
 
-    let document_client = client
+    let response = client
         .clone()
-        .into_document_client(id.clone(), partition_key)?;
-    let response = document_client
+        .into_document_client(id.clone(), partition_key)?
         .get_document::<MySampleStruct>(
             Context::new(),
-            GetDocumentOptions::new(&document_client).consistency_level(session_token),
+            GetDocumentOptions::new().consistency_level(session_token),
         )
         .await?;
 
@@ -164,11 +163,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("\n\nLooking for non-existing item");
     let id = format!("unique_id{}", 100);
 
-    let document_client = client.clone().into_document_client(id.clone(), &id)?;
-    let response = document_client
+    let response = client
+        .clone()
+        .into_document_client(id.clone(), &id)?
         .get_document::<MySampleStruct>(
             Context::new(),
-            GetDocumentOptions::new(&document_client).consistency_level(&response),
+            GetDocumentOptions::new().consistency_level(&response),
         )
         .await?;
 

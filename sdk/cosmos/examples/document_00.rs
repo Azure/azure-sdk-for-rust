@@ -150,11 +150,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // Now we get the same document by id.
     println!("getting document by id {}", &doc.id);
-    let document_client = collection_client
+    let get_document_response = collection_client
         .clone()
-        .into_document_client(doc.id.clone(), &doc.id)?;
-    let get_document_response = document_client
-        .get_document::<MySampleStruct>(Context::new(), GetDocumentOptions::new(&document_client))
+        .into_document_client(doc.id.clone(), &doc.id)?
+        .get_document::<MySampleStruct>(Context::new(), GetDocumentOptions::new())
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 

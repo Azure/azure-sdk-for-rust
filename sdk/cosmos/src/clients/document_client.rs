@@ -66,7 +66,7 @@ impl DocumentClient {
     pub async fn get_document<T>(
         &self,
         ctx: Context,
-        options: GetDocumentOptions<'_, '_>,
+        options: GetDocumentOptions<'_>,
     ) -> Result<GetDocumentResponse<T>, crate::Error>
     where
         T: DeserializeOwned,

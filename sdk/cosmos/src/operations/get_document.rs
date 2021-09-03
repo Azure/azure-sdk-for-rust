@@ -11,43 +11,32 @@ use http::{HeaderMap, StatusCode};
 use serde::de::DeserializeOwned;
 
 #[derive(Debug, Clone)]
-pub struct GetDocumentOptions<'a, 'b> {
-    document_client: &'a DocumentClient,
-    if_match_condition: Option<IfMatchCondition<'b>>,
-    if_modified_since: Option<IfModifiedSince<'b>>,
-    activity_id: Option<ActivityId<'b>>,
+pub struct GetDocumentOptions<'a> {
+    if_match_condition: Option<IfMatchCondition<'a>>,
+    if_modified_since: Option<IfModifiedSince<'a>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, 'b> GetDocumentOptions<'a, 'b> {
-    pub fn new(document_client: &'a DocumentClient) -> Self {
+impl<'a> GetDocumentOptions<'a> {
+    pub fn new() -> Self {
         Self {
-            document_client,
             if_match_condition: None,
             if_modified_since: None,
-            activity_id: None,
             consistency_level: None,
         }
     }
 
     setters! {
-        activity_id: &'b str => Some(ActivityId::new(activity_id)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
-        if_modified_since: &'b DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
+        if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
+        if_modified_since: &'a DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
     }
 
     pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> Result<(), crate::Error> {
         // add trait headers
         azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
         azure_core::headers::add_optional_header2(&self.if_modified_since, request)?;
-        azure_core::headers::add_optional_header2(&self.activity_id, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
-
-        crate::cosmos_entity::add_as_partition_key_header_serialized2(
-            self.document_client.partition_key_serialized(),
-            request,
-        );
 
         request.set_body(bytes::Bytes::from_static(EMPTY_BODY).into());
 
