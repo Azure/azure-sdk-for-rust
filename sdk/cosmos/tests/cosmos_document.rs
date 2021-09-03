@@ -1,13 +1,12 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::Context;
-use azure_cosmos::prelude::CreateDocumentOptions;
+use azure_cosmos::prelude::{CreateDocumentOptions, GetDocumentOptions};
 use serde::{Deserialize, Serialize};
 
 mod setup;
 
 use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
-use azure_cosmos::responses::GetDocumentResponse;
 use collection::*;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -88,8 +87,7 @@ async fn create_and_delete_document() {
         .unwrap();
 
     let document_after_get = document_client
-        .get_document()
-        .execute::<MyDocument>()
+        .get_document::<MyDocument>(Context::new(), GetDocumentOptions::new())
         .await
         .unwrap();
 
@@ -262,8 +260,7 @@ async fn replace_document() {
         .into_document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
         .unwrap();
     let document_after_get = document_client
-        .get_document()
-        .execute::<MyDocument>()
+        .get_document::<MyDocument>(Context::new(), GetDocumentOptions::new())
         .await
         .unwrap();
 
