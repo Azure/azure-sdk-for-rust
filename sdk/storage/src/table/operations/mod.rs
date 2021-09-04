@@ -1,3 +1,4 @@
+pub mod Insert_entity;
 use azure_core::HTTPHeaderError;
 use http::HeaderValue;
 
@@ -70,4 +71,14 @@ pub fn header_value<T: AsRef<str>>(value: &Option<T>) -> Result<HeaderValue, HTT
             .as_ref(),
     )
     .map_err(azure_core::HTTPHeaderError::InvalidHeaderValue)
+}
+
+pub trait TableEntity<'a> {
+    type Entity: serde::Serialize + 'a;
+
+    /// Return partition key value as reference.
+    fn partition_key(&self) -> &str;
+
+    /// Return partition key value as reference.
+    fn row_key(&self) -> &str;
 }

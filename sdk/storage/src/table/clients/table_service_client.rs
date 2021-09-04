@@ -1,5 +1,4 @@
 use crate::core::clients::{StorageAccountClient, StorageClient};
-use crate::table::requests::ListTablesBuilder;
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
@@ -38,10 +37,6 @@ impl TableServiceClient {
         }))
     }
 
-    pub fn list(&self) -> ListTablesBuilder {
-        ListTablesBuilder::new(self)
-    }
-
     pub(crate) fn url(&self) -> &Url {
         &self.url
     }
@@ -70,42 +65,5 @@ impl TableServiceClient {
                 crate::core::clients::ServiceType::Table,
                 request_body,
             )
-    }
-}
-
-#[cfg(test)]
-#[cfg(feature = "test_integration")]
-mod integration_tests {
-    use super::*;
-    use crate::{core::prelude::*, table::clients::AsTableClient};
-    use futures::StreamExt;
-
-    fn get_emulator_client() -> Arc<StorageClient> {
-        StorageAccountClient::new_emulator_default().as_storage_client()
-    }
-
-    #[tokio::test]
-    async fn test_list() {
-        let storage_account = get_emulator_client();
-        let table_client = storage_account
-            .as_table_service_client()
-            .expect("a table service client");
-
-        println!("Create a table in the storage account");
-        let table = table_client.as_table_client("TableServiceClientList");
-        match table.create().execute().await {
-            _ => {}
-        }
-
-        println!("Check that the table is listed correctly");
-        let mut stream = Box::pin(table_client.list().stream());
-        while let Some(result) = stream.next().await {
-            let result = result.expect("the request should succeed");
-            let has_table = result
-                .tables
-                .iter()
-                .any(|t| t.name == "TableServiceClientList");
-            assert!(has_table, "the table should be present in the tables list");
-        }
     }
 }

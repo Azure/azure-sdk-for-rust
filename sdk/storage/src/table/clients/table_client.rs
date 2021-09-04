@@ -4,7 +4,7 @@ use crate::{
     operations::{
         create_table::{CreateTableOptions, CreateTableResponse},
         delete_table::DeleteTableOptions,
-        list_tables::{ListTablesOptions, ListTablesResponse},
+        list_tables::{ListTablesOptions, ListTablesResponse, ListTablesResponseBody},
     },
     table_context::TableContext,
 };
@@ -125,8 +125,19 @@ impl TableClient {
             .validate(http::StatusCode::OK)
             .await?;
 
-        //
-        Ok(ListTablesResponse::try_from(response).await?)
+        let a = response
+            .headers()
+            .get("x-ms-continuation-NextTableName")
+            .map_or(None, |value| Some(value.to_str().unwrap().to_string()));
+
+        Ok(ListTablesResponse {
+            // try to initialize the next table header if exists
+            next_table_name: response
+                .headers()
+                .get("x-ms-continuation-NextTableName")
+                .map_or(None, |value| Some(value.to_str().unwrap().to_string())),
+            body: ListTablesResponseBody::try_from(response).await?,
+        })
     }
 
     pub async fn create_table(
@@ -144,7 +155,7 @@ impl TableClient {
             .pipeline
             .send(&mut pipeline_context, &mut request)
             .await?
-            .validate(http::StatusCode::CREATED)
+            .validate(options.expected_status_code())
             .await?;
 
         Ok(CreateTableResponse::try_from(response).await?)
@@ -182,7 +193,6 @@ impl TableClient {
         PipelineEntityClient::new(self, table_name)
     }
 
-    // Create a new table bas request
     pub(crate) fn prepare_table_request(
         &self,
         uri_path: &str,
@@ -193,22 +203,15 @@ impl TableClient {
         azure_core::Request::new(uri, http_method)
     }
 
-    // Get a reference to the pipeline table client's pipeline.
     pub(crate) fn pipeline(&self) -> &Pipeline<TableContext> {
         &self.pipeline
     }
 }
 
 #[cfg(test)]
-pub mod test_pipeline_table_client {
+pub mod table_client_tests {
     use super::{TableClient, TableOptions};
-    use crate::{
-        operations::{
-            create_table::CreateTableOptions, delete_table::DeleteTableOptions,
-            list_tables::ListTablesOptions, OdataMetadataLevel,
-        },
-        Filter, Top,
-    };
+    use crate::{operations::*, Filter, Top};
     use azure_core::Context;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -225,46 +228,14 @@ pub mod test_pipeline_table_client {
     }
 
     #[tokio::test]
-    async fn test_list_tables() {
-        let response = emulator_table_client()
-            .list_tables(
-                Context::new(),
-                ListTablesOptions::default()
-                    .odata_metadata_level(OdataMetadataLevel::FullMetadata)
-                    .filter(Filter::new("TableName gt 'emails'"))
-                    .top(Top::new(2)),
-            )
-            .await
-            .and_then(|ok_response| {
-                ok_response
-                    .tables
-                    .iter()
-                    .for_each(|table| println!("{:?}", table.odata_link));
-                Ok(())
-            });
-        println!("{:?}", response);
-    }
-
-    #[tokio::test]
-    async fn test_delete_table() {
-        let response = emulator_table_client()
-            .delete_table(
-                Context::new(),
-                "TableForTest",
-                DeleteTableOptions::default(),
-            )
-            .await;
-        println!("{:#?}", response);
-    }
-
-    #[tokio::test]
-    async fn test_create_table() {
+    async fn create_and_delete_table_test() {
         let table_name = "TableForTest";
         assert_eq!(
             emulator_table_client()
-                .list_tables(Context::new(), ListTablesOptions::default())
+                .list_tables(Context::new(), list_tables::ListTablesOptions::default())
                 .await
                 .unwrap()
+                .body
                 .tables
                 .iter()
                 .filter(|&t| t.table_name == table_name)
@@ -274,7 +245,11 @@ pub mod test_pipeline_table_client {
 
         assert!(
             emulator_table_client()
-                .create_table(Context::new(), table_name, CreateTableOptions::default())
+                .create_table(
+                    Context::new(),
+                    table_name,
+                    create_table::CreateTableOptions::default()
+                )
                 .await
                 .unwrap()
                 .table_name
@@ -283,7 +258,7 @@ pub mod test_pipeline_table_client {
         );
 
         let tables = emulator_table_client()
-            .list_tables(Context::new(), ListTablesOptions::default())
+            .list_tables(Context::new(), list_tables::ListTablesOptions::default())
             .await
             .unwrap()
             .tables
@@ -291,5 +266,28 @@ pub mod test_pipeline_table_client {
             .filter(|&t| t.table_name == table_name);
         assert_eq!(tables.next(), Some(table_name));
         assert_eq!(tables.next(), None);
+
+        assert_eq!(
+            emulator_table_client()
+                .delete_table(
+                    Context::new(),
+                    table_name,
+                    delete_table::DeleteTableOptions::default()
+                )
+                .await,
+            Ok(())
+        );
+
+        assert_eq!(
+            emulator_table_client()
+                .list_tables(Context::new(), list_tables::ListTablesOptions::default())
+                .await
+                .unwrap()
+                .tables
+                .iter()
+                .filter(|&t| t.table_name == table_name)
+                .next(),
+            None
+        );
     }
 }

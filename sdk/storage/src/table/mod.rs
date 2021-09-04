@@ -10,7 +10,6 @@ mod filter;
 mod if_match_condition;
 mod model;
 pub mod prelude;
-pub mod requests;
 pub mod responses;
 mod return_entity;
 mod select;

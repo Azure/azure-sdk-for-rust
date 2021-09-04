@@ -12,6 +12,7 @@ pub struct ListTablesOptions<'a> {
     top: Option<Top>,
     filter: Option<Filter<'a>>,
     api_version: Option<ApiVersion>,
+    next_table_name: Option<String>, // TODO: try use the next_table_name option
     odata_metadata_level: Option<OdataMetadataLevel>,
 }
 
@@ -20,6 +21,7 @@ impl Default for ListTablesOptions<'_> {
         Self {
             top: Default::default(),
             filter: Default::default(),
+            next_table_name: Default::default(),
             api_version: Some(ApiVersion::default()),
             odata_metadata_level: Some(OdataMetadataLevel::FullMetadata),
         }
@@ -81,6 +83,14 @@ impl<'a> ListTablesOptions<'a> {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ListTablesResponse {
+    ///If the number of tables to be returned exceeds 1,000 or the query does not complete within the timeout interval,
+    ///next_table_name will containe the hash of the name of the next table in the list.
+    pub next_table_name: Option<String>,
+    pub body: ListTablesResponseBody,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Table {
     #[serde(rename = "odata.type")]
@@ -95,14 +105,14 @@ pub struct Table {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ListTablesResponse {
+pub struct ListTablesResponseBody {
     #[serde(rename = "odata.metadata")]
     pub odata_metadata: Option<String>,
     #[serde(rename = "value")]
     pub tables: Vec<Table>,
 }
 
-impl ListTablesResponse {
+impl ListTablesResponseBody {
     pub(crate) async fn try_from(response: Response) -> Result<Self, Error> {
         let body = azure_core::collect_pinned_stream(response.deconstruct().2).await?;
         let response = serde_json::from_slice(&body)?;

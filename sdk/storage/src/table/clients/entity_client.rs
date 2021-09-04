@@ -1,20 +1,22 @@
+use super::table_client::TableClient;
 use crate::operations::get_entity::GetEntityOptions;
-use crate::operations::get_entity::TableEntity;
-use crate::table::prelude::*;
-use crate::table::requests::*;
+use crate::operations::Insert_entity::InsertEntityOptions;
+use crate::operations::Insert_entity::InsertEntityResponse;
+use crate::operations::TableEntity;
+use crate::table::responses::GetEntityResponse;
 use crate::table_context::TableContext;
 use azure_core::Context;
 use azure_core::Error;
 use azure_core::PipelineContext;
+use bytes::Buf;
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
+use serde::de::DeserializeOwned;
 use std::borrow::Cow;
 use std::sync::Arc;
 use url::Url;
-
-use super::table_client::TableClient;
-
+/*
 pub trait AsEntityClient<RK: Into<String>> {
     fn as_entity_client(&self, row_key: RK) -> Result<Arc<EntityClient>, url::ParseError>;
 }
@@ -361,36 +363,31 @@ mod integration_tests {
     }
 }
 
+*/
 pub struct PipelineEntityClient {
     table_name: Cow<'static, str>,
     table_client: TableClient,
 }
 
 impl PipelineEntityClient {
-    pub fn new<S: Into<Cow<'static, str>>>(table_client: TableClient, table_name: S) -> Self {
+    pub fn new<NAME: Into<Cow<'static, str>>>(table_client: TableClient, table_name: NAME) -> Self {
         Self {
             table_client,
             table_name: table_name.into(),
         }
     }
 
-    pub async fn get_entity(
+    pub async fn get_entity<'a, E: DeserializeOwned + TableEntity<'a>>(
         &self,
         ctx: Context,
-        partition_key: &str,
-        row_key: &str,
         options: GetEntityOptions<'_>,
-    ) -> Result<TableEntity, Error> {
-        let mut request = self.table_client.prepare_table_request(
-            format!(
-                "{}(PartitionKey='{}',RowKey='{}')",
-                self.table_name, partition_key, row_key
-            )
-            .as_str(),
-            Method::GET,
-        );
+    ) -> Result<GetEntityResponse<E>, Error> {
+        let mut request = self
+            .table_client
+            .prepare_table_request(&self.table_name, Method::GET);
 
-        options.decorate_request(&mut request)?;
+        options.decorate_request_url(&mut request)?;
+        options.decorate_request_headers(&mut request)?;
 
         let table_context = TableContext::default();
         let mut pipeline_context = PipelineContext::new(ctx, table_context);
@@ -403,7 +400,39 @@ impl PipelineEntityClient {
             .validate(http::StatusCode::OK)
             .await?;
 
-        Ok(TableEntity::try_from(response).await?)
+        let (_, _, body) = response.deconstruct();
+        let body_bytes = azure_core::collect_pinned_stream(body).await?;
+        let response = serde_json::de::from_reader(body_bytes.reader())?;
+        Ok(response)
+    }
+
+    pub async fn insert_entity<'a, E: serde::Serialize + DeserializeOwned + TableEntity<'a>>(
+        &self,
+        ctx: Context,
+        entity: &'a E,
+        options: InsertEntityOptions,
+    ) -> Result<InsertEntityResponse<E>, Error> {
+        let mut request = self
+            .table_client
+            .prepare_table_request(format!("{}", self.table_name).as_str(), Method::POST);
+
+        options.decorate_request::<E>(&mut request, entity)?;
+
+        let table_context = TableContext::default();
+        let mut pipeline_context = PipelineContext::new(ctx, table_context);
+
+        let response = self
+            .table_client
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(options.expected_status_code())
+            .await?;
+
+        let (_, _, body) = response.deconstruct();
+        let body_bytes = azure_core::collect_pinned_stream(body).await?;
+        let response = serde_json::de::from_reader(body_bytes.reader())?;
+        Ok(response)
     }
 }
 

@@ -1,19 +1,21 @@
-use super::{ApiVersion, OdataMetadataLevel};
-use crate::operations::{header_value, EchoContent};
+use super::{header_value, ApiVersion, EchoContent, OdataMetadataLevel, TableEntity};
 use azure_core::{Error, HTTPHeaderError, Request, Response};
-use chrono::Utc;
+use chrono::{Duration, Utc};
 use http::HeaderValue;
+use serde::de::DeserializeOwned;
 
-#[derive(Debug, Clone)]
-pub struct CreateTableOptions {
+pub struct InsertEntityOptions {
+    // Optional. The timeout parameter is expressed in seconds.
+    timeout: Option<Duration>,
     api_version: Option<ApiVersion>,
     echo_content: Option<EchoContent>,
     odata_metadata_level: Option<OdataMetadataLevel>,
 }
 
-impl Default for CreateTableOptions {
+impl Default for InsertEntityOptions {
     fn default() -> Self {
         Self {
+            timeout: Default::default(),
             api_version: Some(ApiVersion::default()),
             echo_content: Some(EchoContent::ReturnContent),
             odata_metadata_level: Some(OdataMetadataLevel::FullMetadata),
@@ -21,8 +23,9 @@ impl Default for CreateTableOptions {
     }
 }
 
-impl CreateTableOptions {
+impl InsertEntityOptions {
     setters! {
+        timeout: Duration => Some(timeout),
         api_version: ApiVersion => Some(api_version),
         echo_content: EchoContent => Some(echo_content),
         odata_metadata_level: OdataMetadataLevel  => Some(odata_metadata_level),
@@ -38,13 +41,12 @@ impl CreateTableOptions {
         }
     }
 
-    pub fn decorate_request(
+    pub fn decorate_request<'b, ENTITY: serde::Serialize + TableEntity<'b>>(
         &self,
         request: &mut Request,
-        table_name: &str,
+        table_entity: &'b ENTITY,
     ) -> Result<(), HTTPHeaderError> {
         let headers = request.headers_mut();
-
         headers.append("Content-Type", HeaderValue::from_static("application/json"));
         headers.append("Prefer", header_value::<EchoContent>(&self.echo_content)?);
         headers.append(
@@ -55,7 +57,6 @@ impl CreateTableOptions {
             "Accept",
             header_value::<OdataMetadataLevel>(&self.odata_metadata_level)?,
         );
-
         headers.append(
             "x-ms-date",
             HeaderValue::from_str(
@@ -66,43 +67,37 @@ impl CreateTableOptions {
             )?,
         );
 
-        #[derive(serde::Serialize)]
-        struct CreateTableRequest<'a> {
-            #[serde(rename = "TableName")]
-            pub table_name: &'a str,
-        }
-        let body = CreateTableRequest { table_name };
-        let bytes = bytes::Bytes::from(serde_json::to_string(&body).unwrap());
-        headers.append("Content-Length", HeaderValue::from(bytes.len()));
+        let serialized = serde_json::to_string(&table_entity).unwrap();
 
-        let md5 = base64::encode(&md5::compute(bytes.as_ref())[..]);
-        headers.append("Content-MD5", HeaderValue::from_str(md5.as_str()).unwrap());
+        headers.append(
+            "Content-Length",
+            HeaderValue::from(serialized.as_bytes().len()),
+        );
 
-        *request.body_mut() = bytes.into();
-
+        request.set_body(bytes::Bytes::from(serialized).into());
         Ok(())
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, serde_derive::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateTableResponse {
+pub struct InsertEntityResponse<ENTITY> {
+    /// odata_metadata fields
     #[serde(rename = "odata.metadata")]
     pub odata_metadata: Option<String>,
     #[serde(rename = "odata.type")]
     pub odata_type: Option<String>,
     #[serde(rename = "odata.id")]
     pub odata_id: Option<String>,
+    #[serde(rename = "odata.etag")]
+    pub odata_etag: Option<String>,
     #[serde(rename = "odata.editLink")]
     pub odata_edit_link: Option<String>,
-    #[serde(rename = "TableName")]
-    pub table_name: String,
-}
+    #[serde(rename = "Timestamp@odata.type")]
+    pub timestamp_odata_type: Option<String>,
+    #[serde(rename = "Timestamp")]
+    pub timestamp: Option<String>,
 
-impl CreateTableResponse {
-    pub(crate) async fn try_from(response: Response) -> Result<Self, Error> {
-        let body = azure_core::collect_pinned_stream(response.deconstruct().2).await?;
-        let response = serde_json::from_slice(&body)?;
-        Ok(response)
-    }
+    #[serde(flatten)]
+    pub model: ENTITY,
 }

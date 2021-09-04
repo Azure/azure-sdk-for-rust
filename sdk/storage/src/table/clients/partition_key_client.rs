@@ -1,11 +1,11 @@
 use crate::core::clients::StorageAccountClient;
 use crate::table::prelude::*;
-use crate::table::requests::*;
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
 use std::sync::Arc;
 
+/*
 pub trait AsPartitionKeyClient<PK: Into<String>> {
     fn as_partition_key_client(&self, partition_key: PK) -> Arc<PartitionKeyClient>;
 }
@@ -156,3 +156,4 @@ mod integration_tests {
         // TODO: Confirm that the entities were in fact inserted (and that the status codes aren't a lie)
     }
 }
+*/
