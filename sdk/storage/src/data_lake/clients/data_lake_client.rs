@@ -1,6 +1,8 @@
 use crate::core::prelude::*;
 use crate::data_lake::requests::*;
 use azure_core::prelude::*;
+use azure_core::pipeline::Pipeline;
+use azure_core::ClientOptions;
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
@@ -39,10 +41,11 @@ impl<DS: Into<String>, A: Into<String>> AsCustomDataLakeClient<DS, A> for Arc<St
 
 #[derive(Debug, Clone)]
 pub struct DataLakeClient {
+    pipeline: Pipeline<Context>,
     storage_client: Arc<StorageClient>,
     account: String,
     custom_dns_suffix: Option<String>,
-    url: Url,
+    url: Url, // TODO: Use CloudLocation similar to CosmosClient
 }
 
 impl DataLakeClient {
@@ -65,7 +68,16 @@ impl DataLakeClient {
             }
         ))?;
 
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            &ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+
         Ok(Arc::new(Self {
+            pipeline,
             storage_client,
             account,
             custom_dns_suffix,
@@ -98,5 +110,9 @@ impl DataLakeClient {
     ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
         self.storage_client
             .prepare_request(url, method, http_header_adder, request_body)
+    }
+
+    pub(crate) fn pipeline(&self) -> &Pipeline<Context> {
+        &self.pipeline
     }
 }

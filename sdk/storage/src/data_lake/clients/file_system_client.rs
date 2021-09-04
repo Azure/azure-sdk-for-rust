@@ -1,9 +1,10 @@
+use azure_core::{Context, HttpClient, PipelineContext};
+use azure_core::pipeline::Pipeline;
 use crate::data_lake::requests::*;
+use crate::data_lake::operations::*;
 use crate::{data_lake::clients::DataLakeClient, Properties};
-use azure_core::prelude::*;
 use bytes::Bytes;
-use http::method::Method;
-use http::request::{Builder, Request};
+
 use std::sync::Arc;
 use url::Url;
 
@@ -60,6 +61,30 @@ impl FileSystemClient {
         SetFileSystemPropertiesBuilder::new(self, properties)
     }
 
+    /// Create a path
+    pub async fn create_path(
+        &self,
+        ctx: Context,
+        path_name: &str,
+        options: CreatePathOptions<'_>,
+    ) -> Result<CreatePathResponse, crate::Error> {
+        let mut request = self.prepare_request_pipeline(
+            &path_name,
+            http::Method::PUT,
+        );
+        let mut pipeline_context = PipelineContext::new(ctx, Vec::new());
+
+        options.decorate_request(&mut request)?;
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::CREATED)
+            .await?;
+
+        Ok(CreatePathResponse::try_from(response).await?)
+    }
+
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
         self.data_lake_client.http_client()
     }
@@ -71,11 +96,30 @@ impl FileSystemClient {
     pub(crate) fn prepare_request(
         &self,
         url: &str,
-        method: &Method,
-        http_header_adder: &dyn Fn(Builder) -> Builder,
+        method: &http::method::Method,
+        http_header_adder: &dyn Fn(http::request::Builder) -> http::request::Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
+    ) -> Result<(http::request::Request<Bytes>, url::Url), crate::Error> {
         self.data_lake_client
             .prepare_request(url, method, http_header_adder, request_body)
+    }
+
+    /// Note: This is part of the new pipeline architecture. Eventually this method will replace `prepare_request` fully.
+    pub(crate) fn prepare_request_pipeline(
+        &self,
+        uri_path: &str,
+        http_method: http::method::Method,
+    ) -> azure_core::Request {
+        let uri = format!("{}/{}?resource=file", self.url(), uri_path); // TODO: Support '?resource=directory'
+        http::request::Builder::new()
+            .method(http_method)
+            .uri(uri)
+            // .body(bytes::Bytes::new())
+            // .unwrap()
+            .into()
+    }
+
+    pub(crate) fn pipeline(&self) -> &Pipeline<Context> {
+        &self.data_lake_client.pipeline()
     }
 }

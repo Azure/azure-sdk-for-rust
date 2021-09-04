@@ -1,4 +1,5 @@
 pub mod clients;
+pub mod operations;
 mod file_system;
 pub mod requests;
 pub mod responses;
