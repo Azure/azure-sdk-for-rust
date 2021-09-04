@@ -16,3 +16,5 @@ sample/
 __azurite*.json
 __blobstorage__
 __queuestorage__
+.idea/
+*.iml
