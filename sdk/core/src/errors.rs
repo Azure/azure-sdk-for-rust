@@ -304,14 +304,11 @@ pub async fn check_status_extract_body_2(
     resp: hyper::Response<Body>,
     expected_status: StatusCode,
 ) -> Result<String, Error> {
-    use log::debug;
-
     let received_status = resp.status();
     let body = body::to_bytes(resp.into_body())
         .await
         .map_err(HttpError::ReadBytesError)?;
     let s = String::from_utf8(body.to_vec())?;
-    debug!("body: {}", s);
     if received_status != expected_status {
         Err(HttpError::new_unexpected_status_code(expected_status, received_status, &s).into())
     } else {

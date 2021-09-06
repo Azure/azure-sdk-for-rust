@@ -1,9 +1,9 @@
 use super::table_client::TableClient;
 use crate::operations::get_entity::GetEntityOptions;
+use crate::operations::get_entity::GetEntityResponse;
 use crate::operations::Insert_entity::InsertEntityOptions;
 use crate::operations::Insert_entity::InsertEntityResponse;
 use crate::operations::TableEntity;
-use crate::table::responses::GetEntityResponse;
 use crate::table_context::TableContext;
 use azure_core::Context;
 use azure_core::Error;
@@ -109,7 +109,7 @@ impl EntityClient {
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
     ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
-        //
+
         self.partition_key_client
             .prepare_request(url, method, http_header_adder, request_body)
     }
@@ -364,12 +364,12 @@ mod integration_tests {
 }
 
 */
-pub struct PipelineEntityClient {
+pub struct EntityClient {
     table_name: Cow<'static, str>,
     table_client: TableClient,
 }
 
-impl PipelineEntityClient {
+impl EntityClient {
     pub fn new<NAME: Into<Cow<'static, str>>>(table_client: TableClient, table_name: NAME) -> Self {
         Self {
             table_client,
@@ -377,16 +377,22 @@ impl PipelineEntityClient {
         }
     }
 
-    pub async fn get_entity<'a, E: DeserializeOwned + TableEntity<'a>>(
+    pub async fn get_entity<'a, E: serde::Serialize + DeserializeOwned + TableEntity<'a>>(
         &self,
         ctx: Context,
-        options: GetEntityOptions<'_>,
+        partition_key: &str,
+        row_key: &str,
+        options: GetEntityOptions,
     ) -> Result<GetEntityResponse<E>, Error> {
-        let mut request = self
-            .table_client
-            .prepare_table_request(&self.table_name, Method::GET);
+        let mut request = self.table_client.prepare_table_request(
+            format!(
+                "{}(PartitionKey='{}',RowKey='{}')",
+                &self.table_name, partition_key, row_key
+            )
+            .as_str(),
+            Method::GET,
+        );
 
-        options.decorate_request_url(&mut request)?;
         options.decorate_request_headers(&mut request)?;
 
         let table_context = TableContext::default();
@@ -402,8 +408,8 @@ impl PipelineEntityClient {
 
         let (_, _, body) = response.deconstruct();
         let body_bytes = azure_core::collect_pinned_stream(body).await?;
-        let response = serde_json::de::from_reader(body_bytes.reader())?;
-        Ok(response)
+        let entity = serde_json::de::from_reader(body_bytes.reader())?;
+        Ok(entity)
     }
 
     pub async fn insert_entity<'a, E: serde::Serialize + DeserializeOwned + TableEntity<'a>>(
@@ -434,37 +440,13 @@ impl PipelineEntityClient {
         let response = serde_json::de::from_reader(body_bytes.reader())?;
         Ok(response)
     }
-}
 
-#[cfg(test)]
-pub mod test_pipeline_table_client {
-    use super::TableClient;
-    use crate::{
-        operations::{
-            create_table::CreateTableOptions, delete_table::DeleteTableOptions,
-            get_entity::GetEntityOptions, list_tables::ListTablesOptions, OdataMetadataLevel,
-        },
-        table::clients::table_client::TableOptions,
-        Filter, Top,
-    };
-    use azure_core::Context;
-
-    #[tokio::test]
-    async fn get_entity_test() {
-        let email_table_client = emulator_table_client()
-            .into_entity_client("emails")
-            .get_entity(
-                Context::new(),
-                "shay@gmail.com",
-                "2021-08-03T03:41:54.221695200Z",
-                GetEntityOptions::default(),
-            )
-            .await;
-
-        println!("{:#?}", email_table_client);
-    }
-
-    fn emulator_table_client() -> TableClient {
-        TableClient::emulator(TableOptions::default())
+    pub async fn update_entity<'a, E: serde::Serialize + TableEntity<'a>>(
+        &self,
+        ctx: Context,
+        entity: &'a E,
+        options: InsertEntityOptions,
+    ) -> Result<(), Error> {
+        Ok(())
     }
 }

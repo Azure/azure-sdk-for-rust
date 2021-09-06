@@ -1,4 +1,6 @@
-use super::{header_value, ApiVersion, EchoContent, OdataMetadataLevel, TableEntity};
+use super::{
+    header_time_value, header_value, ApiVersion, EchoContent, OdataMetadataLevel, TableEntity,
+};
 use azure_core::{Error, HTTPHeaderError, Request, Response};
 use chrono::{Duration, Utc};
 use http::HeaderValue;
@@ -45,10 +47,11 @@ impl InsertEntityOptions {
         &self,
         request: &mut Request,
         table_entity: &'b ENTITY,
-    ) -> Result<(), HTTPHeaderError> {
+    ) -> Result<(), Error> {
         let headers = request.headers_mut();
         headers.append("Content-Type", HeaderValue::from_static("application/json"));
         headers.append("Prefer", header_value::<EchoContent>(&self.echo_content)?);
+        headers.append("x-ms-date", header_time_value(Utc::now())?);
         headers.append(
             "x-ms-version",
             header_value::<ApiVersion>(&self.api_version)?,
@@ -57,23 +60,12 @@ impl InsertEntityOptions {
             "Accept",
             header_value::<OdataMetadataLevel>(&self.odata_metadata_level)?,
         );
-        headers.append(
-            "x-ms-date",
-            HeaderValue::from_str(
-                Utc::now()
-                    .format("%a, %d %h %Y %T GMT")
-                    .to_string()
-                    .as_str(),
-            )?,
-        );
 
-        let serialized = serde_json::to_string(&table_entity).unwrap();
-
+        let serialized = serde_json::to_string(&table_entity)?;
         headers.append(
             "Content-Length",
             HeaderValue::from(serialized.as_bytes().len()),
         );
-
         request.set_body(bytes::Bytes::from(serialized).into());
         Ok(())
     }

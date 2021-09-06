@@ -86,11 +86,6 @@ impl Request {
     pub fn uri_mut(&mut self) -> &mut Uri {
         &mut self.uri
     }
-
-    /// Set the request's uri.
-    pub fn set_uri(&mut self, uri: Uri) {
-        self.uri = uri;
-    }
 }
 
 /// Temporary hack to convert preexisting requests into the new format. It

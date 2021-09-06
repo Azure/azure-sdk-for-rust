@@ -1,11 +1,12 @@
-pub mod Insert_entity;
-use azure_core::HTTPHeaderError;
+use azure_core::{Error, HTTPHeaderError, Request};
+use chrono::{DateTime, Utc};
 use http::HeaderValue;
-
+pub mod Insert_entity;
 pub mod create_table;
 pub mod delete_table;
 pub mod get_entity;
 pub mod list_tables;
+pub mod update_entity;
 
 /// api version enum
 #[derive(Debug, Clone)]
@@ -61,6 +62,46 @@ impl AsRef<str> for EchoContent {
     }
 }
 
+///The client may specify the ETag for the entity on the request in order to compare to the ETag maintained by the service
+/// for the purpose of optimistic concurrency.
+enum ETag {
+    ForceUpdate,
+    OnlyIfMatch(String),
+}
+
+impl Default for ETag {
+    fn default() -> Self {
+        Self::ForceUpdate
+    }
+}
+
+impl AsRef<str> for ETag {
+    fn as_ref(&self) -> &str {
+        match self {
+            ETag::ForceUpdate => "*",
+            ETag::OnlyIfMatch(etag) => etag.as_str(),
+        }
+    }
+}
+
+/// This trait represents a table entity.
+/// User should implement this trait for thir custom models
+pub trait TableEntity<'a> {
+    type Entity: serde::Serialize + 'a;
+
+    /// Return partition key value as reference.
+    fn partition_key(&self) -> &str;
+
+    /// Return partition key value as reference.
+    fn row_key(&self) -> &str;
+}
+
+pub fn header_time_value(utc_time: DateTime<Utc>) -> Result<HeaderValue, HTTPHeaderError> {
+    const FMT: &str = "%a, %d %h %Y %T GMT";
+    HeaderValue::from_str(utc_time.format(FMT).to_string().as_str())
+        .map_err(azure_core::HTTPHeaderError::InvalidHeaderValue)
+}
+
 pub fn header_value<T: AsRef<str>>(value: &Option<T>) -> Result<HeaderValue, HTTPHeaderError> {
     HeaderValue::from_str(
         value
@@ -71,14 +112,4 @@ pub fn header_value<T: AsRef<str>>(value: &Option<T>) -> Result<HeaderValue, HTT
             .as_ref(),
     )
     .map_err(azure_core::HTTPHeaderError::InvalidHeaderValue)
-}
-
-pub trait TableEntity<'a> {
-    type Entity: serde::Serialize + 'a;
-
-    /// Return partition key value as reference.
-    fn partition_key(&self) -> &str;
-
-    /// Return partition key value as reference.
-    fn row_key(&self) -> &str;
 }

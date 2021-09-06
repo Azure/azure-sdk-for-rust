@@ -1,6 +1,6 @@
 use super::{ApiVersion, OdataMetadataLevel};
-use crate::operations::{header_value, EchoContent};
-use azure_core::{Error, HTTPHeaderError, Request, Response};
+use crate::operations::{header_time_value, header_value, EchoContent};
+use azure_core::{Error, Request, Response};
 use chrono::Utc;
 use http::HeaderValue;
 
@@ -38,15 +38,11 @@ impl CreateTableOptions {
         }
     }
 
-    pub fn decorate_request(
-        &self,
-        request: &mut Request,
-        table_name: &str,
-    ) -> Result<(), HTTPHeaderError> {
+    pub fn decorate_request(&self, request: &mut Request, table_name: &str) -> Result<(), Error> {
         let headers = request.headers_mut();
-
         headers.append("Content-Type", HeaderValue::from_static("application/json"));
         headers.append("Prefer", header_value::<EchoContent>(&self.echo_content)?);
+        headers.append("x-ms-date", header_time_value(Utc::now())?);
         headers.append(
             "x-ms-version",
             header_value::<ApiVersion>(&self.api_version)?,
@@ -56,30 +52,19 @@ impl CreateTableOptions {
             header_value::<OdataMetadataLevel>(&self.odata_metadata_level)?,
         );
 
-        headers.append(
-            "x-ms-date",
-            HeaderValue::from_str(
-                Utc::now()
-                    .format("%a, %d %h %Y %T GMT")
-                    .to_string()
-                    .as_str(),
-            )?,
-        );
-
         #[derive(serde::Serialize)]
         struct CreateTableRequest<'a> {
             #[serde(rename = "TableName")]
             pub table_name: &'a str,
         }
         let body = CreateTableRequest { table_name };
-        let bytes = bytes::Bytes::from(serde_json::to_string(&body).unwrap());
+        let bytes = bytes::Bytes::from(serde_json::to_string(&body)?);
         headers.append("Content-Length", HeaderValue::from(bytes.len()));
 
         let md5 = base64::encode(&md5::compute(bytes.as_ref())[..]);
         headers.append("Content-MD5", HeaderValue::from_str(md5.as_str()).unwrap());
 
         *request.body_mut() = bytes.into();
-
         Ok(())
     }
 }

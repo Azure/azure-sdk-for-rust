@@ -1,4 +1,4 @@
-use super::entity_client::PipelineEntityClient;
+use super::entity_client::EntityClient;
 use crate::{
     authorization::{authorization_policy::AuthorizationPolicy, AuthorizationToken},
     operations::{
@@ -110,7 +110,10 @@ impl TableClient {
         ctx: Context,
         options: ListTablesOptions<'_>,
     ) -> Result<ListTablesResponse, Error> {
-        let mut request = self.prepare_table_request("Tables", Method::GET);
+        let uri_path = options.base_uri_path();
+        trace!("uri path created successfully: {:#?}", uri_path);
+
+        let mut request = self.prepare_table_request(uri_path, Method::GET);
 
         // add basic request properties
         options.decorate_request(&mut request)?;
@@ -124,11 +127,6 @@ impl TableClient {
             .await?
             .validate(http::StatusCode::OK)
             .await?;
-
-        let a = response
-            .headers()
-            .get("x-ms-continuation-NextTableName")
-            .map_or(None, |value| Some(value.to_str().unwrap().to_string()));
 
         Ok(ListTablesResponse {
             // try to initialize the next table header if exists
@@ -186,11 +184,8 @@ impl TableClient {
         Ok(())
     }
 
-    pub fn into_entity_client<S: Into<Cow<'static, str>>>(
-        self,
-        table_name: S,
-    ) -> PipelineEntityClient {
-        PipelineEntityClient::new(self, table_name)
+    pub fn into_entity_client<S: Into<Cow<'static, str>>>(self, table_name: S) -> EntityClient {
+        EntityClient::new(self, table_name)
     }
 
     pub(crate) fn prepare_table_request(
@@ -198,8 +193,10 @@ impl TableClient {
         uri_path: &str,
         http_method: http::Method,
     ) -> azure_core::Request {
-        let uri = format!("{}/{}", self.cloud_location.url(), uri_path);
-        let uri = Uri::from_str(uri.as_str()).unwrap();
+        let url = format!("{}/{}", self.cloud_location.url(), uri_path);
+        let url = url::Url::from_str(&url).unwrap();
+        println!("{:?}", url);
+        let uri = Uri::from_str(url.as_str()).unwrap();
         azure_core::Request::new(uri, http_method)
     }
 
@@ -211,7 +208,7 @@ impl TableClient {
 #[cfg(test)]
 pub mod table_client_tests {
     use super::{TableClient, TableOptions};
-    use crate::{operations::*, Filter, Top};
+    use crate::{operations::*, Top};
     use azure_core::Context;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -225,6 +222,20 @@ pub mod table_client_tests {
 
     fn emulator_table_client() -> TableClient {
         TableClient::emulator(TableOptions::default())
+    }
+
+    #[tokio::test]
+    async fn list_table_with_filter_test() {
+        let response = emulator_table_client()
+            .list_tables(
+                Context::new(),
+                list_tables::ListTablesOptions::default().filter("TableName gt 'addj'"),
+            )
+            .await
+            .unwrap();
+        for table in response.body.tables {
+            println!("{}", table.table_name);
+        }
     }
 
     #[tokio::test]
@@ -257,15 +268,18 @@ pub mod table_client_tests {
                 == table_name
         );
 
-        let tables = emulator_table_client()
+        let list_tables_response = emulator_table_client()
             .list_tables(Context::new(), list_tables::ListTablesOptions::default())
             .await
-            .unwrap()
+            .unwrap();
+        let mut names = list_tables_response
+            .body
             .tables
             .iter()
-            .filter(|&t| t.table_name == table_name);
-        assert_eq!(tables.next(), Some(table_name));
-        assert_eq!(tables.next(), None);
+            .filter(|&t| t.table_name == table_name)
+            .map(|t| t.table_name.as_str());
+        assert_eq!(names.next(), Some(table_name));
+        assert_eq!(names.next(), None);
 
         assert_eq!(
             emulator_table_client()
@@ -274,8 +288,9 @@ pub mod table_client_tests {
                     table_name,
                     delete_table::DeleteTableOptions::default()
                 )
-                .await,
-            Ok(())
+                .await
+                .unwrap(),
+            ()
         );
 
         assert_eq!(
@@ -283,6 +298,7 @@ pub mod table_client_tests {
                 .list_tables(Context::new(), list_tables::ListTablesOptions::default())
                 .await
                 .unwrap()
+                .body
                 .tables
                 .iter()
                 .filter(|&t| t.table_name == table_name)

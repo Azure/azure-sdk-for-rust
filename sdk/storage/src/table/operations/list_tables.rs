@@ -1,11 +1,9 @@
-use std::str::FromStr;
-
+use super::{header_time_value, header_value, ApiVersion, OdataMetadataLevel};
 use crate::{Filter, Top};
-
-use super::{header_value, ApiVersion, OdataMetadataLevel};
-use azure_core::{AppendToUrlQuery, Error, HTTPHeaderError, Request, Response};
+use azure_core::{AppendToUrlQuery, Error, Request, Response};
 use chrono::Utc;
-use http::HeaderValue;
+use http::Uri;
+use std::str::FromStr;
 
 #[derive(Debug, Clone)]
 pub struct ListTablesOptions<'a> {
@@ -36,14 +34,21 @@ impl<'a> ListTablesOptions<'a> {
         odata_metadata_level: OdataMetadataLevel  => Some(odata_metadata_level),
     }
 
-    pub fn decorate_request(&self, request: &mut Request) -> Result<(), HTTPHeaderError> {
-        let headers = request.headers_mut();
+    pub(crate) fn query_parameters(&self) -> bool {
+        self.top.is_some() || self.filter.is_some()
+    }
 
-        //if &self.odata_metadata_level. == OdataMetadataLevel::NoMetadata {
-        //  return Err(HTTPHeaderError::HeaderValidationError(
-        //       "List table operation can not include NoMetadata as the Accept header value".into(),
-        //    ));
-        //}
+    pub(crate) fn base_uri_path(&self) -> &str {
+        if self.top.is_none() && self.filter.is_none() {
+            "Tables"
+        } else {
+            "Tables()"
+        }
+    }
+
+    pub(crate) fn decorate_request(&self, request: &mut Request) -> Result<(), Error> {
+        let headers = request.headers_mut();
+        headers.append("x-ms-date", header_time_value(Utc::now())?);
         headers.append(
             "Accept",
             header_value::<OdataMetadataLevel>(&self.odata_metadata_level)?,
@@ -52,32 +57,18 @@ impl<'a> ListTablesOptions<'a> {
             "x-ms-version",
             header_value::<ApiVersion>(&self.api_version)?,
         );
-        headers.append(
-            "x-ms-date",
-            HeaderValue::from_str(
-                Utc::now()
-                    .format("%a, %d %h %Y %T GMT")
-                    .to_string()
-                    .as_str(),
-            )?,
-        );
 
         if let Some(top) = self.top.as_ref() {
             let mut url = url::Url::from_str(request.uri().to_string().as_str()).unwrap();
             top.append_to_url_query(&mut url);
-            let url_as_string = url.to_string();
-            let uri = http::Uri::from_str(url_as_string.as_str()).unwrap();
-            request.set_uri(uri);
+            *request.uri_mut() = http::Uri::from_str(url.to_string().as_str()).unwrap();
         };
 
         if let Some(filter) = self.filter.as_ref() {
             let mut url = url::Url::from_str(request.uri().to_string().as_str()).unwrap();
             filter.append_to_url_query(&mut url);
-            let url_as_string = url.to_string();
-            let uri = http::Uri::from_str(url_as_string.as_str()).unwrap();
-            request.set_uri(uri);
+            *request.uri_mut() = Uri::from_str(url.to_string().as_str()).unwrap();
         }
-
         Ok(())
     }
 }
