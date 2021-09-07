@@ -2,17 +2,17 @@
 // These tests require cloning azure-rest-api-specs.
 // git clone git@github.com:Azure/azure-rest-api-specs.git ../azure-rest-api-specs
 
-use std::path::PathBuf;
-
 use autorust_codegen::{
     spec::{self, TypedReference},
     Spec,
 };
+use std::path::PathBuf;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const REDIS_SPEC: &str = "../../azure-rest-api-specs/specification/redis/resource-manager/Microsoft.Cache/stable/2020-06-01/redis.json";
-const LINKS_SPEC: &str = "../../azure-rest-api-specs/specification/common-types/resource-management/v1/privatelinks.json";
+const REDIS_SPEC: &str =
+    "../../../../azure-rest-api-specs/specification/redis/resource-manager/Microsoft.Cache/stable/2020-06-01/redis.json";
+const LINKS_SPEC: &str = "../../../../azure-rest-api-specs/specification/common-types/resource-management/v1/privatelinks.json";
 
 #[test]
 fn test_redis_ref_files() -> Result<()> {
@@ -30,7 +30,7 @@ fn test_redis_read_spec() -> Result<()> {
     println!("{:#?}", spec.docs().keys());
     assert_eq!(4, spec.docs().len());
     assert!(spec.docs().contains_key(std::path::Path::new(
-        "../../azure-rest-api-specs/specification/common-types/resource-management/v2/types.json"
+        "../../../../azure-rest-api-specs/specification/common-types/resource-management/v2/types.json"
     )));
     Ok(())
 }

@@ -13,7 +13,7 @@ pub mod servers {
     ) -> std::result::Result<Server, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -79,7 +79,7 @@ pub mod servers {
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -158,7 +158,7 @@ pub mod servers {
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -229,7 +229,7 @@ pub mod servers {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -296,7 +296,7 @@ pub mod servers {
     ) -> std::result::Result<ServerListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers",
             operation_config.base_path(),
             subscription_id,
             resource_group_name
@@ -363,7 +363,7 @@ pub mod servers {
     ) -> std::result::Result<ServerListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.DBForMySQL/servers",
+            "{}/subscriptions/{}/providers/Microsoft.DBforMySQL/servers",
             operation_config.base_path(),
             subscription_id
         );
@@ -426,7 +426,7 @@ pub mod servers {
     ) -> std::result::Result<restart::Response, restart::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/restart",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/restart",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -504,7 +504,7 @@ pub mod replicas {
     ) -> std::result::Result<ServerListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/replicas",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/replicas",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -576,7 +576,7 @@ pub mod firewall_rules {
     ) -> std::result::Result<FirewallRule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/firewallRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/firewallRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -644,7 +644,7 @@ pub mod firewall_rules {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/firewallRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/firewallRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -727,7 +727,7 @@ pub mod firewall_rules {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/firewallRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/firewallRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -796,7 +796,7 @@ pub mod firewall_rules {
     ) -> std::result::Result<FirewallRuleListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/firewallRules",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/firewallRules",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -868,7 +868,7 @@ pub mod virtual_network_rules {
     ) -> std::result::Result<VirtualNetworkRule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/virtualNetworkRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/virtualNetworkRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -930,7 +930,7 @@ pub mod virtual_network_rules {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/virtualNetworkRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/virtualNetworkRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1007,7 +1007,7 @@ pub mod virtual_network_rules {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/virtualNetworkRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/virtualNetworkRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1070,7 +1070,7 @@ pub mod virtual_network_rules {
     ) -> std::result::Result<VirtualNetworkRuleListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/virtualNetworkRules",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/virtualNetworkRules",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1136,7 +1136,7 @@ pub mod databases {
     ) -> std::result::Result<Database, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/databases/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/databases/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1204,7 +1204,7 @@ pub mod databases {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/databases/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/databases/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1287,7 +1287,7 @@ pub mod databases {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/databases/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/databases/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1356,7 +1356,7 @@ pub mod databases {
     ) -> std::result::Result<DatabaseListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/databases",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/databases",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1428,7 +1428,7 @@ pub mod configurations {
     ) -> std::result::Result<Configuration, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/configurations/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/configurations/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1496,7 +1496,7 @@ pub mod configurations {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/configurations/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/configurations/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1571,7 +1571,7 @@ pub mod configurations {
     ) -> std::result::Result<ConfigurationListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/configurations",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/configurations",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1642,7 +1642,7 @@ pub mod log_files {
     ) -> std::result::Result<LogFileListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/logFiles",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/logFiles",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1713,7 +1713,7 @@ pub mod server_administrators {
     ) -> std::result::Result<ServerAdministratorResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/Administrators/activeDirectory",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/Administrators/activeDirectory",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1784,7 +1784,7 @@ pub mod server_administrators {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/Administrators/activeDirectory",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/Administrators/activeDirectory",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1868,7 +1868,7 @@ pub mod server_administrators {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/Administrators/activeDirectory",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/Administrators/activeDirectory",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1941,7 +1941,7 @@ pub mod server_administrators {
     ) -> std::result::Result<ServerAdministratorResourceListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/administrators",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/administrators",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2013,7 +2013,7 @@ pub mod location_based_performance_tier {
     ) -> std::result::Result<PerformanceTierListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.DBForMySQL/locations/{}/performanceTiers",
+            "{}/subscriptions/{}/providers/Microsoft.DBforMySQL/locations/{}/performanceTiers",
             operation_config.base_path(),
             subscription_id,
             location_name
@@ -2079,7 +2079,7 @@ pub mod check_name_availability {
     ) -> std::result::Result<NameAvailability, execute::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.DBForMySQL/checkNameAvailability",
+            "{}/subscriptions/{}/providers/Microsoft.DBforMySQL/checkNameAvailability",
             operation_config.base_path(),
             subscription_id
         );
@@ -2149,7 +2149,7 @@ pub mod server_security_alert_policies {
     ) -> std::result::Result<ServerSecurityAlertPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/securityAlertPolicies/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/securityAlertPolicies/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2211,7 +2211,7 @@ pub mod server_security_alert_policies {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/securityAlertPolicies/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/securityAlertPolicies/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2284,7 +2284,7 @@ pub mod query_texts {
     ) -> std::result::Result<QueryText, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/queryTexts/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/queryTexts/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2351,7 +2351,7 @@ pub mod query_texts {
     ) -> std::result::Result<QueryTextsResultList, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/queryTexts",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/queryTexts",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2426,7 +2426,7 @@ pub mod top_query_statistics {
     ) -> std::result::Result<QueryStatistic, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/topQueryStatistics/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/topQueryStatistics/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2493,7 +2493,7 @@ pub mod top_query_statistics {
     ) -> std::result::Result<TopQueryStatisticsResultList, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/topQueryStatistics",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/topQueryStatistics",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2565,7 +2565,7 @@ pub mod wait_statistics {
     ) -> std::result::Result<WaitStatistic, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/waitStatistics/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/waitStatistics/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2632,7 +2632,7 @@ pub mod wait_statistics {
     ) -> std::result::Result<WaitStatisticsResultList, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/waitStatistics",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/waitStatistics",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2704,7 +2704,7 @@ pub mod advisors {
     ) -> std::result::Result<Advisor, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/advisors/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/advisors/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2770,7 +2770,7 @@ pub mod advisors {
     ) -> std::result::Result<AdvisorsResultList, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/advisors",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/advisors",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2841,7 +2841,7 @@ pub async fn create_recommended_action_session(
 ) -> std::result::Result<create_recommended_action_session::Response, create_recommended_action_session::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
-        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/advisors/{}/createRecommendedActionSession",
+        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/advisors/{}/createRecommendedActionSession",
         operation_config.base_path(),
         subscription_id,
         resource_group_name,
@@ -2919,7 +2919,7 @@ pub mod recommended_actions {
     ) -> std::result::Result<RecommendationAction, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/advisors/{}/recommendedActions/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/advisors/{}/recommendedActions/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -2988,7 +2988,7 @@ pub mod recommended_actions {
     ) -> std::result::Result<RecommendationActionsResultList, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForMySQL/servers/{}/advisors/{}/recommendedActions",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforMySQL/servers/{}/advisors/{}/recommendedActions",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -3063,7 +3063,7 @@ pub mod location_based_recommended_action_sessions_operation_status {
     ) -> std::result::Result<RecommendedActionSessionsOperationStatus, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.DBForMySQL/locations/{}/recommendedActionSessionsAzureAsyncOperation/{}",
+            "{}/subscriptions/{}/providers/Microsoft.DBforMySQL/locations/{}/recommendedActionSessionsAzureAsyncOperation/{}",
             operation_config.base_path(),
             subscription_id,
             location_name,
@@ -3131,7 +3131,7 @@ pub mod location_based_recommended_action_sessions_result {
     ) -> std::result::Result<list::Response, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.DBForMySQL/locations/{}/recommendedActionSessionsOperationResults/{}",
+            "{}/subscriptions/{}/providers/Microsoft.DBforMySQL/locations/{}/recommendedActionSessionsOperationResults/{}",
             operation_config.base_path(),
             subscription_id,
             location_name,
@@ -3204,7 +3204,7 @@ pub mod operations {
     use crate::models::*;
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
-        let url_str = &format!("{}/providers/Microsoft.DBForMySQL/operations", operation_config.base_path(),);
+        let url_str = &format!("{}/providers/Microsoft.DBforMySQL/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);

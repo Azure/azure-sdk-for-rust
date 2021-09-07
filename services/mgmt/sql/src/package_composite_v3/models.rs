@@ -4998,5 +4998,7 @@ pub mod resource_identity {
         None,
         SystemAssigned,
         UserAssigned,
+        #[serde(rename = "SystemAssigned,UserAssigned")]
+        SystemAssignedUserAssigned,
     }
 }

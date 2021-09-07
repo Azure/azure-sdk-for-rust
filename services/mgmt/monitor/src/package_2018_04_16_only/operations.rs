@@ -13,7 +13,7 @@ pub mod scheduled_query_rules {
     ) -> std::result::Result<LogSearchRuleResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/scheduledQueryRules/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/scheduledQueryRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -84,7 +84,7 @@ pub mod scheduled_query_rules {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/scheduledQueryRules/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/scheduledQueryRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -169,7 +169,7 @@ pub mod scheduled_query_rules {
     ) -> std::result::Result<LogSearchRuleResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/scheduledQueryRules/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/scheduledQueryRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -239,7 +239,7 @@ pub mod scheduled_query_rules {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/scheduledQueryRules/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/scheduledQueryRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -309,7 +309,7 @@ pub mod scheduled_query_rules {
     ) -> std::result::Result<LogSearchRuleResourceCollection, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/scheduledQueryRules",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/scheduledQueryRules",
             operation_config.base_path(),
             subscription_id
         );
@@ -383,7 +383,7 @@ pub mod scheduled_query_rules {
     ) -> std::result::Result<LogSearchRuleResourceCollection, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/scheduledQueryRules",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/scheduledQueryRules",
             operation_config.base_path(),
             subscription_id,
             resource_group_name

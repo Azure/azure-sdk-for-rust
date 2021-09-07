@@ -1083,6 +1083,7 @@ pub async fn list_order_items_at_resource_group_level(
     subscription_id: &str,
     resource_group_name: &str,
     filter: Option<&str>,
+    expand: Option<&str>,
     skip_token: Option<&str>,
 ) -> std::result::Result<OrderItemResourceList, list_order_items_at_resource_group_level::Error> {
     let http_client = operation_config.http_client();
@@ -1105,6 +1106,9 @@ pub async fn list_order_items_at_resource_group_level(
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     if let Some(filter) = filter {
         url.query_pairs_mut().append_pair("$filter", filter);
+    }
+    if let Some(expand) = expand {
+        url.query_pairs_mut().append_pair("$expand", expand);
     }
     if let Some(skip_token) = skip_token {
         url.query_pairs_mut().append_pair("$skipToken", skip_token);
@@ -1164,6 +1168,7 @@ pub async fn get_order_item_by_name(
     order_item_name: &str,
     subscription_id: &str,
     resource_group_name: &str,
+    expand: Option<&str>,
 ) -> std::result::Result<OrderItemResource, get_order_item_by_name::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -1184,6 +1189,9 @@ pub async fn get_order_item_by_name(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    if let Some(expand) = expand {
+        url.query_pairs_mut().append_pair("$expand", expand);
+    }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder

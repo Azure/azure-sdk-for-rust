@@ -661,8 +661,6 @@ pub struct CapacityReservationProperties {
     pub last_sku_update: Option<String>,
     #[serde(rename = "minCapacity", default, skip_serializing_if = "Option::is_none")]
     pub min_capacity: Option<i64>,
-    #[serde(rename = "maxCapacity", default, skip_serializing_if = "Option::is_none")]
-    pub max_capacity: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {

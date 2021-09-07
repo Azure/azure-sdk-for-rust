@@ -25,6 +25,14 @@ pub struct AzureMonitorWorkspaceProperties {
     pub workspace_id: Option<String>,
     #[serde(rename = "workspaceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_resource_id: Option<String>,
+    #[serde(rename = "includeChangeDetails", default, skip_serializing_if = "Option::is_none")]
+    pub include_change_details: Option<ChangeDetailsMode>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ChangeDetailsMode {
+    None,
+    Include,
+    Exclude,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum NotificationsState {
@@ -67,6 +75,8 @@ pub struct ConfigurationProfileResource {
     pub identity: Option<ResourceIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProfileResourceProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtendedProxyResource {

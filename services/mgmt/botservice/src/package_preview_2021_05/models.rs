@@ -71,8 +71,14 @@ pub struct BotProperties {
     pub endpoint: String,
     #[serde(rename = "endpointVersion", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_version: Option<String>,
+    #[serde(rename = "msaAppType", default, skip_serializing_if = "Option::is_none")]
+    pub msa_app_type: Option<bot_properties::MsaAppType>,
     #[serde(rename = "msaAppId")]
     pub msa_app_id: String,
+    #[serde(rename = "msaAppTenantId", default, skip_serializing_if = "Option::is_none")]
+    pub msa_app_tenant_id: Option<String>,
+    #[serde(rename = "msaAppMSIResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub msa_app_msi_resource_id: Option<String>,
     #[serde(rename = "configuredChannels", default, skip_serializing_if = "Vec::is_empty")]
     pub configured_channels: Vec<String>,
     #[serde(rename = "enabledChannels", default, skip_serializing_if = "Vec::is_empty")]
@@ -93,8 +99,22 @@ pub struct BotProperties {
     pub cmek_key_vault_url: Option<String>,
     #[serde(rename = "isIsolated", default, skip_serializing_if = "Option::is_none")]
     pub is_isolated: Option<bool>,
+    #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
+    pub disable_local_auth: Option<bool>,
     #[serde(rename = "schemaTransformationVersion", default, skip_serializing_if = "Option::is_none")]
     pub schema_transformation_version: Option<String>,
+    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+}
+pub mod bot_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum MsaAppType {
+        #[serde(rename = "UserAssignedMSI")]
+        UserAssignedMsi,
+        SingleTenant,
+        MultiTenant,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BotResponseList {
@@ -315,6 +335,8 @@ pub struct SlackChannelProperties {
     pub client_secret: Option<String>,
     #[serde(rename = "verificationToken", default, skip_serializing_if = "Option::is_none")]
     pub verification_token: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scopes: Option<String>,
     #[serde(rename = "landingPageUrl", default, skip_serializing_if = "Option::is_none")]
     pub landing_page_url: Option<String>,
     #[serde(rename = "redirectAction", default, skip_serializing_if = "Option::is_none")]
@@ -647,8 +669,8 @@ pub struct PrivateLinkServiceConnectionState {
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "actionRequired", default, skip_serializing_if = "Option::is_none")]
-    pub action_required: Option<String>,
+    #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
+    pub actions_required: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointServiceConnectionStatus {

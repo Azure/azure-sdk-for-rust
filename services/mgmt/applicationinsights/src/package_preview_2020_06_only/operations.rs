@@ -88,7 +88,7 @@ pub mod live_token {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: ErrorResponseLinkedStorage =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -104,7 +104,7 @@ pub mod live_token {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorResponseLinkedStorage,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),

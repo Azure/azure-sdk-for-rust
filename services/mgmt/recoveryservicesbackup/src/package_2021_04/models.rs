@@ -981,6 +981,49 @@ pub struct DpmJob {
     pub extended_info: Option<DpmJobExtendedInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupResourceConfigResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<BackupResourceConfig>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupResourceConfig {
+    #[serde(rename = "storageModelType", default, skip_serializing_if = "Option::is_none")]
+    pub storage_model_type: Option<backup_resource_config::StorageModelType>,
+    #[serde(rename = "storageType", default, skip_serializing_if = "Option::is_none")]
+    pub storage_type: Option<backup_resource_config::StorageType>,
+    #[serde(rename = "storageTypeState", default, skip_serializing_if = "Option::is_none")]
+    pub storage_type_state: Option<backup_resource_config::StorageTypeState>,
+    #[serde(rename = "crossRegionRestoreFlag", default, skip_serializing_if = "Option::is_none")]
+    pub cross_region_restore_flag: Option<bool>,
+}
+pub mod backup_resource_config {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StorageModelType {
+        Invalid,
+        GeoRedundant,
+        LocallyRedundant,
+        ZoneRedundant,
+        ReadAccessGeoZoneRedundant,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StorageType {
+        Invalid,
+        GeoRedundant,
+        LocallyRedundant,
+        ZoneRedundant,
+        ReadAccessGeoZoneRedundant,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StorageTypeState {
+        Invalid,
+        Locked,
+        Unlocked,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DpmJobExtendedInfo {
     #[serde(rename = "tasksList", default, skip_serializing_if = "Vec::is_empty")]
     pub tasks_list: Vec<DpmJobTaskDetails>,
@@ -4055,42 +4098,6 @@ pub struct AadPropertiesResource {
     pub properties: Option<AadProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupResourceConfig {
-    #[serde(rename = "storageModelType", default, skip_serializing_if = "Option::is_none")]
-    pub storage_model_type: Option<backup_resource_config::StorageModelType>,
-    #[serde(rename = "storageType", default, skip_serializing_if = "Option::is_none")]
-    pub storage_type: Option<backup_resource_config::StorageType>,
-    #[serde(rename = "storageTypeState", default, skip_serializing_if = "Option::is_none")]
-    pub storage_type_state: Option<backup_resource_config::StorageTypeState>,
-    #[serde(rename = "crossRegionRestoreFlag", default, skip_serializing_if = "Option::is_none")]
-    pub cross_region_restore_flag: Option<bool>,
-}
-pub mod backup_resource_config {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StorageModelType {
-        Invalid,
-        GeoRedundant,
-        LocallyRedundant,
-        ZoneRedundant,
-        ReadAccessGeoZoneRedundant,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StorageType {
-        Invalid,
-        GeoRedundant,
-        LocallyRedundant,
-        ZoneRedundant,
-        ReadAccessGeoZoneRedundant,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StorageTypeState {
-        Invalid,
-        Locked,
-        Unlocked,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CrrJobRequest {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
@@ -4103,13 +4110,6 @@ pub struct CrrJobRequestResource {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CrrJobRequest>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupResourceConfigResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BackupResourceConfig>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CrossRegionRestoreRequest {
@@ -4186,6 +4186,13 @@ pub struct CrrAccessTokenResource {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CrrAccessToken>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IdentityInfo {
+    #[serde(rename = "isSystemAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub is_system_assigned_identity: Option<bool>,
+    #[serde(rename = "managedIdentityResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub managed_identity_resource_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BmsaadPropertiesQueryObject {

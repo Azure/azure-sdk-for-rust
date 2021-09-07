@@ -1,9 +1,9 @@
+use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
 use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
-use azure_cosmos::responses::GetDocumentResponse;
 use std::borrow::Cow;
 use std::error::Error;
 
@@ -57,9 +57,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // an error (for example, the given key is not valid) you will receive a
     // specific azure_cosmos::Error. In this example we will look for a specific database
     // so we chain a filter operation.
-    let db = client
-        .list_databases(Context::new(), ListDatabasesOptions::new())
-        .await?
+    let db = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+        .next()
+        .await
+        .unwrap()?
         .databases
         .into_iter()
         .find(|db| db.id == DATABASE);
@@ -154,8 +155,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let get_document_response = collection_client
         .clone()
         .into_document_client(doc.id.clone(), &doc.id)?
-        .get_document()
-        .execute::<MySampleStruct>()
+        .get_document::<MySampleStruct>(Context::new(), GetDocumentOptions::new())
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 

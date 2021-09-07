@@ -68,6 +68,12 @@ pub struct DataLakeAnalyticsAccountProperties {
     pub current_tier: Option<data_lake_analytics_account_properties::CurrentTier>,
     #[serde(rename = "maxJobCount", default, skip_serializing_if = "Option::is_none")]
     pub max_job_count: Option<i32>,
+    #[serde(rename = "maxActiveJobCountPerUser", default, skip_serializing_if = "Option::is_none")]
+    pub max_active_job_count_per_user: Option<i32>,
+    #[serde(rename = "maxQueuedJobCountPerUser", default, skip_serializing_if = "Option::is_none")]
+    pub max_queued_job_count_per_user: Option<i32>,
+    #[serde(rename = "maxJobRunningTimeInMin", default, skip_serializing_if = "Option::is_none")]
+    pub max_job_running_time_in_min: Option<i32>,
     #[serde(rename = "systemMaxJobCount", default, skip_serializing_if = "Option::is_none")]
     pub system_max_job_count: Option<i32>,
     #[serde(rename = "maxDegreeOfParallelism", default, skip_serializing_if = "Option::is_none")]

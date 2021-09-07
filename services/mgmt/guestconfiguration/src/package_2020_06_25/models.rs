@@ -26,6 +26,8 @@ pub struct GuestConfigurationNavigation {
     pub content_uri: Option<String>,
     #[serde(rename = "contentHash", default, skip_serializing_if = "Option::is_none")]
     pub content_hash: Option<String>,
+    #[serde(rename = "assignmentType", default, skip_serializing_if = "Option::is_none")]
+    pub assignment_type: Option<guest_configuration_navigation::AssignmentType>,
     #[serde(rename = "configurationParameter", default, skip_serializing_if = "Vec::is_empty")]
     pub configuration_parameter: Vec<ConfigurationParameter>,
     #[serde(rename = "configurationSetting", default, skip_serializing_if = "Option::is_none")]
@@ -37,6 +39,13 @@ pub mod guest_configuration_navigation {
     pub enum Kind {
         #[serde(rename = "DSC")]
         Dsc,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AssignmentType {
+        Audit,
+        DeployAndAutoCorrect,
+        ApplyAndAutoCorrect,
+        ApplyAndMonitor,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

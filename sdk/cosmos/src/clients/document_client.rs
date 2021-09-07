@@ -1,7 +1,9 @@
 use super::{AttachmentClient, CollectionClient, CosmosClient, DatabaseClient};
+use crate::prelude::{GetDocumentOptions, GetDocumentResponse};
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
-use azure_core::HttpClient;
+use azure_core::{Context, HttpClient, PipelineContext, Request};
+use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 /// A client for Cosmos document resources.
@@ -61,8 +63,28 @@ impl DocumentClient {
     }
 
     /// Get a document
-    pub fn get_document(&self) -> requests::GetDocumentBuilder<'_, '_> {
-        requests::GetDocumentBuilder::new(self)
+    pub async fn get_document<T>(
+        &self,
+        ctx: Context,
+        options: GetDocumentOptions<'_>,
+    ) -> Result<GetDocumentResponse<T>, crate::Error>
+    where
+        T: DeserializeOwned,
+    {
+        let mut request = self.prepare_request_pipeline_with_document_name(http::Method::GET);
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+
+        options.decorate_request(&mut request)?;
+
+        let response = self
+            .cosmos_client()
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
+            .await?;
+
+        GetDocumentResponse::try_from(response).await
     }
 
     /// Delete a document
@@ -96,6 +118,18 @@ impl DocumentClient {
             ),
             method,
             ResourceType::Documents,
+        )
+    }
+
+    fn prepare_request_pipeline_with_document_name(&self, method: http::Method) -> Request {
+        self.cosmos_client().prepare_request_pipeline(
+            &format!(
+                "dbs/{}/colls/{}/docs/{}",
+                self.database_client().database_name(),
+                self.collection_client().collection_name(),
+                self.document_name()
+            ),
+            method,
         )
     }
 

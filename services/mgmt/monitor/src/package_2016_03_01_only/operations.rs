@@ -608,7 +608,7 @@ pub mod log_profiles {
     ) -> std::result::Result<LogProfileResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/logprofiles/{}",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
             operation_config.base_path(),
             subscription_id,
             log_profile_name
@@ -677,7 +677,7 @@ pub mod log_profiles {
     ) -> std::result::Result<LogProfileResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/logprofiles/{}",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
             operation_config.base_path(),
             subscription_id,
             log_profile_name
@@ -744,7 +744,7 @@ pub mod log_profiles {
     ) -> std::result::Result<LogProfileResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/logprofiles/{}",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
             operation_config.base_path(),
             subscription_id,
             log_profile_name
@@ -812,7 +812,7 @@ pub mod log_profiles {
     ) -> std::result::Result<(), delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/logprofiles/{}",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
             operation_config.base_path(),
             subscription_id,
             log_profile_name
@@ -869,7 +869,7 @@ pub mod log_profiles {
     ) -> std::result::Result<LogProfileCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/logprofiles",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles",
             operation_config.base_path(),
             subscription_id
         );

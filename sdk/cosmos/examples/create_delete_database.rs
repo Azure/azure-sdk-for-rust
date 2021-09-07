@@ -34,10 +34,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
 
-    let list_databases_response = client
-        .list_databases(Context::new(), ListDatabasesOptions::new())
-        .await?;
-    println!("list_databases_response = {:#?}", list_databases_response);
+    let mut list_databases_stream =
+        Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()));
+    while let Some(list_databases_response) = list_databases_stream.next().await {
+        println!("list_databases_response = {:#?}", list_databases_response?);
+    }
+    drop(list_databases_stream);
 
     let db = client
         .create_database(Context::new(), &database_name, CreateDatabaseOptions::new())

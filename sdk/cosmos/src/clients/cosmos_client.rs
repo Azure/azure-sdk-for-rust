@@ -5,12 +5,17 @@ use crate::operations::*;
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::{ReadonlyString, TimeNonce};
+
 use azure_core::pipeline::Pipeline;
+use azure_core::prelude::Continuation;
 use azure_core::HttpClient;
 use azure_core::Request;
 use azure_core::*;
+use futures::stream::unfold;
+use futures::Stream;
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};
+
 use std::fmt::Debug;
 use std::sync::Arc;
 
@@ -158,28 +163,81 @@ impl CosmosClient {
         Ok(CreateDatabaseResponse::try_from(response).await?)
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline<CosmosContext> {
-        &self.pipeline
-    }
-
     /// List all databases
-    pub async fn list_databases(
+    pub fn list_databases(
         &self,
         ctx: Context,
         options: ListDatabasesOptions,
-    ) -> Result<ListDatabasesResponse, crate::Error> {
-        let mut request = self.prepare_request_pipeline("dbs", http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+    ) -> impl Stream<Item = Result<ListDatabasesResponse, crate::Error>> + '_ {
+        macro_rules! r#try {
+            ($expr:expr $(,)?) => {
+                match $expr {
+                    Result::Ok(val) => val,
+                    Result::Err(err) => {
+                        return Some((Err(err.into()), State::Done));
+                    }
+                }
+            };
+        }
 
-        options.decorate_request(&mut request).await?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
-            .await?;
+        #[derive(Debug, Clone, PartialEq)]
+        enum State {
+            Init,
+            Continuation(String),
+            Done,
+        }
 
-        Ok(ListDatabasesResponse::try_from(response).await?)
+        unfold(State::Init, move |state: State| {
+            let this = self.clone();
+            let ctx = ctx.clone();
+            let options = options.clone();
+            async move {
+                let response = match state {
+                    State::Init => {
+                        let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
+                        let mut pipeline_context =
+                            PipelineContext::new(ctx.clone(), ResourceType::Databases.into());
+
+                        r#try!(options.decorate_request(&mut request).await);
+                        let response = r#try!(
+                            this.pipeline()
+                                .send(&mut pipeline_context, &mut request)
+                                .await
+                        );
+                        let response = r#try!(response.validate(http::StatusCode::OK).await);
+
+                        ListDatabasesResponse::try_from(response).await
+                    }
+                    State::Continuation(continuation_token) => {
+                        let continuation = Continuation::new(continuation_token.as_str());
+                        let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
+                        let mut pipeline_context =
+                            PipelineContext::new(ctx.clone(), ResourceType::Databases.into());
+
+                        r#try!(options.decorate_request(&mut request).await);
+                        r#try!(continuation.add_as_header2(&mut request));
+                        let response = r#try!(
+                            this.pipeline()
+                                .send(&mut pipeline_context, &mut request)
+                                .await
+                        );
+                        let response = r#try!(response.validate(http::StatusCode::OK).await);
+                        ListDatabasesResponse::try_from(response).await
+                    }
+                    State::Done => return None,
+                };
+
+                let response = r#try!(response);
+
+                let next_state = response
+                    .continuation_token
+                    .clone()
+                    .map(|ct| State::Continuation(ct))
+                    .unwrap_or(State::Done);
+
+                Some((Ok(response), next_state))
+            }
+        })
     }
 
     /// Convert into a [`DatabaseClient`]
@@ -239,10 +297,6 @@ impl CosmosClient {
             .into()
     }
 
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.pipeline.http_client()
-    }
-
     fn prepare_request_with_signature(
         &self,
         uri_path: &str,
@@ -263,6 +317,14 @@ impl CosmosClient {
             .header(HEADER_DATE, time_nonce.to_string())
             .header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION))
             .header(header::AUTHORIZATION, signature)
+    }
+
+    pub(crate) fn pipeline(&self) -> &Pipeline<CosmosContext> {
+        &self.pipeline
+    }
+
+    pub(crate) fn http_client(&self) -> &dyn HttpClient {
+        self.pipeline.http_client()
     }
 }
 
