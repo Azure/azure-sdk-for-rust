@@ -1,25 +1,26 @@
-use super::{header_time_value, header_value, ApiVersion, ETag, TableEntity};
 use azure_core::{Error, Request};
 use chrono::{Duration, Utc};
 use http::HeaderValue;
 
-struct UpdateEntityOptions {
+use super::{header_time_value, header_value, ApiVersion, ETag, TableEntity};
+
+pub struct MergeEntityOptions {
     etag: Option<ETag>,
     timeout: Option<Duration>,
     api_version: Option<ApiVersion>,
 }
 
-impl Default for UpdateEntityOptions {
+impl Default for MergeEntityOptions {
     fn default() -> Self {
         Self {
+            etag: Default::default(),
             timeout: Default::default(),
-            etag: Some(ETag::default()),
-            api_version: Some(ApiVersion::default()),
+            api_version: Default::default(),
         }
     }
 }
 
-impl UpdateEntityOptions {
+impl MergeEntityOptions {
     setters! {
         etag: ETag => Some(etag),
         timeout: Duration => Some(timeout),
@@ -28,8 +29,8 @@ impl UpdateEntityOptions {
 
     pub fn decorate_request<'b, ENTITY: serde::Serialize + TableEntity<'b>>(
         &self,
-        entity: &ENTITY,
         request: &mut Request,
+        entity: &ENTITY,
     ) -> Result<(), Error> {
         let headers = request.headers_mut();
         headers.append("Content-Type", HeaderValue::from_static("application/json"));

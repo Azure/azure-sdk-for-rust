@@ -3,11 +3,10 @@ use azure_storage::{
     operations::{
         create_table::{CreateTableOptions, CreateTableResponse},
         delete_table::DeleteTableOptions,
-        get_entity::GetEntityOptions,
-        list_tables::ListTablesOptions,
-        EchoContent,
-        Insert_entity::InsertEntityOptions,
-        OdataMetadataLevel, TableEntity,
+        get_entity::QueryEntitiesOptions,
+        insert_entity::InsertEntityOptions,
+        query_tables::QueryTablesOptions,
+        EchoContent, OdataMetadataLevel, TableEntity,
     },
     table::clients::{EntityClient, TableClient, TableOptions},
 };
@@ -50,8 +49,8 @@ async fn main() -> Result<(), Error> {
 
     let table_client = TableClient::emulator(TableOptions::default());
 
-    // create user table if not exists;
-    //let _ = create_if_not_exist(&table_client, table_name).await?;
+    //create user table if not exists;
+    let _ = create_if_not_exist(&table_client, table_name).await?;
 
     let entity_client = table_client.into_entity_client(table_name);
     let users = vec![
@@ -61,34 +60,43 @@ async fn main() -> Result<(), Error> {
     ];
 
     // insert users into users table;
-    /*
-       for user in users.iter() {
-           let _ = entity_client
-               .insert_entity(
-                   Context::new(),
-                   user,
-                   InsertEntityOptions::default()
-                       .echo_content(EchoContent::ReturnContent)
-                       .odata_metadata_level(OdataMetadataLevel::NoMetadata),
-               )
-               .await?;
-       }
-    */
+    for user in users.iter() {
+        let _ = entity_client
+            .insert_entity(
+                Context::new(),
+                user,
+                InsertEntityOptions::default()
+                    .echo_content(EchoContent::ReturnContent)
+                    .odata_metadata_level(OdataMetadataLevel::NoMetadata),
+            )
+            .await?;
+    }
 
     // print users from the table using partition_key and row_key;
     for user in users.iter() {
         let user = entity_client
-            .get_entity::<UserEntity>(
+            .query_entities::<UserEntity>(
                 Context::new(),
                 user.partition_key(),
                 user.row_key(),
-                GetEntityOptions::default(),
+                QueryEntitiesOptions::default(),
             )
             .await?;
         println!("{:#?}", user);
     }
 
     // delete the users table;
+    for user in users.iter() {
+        let user = entity_client
+            .delete_entity::<UserEntity>(
+                Context::new(),
+                user.partition_key(),
+                user.row_key(),
+                DeleteTableOptions::default(),
+            )
+            .await?;
+        println!("{:#?}", user);
+    }
     Ok(())
 }
 
@@ -97,9 +105,8 @@ async fn create_if_not_exist(
     table_name: &str,
 ) -> Result<Option<CreateTableResponse>, Error> {
     let exists = table_client
-        .list_tables(Context::new(), ListTablesOptions::default())
+        .query_tables(Context::new(), QueryTablesOptions::default())
         .await?
-        .body
         .tables
         .iter()
         .find(|&t| t.table_name == table_name)

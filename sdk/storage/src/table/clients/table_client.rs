@@ -4,7 +4,7 @@ use crate::{
     operations::{
         create_table::{CreateTableOptions, CreateTableResponse},
         delete_table::DeleteTableOptions,
-        list_tables::{ListTablesOptions, ListTablesResponse, ListTablesResponseBody},
+        query_tables::{QueryTablesOptions, QueryTablesResponse},
     },
     table_context::TableContext,
 };
@@ -105,11 +105,12 @@ impl TableClient {
         }
     }
 
-    pub async fn list_tables(
+    /// The Query Tables operation returns a list of tables under the specified account.
+    pub async fn query_tables(
         &self,
         ctx: Context,
-        options: ListTablesOptions<'_>,
-    ) -> Result<ListTablesResponse, Error> {
+        options: QueryTablesOptions<'_>,
+    ) -> Result<QueryTablesResponse, Error> {
         let uri_path = options.base_uri_path();
         trace!("uri path created successfully: {:#?}", uri_path);
 
@@ -128,16 +129,16 @@ impl TableClient {
             .validate(http::StatusCode::OK)
             .await?;
 
-        Ok(ListTablesResponse {
-            // try to initialize the next table header if exists
-            next_table_name: response
-                .headers()
-                .get("x-ms-continuation-NextTableName")
-                .map_or(None, |value| Some(value.to_str().unwrap().to_string())),
-            body: ListTablesResponseBody::try_from(response).await?,
-        })
+        // try to initialize the next table header if exists
+        let next_table_name = request
+            .headers()
+            .get("x-ms-continuation-NextTableName")
+            .map_or(None, |value| Some(value.to_str().unwrap().to_string()));
+
+        Ok(QueryTablesResponse::try_from(response).await?)
     }
 
+    /// The Create Table operation creates a new table in a storage account.
     pub async fn create_table(
         &self,
         ctx: Context,
@@ -159,6 +160,7 @@ impl TableClient {
         Ok(CreateTableResponse::try_from(response).await?)
     }
 
+    /// The Delete Table operation deletes the specified table and any data it contains.
     pub async fn delete_table<N: AsRef<str>>(
         &self,
         ctx: Context,
@@ -184,6 +186,7 @@ impl TableClient {
         Ok(())
     }
 
+    /// Crates Entity client for a given table. consuming Self in the process.
     pub fn into_entity_client<S: Into<Cow<'static, str>>>(self, table_name: S) -> EntityClient {
         EntityClient::new(self, table_name)
     }
@@ -195,7 +198,6 @@ impl TableClient {
     ) -> azure_core::Request {
         let url = format!("{}/{}", self.cloud_location.url(), uri_path);
         let url = url::Url::from_str(&url).unwrap();
-        println!("{:?}", url);
         let uri = Uri::from_str(url.as_str()).unwrap();
         azure_core::Request::new(uri, http_method)
     }
@@ -227,13 +229,13 @@ pub mod table_client_tests {
     #[tokio::test]
     async fn list_table_with_filter_test() {
         let response = emulator_table_client()
-            .list_tables(
+            .query_tables(
                 Context::new(),
-                list_tables::ListTablesOptions::default().filter("TableName gt 'addj'"),
+                query_tables::QueryTablesOptions::default().filter("TableName gt 'a'"),
             )
             .await
             .unwrap();
-        for table in response.body.tables {
+        for table in response.tables {
             println!("{}", table.table_name);
         }
     }
@@ -243,10 +245,9 @@ pub mod table_client_tests {
         let table_name = "TableForTest";
         assert_eq!(
             emulator_table_client()
-                .list_tables(Context::new(), list_tables::ListTablesOptions::default())
+                .query_tables(Context::new(), query_tables::QueryTablesOptions::default())
                 .await
                 .unwrap()
-                .body
                 .tables
                 .iter()
                 .filter(|&t| t.table_name == table_name)
@@ -269,11 +270,10 @@ pub mod table_client_tests {
         );
 
         let list_tables_response = emulator_table_client()
-            .list_tables(Context::new(), list_tables::ListTablesOptions::default())
+            .query_tables(Context::new(), query_tables::QueryTablesOptions::default())
             .await
             .unwrap();
         let mut names = list_tables_response
-            .body
             .tables
             .iter()
             .filter(|&t| t.table_name == table_name)
@@ -295,10 +295,9 @@ pub mod table_client_tests {
 
         assert_eq!(
             emulator_table_client()
-                .list_tables(Context::new(), list_tables::ListTablesOptions::default())
+                .query_tables(Context::new(), query_tables::QueryTablesOptions::default())
                 .await
                 .unwrap()
-                .body
                 .tables
                 .iter()
                 .filter(|&t| t.table_name == table_name)

@@ -1,12 +1,17 @@
-use azure_core::{Error, HTTPHeaderError, Request};
-use chrono::{DateTime, Utc};
-use http::HeaderValue;
-pub mod Insert_entity;
+pub mod insert_entity;
 pub mod create_table;
+pub mod delete_entity;
 pub mod delete_table;
 pub mod get_entity;
-pub mod list_tables;
+pub mod insert_or_merge_entity;
+pub mod insert_or_replace_entity;
+pub mod merge_entity;
+pub mod query_tables;
 pub mod update_entity;
+
+use azure_core::HTTPHeaderError;
+use chrono::{DateTime, Utc};
+use http::HeaderValue;
 
 /// api version enum
 #[derive(Debug, Clone)]
@@ -64,7 +69,7 @@ impl AsRef<str> for EchoContent {
 
 ///The client may specify the ETag for the entity on the request in order to compare to the ETag maintained by the service
 /// for the purpose of optimistic concurrency.
-enum ETag {
+pub enum ETag {
     ForceUpdate,
     OnlyIfMatch(String),
 }

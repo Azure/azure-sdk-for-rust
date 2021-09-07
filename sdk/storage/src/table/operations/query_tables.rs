@@ -6,7 +6,7 @@ use http::Uri;
 use std::str::FromStr;
 
 #[derive(Debug, Clone)]
-pub struct ListTablesOptions<'a> {
+pub struct QueryTablesOptions<'a> {
     top: Option<Top>,
     filter: Option<Filter<'a>>,
     api_version: Option<ApiVersion>,
@@ -14,7 +14,7 @@ pub struct ListTablesOptions<'a> {
     odata_metadata_level: Option<OdataMetadataLevel>,
 }
 
-impl Default for ListTablesOptions<'_> {
+impl Default for QueryTablesOptions<'_> {
     fn default() -> Self {
         Self {
             top: Default::default(),
@@ -26,16 +26,12 @@ impl Default for ListTablesOptions<'_> {
     }
 }
 
-impl<'a> ListTablesOptions<'a> {
+impl<'a> QueryTablesOptions<'a> {
     setters! {
         top: Top => Some(top),
         filter: Filter<'a> => Some(filter),
         api_version: ApiVersion => Some(api_version),
         odata_metadata_level: OdataMetadataLevel  => Some(odata_metadata_level),
-    }
-
-    pub(crate) fn query_parameters(&self) -> bool {
-        self.top.is_some() || self.filter.is_some()
     }
 
     pub(crate) fn base_uri_path(&self) -> &str {
@@ -74,14 +70,6 @@ impl<'a> ListTablesOptions<'a> {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct ListTablesResponse {
-    ///If the number of tables to be returned exceeds 1,000 or the query does not complete within the timeout interval,
-    ///next_table_name will containe the hash of the name of the next table in the list.
-    pub next_table_name: Option<String>,
-    pub body: ListTablesResponseBody,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Table {
     #[serde(rename = "odata.type")]
@@ -96,14 +84,14 @@ pub struct Table {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ListTablesResponseBody {
+pub struct QueryTablesResponse {
     #[serde(rename = "odata.metadata")]
     pub odata_metadata: Option<String>,
     #[serde(rename = "value")]
     pub tables: Vec<Table>,
 }
 
-impl ListTablesResponseBody {
+impl QueryTablesResponse {
     pub(crate) async fn try_from(response: Response) -> Result<Self, Error> {
         let body = azure_core::collect_pinned_stream(response.deconstruct().2).await?;
         let response = serde_json::from_slice(&body)?;

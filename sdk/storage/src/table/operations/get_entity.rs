@@ -1,18 +1,17 @@
 use super::header_time_value;
 use super::{header_value, ApiVersion, OdataMetadataLevel};
-use azure_core::AppendToUrlQuery;
 use azure_core::HTTPHeaderError;
 use azure_core::Request;
 use chrono::Utc;
-use http::{HeaderValue, Uri};
+use http::Uri;
 
 #[derive(Debug, Clone)]
-pub struct GetEntityOptions {
+pub struct QueryEntitiesOptions {
     api_version: Option<ApiVersion>,
     odata_metadata_level: Option<OdataMetadataLevel>,
 }
 
-impl Default for GetEntityOptions {
+impl Default for QueryEntitiesOptions {
     fn default() -> Self {
         Self {
             api_version: Some(ApiVersion::default()),
@@ -21,7 +20,7 @@ impl Default for GetEntityOptions {
     }
 }
 
-impl GetEntityOptions {
+impl QueryEntitiesOptions {
     setters! {
         api_version: ApiVersion => Some(api_version),
         odata_metadata_level: OdataMetadataLevel => Some(odata_metadata_level),
