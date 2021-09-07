@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 // DB.
 use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
-use azure_cosmos::responses::GetDocumentResponse;
 use std::borrow::Cow;
 use std::error::Error;
 
@@ -156,8 +155,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let get_document_response = collection_client
         .clone()
         .into_document_client(doc.id.clone(), &doc.id)?
-        .get_document()
-        .execute::<MySampleStruct>()
+        .get_document::<MySampleStruct>(Context::new(), GetDocumentOptions::new())
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 

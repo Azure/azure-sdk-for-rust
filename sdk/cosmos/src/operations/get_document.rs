@@ -1,12 +1,48 @@
 use crate::headers::from_headers::*;
+use crate::prelude::*;
 use crate::resources::Document;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
+use azure_core::prelude::*;
 use azure_core::SessionToken;
+use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as HttpResponse};
 use chrono::{DateTime, Utc};
-use http::response::Response;
-use http::StatusCode;
+use http::{HeaderMap, StatusCode};
 use serde::de::DeserializeOwned;
+
+#[derive(Debug, Clone)]
+pub struct GetDocumentOptions<'a> {
+    if_match_condition: Option<IfMatchCondition<'a>>,
+    if_modified_since: Option<IfModifiedSince<'a>>,
+    consistency_level: Option<ConsistencyLevel>,
+}
+
+impl<'a> GetDocumentOptions<'a> {
+    pub fn new() -> Self {
+        Self {
+            if_match_condition: None,
+            if_modified_since: None,
+            consistency_level: None,
+        }
+    }
+
+    setters! {
+        consistency_level: ConsistencyLevel => Some(consistency_level),
+        if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
+        if_modified_since: &'a DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
+    }
+
+    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> Result<(), crate::Error> {
+        // add trait headers
+        azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
+        azure_core::headers::add_optional_header2(&self.if_modified_since, request)?;
+        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
+
+        request.set_body(bytes::Bytes::from_static(EMPTY_BODY).into());
+
+        Ok(())
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum GetDocumentResponse<T> {
@@ -14,25 +50,25 @@ pub enum GetDocumentResponse<T> {
     NotFound(Box<NotFoundDocumentResponse>),
 }
 
-impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for GetDocumentResponse<T>
+impl<T> GetDocumentResponse<T>
 where
     T: DeserializeOwned,
 {
-    type Error = crate::Error;
-
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
-        let status_code = response.status();
+    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+        let (status_code, headers, pinned_stream) = response.deconstruct();
 
         let has_been_found =
             status_code == StatusCode::OK || status_code == StatusCode::NOT_MODIFIED;
 
+        let body = collect_pinned_stream(pinned_stream).await?;
+
         if has_been_found {
             Ok(GetDocumentResponse::Found(Box::new(
-                FoundDocumentResponse::try_from(response)?,
+                FoundDocumentResponse::try_from(&headers, body).await?,
             )))
         } else {
             Ok(GetDocumentResponse::NotFound(Box::new(
-                NotFoundDocumentResponse::try_from(response)?,
+                NotFoundDocumentResponse::try_from(&headers).await?,
             )))
         }
     }
@@ -65,18 +101,13 @@ pub struct FoundDocumentResponse<T> {
     pub date: DateTime<Utc>,
 }
 
-impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for FoundDocumentResponse<T>
+impl<T> FoundDocumentResponse<T>
 where
     T: DeserializeOwned,
 {
-    type Error = crate::Error;
-
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
-        let headers = response.headers();
-        let body: &[u8] = response.body();
-
+    async fn try_from(headers: &HeaderMap, body: bytes::Bytes) -> Result<Self, crate::Error> {
         Ok(Self {
-            document: Document::try_from((headers, body))?,
+            document: serde_json::from_slice(&body)?,
 
             content_location: content_location_from_headers(headers)?.to_owned(),
             last_state_change: last_state_change_from_headers(headers)?,
@@ -126,12 +157,8 @@ pub struct NotFoundDocumentResponse {
     pub date: DateTime<Utc>,
 }
 
-impl std::convert::TryFrom<Response<bytes::Bytes>> for NotFoundDocumentResponse {
-    type Error = crate::Error;
-
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
-        let headers = response.headers();
-
+impl NotFoundDocumentResponse {
+    async fn try_from(headers: &HeaderMap) -> Result<Self, crate::Error> {
         Ok(Self {
             content_location: content_location_from_headers(headers)?.to_owned(),
             last_state_change: last_state_change_from_headers(headers)?,
