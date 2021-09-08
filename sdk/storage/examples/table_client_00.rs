@@ -2,10 +2,12 @@ use azure_core::{Context, Error};
 use azure_storage::{
     operations::{
         create_table::{CreateTableOptions, CreateTableResponse},
+        delete_entity::DeleteEntityOptions,
         delete_table::DeleteTableOptions,
         get_entity::QueryEntitiesOptions,
         insert_entity::InsertEntityOptions,
         query_tables::QueryTablesOptions,
+        update_entity::UpdateEntityOptions,
         EchoContent, OdataMetadataLevel, TableEntity,
     },
     table::clients::{EntityClient, TableClient, TableOptions},
@@ -15,23 +17,44 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct UserEntity {
     #[serde(rename = "PartitionKey")]
-    pub city: String,
+    pub city: Option<String>,
     #[serde(rename = "RowKey")]
-    pub surname: String,
-    pub name: String,
+    pub surname: Option<String>,
+    pub name: Option<String>,
 }
 
 impl UserEntity {
     pub fn new(city: &str, surname: &str, name: &str) -> Self {
         UserEntity {
-            name: name.into(),
-            city: city.into(),
-            surname: surname.into(),
+            name: Some(name.into()),
+            city: Some(city.into()),
+            surname: Some(surname.into()),
         }
     }
 }
 
 impl<'a> TableEntity<'a> for UserEntity {
+    type Entity = Self;
+
+    fn partition_key(&self) -> &str {
+        self.city.as_ref().unwrap().as_str()
+    }
+
+    fn row_key(&self) -> &str {
+        self.surname.as_ref().unwrap().as_str()
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct UserEntityExtended {
+    #[serde(rename = "PartitionKey")]
+    pub city: String,
+    #[serde(rename = "RowKey")]
+    pub surname: String,
+    pub age: u8,
+}
+
+impl<'a> TableEntity<'a> for UserEntityExtended {
     type Entity = Self;
 
     fn partition_key(&self) -> &str {
@@ -53,6 +76,7 @@ async fn main() -> Result<(), Error> {
     let _ = create_if_not_exist(&table_client, table_name).await?;
 
     let entity_client = table_client.into_entity_client(table_name);
+
     let users = vec![
         UserEntity::new("beit dagan", "shem tov", "or"),
         UserEntity::new("rishon lezion", "gerbil", "yaron"),
@@ -81,22 +105,37 @@ async fn main() -> Result<(), Error> {
                 user.row_key(),
                 QueryEntitiesOptions::default(),
             )
+            .await?
+            .model;
+
+        // update entity by adding new column
+        entity_client
+            .update_entity::<UserEntityExtended>(
+                Context::new(),
+                &UserEntityExtended {
+                    city: user.city.unwrap(),
+                    surname: user.surname.unwrap(),
+                    //name: user.name,
+                    age: 30,
+                },
+                UpdateEntityOptions::default(),
+            )
             .await?;
-        println!("{:#?}", user);
     }
 
-    // delete the users table;
+    // delete the users table content;
     for user in users.iter() {
         let user = entity_client
-            .delete_entity::<UserEntity>(
+            .delete_entity(
                 Context::new(),
                 user.partition_key(),
                 user.row_key(),
-                DeleteTableOptions::default(),
+                DeleteEntityOptions::default(),
             )
             .await?;
         println!("{:#?}", user);
     }
+
     Ok(())
 }
 

@@ -7,6 +7,7 @@ use crate::operations::insert_entity::InsertEntityResponse;
 use crate::operations::insert_or_merge_entity::InsertOrMergeEntityOptions;
 use crate::operations::insert_or_replace_entity::InsertOrReplaceEntityOptions;
 use crate::operations::merge_entity::MergeEntityOptions;
+use crate::operations::update_entity::UpdateEntityOptions;
 use crate::operations::TableEntity;
 use crate::table_context::TableContext;
 use azure_core::Context;
@@ -17,8 +18,6 @@ use http::method::Method;
 use once_cell::sync::Lazy;
 use serde::de::DeserializeOwned;
 use std::borrow::Cow;
-use std::str::FromStr;
-use std::sync::Arc;
 
 // we need this since the http::Method does not have the MERGE verb. The unwrap is safe here.
 static MERGE: Lazy<http::Method> = Lazy::new(|| http::Method::from_bytes(b"MERGE").unwrap());
@@ -126,7 +125,7 @@ impl EntityClient {
         &self,
         ctx: Context,
         entity: &'a E,
-        options: MergeEntityOptions,
+        options: UpdateEntityOptions,
     ) -> Result<(), Error> {
         let mut request = self.table_client.prepare_table_request(
             format!(
@@ -139,7 +138,7 @@ impl EntityClient {
             Method::PUT,
         );
 
-        options.decorate_request::<E>(&mut request, entity)?;
+        options.decorate_request::<E>(entity, &mut request)?;
 
         let table_context = TableContext::default();
         let mut pipeline_context = PipelineContext::new(ctx, table_context);
@@ -162,7 +161,7 @@ impl EntityClient {
         &self,
         ctx: Context,
         entity: &'a E,
-        options: InsertEntityOptions,
+        options: MergeEntityOptions,
     ) -> Result<(), Error> {
         let mut request = self.table_client.prepare_table_request(
             format!(
@@ -195,25 +194,23 @@ impl EntityClient {
     /// The Delete Entity operation deletes an existing entity in a table.
     /// When an entity is successfully deleted, the entity is immediately marked for deletion and is no longer accessible to clients.
     /// The entity is later removed from the Table service during garbage collection.
-    pub async fn delete_entity<'a, E: serde::Serialize + TableEntity<'a>>(
+    pub async fn delete_entity(
         &self,
         ctx: Context,
-        entity: &'a E,
+        partition_key: &str,
+        row_key: &str,
         options: DeleteEntityOptions,
     ) -> Result<(), Error> {
         let mut request = self.table_client.prepare_table_request(
             format!(
                 "{}(PartitionKey='{}', RowKey='{}')",
-                self.table_name,
-                entity.partition_key(),
-                entity.row_key()
+                self.table_name, partition_key, row_key
             )
             .as_str(),
             Method::DELETE,
         );
 
-        options.decorate_request::<E>(&mut request, entity)?;
-
+        options.decorate_request(&mut request)?;
         let table_context = TableContext::default();
         let mut pipeline_context = PipelineContext::new(ctx, table_context);
 

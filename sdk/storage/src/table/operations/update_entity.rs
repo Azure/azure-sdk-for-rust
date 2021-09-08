@@ -3,7 +3,7 @@ use azure_core::{Error, Request};
 use chrono::{Duration, Utc};
 use http::HeaderValue;
 
-struct UpdateEntityOptions {
+pub struct UpdateEntityOptions {
     etag: Option<ETag>,
     timeout: Option<Duration>,
     api_version: Option<ApiVersion>,

@@ -13,6 +13,7 @@ categories = ["api-bindings"]
 edition = "2018"
 
 [dependencies]
+tracing = "*"
 async-trait = "0.1"
 azure_core = { path = "../core", version = "0.1.0" }
 ring = "0.16"
@@ -51,9 +52,6 @@ table = []
 data_lake = []
 
 # This section specifies the required features for the examples.
-[[example]]
-name = "table_00"
-required-features = ["table"]
 [[example]]
 name = "account00"
 required-features = ["account"]

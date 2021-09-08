@@ -19,6 +19,4 @@ pub use entity_with_metadata::EntityWithMetadata;
 pub use filter::Filter;
 pub use if_match_condition::IfMatchCondition;
 pub use model::Table;
-use once_cell::sync::Lazy;
-pub use select::Select;
 pub use top::Top;

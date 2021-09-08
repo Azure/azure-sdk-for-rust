@@ -1,8 +1,8 @@
-pub mod insert_entity;
 pub mod create_table;
 pub mod delete_entity;
 pub mod delete_table;
 pub mod get_entity;
+pub mod insert_entity;
 pub mod insert_or_merge_entity;
 pub mod insert_or_replace_entity;
 pub mod merge_entity;

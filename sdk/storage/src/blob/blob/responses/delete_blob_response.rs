@@ -11,7 +11,7 @@ response_from_headers!(DeleteBlobResponse ,
 
 #[cfg(feature = "azurite_workaround")]
 response_from_headers!(DeleteBlobResponse ,
-               delete_type_permanent_from_headers => delete_type_permanent: Option<bool>,
+               delete_type_permanent_from_headers => delete_type_permanent: bool,
                request_id_from_headers => request_id: RequestId,
                date_from_headers => date: DateTime<Utc>
 );

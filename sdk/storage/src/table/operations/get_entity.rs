@@ -3,7 +3,6 @@ use super::{header_value, ApiVersion, OdataMetadataLevel};
 use azure_core::HTTPHeaderError;
 use azure_core::Request;
 use chrono::Utc;
-use http::Uri;
 
 #[derive(Debug, Clone)]
 pub struct QueryEntitiesOptions {

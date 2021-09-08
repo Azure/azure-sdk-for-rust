@@ -1,8 +1,6 @@
+use super::{header_time_value, header_value, ApiVersion, ETag};
 use azure_core::{Error, Request};
 use chrono::{Duration, Utc};
-use http::HeaderValue;
-
-use super::{header_time_value, header_value, ApiVersion, ETag, TableEntity};
 
 pub struct DeleteEntityOptions {
     etag: Option<ETag>,
@@ -13,9 +11,9 @@ pub struct DeleteEntityOptions {
 impl Default for DeleteEntityOptions {
     fn default() -> Self {
         Self {
-            etag: Default::default(),
+            etag: Some(ETag::default()),
             timeout: Default::default(),
-            api_version: Default::default(),
+            api_version: Some(ApiVersion::default()),
         }
     }
 }
@@ -27,26 +25,17 @@ impl DeleteEntityOptions {
         api_version: ApiVersion => Some(api_version),
     }
 
-    pub fn decorate_request<'b, ENTITY: serde::Serialize + TableEntity<'b>>(
-        &self,
-        request: &mut Request,
-        entity: &ENTITY,
-    ) -> Result<(), Error> {
+    pub fn decorate_request(&self, request: &mut Request) -> Result<(), Error> {
         let headers = request.headers_mut();
-        headers.append("Content-Type", HeaderValue::from_static("application/json"));
         headers.append("If-Match", header_value::<ETag>(&self.etag)?);
         headers.append("x-ms-date", header_time_value(Utc::now())?);
         headers.append(
             "x-ms-version",
             header_value::<ApiVersion>(&self.api_version)?,
         );
-
-        let serialized = serde_json::to_string(&entity)?;
-        headers.append(
-            "Content-Length",
-            HeaderValue::from(serialized.as_bytes().len()),
-        );
-        request.set_body(bytes::Bytes::from(serialized).into());
+        if self.timeout.is_some() {
+            // add timeout header;
+        }
         Ok(())
     }
 }

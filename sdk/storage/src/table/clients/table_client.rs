@@ -210,7 +210,7 @@ impl TableClient {
 #[cfg(test)]
 pub mod table_client_tests {
     use super::{TableClient, TableOptions};
-    use crate::{operations::*, Top};
+    use crate::operations::*;
     use azure_core::Context;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]

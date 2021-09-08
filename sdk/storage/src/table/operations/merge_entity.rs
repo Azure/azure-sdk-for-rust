@@ -13,9 +13,9 @@ pub struct MergeEntityOptions {
 impl Default for MergeEntityOptions {
     fn default() -> Self {
         Self {
-            etag: Default::default(),
             timeout: Default::default(),
-            api_version: Default::default(),
+            etag: Some(ETag::default()),
+            api_version: Some(ApiVersion::default()),
         }
     }
 }
