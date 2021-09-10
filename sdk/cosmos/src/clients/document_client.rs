@@ -99,8 +99,8 @@ impl DocumentClient {
             .unwrap()
             .into();
         options.decorate_request(&mut request);
-        let response = self
-            .pipeline()
+        let response = self.
+            cosmos_client().pipeline()
             .send(&mut ctx, &mut request)
             .await
             .map_err(crate::Errror::PolicyError)?
