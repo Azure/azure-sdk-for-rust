@@ -11,7 +11,6 @@ mod create_user_defined_function_response;
 mod delete_attachment_response;
 mod delete_collection_response;
 mod delete_database_response;
-mod delete_permission_response;
 mod delete_stored_procedure_response;
 mod delete_trigger_response;
 mod delete_user_defined_function_response;
@@ -42,7 +41,6 @@ pub use create_user_defined_function_response::CreateUserDefinedFunctionResponse
 pub use delete_attachment_response::DeleteAttachmentResponse;
 pub use delete_collection_response::DeleteCollectionResponse;
 pub use delete_database_response::DeleteDatabaseResponse;
-pub use delete_permission_response::DeletePermissionResponse;
 pub use delete_stored_procedure_response::DeleteStoredProcedureResponse;
 pub use delete_trigger_response::DeleteTriggerResponse;
 pub use delete_user_defined_function_response::DeleteUserDefinedFunctionResponse;

@@ -1,5 +1,5 @@
 use super::{AttachmentClient, CollectionClient, CosmosClient, DatabaseClient};
-use crate::prelude::{GetDocumentOptions, GetDocumentResponse};
+use crate::prelude::{GetDocumentOptions, GetDocumentResponse, DeleteDocumentOptions, DeleteDocumentResponse};
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 use azure_core::{Context, HttpClient, PipelineContext, Request};
@@ -91,19 +91,18 @@ impl DocumentClient {
     pub async fn delete_document(
         &self,
         mut ctx: Context,
-        options: DeleteDocumentOptions,
+        options: DeleteDocumentOptions<'_>,
     ) -> Result<DeleteDocumentResponse, crate::Error> {
-        let mut request = self
-            .prepare_request_with_document_name(http::Method::DELETE)
-            .body(bytes::Bytes::new())
-            .unwrap()
-            .into();
+        let mut request = self.prepare_request_with_document_name(http::Method::DELETE);
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+
         options.decorate_request(&mut request);
+
         let response = self.
-            cosmos_client().pipeline()
+            cosmos_client()
+            .pipeline()
             .send(&mut ctx, &mut request)
-            .await
-            .map_err(crate::Errror::PolicyError)?
+            .await?
             .validate(http::StatusCode::OK)
             .await?;
     }
@@ -124,8 +123,8 @@ impl DocumentClient {
     pub(crate) fn prepare_request_with_document_name(
         &self,
         method: http::Method,
-    ) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
+    ) -> Request {
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/docs/{}",
                 self.database_client().database_name(),

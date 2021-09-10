@@ -1,13 +1,12 @@
 use crate::prelude::*;
-use crate::responses::DeleteDocumentResponse;
+use crate::prelude::{DeleteDocumentResponse};
 use crate::headers::from_headers::*;
 use azure_core::prelude::*;
 use azure_core::headers::session_token_from_headers;
 
 use chrono::{DateTime, Utc};
-use http::StatusCode;
 use http::response::Response;
-use std::convert::TryInto;
+use azure_core::Request as HttpRequest;
 
 #[derive(Debug, Clone)]
 pub struct DeleteDocumentOptions<'a> {
@@ -17,12 +16,11 @@ pub struct DeleteDocumentOptions<'a> {
     allow_tentative_writes: TenativeWritesAllowance,
 }
 
-impl DeleteDocumentOptions {
+impl DeleteDocumentOptions<'a> {
     pub(crate) fn new(document_client: &'a DocumentClient) -> DeleteDocumentOptions<'a> {
         Self {
             if_match_condition: None,
             if_modified_since: None,
-            user_agent: None,
             consistency_level: None,
             allow_tentative_writes: TenativeWritesAllowance::Deny,
         }
@@ -35,7 +33,7 @@ impl DeleteDocumentOptions {
         if_modified_since: &'a DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
     }
 
-    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> Result<DeleteDocumentResponse, crate::Error> {
+    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> Result<(), crate::Error> {
         trace!("DeleteDocumentOptions::execute called");
 
         // add trait headers
@@ -56,7 +54,9 @@ pub struct DeleteDocumentResponse {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for DeleteDocumentResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    type Error = crate::Error;
+    
+    fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
         let headers = response.headers();
 
         let charge = request_charge_from_headers(headers)?;
