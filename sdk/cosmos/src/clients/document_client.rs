@@ -70,7 +70,7 @@ impl DocumentClient {
         &self,
         mut ctx: Context,
         options: DeleteDocumentOptions,
-    ) -> Result<DeleteDocumentResponse, create::Error> {
+    ) -> Result<DeleteDocumentResponse, crate::Error> {
         let mut request = self
             .prepare_request_with_document_name(http::Method::DELETE)
             .body(bytes::Bytes::new())
@@ -85,9 +85,6 @@ impl DocumentClient {
             .validate(http::StatusCode::OK)
             .await?;
     }
-    // pub fn delete_document(&self) -> requests::DeleteDocumentBuilder<'_> {
-    //     requests::DeleteDocumentBuilder::new(self)
-    // }
 
     /// List all attachments for a document
     pub fn list_attachments(&self) -> requests::ListAttachmentsBuilder<'_, '_> {
