@@ -98,7 +98,7 @@ async fn create_and_delete_document() {
     }
 
     // delete document
-    document_client.delete_document().execute().await.unwrap();
+    document_client.delete_document(Context::new(), DeleteDocumentOptions::new()).await.unwrap();
 
     let documents = collection_client
         .list_documents()
