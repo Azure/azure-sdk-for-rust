@@ -1,9 +1,9 @@
 use super::entity_client::EntityClient;
 use crate::{
     authorization::{authorization_policy::AuthorizationPolicy, AuthorizationToken},
-    operations::{
+    operations::table::{
         create_table::{CreateTableOptions, CreateTableResponse},
-        delete_table::DeleteTableOptions,
+        delete_table::{DeleteTableOptions, DeleteTableResponse},
         query_tables::{QueryTablesOptions, QueryTablesResponse},
     },
     table_context::TableContext,
@@ -105,6 +105,7 @@ impl TableClient {
         }
     }
 
+    /// TODO: this operation should return stream instead of a single response.
     /// The Query Tables operation returns a list of tables under the specified account.
     pub async fn query_tables(
         &self,
@@ -128,12 +129,6 @@ impl TableClient {
             .await?
             .validate(http::StatusCode::OK)
             .await?;
-
-        // try to initialize the next table header if exists
-        let next_table_name = request
-            .headers()
-            .get("x-ms-continuation-NextTableName")
-            .map_or(None, |value| Some(value.to_str().unwrap().to_string()));
 
         Ok(QueryTablesResponse::try_from(response).await?)
     }
@@ -166,7 +161,7 @@ impl TableClient {
         ctx: Context,
         table_name: N,
         options: DeleteTableOptions,
-    ) -> Result<(), Error> {
+    ) -> Result<DeleteTableResponse, Error> {
         let mut request = self.prepare_table_request(
             format!("Tables('{}')", table_name.as_ref()).as_str(),
             Method::DELETE,
@@ -183,12 +178,7 @@ impl TableClient {
             .validate(http::StatusCode::NO_CONTENT)
             .await?;
 
-        Ok(())
-    }
-
-    /// Crates Entity client for a given table. consuming Self in the process.
-    pub fn into_entity_client<S: Into<Cow<'static, str>>>(self, table_name: S) -> EntityClient {
-        EntityClient::new(self, table_name)
+        Ok(DeleteTableResponse {})
     }
 
     pub(crate) fn prepare_table_request(
@@ -205,22 +195,18 @@ impl TableClient {
     pub(crate) fn pipeline(&self) -> &Pipeline<TableContext> {
         &self.pipeline
     }
+
+    /// Crates Entity client for a given table. consuming Self in the process.
+    pub fn into_entity_client<S: Into<Cow<'static, str>>>(self, table_name: S) -> EntityClient {
+        EntityClient::new(self, table_name)
+    }
 }
 
 #[cfg(test)]
 pub mod table_client_tests {
     use super::{TableClient, TableOptions};
-    use crate::operations::*;
+    use crate::operations::table::{create_table, delete_table, query_tables};
     use azure_core::Context;
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    struct TestEntity {
-        #[serde(rename = "PartitionKey")]
-        pub city: String,
-        pub name: String,
-        #[serde(rename = "RowKey")]
-        pub surname: String,
-    }
 
     fn emulator_table_client() -> TableClient {
         TableClient::emulator(TableOptions::default())
@@ -236,7 +222,7 @@ pub mod table_client_tests {
             .await
             .unwrap();
         for table in response.tables {
-            println!("{}", table.table_name);
+            println!("{}", table.name);
         }
     }
 
@@ -250,7 +236,7 @@ pub mod table_client_tests {
                 .unwrap()
                 .tables
                 .iter()
-                .filter(|&t| t.table_name == table_name)
+                .filter(|&t| t.name == table_name)
                 .next(),
             None
         );
@@ -264,7 +250,8 @@ pub mod table_client_tests {
                 )
                 .await
                 .unwrap()
-                .table_name
+                .table
+                .name
                 .as_str()
                 == table_name
         );
@@ -273,11 +260,13 @@ pub mod table_client_tests {
             .query_tables(Context::new(), query_tables::QueryTablesOptions::default())
             .await
             .unwrap();
-        let mut names = list_tables_response
-            .tables
-            .iter()
-            .filter(|&t| t.table_name == table_name)
-            .map(|t| t.table_name.as_str());
+        let mut names = list_tables_response.tables.iter().filter_map(|&t| {
+            if t.name == table_name {
+                Some(t.name.as_str())
+            } else {
+                None
+            }
+        });
         assert_eq!(names.next(), Some(table_name));
         assert_eq!(names.next(), None);
 
@@ -300,7 +289,7 @@ pub mod table_client_tests {
                 .unwrap()
                 .tables
                 .iter()
-                .filter(|&t| t.table_name == table_name)
+                .filter(|&t| t.name == table_name)
                 .next(),
             None
         );

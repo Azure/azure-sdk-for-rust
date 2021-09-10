@@ -1,16 +1,17 @@
+use crate::operations::{header_time_value, header_value, ApiVersion, ETag};
 use azure_core::{Error, Request};
 use chrono::{Duration, Utc};
 use http::HeaderValue;
 
-use super::{header_time_value, header_value, ApiVersion, ETag, TableEntity};
+use super::TableEntity;
 
-pub struct MergeEntityOptions {
+pub struct UpdateEntityOptions {
     etag: Option<ETag>,
     timeout: Option<Duration>,
     api_version: Option<ApiVersion>,
 }
 
-impl Default for MergeEntityOptions {
+impl Default for UpdateEntityOptions {
     fn default() -> Self {
         Self {
             timeout: Default::default(),
@@ -20,7 +21,7 @@ impl Default for MergeEntityOptions {
     }
 }
 
-impl MergeEntityOptions {
+impl UpdateEntityOptions {
     setters! {
         etag: ETag => Some(etag),
         timeout: Duration => Some(timeout),
@@ -29,8 +30,8 @@ impl MergeEntityOptions {
 
     pub fn decorate_request<'b, ENTITY: serde::Serialize + TableEntity<'b>>(
         &self,
-        request: &mut Request,
         entity: &ENTITY,
+        request: &mut Request,
     ) -> Result<(), Error> {
         let headers = request.headers_mut();
         headers.append("Content-Type", HeaderValue::from_static("application/json"));

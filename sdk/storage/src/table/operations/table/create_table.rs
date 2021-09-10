@@ -1,5 +1,6 @@
-use super::{ApiVersion, OdataMetadataLevel};
-use crate::operations::{header_time_value, header_value, EchoContent};
+use crate::operations::{
+    header_time_value, header_value, ApiVersion, EchoContent, OdataMetadataLevel,
+};
 use azure_core::{Error, Request, Response};
 use chrono::Utc;
 use http::HeaderValue;
@@ -28,6 +29,9 @@ impl CreateTableOptions {
         odata_metadata_level: OdataMetadataLevel  => Some(odata_metadata_level),
     }
 
+    /// the create table response can contain two different status codes depending on the `EchoContent` header value.
+    /// * NO_CONTENT - the response body will be empty and the status code will be 204.
+    /// * NO_CONTENT - the response body will contain the create table with the specified metadata details and the status code will be 201.
     pub(crate) fn expected_status_code(&self) -> http::StatusCode {
         match &self.echo_content {
             Some(value) => match value {
@@ -57,8 +61,10 @@ impl CreateTableOptions {
             #[serde(rename = "TableName")]
             pub table_name: &'a str,
         }
+
         let body = CreateTableRequest { table_name };
         let bytes = bytes::Bytes::from(serde_json::to_string(&body)?);
+
         headers.append("Content-Length", HeaderValue::from(bytes.len()));
 
         let md5 = base64::encode(&md5::compute(bytes.as_ref())[..]);
@@ -72,16 +78,8 @@ impl CreateTableOptions {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateTableResponse {
-    #[serde(rename = "odata.metadata")]
-    pub odata_metadata: Option<String>,
-    #[serde(rename = "odata.type")]
-    pub odata_type: Option<String>,
-    #[serde(rename = "odata.id")]
-    pub odata_id: Option<String>,
-    #[serde(rename = "odata.editLink")]
-    pub odata_edit_link: Option<String>,
-    #[serde(rename = "TableName")]
-    pub table_name: String,
+    #[serde(flatten)]
+    pub table: super::Table,
 }
 
 impl CreateTableResponse {

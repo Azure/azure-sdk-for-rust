@@ -1,13 +1,5 @@
-pub mod create_table;
-pub mod delete_entity;
-pub mod delete_table;
-pub mod get_entity;
-pub mod insert_entity;
-pub mod insert_or_merge_entity;
-pub mod insert_or_replace_entity;
-pub mod merge_entity;
-pub mod query_tables;
-pub mod update_entity;
+pub mod entity;
+pub mod table;
 
 use azure_core::HTTPHeaderError;
 use chrono::{DateTime, Utc};
@@ -87,18 +79,6 @@ impl AsRef<str> for ETag {
             ETag::OnlyIfMatch(etag) => etag.as_str(),
         }
     }
-}
-
-/// This trait represents a table entity.
-/// User should implement this trait for thir custom models
-pub trait TableEntity<'a> {
-    type Entity: serde::Serialize + 'a;
-
-    /// Return partition key value as reference.
-    fn partition_key(&self) -> &str;
-
-    /// Return partition key value as reference.
-    fn row_key(&self) -> &str;
 }
 
 pub fn header_time_value(utc_time: DateTime<Utc>) -> Result<HeaderValue, HTTPHeaderError> {

@@ -2,7 +2,7 @@ use azure_core::{HTTPHeaderError, Request};
 use chrono::Utc;
 use http::HeaderValue;
 
-use super::{header_time_value, header_value, ApiVersion};
+use crate::operations::{header_time_value, header_value, ApiVersion};
 
 #[derive(Debug, Clone)]
 pub struct DeleteTableOptions {
@@ -32,4 +32,8 @@ impl DeleteTableOptions {
         );
         Ok(())
     }
+}
+
+pub struct DeleteTableResponse {
+    // do we want to return some of the headers to the client? x-ms-request-id, x-ms-version, Date or x-ms-client-request-id
 }

@@ -1,40 +1,40 @@
-use super::{header_time_value, header_value, ApiVersion, ETag, TableEntity};
 use azure_core::{Error, Request};
 use chrono::{Duration, Utc};
 use http::HeaderValue;
 
-pub struct UpdateEntityOptions {
-    etag: Option<ETag>,
+use crate::operations::{ApiVersion, header_time_value, header_value};
+
+use super::TableEntity;
+
+
+pub struct InsertOrMergeEntityOptions {
     timeout: Option<Duration>,
     api_version: Option<ApiVersion>,
 }
 
-impl Default for UpdateEntityOptions {
+impl Default for InsertOrMergeEntityOptions {
     fn default() -> Self {
         Self {
             timeout: Default::default(),
-            etag: Some(ETag::default()),
             api_version: Some(ApiVersion::default()),
         }
     }
 }
 
-impl UpdateEntityOptions {
+impl InsertOrMergeEntityOptions {
     setters! {
-        etag: ETag => Some(etag),
         timeout: Duration => Some(timeout),
         api_version: ApiVersion => Some(api_version),
     }
 
     pub fn decorate_request<'b, ENTITY: serde::Serialize + TableEntity<'b>>(
         &self,
-        entity: &ENTITY,
         request: &mut Request,
+        entity: &ENTITY,
     ) -> Result<(), Error> {
         let headers = request.headers_mut();
-        headers.append("Content-Type", HeaderValue::from_static("application/json"));
-        headers.append("If-Match", header_value::<ETag>(&self.etag)?);
         headers.append("x-ms-date", header_time_value(Utc::now())?);
+        headers.append("Content-Type", HeaderValue::from_static("application/json"));
         headers.append(
             "x-ms-version",
             header_value::<ApiVersion>(&self.api_version)?,

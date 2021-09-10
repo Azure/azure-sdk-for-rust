@@ -1,5 +1,7 @@
-use super::{header_time_value, header_value, ApiVersion, OdataMetadataLevel};
-use crate::{Filter, Top};
+use crate::{
+    operations::{header_time_value, header_value, ApiVersion, OdataMetadataLevel},
+    Filter, Top,
+};
 use azure_core::{AppendToUrlQuery, Error, Request, Response};
 use chrono::Utc;
 use http::Uri;
@@ -71,24 +73,9 @@ impl<'a> QueryTablesOptions<'a> {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Table {
-    #[serde(rename = "odata.type")]
-    pub odata_type: Option<String>,
-    #[serde(rename = "odata.id")]
-    pub odata_id: Option<String>,
-    #[serde(rename = "odata.editLink")]
-    pub odata_link: Option<String>,
-    #[serde(rename = "TableName")]
-    pub table_name: String,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct QueryTablesResponse {
-    #[serde(rename = "odata.metadata")]
-    pub odata_metadata: Option<String>,
     #[serde(rename = "value")]
-    pub tables: Vec<Table>,
+    pub tables: Vec<super::Table>,
 }
 
 impl QueryTablesResponse {

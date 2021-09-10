@@ -1,14 +1,13 @@
 use super::table_client::TableClient;
-use crate::operations::delete_entity::DeleteEntityOptions;
-use crate::operations::get_entity::GetEntityResponse;
-use crate::operations::get_entity::QueryEntitiesOptions;
-use crate::operations::insert_entity::InsertEntityOptions;
-use crate::operations::insert_entity::InsertEntityResponse;
-use crate::operations::insert_or_merge_entity::InsertOrMergeEntityOptions;
-use crate::operations::insert_or_replace_entity::InsertOrReplaceEntityOptions;
-use crate::operations::merge_entity::MergeEntityOptions;
-use crate::operations::update_entity::UpdateEntityOptions;
-use crate::operations::TableEntity;
+use crate::operations::entity::delete_entity::DeleteEntityOptions;
+use crate::operations::entity::get_entity::QueryEntitiesOptions;
+use crate::operations::entity::insert_entity::InsertEntityOptions;
+use crate::operations::entity::insert_or_merge_entity::InsertOrMergeEntityOptions;
+use crate::operations::entity::insert_or_replace_entity::InsertOrReplaceEntityOptions;
+use crate::operations::entity::merge_entity::MergeEntityOptions;
+use crate::operations::entity::update_entity::UpdateEntityOptions;
+use crate::operations::entity::EntityResponse;
+use crate::operations::entity::TableEntity;
 use crate::table_context::TableContext;
 use azure_core::Context;
 use azure_core::Error;
@@ -34,7 +33,7 @@ pub struct EntityClient {
 ///  * Merge Entity
 ///  * Delete Entity
 ///  * Insert Or Replace Entity
-///  *  Insert Or Merge Entity
+///  * Insert Or Merge Entity
 ///
 /// Both the PartitionKey and RowKey values must be string values; each key value may be up to 64 KiB in size.
 /// If you are using an integer value for the key value, you should convert the integer to a fixed-width string, because they are canonically sorted.
@@ -59,7 +58,7 @@ impl EntityClient {
         partition_key: &str,
         row_key: &str,
         options: QueryEntitiesOptions,
-    ) -> Result<GetEntityResponse<E>, Error> {
+    ) -> Result<EntityResponse<E>, Error> {
         let mut request = self.table_client.prepare_table_request(
             format!(
                 "{}(PartitionKey='{}',RowKey='{}')",
@@ -82,8 +81,7 @@ impl EntityClient {
             .validate(http::StatusCode::OK)
             .await?;
 
-        let (_, _, body) = response.deconstruct();
-        let body_bytes = azure_core::collect_pinned_stream(body).await?;
+        let body_bytes = azure_core::collect_pinned_stream(response.deconstruct().2).await?;
         let entity = serde_json::de::from_reader(body_bytes.reader())?;
         Ok(entity)
     }
@@ -94,7 +92,7 @@ impl EntityClient {
         ctx: Context,
         entity: &'a E,
         options: InsertEntityOptions,
-    ) -> Result<InsertEntityResponse<E>, Error> {
+    ) -> Result<EntityResponse<E>, Error> {
         let mut request = self
             .table_client
             .prepare_table_request(format!("{}", self.table_name).as_str(), Method::POST);
@@ -121,6 +119,7 @@ impl EntityClient {
     /// TODO: write test, example, read remarks in documentation.
     /// The Update Entity operation updates an existing entity in a table.
     /// The Update Entity operation replaces the entire entity and can be used to remove properties.
+    /// If the If-Match header is missing from the request, the service performs an Insert Or Replace Entity (upsert) operation.
     pub async fn update_entity<'a, E: serde::Serialize + TableEntity<'a>>(
         &self,
         ctx: Context,
@@ -154,9 +153,13 @@ impl EntityClient {
         Ok(())
     }
 
-    /// TODO: write test, example, read remarks in documentation.
     /// The Merge Entity operation updates an existing entity by updating the entity's properties.
     /// This operation does not replace the existing entity, as the Update Entity operation does.
+    ///
+    /// The Table service does not persist null values for properties.
+    /// Specifying a property with a null value is equivalent to omitting that property in the request.
+    /// Only properties with non-null values will be updated by the Merge Entity operation.
+    /// Property cannot be removed with a Merge Entity operation. To remove a property from an entity, replace the entity by calling the Update Entity operation.
     pub async fn merge_entity<'a, E: serde::Serialize + TableEntity<'a>>(
         &self,
         ctx: Context,
@@ -233,7 +236,31 @@ impl EntityClient {
         entity: &'a E,
         options: InsertOrReplaceEntityOptions,
     ) -> Result<(), Error> {
-        todo!()
+        let mut request = self.table_client.prepare_table_request(
+            format!(
+                "{}(PartitionKey='{}', RowKey='{}')",
+                self.table_name,
+                entity.partition_key(),
+                entity.row_key()
+            )
+            .as_str(),
+            Method::PUT,
+        );
+
+        options.decorate_request::<E>(entity, &mut request)?;
+
+        let table_context = TableContext::default();
+        let mut pipeline_context = PipelineContext::new(ctx, table_context);
+
+        let _ = self
+            .table_client
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::NO_CONTENT)
+            .await?;
+
+        Ok(())
     }
 
     /// TODO: add implementation, write test, example, read remarks in documentation.
@@ -244,6 +271,30 @@ impl EntityClient {
         entity: &'a E,
         options: InsertOrMergeEntityOptions,
     ) -> Result<(), Error> {
-        todo!()
+        let mut request = self.table_client.prepare_table_request(
+            format!(
+                "{}(PartitionKey='{}', RowKey='{}')",
+                self.table_name,
+                entity.partition_key(),
+                entity.row_key()
+            )
+            .as_str(),
+            MERGE.clone(),
+        );
+
+        options.decorate_request::<E>(&mut request, entity)?;
+
+        let table_context = TableContext::default();
+        let mut pipeline_context = PipelineContext::new(ctx, table_context);
+
+        let _ = self
+            .table_client
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::NO_CONTENT)
+            .await?;
+
+        Ok(())
     }
 }

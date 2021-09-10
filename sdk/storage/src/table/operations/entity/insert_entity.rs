@@ -1,9 +1,11 @@
-use super::{
-    header_time_value, header_value, ApiVersion, EchoContent, OdataMetadataLevel, TableEntity,
+use crate::operations::{
+    header_time_value, header_value, ApiVersion, EchoContent, OdataMetadataLevel,
 };
 use azure_core::{Error, Request};
 use chrono::{Duration, Utc};
 use http::HeaderValue;
+
+use super::TableEntity;
 
 pub struct InsertEntityOptions {
     // Optional. The timeout parameter is expressed in seconds.
@@ -66,29 +68,7 @@ impl InsertEntityOptions {
             HeaderValue::from(serialized.as_bytes().len()),
         );
         request.set_body(bytes::Bytes::from(serialized).into());
+
         Ok(())
     }
-}
-
-#[derive(Default, Debug, Clone, PartialEq, serde_derive::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct InsertEntityResponse<ENTITY> {
-    /// odata_metadata fields
-    #[serde(rename = "odata.metadata")]
-    pub odata_metadata: Option<String>,
-    #[serde(rename = "odata.type")]
-    pub odata_type: Option<String>,
-    #[serde(rename = "odata.id")]
-    pub odata_id: Option<String>,
-    #[serde(rename = "odata.etag")]
-    pub odata_etag: Option<String>,
-    #[serde(rename = "odata.editLink")]
-    pub odata_edit_link: Option<String>,
-    #[serde(rename = "Timestamp@odata.type")]
-    pub timestamp_odata_type: Option<String>,
-    #[serde(rename = "Timestamp")]
-    pub timestamp: Option<String>,
-
-    #[serde(flatten)]
-    pub model: ENTITY,
 }
