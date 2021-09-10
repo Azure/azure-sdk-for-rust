@@ -44,11 +44,6 @@ impl DeleteDocumentOptions {
         azure_core::headers::add_optional_header2(&self.consistency_level, request);
         azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, request);
 
-        request = crate::cosmos_entity::add_as_partition_key_header_serialized(
-            self.document_client.partition_key_serialized(),
-            request,
-        );
-
         Ok(())
     }
 }
