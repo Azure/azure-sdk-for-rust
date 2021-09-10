@@ -67,15 +67,17 @@ pub struct LockboxRequestResponseProperties {
     #[serde(rename = "expirationDateTime", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub duration: Option<i32>,
-    #[serde(rename = "requestedResourceIds", default, skip_serializing_if = "Vec::is_empty")]
-    pub requested_resource_ids: Vec<String>,
+    pub duration: Option<String>,
+    #[serde(rename = "resourceIds", default, skip_serializing_if = "Option::is_none")]
+    pub resource_ids: Option<String>,
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
     #[serde(rename = "supportRequest", default, skip_serializing_if = "Option::is_none")]
     pub support_request: Option<String>,
     #[serde(rename = "supportCaseUrl", default, skip_serializing_if = "Option::is_none")]
     pub support_case_url: Option<String>,
+    #[serde(rename = "workItemSource", default, skip_serializing_if = "Option::is_none")]
+    pub work_item_source: Option<String>,
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
 }
@@ -98,14 +100,14 @@ pub enum LockboxRequestStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Approval {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub decision: Option<approval::Decision>,
+    pub status: Option<approval::Status>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
 }
 pub mod approval {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Decision {
+    pub enum Status {
         Approve,
         Deny,
     }

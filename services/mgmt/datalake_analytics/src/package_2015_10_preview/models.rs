@@ -54,6 +54,8 @@ pub struct DataLakeAnalyticsAccountProperties {
     pub compute_policies: Vec<ComputePolicy>,
     #[serde(rename = "hiveMetastores", default, skip_serializing_if = "Vec::is_empty")]
     pub hive_metastores: Vec<HiveMetastore>,
+    #[serde(rename = "hierarchicalQueueState", default, skip_serializing_if = "Option::is_none")]
+    pub hierarchical_queue_state: Option<String>,
     #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
     #[serde(rename = "firewallRules", default, skip_serializing_if = "Vec::is_empty")]
@@ -426,6 +428,8 @@ pub struct OperationMetaMetricSpecification {
     pub name: Option<String>,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]

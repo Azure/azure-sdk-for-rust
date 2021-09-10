@@ -12,7 +12,7 @@ pub mod diagnostic_settings_category {
     ) -> std::result::Result<DiagnosticSettingsCategoryResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/diagnosticSettingsCategories/{}",
+            "{}/{}/providers/Microsoft.Insights/diagnosticSettingsCategories/{}",
             operation_config.base_path(),
             resource_uri,
             name
@@ -79,7 +79,7 @@ pub mod diagnostic_settings_category {
     ) -> std::result::Result<DiagnosticSettingsCategoryResourceCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/diagnosticSettingsCategories",
+            "{}/{}/providers/Microsoft.Insights/diagnosticSettingsCategories",
             operation_config.base_path(),
             resource_uri
         );
@@ -149,7 +149,7 @@ pub mod diagnostic_settings {
     ) -> std::result::Result<DiagnosticSettingsResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/diagnosticSettings/{}",
+            "{}/{}/providers/Microsoft.Insights/diagnosticSettings/{}",
             operation_config.base_path(),
             resource_uri,
             name
@@ -218,7 +218,7 @@ pub mod diagnostic_settings {
     ) -> std::result::Result<DiagnosticSettingsResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/diagnosticSettings/{}",
+            "{}/{}/providers/Microsoft.Insights/diagnosticSettings/{}",
             operation_config.base_path(),
             resource_uri,
             name
@@ -289,7 +289,7 @@ pub mod diagnostic_settings {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/diagnosticSettings/{}",
+            "{}/{}/providers/Microsoft.Insights/diagnosticSettings/{}",
             operation_config.base_path(),
             resource_uri,
             name
@@ -357,7 +357,7 @@ pub mod diagnostic_settings {
     ) -> std::result::Result<DiagnosticSettingsResourceCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/microsoft.insights/diagnosticSettings",
+            "{}/{}/providers/Microsoft.Insights/diagnosticSettings",
             operation_config.base_path(),
             resource_uri
         );

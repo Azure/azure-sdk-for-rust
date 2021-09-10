@@ -13,7 +13,7 @@ pub mod activity_logs {
     ) -> std::result::Result<EventDataCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/eventtypes/management/values",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/eventtypes/management/values",
             operation_config.base_path(),
             subscription_id
         );
@@ -87,7 +87,7 @@ pub mod autoscale_settings {
     ) -> std::result::Result<AutoscaleSettingResourceCollection, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/autoscalesettings",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/autoscalesettings",
             operation_config.base_path(),
             subscription_id,
             resource_group_name
@@ -161,7 +161,7 @@ pub mod autoscale_settings {
     ) -> std::result::Result<AutoscaleSettingResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/autoscalesettings/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/autoscalesettings/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -232,7 +232,7 @@ pub mod autoscale_settings {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/autoscalesettings/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/autoscalesettings/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -317,7 +317,7 @@ pub mod autoscale_settings {
     ) -> std::result::Result<AutoscaleSettingResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/autoscalesettings/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/autoscalesettings/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -387,7 +387,7 @@ pub mod autoscale_settings {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/autoscalesettings/{}",
+            "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/autoscalesettings/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -456,7 +456,7 @@ pub mod autoscale_settings {
     ) -> std::result::Result<AutoscaleSettingResourceCollection, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/microsoft.insights/autoscalesettings",
+            "{}/subscriptions/{}/providers/Microsoft.Insights/autoscalesettings",
             operation_config.base_path(),
             subscription_id
         );
@@ -524,7 +524,7 @@ pub mod event_categories {
     use crate::models::*;
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<EventCategoryCollection, list::Error> {
         let http_client = operation_config.http_client();
-        let url_str = &format!("{}/providers/microsoft.insights/eventcategories", operation_config.base_path(),);
+        let url_str = &format!("{}/providers/Microsoft.Insights/eventcategories", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
@@ -586,7 +586,7 @@ pub mod operations {
     use crate::models::*;
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
-        let url_str = &format!("{}/providers/microsoft.insights/operations", operation_config.base_path(),);
+        let url_str = &format!("{}/providers/Microsoft.Insights/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
@@ -648,7 +648,7 @@ pub mod tenant_activity_logs {
     ) -> std::result::Result<EventDataCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/providers/microsoft.insights/eventtypes/management/values",
+            "{}/providers/Microsoft.Insights/eventtypes/management/values",
             operation_config.base_path(),
         );
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;

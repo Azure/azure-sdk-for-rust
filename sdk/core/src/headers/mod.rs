@@ -34,11 +34,23 @@ impl TryFrom<&HeaderMap> for CommonStorageResponseHeaders {
     }
 }
 
+/// Implement this trait to allow a custom struct to express itself as a HTTP header.
+/// Ad interim we require two functions: `add_as_header` and `add_as_header2`. Make sure
+/// your implementations are functionally equivalent between the two. In other words, the
+/// effect should be the same regardless of which function the SDK calls.
+///
+/// While not restricted by the type system, please add HTTP headers only. In particular, do not
+/// interact with the body of the request.
+///
+/// As soon as the migration to the pipeline architecture will be complete we will phase out
+/// `add_as_header`.
 pub trait AddAsHeader {
     fn add_as_header(&self, builder: Builder) -> Builder;
-    fn add_as_header2(&self, _request: &mut crate::Request) {
-        unimplemented!()
-    }
+
+    fn add_as_header2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<(), crate::errors::HTTPHeaderError>;
 }
 
 #[must_use]
@@ -57,15 +69,25 @@ pub fn add_optional_header<T: AddAsHeader>(item: &Option<T>, mut builder: Builde
     builder
 }
 
-pub fn add_optional_header2<T: AddAsHeader>(item: &Option<T>, request: &mut crate::Request) {
-    if let Some(item) = item {
-        item.add_as_header2(request);
-    }
+pub fn add_optional_header2<T: AddAsHeader>(
+    item: &Option<T>,
+    request: &mut crate::Request,
+) -> Result<(), crate::errors::HTTPHeaderError> {
+    Ok(if let Some(item) = item {
+        item.add_as_header2(request)?
+    })
 }
 
 #[must_use]
 pub fn add_mandatory_header<T: AddAsHeader>(item: &T, builder: Builder) -> Builder {
     item.add_as_header(builder)
+}
+
+pub fn add_mandatory_header2<T: AddAsHeader>(
+    item: &T,
+    request: &mut crate::Request,
+) -> Result<(), crate::errors::HTTPHeaderError> {
+    item.add_as_header2(request)
 }
 
 pub const SERVER: &str = "server";

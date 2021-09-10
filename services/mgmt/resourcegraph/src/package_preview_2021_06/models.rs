@@ -119,6 +119,8 @@ pub enum ColumnDataType {
     Boolean,
     #[serde(rename = "object")]
     Object,
+    #[serde(rename = "datetime")]
+    Datetime,
 }
 pub type Row = Vec<serde_json::Value>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

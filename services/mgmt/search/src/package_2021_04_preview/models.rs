@@ -465,8 +465,8 @@ pub struct OperationProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationServiceSpecification {
-    #[serde(rename = "metricsSpecifications", default, skip_serializing_if = "Vec::is_empty")]
-    pub metrics_specifications: Vec<OperationMetricsSpecification>,
+    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    pub metric_specifications: Vec<OperationMetricsSpecification>,
     #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub log_specifications: Vec<OperationLogsSpecification>,
 }

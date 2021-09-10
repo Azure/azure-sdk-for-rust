@@ -61,6 +61,11 @@ pub mod canonical_support_plan_info_definition {
         OnReenabled,
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListValue {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<OperationList>,
+}
 pub type OperationList = Vec<OperationsDefinition>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsDefinition {
@@ -83,5 +88,5 @@ pub struct OperationsDisplayDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDefinition {
     pub message: String,
-    pub code: i64,
+    pub code: String,
 }

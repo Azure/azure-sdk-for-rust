@@ -564,8 +564,7 @@ pub struct ForecastDefinition {
     pub timeframe: forecast_definition::Timeframe,
     #[serde(rename = "timePeriod", default, skip_serializing_if = "Option::is_none")]
     pub time_period: Option<QueryTimePeriod>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dataset: Option<QueryDataset>,
+    pub dataset: QueryDataset,
     #[serde(rename = "includeActualCost", default, skip_serializing_if = "Option::is_none")]
     pub include_actual_cost: Option<bool>,
     #[serde(rename = "includeFreshPartialCost", default, skip_serializing_if = "Option::is_none")]
@@ -596,8 +595,7 @@ pub struct QueryDefinition {
     pub timeframe: query_definition::Timeframe,
     #[serde(rename = "timePeriod", default, skip_serializing_if = "Option::is_none")]
     pub time_period: Option<QueryTimePeriod>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dataset: Option<QueryDataset>,
+    pub dataset: QueryDataset,
 }
 pub mod query_definition {
     use super::*;

@@ -29,9 +29,13 @@ mod package_2020_07_01_privatepreview;
 pub use package_2020_07_01_privatepreview::{models, operations, API_VERSION};
 #[cfg(feature = "package-2020-07-01-preview")]
 mod package_2020_07_01_preview;
-use azure_core::setters;
 #[cfg(feature = "package-2020-07-01-preview")]
 pub use package_2020_07_01_preview::{models, operations, API_VERSION};
+#[cfg(feature = "package-flexibleserver-2021-05-01-preview")]
+mod package_flexibleserver_2021_05_01_preview;
+use azure_core::setters;
+#[cfg(feature = "package-flexibleserver-2021-05-01-preview")]
+pub use package_flexibleserver_2021_05_01_preview::{models, operations, API_VERSION};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

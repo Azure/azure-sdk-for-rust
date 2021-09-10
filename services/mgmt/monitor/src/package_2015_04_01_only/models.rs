@@ -129,6 +129,8 @@ pub struct MetricTrigger {
     pub metric_namespace: Option<String>,
     #[serde(rename = "metricResourceUri")]
     pub metric_resource_uri: String,
+    #[serde(rename = "metricResourceLocation", default, skip_serializing_if = "Option::is_none")]
+    pub metric_resource_location: Option<String>,
     #[serde(rename = "timeGrain")]
     pub time_grain: String,
     pub statistic: metric_trigger::Statistic,
@@ -151,6 +153,7 @@ pub mod metric_trigger {
         Min,
         Max,
         Sum,
+        Count,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TimeAggregation {
@@ -193,6 +196,7 @@ pub mod scale_action {
         ChangeCount,
         PercentChangeCount,
         ExactCount,
+        ServiceAllowedNextValue,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -288,6 +292,8 @@ pub struct AutoscaleSetting {
     pub name: Option<String>,
     #[serde(rename = "targetResourceUri", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_uri: Option<String>,
+    #[serde(rename = "targetResourceLocation", default, skip_serializing_if = "Option::is_none")]
+    pub target_resource_location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoscaleSettingResource {

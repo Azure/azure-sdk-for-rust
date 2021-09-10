@@ -1,4 +1,6 @@
+use azure_core::Context;
 use azure_cosmos::prelude::*;
+use futures::stream::StreamExt;
 use serde_json::Value;
 use std::error::Error;
 
@@ -14,7 +16,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
 
-    let dbs = client.list_databases().execute().await?;
+    let dbs = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+        .next()
+        .await
+        .unwrap()?;
 
     for db in dbs.databases {
         println!("database == {:?}", db);
@@ -40,10 +45,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 }"#;
                 let document: Value = serde_json::from_str(data)?;
 
-                let resp = collection_client
-                    .create_document()
+                let options = CreateDocumentOptions::new()
                     .is_upsert(true)
-                    .execute_with_partition_key(&document, &43u32)
+                    .partition_key(&43u32)
+                    .unwrap();
+                let resp = collection_client
+                    .create_document(Context::new(), &document, options)
                     .await?;
 
                 println!("resp == {:?}", resp);

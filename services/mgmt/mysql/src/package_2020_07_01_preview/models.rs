@@ -33,6 +33,11 @@ pub struct DelegatedSubnetArguments {
     pub subnet_arm_resource_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateDnsZoneArguments {
+    #[serde(rename = "privateDnsZoneArmResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub private_dns_zone_arm_resource_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MaintenanceWindow {
     #[serde(rename = "customWindow", default, skip_serializing_if = "Option::is_none")]
     pub custom_window: Option<String>,
@@ -122,6 +127,8 @@ pub struct ServerProperties {
     pub byok_enforcement: Option<String>,
     #[serde(rename = "delegatedSubnetArguments", default, skip_serializing_if = "Option::is_none")]
     pub delegated_subnet_arguments: Option<DelegatedSubnetArguments>,
+    #[serde(rename = "privateDnsZoneArguments", default, skip_serializing_if = "Option::is_none")]
+    pub private_dns_zone_arguments: Option<PrivateDnsZoneArguments>,
     #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<server_properties::CreateMode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

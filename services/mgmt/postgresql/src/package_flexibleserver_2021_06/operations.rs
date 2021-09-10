@@ -13,7 +13,7 @@ pub mod servers {
     ) -> std::result::Result<Server, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -84,7 +84,7 @@ pub mod servers {
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -168,7 +168,7 @@ pub mod servers {
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -244,7 +244,7 @@ pub mod servers {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -316,7 +316,7 @@ pub mod servers {
     ) -> std::result::Result<ServerListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers",
             operation_config.base_path(),
             subscription_id,
             resource_group_name
@@ -388,7 +388,7 @@ pub mod servers {
     ) -> std::result::Result<ServerListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.DBForPostgreSql/flexibleServers",
+            "{}/subscriptions/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers",
             operation_config.base_path(),
             subscription_id
         );
@@ -457,7 +457,7 @@ pub mod servers {
     ) -> std::result::Result<restart::Response, restart::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/restart",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/restart",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -535,7 +535,7 @@ pub mod servers {
     ) -> std::result::Result<start::Response, start::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/start",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/start",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -607,7 +607,7 @@ pub mod servers {
     ) -> std::result::Result<stop::Response, stop::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/stop",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/stop",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -683,7 +683,7 @@ pub mod firewall_rules {
     ) -> std::result::Result<FirewallRule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/firewallRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/firewallRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -756,7 +756,7 @@ pub mod firewall_rules {
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/firewallRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/firewallRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -844,7 +844,7 @@ pub mod firewall_rules {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/firewallRules/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/firewallRules/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -918,7 +918,7 @@ pub mod firewall_rules {
     ) -> std::result::Result<FirewallRuleListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/firewallRules",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/firewallRules",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -994,7 +994,7 @@ pub mod configurations {
     ) -> std::result::Result<ConfigurationListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/configurations",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/configurations",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1068,7 +1068,7 @@ pub mod configurations {
     ) -> std::result::Result<Configuration, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/configurations/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/configurations/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1141,7 +1141,7 @@ pub mod configurations {
     ) -> std::result::Result<put::Response, put::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/configurations/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/configurations/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1220,7 +1220,7 @@ pub mod configurations {
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/configurations/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/configurations/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1299,7 +1299,7 @@ pub mod check_name_availability {
     ) -> std::result::Result<NameAvailability, execute::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.DBForPostgreSql/checkNameAvailability",
+            "{}/subscriptions/{}/providers/Microsoft.DBforPostgreSQL/checkNameAvailability",
             operation_config.base_path(),
             subscription_id
         );
@@ -1372,7 +1372,7 @@ pub mod location_based_capabilities {
     ) -> std::result::Result<CapabilitiesListResult, execute::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.DBForPostgreSql/locations/{}/capabilities",
+            "{}/subscriptions/{}/providers/Microsoft.DBforPostgreSQL/locations/{}/capabilities",
             operation_config.base_path(),
             subscription_id,
             location_name
@@ -1447,7 +1447,7 @@ pub mod virtual_network_subnet_usage {
     ) -> std::result::Result<VirtualNetworkSubnetUsageResult, execute::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.DBForPostgreSql/locations/{}/checkVirtualNetworkSubnetUsage",
+            "{}/subscriptions/{}/providers/Microsoft.DBforPostgreSQL/locations/{}/checkVirtualNetworkSubnetUsage",
             operation_config.base_path(),
             subscription_id,
             location_name
@@ -1516,7 +1516,7 @@ pub mod operations {
     use crate::models::*;
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
-        let url_str = &format!("{}/providers/Microsoft.DBForPostgreSql/operations", operation_config.base_path(),);
+        let url_str = &format!("{}/providers/Microsoft.DBforPostgreSQL/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
@@ -1585,7 +1585,7 @@ pub mod databases {
     ) -> std::result::Result<Database, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/databases/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/databases/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1658,7 +1658,7 @@ pub mod databases {
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/databases/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/databases/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1743,7 +1743,7 @@ pub mod databases {
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/databases/{}",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/databases/{}",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1817,7 +1817,7 @@ pub mod databases {
     ) -> std::result::Result<DatabaseListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/flexibleServers/{}/databases",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/databases",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
@@ -1888,7 +1888,7 @@ pub mod get_private_dns_zone_suffix {
     pub async fn execute(operation_config: &crate::OperationConfig) -> std::result::Result<PrivateDnsZoneSuffix, execute::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/providers/Microsoft.DBForPostgreSql/getPrivateDnsZoneSuffix",
+            "{}/providers/Microsoft.DBforPostgreSQL/getPrivateDnsZoneSuffix",
             operation_config.base_path(),
         );
         let mut url = url::Url::parse(url_str).map_err(execute::Error::ParseUrlError)?;

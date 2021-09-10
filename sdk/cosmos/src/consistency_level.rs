@@ -1,4 +1,5 @@
 use crate::headers;
+use crate::operations::*;
 use crate::responses::*;
 use azure_core::AddAsHeader;
 use http::request;
@@ -120,5 +121,26 @@ impl AddAsHeader for ConsistencyLevel {
         } else {
             builder
         }
+    }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), azure_core::HTTPHeaderError> {
+        request.headers_mut().append(
+            headers::HEADER_CONSISTENCY_LEVEL,
+            http::header::HeaderValue::from_str(self.to_consistency_level_header())?,
+        );
+
+        // if we have a Session consistency level we make sure to pass
+        // the x-ms-session-token header too.
+        if let ConsistencyLevel::Session(session_token) = self {
+            request.headers_mut().append(
+                headers::HEADER_SESSION_TOKEN,
+                http::header::HeaderValue::from_str(session_token)?,
+            );
+        }
+
+        Ok(())
     }
 }

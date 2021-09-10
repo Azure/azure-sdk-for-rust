@@ -66,6 +66,35 @@ create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
+use serde::{self, Deserialize, Deserializer};
+fn deserialize_crc64_optional<'de, D>(
+    deserializer: D,
+) -> Result<Option<crate::ConsistencyCRC64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: Option<String> = Option::deserialize(deserializer)?;
+
+    Ok(s.filter(|s| s.len() > 0)
+        .map(crate::ConsistencyCRC64::decode)
+        .transpose()
+        .map_err(serde::de::Error::custom)?)
+}
+
+fn deserialize_md5_optional<'de, D>(
+    deserializer: D,
+) -> Result<Option<crate::ConsistencyMD5>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: Option<String> = Option::deserialize(deserializer)?;
+
+    Ok(s.filter(|s| s.len() > 0)
+        .map(crate::ConsistencyMD5::decode)
+        .transpose()
+        .map_err(serde::de::Error::custom)?)
+}
+
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Blob {
@@ -106,8 +135,12 @@ pub struct BlobProperties {
     #[serde(rename = "Content-Disposition")]
     pub content_disposition: Option<String>,
     #[serde(rename = "Content-MD5")]
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_md5_optional")]
     pub content_md5: Option<ConsistencyMD5>,
     #[serde(rename = "Content-CRC64")]
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_crc64_optional")]
     pub content_crc64: Option<ConsistencyCRC64>,
     #[serde(rename = "Cache-Control")]
     pub cache_control: Option<String>,

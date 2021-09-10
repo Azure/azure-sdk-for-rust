@@ -1,8 +1,6 @@
-use azure_core::prelude::*;
+use azure_core::Context;
 use azure_cosmos::prelude::*;
-
 use futures::stream::StreamExt;
-
 use std::error::Error;
 
 #[tokio::main]
@@ -36,15 +34,15 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
 
-    let list_databases_response = client.list_databases().execute().await?;
-    println!("list_databases_response = {:#?}", list_databases_response);
+    let mut list_databases_stream =
+        Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()));
+    while let Some(list_databases_response) = list_databases_stream.next().await {
+        println!("list_databases_response = {:#?}", list_databases_response?);
+    }
+    drop(list_databases_stream);
 
     let db = client
-        .create_database(
-            azure_core::Context::new(),
-            &database_name,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(Context::new(), &database_name, CreateDatabaseOptions::new())
         .await?;
     println!("created database = {:#?}", db);
 
