@@ -4,6 +4,7 @@ use crate::policies::{Policy, PolicyResult};
 use crate::TransportOptions;
 #[allow(unused_imports)]
 use crate::{Context, HttpClient, PipelineContext, Request, Response};
+#[cfg(not(target_arch = "wasm32"))]
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
