@@ -2,6 +2,7 @@
 use crate::policies::TransportPolicy;
 use crate::policies::{Policy, TelemetryPolicy};
 use crate::{ClientOptions, Error, HttpClient, PipelineContext, Request, Response};
+#[cfg(feature = "mock_transport_framework")]
 use log::warn;
 use std::sync::Arc;
 
