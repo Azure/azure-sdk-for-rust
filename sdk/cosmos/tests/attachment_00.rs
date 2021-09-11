@@ -38,7 +38,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
     // create a temp database
     let _create_database_response = client
         .create_database(
-            azure_core::Context::new(),
+            &mut azure_core::Context::new(),
             DATABASE_NAME,
             CreateDatabaseOptions::new(),
         )
@@ -71,7 +71,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
             .offer(Offer::Throughput(400))
             .indexing_policy(ip);
         database_client
-            .create_collection(Context::new(), COLLECTION_NAME, options)
+            .create_collection(&mut Context::new(), COLLECTION_NAME, options)
             .await
             .unwrap()
     };
@@ -91,7 +91,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
 
     // let's add an entity.
     let session_token: ConsistencyLevel = collection_client
-        .create_document(Context::new(), &doc, CreateDocumentOptions::new())
+        .create_document(&mut Context::new(), &doc, CreateDocumentOptions::new())
         .await?
         .into();
 

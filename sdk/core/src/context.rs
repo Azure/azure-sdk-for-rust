@@ -1,3 +1,7 @@
+use std::any::{Any, TypeId};
+use std::collections::HashMap;
+use std::sync::Arc;
+
 /// Pipeline execution context.
 ///
 /// During a pipeline execution, context will be passed from the function starting the
@@ -6,15 +10,84 @@
 /// pipeline execution history between policies.
 /// For example, it could be used to signal that an execution failed because a CosmosDB endpoint is
 /// down and the appropriate policy should try the next one).
-#[derive(Clone)]
+#[derive(Clone, Debug, Default)]
 pub struct Context {
-    // Temporary hack to make sure that Context is not initializeable
-    // Soon Context will have proper data fields
-    _priv: (),
+    property_bag: HashMap<TypeId, Arc<dyn Any + Send + Sync>>,
 }
 
 impl Context {
     pub fn new() -> Self {
-        Self { _priv: () }
+        Self::default()
+    }
+
+    pub fn property_bag(&self) -> &HashMap<TypeId, Arc<dyn Any + Send + Sync>> {
+        &self.property_bag
+    }
+
+    // **IMPORTANT**: Care must be taken to avoid storing a mismatched TypeId because the other,
+    // public functions, assume that the same TypeId used as key will be the one extracted from the
+    // hashmap. This is guaranteed by the public `set_property` function.
+    fn property_bag_mut(&mut self) -> &mut HashMap<TypeId, Arc<dyn Any + Send + Sync>> {
+        &mut self.property_bag
+    }
+
+    pub fn get_property<T: Any + Send + Sync>(&self) -> Option<&T> {
+        self.property_bag.get(&TypeId::of::<T>()).map(|e| {
+            e.downcast_ref::<T>().unwrap_or_else(|| {
+                panic!(
+                    "**BUG**: this type must have been type_id == {:?}",
+                    TypeId::of::<T>()
+                )
+            })
+        })
+    }
+
+    pub fn set_property<T: Any + Send + Sync>(&mut self, t: Arc<T>) {
+        self.property_bag_mut().insert(TypeId::of::<T>(), t);
+    }
+
+    #[cfg(not(feature = "mock_transport_framework"))]
+    pub fn start_mock_transaction(&mut self, _name: impl Into<String>) {}
+
+    #[cfg(feature = "mock_transport_framework")]
+    pub fn start_mock_transaction(&mut self, name: impl Into<String>) {
+        self.set_property(Arc::new(crate::MockTransaction::new(name)));
+    }
+
+    #[cfg(feature = "mock_transport_framework")]
+    pub(crate) fn get_mock_transaction(
+        &self,
+    ) -> Result<&crate::MockTransaction, crate::MockFrameworkError> {
+        self.get_property::<crate::MockTransaction>()
+            .ok_or(crate::MockFrameworkError::UninitializedTransaction())
+    }
+
+    #[cfg(feature = "mock_transport_framework")]
+    pub(crate) fn increment_mock_transaction(&mut self) -> Result<(), crate::MockFrameworkError> {
+        let current_transaction = self.get_mock_transaction()?;
+        let new_transaction = crate::MockTransaction {
+            name: current_transaction.name().to_owned(),
+            number: current_transaction.number() + 1,
+        };
+
+        self.set_property(Arc::new(new_transaction));
+
+        Ok(())
+    }
+
+    #[cfg(feature = "mock_transport_framework")]
+    pub(crate) fn prepare_and_get_transaction_path(
+        &self,
+    ) -> Result<std::path::PathBuf, crate::MockFrameworkError> {
+        let path: std::path::PathBuf =
+            std::path::PathBuf::from("SessionRecords").join(self.get_mock_transaction()?.name());
+
+        if !path.exists() {
+            std::fs::create_dir(&path).map_err(|e| {
+                crate::MockFrameworkError::IOError("cannot create transaction folder", e)
+            })?;
+        }
+
+        Ok(path)
     }
 }

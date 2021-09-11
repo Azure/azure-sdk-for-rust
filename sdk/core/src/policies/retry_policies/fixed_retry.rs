@@ -50,11 +50,11 @@ impl<C> Policy<C> for FixedRetryPolicy
 where
     C: Send + Sync,
 {
-    async fn send(
-        &self,
-        ctx: &mut PipelineContext<C>,
-        request: &mut Request,
-        next: &[Arc<dyn Policy<C>>],
+    async fn send<'a, 'b, 'c>(
+        &'a self,
+        ctx: &'b mut PipelineContext<'a, C>,
+        request: &'c mut Request,
+        next: &'a [Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response> {
         let mut first_retry_time = None;
         let mut current_retries = 0;

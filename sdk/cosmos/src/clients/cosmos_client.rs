@@ -7,12 +7,12 @@ use crate::resources::ResourceType;
 use crate::{ReadonlyString, TimeNonce};
 
 use azure_core::pipeline::Pipeline;
-use azure_core::prelude::Continuation;
+//use azure_core::prelude::Continuation;
 use azure_core::HttpClient;
 use azure_core::Request;
 use azure_core::*;
-use futures::stream::unfold;
-use futures::Stream;
+//use futures::stream::unfold;
+//use futures::Stream;
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};
 
@@ -145,11 +145,12 @@ impl CosmosClient {
     /// Create a database
     pub async fn create_database<S: AsRef<str>>(
         &self,
-        ctx: Context,
+        ctx: &mut Context,
         database_name: S,
         options: CreateDatabaseOptions,
     ) -> Result<CreateDatabaseResponse, crate::Error> {
         let mut request = self.prepare_request_pipeline("dbs", http::Method::POST);
+
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
         options.decorate_request(&mut request, database_name.as_ref())?;
@@ -163,82 +164,83 @@ impl CosmosClient {
         Ok(CreateDatabaseResponse::try_from(response).await?)
     }
 
-    /// List all databases
-    pub fn list_databases(
-        &self,
-        ctx: Context,
-        options: ListDatabasesOptions,
-    ) -> impl Stream<Item = Result<ListDatabasesResponse, crate::Error>> + '_ {
-        macro_rules! r#try {
-            ($expr:expr $(,)?) => {
-                match $expr {
-                    Result::Ok(val) => val,
-                    Result::Err(err) => {
-                        return Some((Err(err.into()), State::Done));
-                    }
-                }
-            };
-        }
+    // TODO: Figure out Context mutable borrow lifetime and re-enable.
+    ///// List all databases
+    //pub fn list_databases(
+    //    &self,
+    //    ctx: Context,
+    //    options: ListDatabasesOptions,
+    //) -> impl Stream<Item = Result<ListDatabasesResponse, crate::Error>> + '_ {
+    //    macro_rules! r#try {
+    //        ($expr:expr $(,)?) => {
+    //            match $expr {
+    //                Result::Ok(val) => val,
+    //                Result::Err(err) => {
+    //                    return Some((Err(err.into()), State::Done));
+    //                }
+    //            }
+    //        };
+    //    }
 
-        #[derive(Debug, Clone, PartialEq)]
-        enum State {
-            Init,
-            Continuation(String),
-            Done,
-        }
+    //    #[derive(Debug, Clone, PartialEq)]
+    //    enum State {
+    //        Init,
+    //        Continuation(String),
+    //        Done,
+    //    }
 
-        unfold(State::Init, move |state: State| {
-            let this = self.clone();
-            let ctx = ctx.clone();
-            let options = options.clone();
-            async move {
-                let response = match state {
-                    State::Init => {
-                        let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Databases.into());
+    //    unfold(State::Init, move |state: State| {
+    //        let this = self.clone();
+    //        let ctx = ctx.clone();
+    //        let options = options.clone();
+    //        async move {
+    //            let response = match state {
+    //                State::Init => {
+    //                    let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
+    //                    let mut pipeline_context =
+    //                        PipelineContext::new(ctx.clone(), ResourceType::Databases.into());
 
-                        r#try!(options.decorate_request(&mut request).await);
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
-                        let response = r#try!(response.validate(http::StatusCode::OK).await);
+    //                    r#try!(options.decorate_request(&mut request).await);
+    //                    let response = r#try!(
+    //                        this.pipeline()
+    //                            .send(&mut pipeline_context, &mut request)
+    //                            .await
+    //                    );
+    //                    let response = r#try!(response.validate(http::StatusCode::OK).await);
 
-                        ListDatabasesResponse::try_from(response).await
-                    }
-                    State::Continuation(continuation_token) => {
-                        let continuation = Continuation::new(continuation_token.as_str());
-                        let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Databases.into());
+    //                    ListDatabasesResponse::try_from(response).await
+    //                }
+    //                State::Continuation(continuation_token) => {
+    //                    let continuation = Continuation::new(continuation_token.as_str());
+    //                    let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
+    //                    let mut pipeline_context =
+    //                        PipelineContext::new(ctx.clone(), ResourceType::Databases.into());
 
-                        r#try!(options.decorate_request(&mut request).await);
-                        r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
-                        let response = r#try!(response.validate(http::StatusCode::OK).await);
-                        ListDatabasesResponse::try_from(response).await
-                    }
-                    State::Done => return None,
-                };
+    //                    r#try!(options.decorate_request(&mut request).await);
+    //                    r#try!(continuation.add_as_header2(&mut request));
+    //                    let response = r#try!(
+    //                        this.pipeline()
+    //                            .send(&mut pipeline_context, &mut request)
+    //                            .await
+    //                    );
+    //                    let response = r#try!(response.validate(http::StatusCode::OK).await);
+    //                    ListDatabasesResponse::try_from(response).await
+    //                }
+    //                State::Done => return None,
+    //            };
 
-                let response = r#try!(response);
+    //            let response = r#try!(response);
 
-                let next_state = response
-                    .continuation_token
-                    .clone()
-                    .map(|ct| State::Continuation(ct))
-                    .unwrap_or(State::Done);
+    //            let next_state = response
+    //                .continuation_token
+    //                .clone()
+    //                .map(|ct| State::Continuation(ct))
+    //                .unwrap_or(State::Done);
 
-                Some((Ok(response), next_state))
-            }
-        })
-    }
+    //            Some((Ok(response), next_state))
+    //        }
+    //    })
+    //}
 
     /// Convert into a [`DatabaseClient`]
     pub fn into_database_client<S: Into<ReadonlyString>>(self, database_name: S) -> DatabaseClient {

@@ -1,8 +1,16 @@
+#[cfg(feature = "mock_transport_framework")]
+mod mock_transport_player_policy;
+#[cfg(feature = "mock_transport_framework")]
+mod mock_transport_recorder_policy;
 mod retry_policies;
 mod telemetry_policy;
 mod transport;
 
 use crate::{PipelineContext, Request, Response};
+#[cfg(feature = "mock_transport_framework")]
+pub use mock_transport_player_policy::MockTransportPlayerPolicy;
+#[cfg(feature = "mock_transport_framework")]
+pub use mock_transport_recorder_policy::MockTransportRecorderPolicy;
 pub use retry_policies::*;
 use std::error::Error;
 use std::sync::Arc;
@@ -23,10 +31,10 @@ pub trait Policy<C>: Send + Sync + std::fmt::Debug
 where
     C: Send + Sync,
 {
-    async fn send(
-        &self,
-        ctx: &mut PipelineContext<C>,
-        request: &mut Request,
-        next: &[Arc<dyn Policy<C>>],
+    async fn send<'a, 'b, 'c>(
+        &'a self,
+        ctx: &'b mut PipelineContext<'a, C>,
+        request: &'c mut Request,
+        next: &'a [Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response>;
 }

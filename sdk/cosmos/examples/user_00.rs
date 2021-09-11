@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let user_client = database_client.clone().into_user_client(user_name.clone());
 
     let create_user_response = user_client
-        .create_user(Context::new(), CreateUserOptions::new())
+        .create_user(&mut Context::new(), CreateUserOptions::new())
         .await?;
     println!("create_user_response == {:#?}", create_user_response);
 
@@ -37,14 +37,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("list_users_response == {:#?}", list_users_response);
 
     let get_user_response = user_client
-        .get_user(Context::new(), GetUserOptions::new())
+        .get_user(&mut Context::new(), GetUserOptions::new())
         .await?;
     println!("get_user_response == {:#?}", get_user_response);
 
     let new_user = format!("{}replaced", user_name);
 
     let replace_user_response = user_client
-        .replace_user(Context::new(), &new_user, ReplaceUserOptions::new())
+        .replace_user(&mut Context::new(), &new_user, ReplaceUserOptions::new())
         .await?;
     println!("replace_user_response == {:#?}", replace_user_response);
 

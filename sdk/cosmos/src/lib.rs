@@ -77,7 +77,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // insert it
         collection_client
             .create_document(
-                Context::new(),
+                &mut Context::new(),
                 &document_to_insert,
                 CreateDocumentOptions::new().is_upsert(true),
             )

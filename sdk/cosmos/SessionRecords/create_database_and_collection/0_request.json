@@ -1,0 +1,1 @@
+{"uri":"https://mindflavor2.documents.azure.com/dbs","method":"POST","headers":{"x-ms-date":"Sat, 11 Sep 2021 12:13:23 GMT","authorization":"<<STRIPPED>>","user-agent":"azsdk-rust-cosmos/0.1.0 (1.56.0-nightly; linux; x86_64)","x-ms-version":"2018-12-31"},"body":[123,34,105,100,34,58,34,115,97,109,112,108,101,34,125]}

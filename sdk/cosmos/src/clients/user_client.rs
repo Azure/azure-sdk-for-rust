@@ -42,7 +42,7 @@ impl UserClient {
     /// Create the user
     pub async fn create_user(
         &self,
-        ctx: Context,
+        ctx: &mut Context,
         options: CreateUserOptions,
     ) -> Result<CreateUserResponse, crate::Error> {
         let mut request = self.cosmos_client().prepare_request_pipeline(
@@ -65,7 +65,7 @@ impl UserClient {
     /// Get the user
     pub async fn get_user(
         &self,
-        ctx: Context,
+        ctx: &mut Context,
         options: GetUserOptions,
     ) -> Result<GetUserResponse, crate::Error> {
         let mut request = self.cosmos_client().prepare_request_pipeline(
@@ -92,7 +92,7 @@ impl UserClient {
     /// Replace the user
     pub async fn replace_user<S: AsRef<str>>(
         &self,
-        ctx: Context,
+        ctx: &mut Context,
         user_name: S,
         options: ReplaceUserOptions,
     ) -> Result<ReplaceUserResponse, crate::Error> {

@@ -14,7 +14,7 @@ async fn create_and_delete_collection() {
 
     client
         .create_database(
-            azure_core::Context::new(),
+            &mut azure_core::Context::new(),
             DATABASE_NAME,
             CreateDatabaseOptions::new(),
         )
@@ -26,7 +26,7 @@ async fn create_and_delete_collection() {
     // create a new collection
     let collection = database_client
         .create_collection(
-            Context::new(),
+            &mut Context::new(),
             COLLECTION_NAME,
             CreateCollectionOptions::new("/id"),
         )
@@ -70,7 +70,7 @@ async fn replace_collection() {
 
     client
         .create_database(
-            azure_core::Context::new(),
+            &mut azure_core::Context::new(),
             DATABASE_NAME,
             CreateDatabaseOptions::new(),
         )
@@ -90,7 +90,7 @@ async fn replace_collection() {
         .offer(Offer::S2)
         .indexing_policy(indexing_policy);
     let collection = database_client
-        .create_collection(Context::new(), COLLECTION_NAME, options)
+        .create_collection(&mut Context::new(), COLLECTION_NAME, options)
         .await
         .unwrap();
 

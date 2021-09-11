@@ -2,6 +2,7 @@
 use crate::policies::TransportPolicy;
 use crate::policies::{Policy, TelemetryPolicy};
 use crate::{ClientOptions, Error, HttpClient, PipelineContext, Request, Response};
+use log::warn;
 use std::sync::Arc;
 
 /// Execution pipeline.
@@ -79,8 +80,36 @@ where
         // TODO: Add transport policy for WASM once https://github.com/Azure/azure-sdk-for-rust/issues/293 is resolved.
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let transport_policy = TransportPolicy::new(&options.transport);
-            pipeline.push(Arc::new(transport_policy));
+            // This code replaces the default transport policy at runtime if these two conditions
+            // are met:
+            // 1. The mock_transport_framework is enabled
+            // 2. The environmental variable TESTING_MODE is either RECORD or PLAY
+            #[cfg(not(feature = "mock_transport_framework"))]
+            pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
+
+            #[cfg(feature = "mock_transport_framework")]
+            match &std::env::vars()
+                .find(|env| env.0 == "TESTING_MODE")
+                .unwrap_or_default()
+                .1
+                .to_uppercase() as &str
+            {
+                "RECORD" => {
+                    warn!("mock testing framework record mode enabled");
+                    pipeline.push(Arc::new(crate::policies::MockTransportRecorderPolicy::new(
+                        options.transport.clone(),
+                    )));
+                }
+                "PLAY" => {
+                    warn!("mock testing framework record reply enabled");
+                    pipeline.push(Arc::new(crate::policies::MockTransportPlayerPolicy::new(
+                        options.transport.clone(),
+                    )));
+                }
+                _ => {
+                    pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
+                }
+            }
         }
 
         Self {
@@ -95,10 +124,10 @@ where
         self.http_client.as_ref()
     }
 
-    pub async fn send(
-        &self,
-        ctx: &mut PipelineContext<C>,
-        request: &mut Request,
+    pub async fn send<'a>(
+        &'a self,
+        ctx: &'a mut PipelineContext<'a, C>,
+        request: &'a mut Request,
     ) -> Result<Response, Error> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])

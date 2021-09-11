@@ -65,7 +65,7 @@ impl DocumentClient {
     /// Get a document
     pub async fn get_document<T>(
         &self,
-        ctx: Context,
+        ctx: &mut Context,
         options: GetDocumentOptions<'_>,
     ) -> Result<GetDocumentResponse<T>, crate::Error>
     where

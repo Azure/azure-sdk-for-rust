@@ -29,7 +29,7 @@ async fn user_defined_function00() -> Result<(), azure_cosmos::Error> {
     // create a temp database
     let _create_database_response = client
         .create_database(
-            azure_core::Context::new(),
+            &mut azure_core::Context::new(),
             DATABASE_NAME,
             CreateDatabaseOptions::new(),
         )
@@ -41,7 +41,7 @@ async fn user_defined_function00() -> Result<(), azure_cosmos::Error> {
     // create a temp collection
     let _create_collection_response = database_client
         .create_collection(
-            Context::new(),
+            &mut Context::new(),
             COLLECTION_NAME,
             CreateCollectionOptions::new("/id"),
         )
