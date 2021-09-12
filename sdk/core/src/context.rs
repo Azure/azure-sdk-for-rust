@@ -42,8 +42,9 @@ impl Context {
         })
     }
 
-    pub fn set_property<T: Any + Send + Sync>(&mut self, t: Arc<T>) {
-        self.property_bag_mut().insert(TypeId::of::<T>(), t);
+    pub fn set_property<T: Any + Send + Sync>(&mut self, t: T) {
+        self.property_bag_mut()
+            .insert(TypeId::of::<T>(), Arc::new(t));
     }
 
     #[cfg(not(feature = "mock_transport_framework"))]
@@ -51,7 +52,7 @@ impl Context {
 
     #[cfg(feature = "mock_transport_framework")]
     pub fn start_mock_transaction(&mut self, name: impl Into<String>) {
-        self.set_property(Arc::new(crate::MockTransaction::new(name)));
+        self.set_property(crate::MockTransaction::new(name));
     }
 
     #[cfg(feature = "mock_transport_framework")]
@@ -70,7 +71,7 @@ impl Context {
             number: current_transaction.number() + 1,
         };
 
-        self.set_property(Arc::new(new_transaction));
+        self.set_property(new_transaction);
 
         Ok(())
     }
@@ -89,5 +90,43 @@ impl Context {
         }
 
         Ok(path)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn simple_types() {
+        let mut c = Context::new();
+
+        c.set_property(100u32);
+        c.set_property(String::from("string"));
+        c.set_property("static str");
+
+        assert_eq!(Some(&100u32), c.get_property());
+        assert_eq!(Some(&String::from("string")), c.get_property());
+        assert_eq!(Some(&"static str"), c.get_property());
+    }
+
+    #[test]
+    fn complex_type() {
+        #[derive(Debug, Clone, PartialEq, Eq)]
+        struct Foo {
+            foo: u32,
+            bar: String,
+        }
+
+        let foo = Foo {
+            foo: 100,
+            bar: "bar".into(),
+        };
+
+        let mut c = Context::new();
+
+        c.set_property(foo.clone());
+
+        assert_eq!(Some(&foo), c.get_property());
     }
 }
