@@ -25,14 +25,15 @@ reqwest = { version = "0.11", features = ["json"] }
 async-timer = "1.0.0-beta.7"
 thiserror = "1.0"
 async-trait = "0.1"
-lazy_static = "1.4"
 regex = "1.5"
+async-once-cell = "0.3.0"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "process"] }
 azure_storage = { version = "0.1", path = "../storage" }
 env_logger = "0.8"
 serde_test = "1"
+json = "0.12"
 
 [features]
 default = ["development"]

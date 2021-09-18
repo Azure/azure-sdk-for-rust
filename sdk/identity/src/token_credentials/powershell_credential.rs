@@ -1,3 +1,4 @@
+use async_once_cell::OnceCell;
 use azure_core::TokenResponse;
 use chrono::{DateTime, Utc};
 use futures::channel::oneshot::Canceled;
@@ -13,9 +14,7 @@ use std::{io::ErrorKind, path::PathBuf, str::FromStr};
 
 use super::TokenCredential;
 
-lazy_static::lazy_static! {
-    static ref POWERSHELL_PATH: PathBuf = get_default_powershell_path();
-}
+static POWERSHELL_PATH: OnceCell<PathBuf> = OnceCell::new();
 
 fn get_scope_resource(scope: &str) -> String {
     Regex::new(r"/.default$")
@@ -24,16 +23,33 @@ fn get_scope_resource(scope: &str) -> String {
         .to_string()
 }
 
+/// Run a command in a separate thread, using a oneshot channel to communicate back to the calling thread. This avoids
+/// blocking the calling thread (and asynchronous runtime) while waiting for the command to finish.
+async fn run_in_thread(mut command: Command) -> Result<Output, AzurePowerShellCredentialError> {
+    let (s, r) = futures::channel::oneshot::channel();
+    thread::spawn(move || {
+        let output = command.output();
+        s.send(output).unwrap();
+    });
+
+    r.await
+        .map_err(AzurePowerShellCredentialError::ReceiveFailed)?
+        .map_err(|error| error.into())
+}
+
 #[cfg(target_os = "windows")]
-fn get_default_powershell_path() -> PathBuf {
-    match Command::new("pwsh.exe").args("/?").output() {
+async fn get_default_powershell_path() -> PathBuf {
+    let command = Command::new("pwsh.exe");
+    command.args("/?");
+
+    match run_in_thread(command).await {
         Ok(_) => PathBuf::from_str("pwsh.exe"),
         Err(_) => PathBuf::from_str("powershell.exe"),
     }
 }
 
 #[cfg(not(target_os = "windows"))]
-fn get_default_powershell_path() -> PathBuf {
+async fn get_default_powershell_path() -> PathBuf {
     PathBuf::from_str("pwsh").unwrap()
 }
 
@@ -84,9 +100,7 @@ impl From<Error> for AzurePowerShellCredentialError {
 
 impl AzurePowerShellCredential {
     pub fn new(powershell_path: Option<PathBuf>) -> Self {
-        Self {
-            powershell_path: powershell_path,
-        }
+        Self { powershell_path }
     }
 
     /// A helper to run PowerShell commands asynchronously using threads and an async_channel
@@ -98,21 +112,20 @@ impl AzurePowerShellCredential {
         I: IntoIterator<Item = S>,
         S: Into<OsString>,
     {
-        let pwsh = self.powershell_path.as_ref().unwrap_or(&*POWERSHELL_PATH);
+        let pwsh = if let Some(buf) = self.powershell_path.as_ref() {
+            buf
+        } else {
+            POWERSHELL_PATH
+                .get_or_init(get_default_powershell_path())
+                .await
+        };
 
         let mut command = Command::new(pwsh.clone());
 
         let args: Vec<OsString> = args_iter.into_iter().map(|v| v.into()).collect();
+        command.args(args);
 
-        let (s, r) = futures::channel::oneshot::channel();
-        thread::spawn(move || {
-            let output = command.args(args).output();
-            s.send(output).unwrap();
-        });
-
-        r.await
-            .map_err(|recv_error| AzurePowerShellCredentialError::ReceiveFailed(recv_error))?
-            .map_err(|error| error.into())
+        run_in_thread(command).await
     }
 
     async fn get_access_token(
@@ -144,27 +157,27 @@ impl AzurePowerShellCredential {
             ])
             .await?;
 
-        if !get_token_response.status.success() {
-            let output = String::from_utf8_lossy(&get_token_response.stderr);
-            Err(AzurePowerShellCredentialError::CommandFailed(
-                output.to_string(),
-            ))
-        } else {
+        if get_token_response.status.success() {
             let result = std::str::from_utf8(&get_token_response.stdout)
                 .map_err(AzurePowerShellCredentialError::ResponseNotUtf8)?;
 
             let token_response = serde_json::from_str::<PowerShellTokenResponse>(result)
                 .map_err(AzurePowerShellCredentialError::ResponseFailedToDeserialize)?;
             Ok(token_response)
+        } else {
+            let output = String::from_utf8_lossy(&get_token_response.stderr);
+            Err(AzurePowerShellCredentialError::CommandFailed(
+                output.to_string(),
+            ))
         }
     }
 }
 
-impl Into<TokenResponse> for PowerShellTokenResponse {
-    fn into(self) -> TokenResponse {
+impl From<PowerShellTokenResponse> for TokenResponse {
+    fn from(val: PowerShellTokenResponse) -> Self {
         TokenResponse {
-            token: self.token,
-            expires_on: self.expires_on,
+            token: val.token,
+            expires_on: val.expires_on,
         }
     }
 }
