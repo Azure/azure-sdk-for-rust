@@ -1,5 +1,7 @@
-use crate::policies::{Policy, PolicyResult, TelemetryPolicy};
-use crate::{ClientOptions, Context, Request, Response};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::policies::TransportPolicy;
+use crate::policies::{Policy, TelemetryPolicy};
+use crate::{ClientOptions, Error, HttpClient, PipelineContext, Request, Response};
 use std::sync::Arc;
 
 /// Execution pipeline.
@@ -14,19 +16,34 @@ use std::sync::Arc;
 /// 5. Client library-specified per-retry policies. Per-retry polices are always executed at least once but are re-executed
 ///    in case of retries.
 /// 6. User-specified per-retry policies are executed.
-/// 7. Transport policy. Transport policy is always the last policy and is the policy that
+/// 7. Authorization policy. Authorization can depend on the HTTP headers and/or the request body so it
+///    must be executed right before sending the request to the transport. Also, the authorization
+///    can depend on the current time so it must be executed at every retry.
+/// 8. Transport policy. Transport policy is always the last policy and is the policy that
 ///    actually constructs the `Response` to be passed up the pipeline.
 ///
 /// A pipeline is immutable. In other words a policy can either succeed and call the following
 /// policy of fail and return to the calling policy. Arbitrary policy "skip" must be avoided (but
 /// cannot be enforced by code). All policies except Transport policy can assume there is another following policy (so
 /// self.pipeline[0] is always valid).
+///
+/// The `C` generic contains the pipeline-specific context. Different crates can pass
+/// different contexts using this generic. This way each crate can have its own specific pipeline
+/// context. For example, in CosmosDB, the generic carries the operation-specific information used by
+/// the authorization policy.
 #[derive(Debug, Clone)]
-pub struct Pipeline {
-    pipeline: Vec<Arc<dyn Policy>>,
+pub struct Pipeline<C>
+where
+    C: Send + Sync,
+{
+    http_client: Arc<dyn HttpClient>,
+    pipeline: Vec<Arc<dyn Policy<C>>>,
 }
 
-impl Pipeline {
+impl<C> Pipeline<C>
+where
+    C: Send + Sync,
+{
     /// Creates a new pipeline given the client library crate name and version,
     /// alone with user-specified and client library-specified policies.
     ///
@@ -35,13 +52,11 @@ impl Pipeline {
     pub fn new(
         crate_name: Option<&'static str>,
         crate_version: Option<&'static str>,
-        options: &ClientOptions,
-        per_call_policies: Vec<Arc<dyn Policy>>,
-        retry: Arc<dyn Policy>,
-        per_retry_policies: Vec<Arc<dyn Policy>>,
-        transport_policy: Arc<dyn Policy>,
+        options: &ClientOptions<C>,
+        per_call_policies: Vec<Arc<dyn Policy<C>>>,
+        per_retry_policies: Vec<Arc<dyn Policy<C>>>,
     ) -> Self {
-        let mut pipeline: Vec<Arc<dyn Policy>> = Vec::with_capacity(
+        let mut pipeline: Vec<Arc<dyn Policy<C>>> = Vec::with_capacity(
             options.per_call_policies.len()
                 + per_call_policies.len()
                 + options.per_retry_policies.len()
@@ -51,22 +66,43 @@ impl Pipeline {
 
         pipeline.extend_from_slice(&per_call_policies);
         pipeline.extend_from_slice(&options.per_call_policies);
-        pipeline.push(Arc::new(TelemetryPolicy::new(
-            crate_name,
-            crate_version,
-            &options.telemetry,
-        )));
-        pipeline.push(retry);
+
+        let telemetry_policy = TelemetryPolicy::new(crate_name, crate_version, &options.telemetry);
+        pipeline.push(Arc::new(telemetry_policy));
+
+        let retry_policy = options.retry.to_policy();
+        pipeline.push(retry_policy);
+
         pipeline.extend_from_slice(&per_retry_policies);
         pipeline.extend_from_slice(&options.per_retry_policies);
-        pipeline.push(transport_policy);
 
-        Self { pipeline }
+        // TODO: Add transport policy for WASM once https://github.com/Azure/azure-sdk-for-rust/issues/293 is resolved.
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let transport_policy = TransportPolicy::new(&options.transport);
+            pipeline.push(Arc::new(transport_policy));
+        }
+
+        Self {
+            http_client: options.transport.http_client.clone(),
+            pipeline,
+        }
     }
 
-    pub async fn send(&self, ctx: &mut Context, request: &mut Request) -> PolicyResult<Response> {
+    /// Gets the `HttpClient` used by the pipeline.
+    pub fn http_client(&self) -> &dyn HttpClient {
+        // TODO: Request methods should be defined directly on the pipeline instead of exposing the HttpClient.
+        self.http_client.as_ref()
+    }
+
+    pub async fn send(
+        &self,
+        ctx: &mut PipelineContext<C>,
+        request: &mut Request,
+    ) -> Result<Response, Error> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
+            .map_err(Error::PolicyError)
     }
 }

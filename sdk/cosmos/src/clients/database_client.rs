@@ -1,10 +1,10 @@
 use super::*;
+use crate::authorization_policy::CosmosContext;
 use crate::operations::*;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
-
 use azure_core::pipeline::Pipeline;
-use azure_core::{Context, HttpClient};
+use azure_core::{Context, HttpClient, PipelineContext};
 
 /// A client for Cosmos database resources.
 #[derive(Debug, Clone)]
@@ -37,20 +37,19 @@ impl DatabaseClient {
     /// Get the database
     pub async fn get_database(
         &self,
-        mut ctx: Context,
+        ctx: Context,
         options: GetDatabaseOptions,
     ) -> Result<GetDatabaseResponse, crate::Error> {
         let mut request = self
-            .prepare_request_with_database_name(http::Method::GET)
-            .body(bytes::Bytes::new())
-            .unwrap()
-            .into();
+            .cosmos_client()
+            .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), http::Method::GET);
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+
         options.decorate_request(&mut request)?;
         let response = self
             .pipeline()
-            .send(&mut ctx, &mut request)
-            .await
-            .map_err(crate::Error::PolicyError)?
+            .send(&mut pipeline_context, &mut request)
+            .await?
             .validate(http::StatusCode::OK)
             .await?;
 
@@ -70,21 +69,21 @@ impl DatabaseClient {
     /// Create a collection
     pub async fn create_collection<S: AsRef<str>>(
         &self,
-        mut ctx: Context,
+        ctx: Context,
         collection_name: S,
         options: CreateCollectionOptions,
     ) -> Result<CreateCollectionResponse, crate::Error> {
-        let mut request = self.cosmos_client().prepare_request2(
+        let mut request = self.cosmos_client().prepare_request_pipeline(
             &format!("dbs/{}/colls", self.database_name()),
             http::Method::POST,
-            ResourceType::Collections,
         );
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
+
         options.decorate_request(&mut request, collection_name.as_ref())?;
         let response = self
             .pipeline()
-            .send(&mut ctx, &mut request)
-            .await
-            .map_err(crate::Error::PolicyError)?
+            .send(&mut pipeline_context, &mut request)
+            .await?
             .validate(http::StatusCode::CREATED)
             .await?;
 
@@ -124,7 +123,7 @@ impl DatabaseClient {
         self.cosmos_client().http_client()
     }
 
-    fn pipeline(&self) -> &Pipeline {
+    fn pipeline(&self) -> &Pipeline<CosmosContext> {
         self.cosmos_client.pipeline()
     }
 }

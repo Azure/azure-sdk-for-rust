@@ -42,9 +42,6 @@ impl std::convert::TryFrom<Response<bytes::Bytes>> for ListTriggersResponse {
         let headers = response.headers();
         let body = response.body();
 
-        debug!("{:#?}", headers);
-        debug!("{:#?}", std::str::from_utf8(&body)?);
-
         #[derive(Debug, Deserialize)]
         struct Response<'a> {
             #[serde(rename = "_rid")]

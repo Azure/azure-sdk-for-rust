@@ -4,12 +4,12 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     pub location: String,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -26,17 +26,17 @@ pub struct WebServiceProperties {
     pub title: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "createdOn", skip_serializing)]
+    #[serde(rename = "createdOn", default, skip_serializing_if = "Option::is_none")]
     pub created_on: Option<String>,
-    #[serde(rename = "modifiedOn", skip_serializing)]
+    #[serde(rename = "modifiedOn", default, skip_serializing_if = "Option::is_none")]
     pub modified_on: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<web_service_properties::ProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keys: Option<WebServiceKeys>,
     #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
     pub read_only: Option<bool>,
-    #[serde(rename = "swaggerLocation", skip_serializing)]
+    #[serde(rename = "swaggerLocation", default, skip_serializing_if = "Option::is_none")]
     pub swagger_location: Option<String>,
     #[serde(rename = "exposeSampleData", default, skip_serializing_if = "Option::is_none")]
     pub expose_sample_data: Option<bool>,

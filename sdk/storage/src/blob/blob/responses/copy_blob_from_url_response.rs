@@ -1,5 +1,6 @@
 use crate::blob::blob::{copy_status_from_headers, CopyStatus};
 use crate::core::CopyId;
+use crate::ConsistencyMD5;
 use crate::{core::copy_id_from_headers, headers::content_md5_from_headers_optional};
 use azure_core::headers::{
     date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
@@ -12,7 +13,7 @@ use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CopyBlobFromUrlResponse {
-    pub content_md5: Option<[u8; 16]>,
+    pub content_md5: Option<ConsistencyMD5>,
     pub last_modified: DateTime<Utc>,
     pub etag: String,
     pub server: String,

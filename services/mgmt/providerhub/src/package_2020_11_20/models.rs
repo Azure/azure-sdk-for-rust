@@ -19,7 +19,7 @@ pub struct CustomRolloutSpecification {
 pub struct TypedErrorInfo {
     #[serde(rename = "type")]
     pub type_: String,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -83,22 +83,22 @@ pub struct CustomRollout {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InnerError {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(rename = "innerError", skip_serializing)]
+    #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<Error>,
-    #[serde(rename = "innerError", skip_serializing)]
+    #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -682,6 +682,8 @@ pub struct NotificationRegistrationProperties {
     pub included_events: Vec<String>,
     #[serde(rename = "notificationEndpoints", default, skip_serializing_if = "Vec::is_empty")]
     pub notification_endpoints: Vec<NotificationEndpoint>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<notification_registration_properties::ProvisioningState>,
 }
 pub mod notification_registration_properties {
     use super::*;
@@ -695,6 +697,22 @@ pub mod notification_registration_properties {
     pub enum MessageScope {
         NotSpecified,
         RegisteredSubscriptions,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        NotSpecified,
+        Accepted,
+        Running,
+        Creating,
+        Created,
+        Deleting,
+        Deleted,
+        Canceled,
+        Failed,
+        Succeeded,
+        MovingResources,
+        TransientFailure,
+        RolloutInProgress,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1203,6 +1221,27 @@ pub struct SkuSetting {
 pub struct ResourceTypeSku {
     #[serde(rename = "skuSettings")]
     pub sku_settings: Vec<SkuSetting>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<resource_type_sku::ProvisioningState>,
+}
+pub mod resource_type_sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        NotSpecified,
+        Accepted,
+        Running,
+        Creating,
+        Created,
+        Deleting,
+        Deleted,
+        Canceled,
+        Failed,
+        Succeeded,
+        MovingResources,
+        TransientFailure,
+        RolloutInProgress,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuResource {
@@ -1225,10 +1264,10 @@ pub struct ProxyResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

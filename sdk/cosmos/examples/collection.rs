@@ -1,5 +1,6 @@
 use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
+use futures::stream::StreamExt;
 use std::error::Error;
 
 #[tokio::main]
@@ -24,13 +25,19 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
     // Here we are using reqwest but other clients are supported (check the documentation).
-    let http_client = azure_core::new_http_client();
-    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
+    let client = CosmosClient::new(
+        account.clone(),
+        authorization_token,
+        CosmosOptions::default(),
+    );
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
-    let databases = client.list_databases().execute().await?;
+    let databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+        .next()
+        .await
+        .unwrap()?;
 
     println!(
         "Account {} has {} database(s)",

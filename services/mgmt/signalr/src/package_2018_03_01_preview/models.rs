@@ -101,11 +101,11 @@ pub struct SignalRResource {
     pub sku: Option<ResourceSku>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SignalRProperties>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -119,11 +119,11 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -152,15 +152,15 @@ pub mod resource_sku {
 pub struct SignalRProperties {
     #[serde(flatten)]
     pub signal_r_create_or_update_properties: SignalRCreateOrUpdateProperties,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<signal_r_properties::ProvisioningState>,
-    #[serde(rename = "externalIP", skip_serializing)]
+    #[serde(rename = "externalIP", default, skip_serializing_if = "Option::is_none")]
     pub external_ip: Option<String>,
-    #[serde(rename = "hostName", skip_serializing)]
+    #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
-    #[serde(rename = "publicPort", skip_serializing)]
+    #[serde(rename = "publicPort", default, skip_serializing_if = "Option::is_none")]
     pub public_port: Option<i32>,
-    #[serde(rename = "serverPort", skip_serializing)]
+    #[serde(rename = "serverPort", default, skip_serializing_if = "Option::is_none")]
     pub server_port: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,

@@ -1,7 +1,8 @@
 use crate::EntityWithMetadata;
 use azure_core::{
-    headers::{etag_from_headers, string_from_headers_mandatory, CommonStorageResponseHeaders},
+    headers::{etag_from_headers, get_str_from_headers, CommonStorageResponseHeaders},
     prelude::Etag,
+    util::HeaderMapExt,
 };
 use bytes::Bytes;
 use http::Response;
@@ -16,7 +17,7 @@ where
 {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: Etag,
-    pub location: Url,
+    pub location: Option<Url>,
     pub entity_with_metadata: Option<EntityWithMetadata<E>>,
 }
 
@@ -31,7 +32,7 @@ where
         println!("headers == {:#?}", response.headers());
 
         let entity_with_metadata =
-            match string_from_headers_mandatory(response.headers(), "preference-applied")? {
+            match get_str_from_headers(response.headers(), "preference-applied")? {
                 "return-no-content" => None,
                 "return-content" => Some(response.try_into()?),
                 _ => {
@@ -44,10 +45,11 @@ where
         Ok(InsertEntityResponse {
             common_storage_response_headers: response.headers().try_into()?,
             etag: etag_from_headers(response.headers())?.into(),
-            location: Url::parse(string_from_headers_mandatory(
-                response.headers(),
-                "location",
-            )?)?,
+            location: response
+                .headers()
+                .get_as_str("location")
+                .map(Url::parse)
+                .transpose()?,
             entity_with_metadata,
         })
     }

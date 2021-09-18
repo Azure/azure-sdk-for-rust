@@ -1,40 +1,61 @@
-/// A general error having to do with Cosmos.
+/// An error having to do with Cosmos.
 #[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    /// An error as defined in the `azure_core` crate
     #[error(transparent)]
-    AzureCoreError(#[from] azure_core::Error),
+    Core(#[from] azure_core::Error),
+    /// An error related to parsing
+    #[error(transparent)]
+    ParsingError(#[from] ParsingError),
+    #[error("conversion to `{0}` failed because at lease one element is raw")]
+    ElementIsRaw(String),
+    #[error("error parsing authorization token: {0}")]
+    AuthorizationTokenParsing(#[from] crate::resources::permission::AuthorizationTokenParsingError),
+    #[error("error parsing permission token: {0}")]
+    PermissionTokenParsing(#[from] crate::resources::permission::PermissionTokenParsingError),
+    #[error("error writing the header value: {0}")]
+    InvalidHeaderValue(#[from] azure_core::HTTPHeaderError),
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(error: serde_json::Error) -> Self {
+        Self::Core(azure_core::Error::JsonError(error))
+    }
+}
+
+impl From<azure_core::StreamError> for Error {
+    fn from(error: azure_core::StreamError) -> Self {
+        Self::Core(azure_core::Error::StreamError(error))
+    }
+}
+
+impl From<azure_core::HttpError> for Error {
+    fn from(error: azure_core::HttpError) -> Self {
+        Self::Core(azure_core::Error::HttpError(error))
+    }
+}
+
+impl From<http::Error> for Error {
+    fn from(error: http::Error) -> Self {
+        Self::Core(azure_core::Error::HttpPrepareError(error))
+    }
+}
+
+/// A parsing error
+///
+/// Most issues are already defined in `azure_core`
+#[derive(Debug, thiserror::Error)]
+pub enum ParsingError {
+    #[error(transparent)]
+    Core(azure_core::ParsingError),
     #[error("Resource quota parsing error: {0}")]
-    ResourceQuotaParsingError(#[from] crate::resource_quota::ResourceQuotaParsingError),
-    #[error("Policy error: {0}")]
-    PolicyError(Box<dyn std::error::Error + Send + Sync>),
-    #[error("Header not found: {0}")]
-    HeaderNotFound(String),
-    #[error("To str error: {0}")]
-    ToStrError(#[from] http::header::ToStrError),
-    #[error("Parsing error: {0}")]
-    ParsingError(#[from] azure_core::ParsingError),
-    #[error("http error: {0}")]
-    AzureHttpError(#[from] azure_core::HttpError),
-    #[error("stream error: {0}")]
-    StreamError(#[from] azure_core::StreamError),
-    #[error("http error: {0}")]
-    HttpError(#[from] http::Error),
-    #[error("Parse int error: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
-    #[error("uuid error: {0}")]
-    ParseUuidError(#[from] uuid::Error),
-    #[error("Date time parse error: {0}")]
-    DateTimeParseError(#[from] chrono::format::ParseError),
-    #[error("Parse float error: {0}")]
-    ParseFloatError(#[from] std::num::ParseFloatError),
-    #[error("JSON error: {0}")]
-    JsonError(#[from] serde_json::Error),
-    #[error("UTF-8 conversion error: {0}")]
-    Utf8Error(#[from] std::str::Utf8Error),
-    #[error("base64 decode error: {0}")]
-    DecodeError(#[from] base64::DecodeError),
-    #[error("Conversion to document failed because at lease one element is raw.")]
-    RawElementError,
+    ParseResourceQuotaError(#[from] crate::resource_quota::ResourceQuotaParsingError),
+}
+
+impl<T: Into<azure_core::ParsingError>> From<T> for ParsingError {
+    fn from(error: T) -> Self {
+        Self::Core(error.into())
+    }
 }

@@ -1,4 +1,4 @@
-target
+target/
 Cargo.lock
 *.rs.bk
 .vscode/
@@ -9,7 +9,10 @@ sample/
 \#*\#
 \.#*
 *~
+*.code-workspace
 *.swp
 *.swo
 *.vim
 __azurite*.json
+__blobstorage__
+__queuestorage__

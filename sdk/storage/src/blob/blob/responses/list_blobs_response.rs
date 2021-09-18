@@ -1,7 +1,7 @@
 use crate::blob::blob::Blob;
+use crate::xml::read_xml;
 use azure_core::headers::{date_from_headers, request_id_from_headers};
 use azure_core::prelude::NextMarker;
-use azure_core::util::to_str_without_bom;
 use azure_core::RequestId;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -46,10 +46,10 @@ impl TryFrom<&http::Response<Bytes>> for ListBlobsResponse {
     type Error = crate::Error;
 
     fn try_from(response: &http::Response<Bytes>) -> Result<Self, Self::Error> {
-        let body = to_str_without_bom(response.body())?;
+        let body = response.body();
 
-        trace!("body == {}", body);
-        let list_blobs_response_internal: ListBlobsResponseInternal = serde_xml_rs::from_str(body)?;
+        trace!("body == {:?}", body);
+        let list_blobs_response_internal: ListBlobsResponseInternal = read_xml(body)?;
 
         Ok(Self {
             request_id: request_id_from_headers(response.headers())?,
@@ -62,5 +62,163 @@ impl TryFrom<&http::Response<Bytes>> for ListBlobsResponse {
                 list_blobs_response_internal.next_marker,
             ),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deserde_azure() {
+        const S: &'static str = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+<EnumerationResults ServiceEndpoint=\"https://azureskdforrust.blob.core.windows.net/\" ContainerName=\"osa2\">
+    <Blobs>
+        <Blob>
+            <Name>blob0.txt</Name>
+            <Properties>
+                <Creation-Time>Thu, 01 Jul 2021 10:44:59 GMT</Creation-Time>
+                <Last-Modified>Thu, 01 Jul 2021 10:44:59 GMT</Last-Modified>
+                <Etag>0x8D93C7D4629C227</Etag>
+                <Content-Length>8</Content-Length>
+                <Content-Type>text/plain</Content-Type>
+                <Content-Encoding />
+                <Content-Language />
+                <Content-CRC64 />
+                <Content-MD5>rvr3UC1SmUw7AZV2NqPN0g==</Content-MD5>
+                <Cache-Control />
+                <Content-Disposition />
+                <BlobType>BlockBlob</BlobType>
+                <AccessTier>Hot</AccessTier>
+                <AccessTierInferred>true</AccessTierInferred>
+                <LeaseStatus>unlocked</LeaseStatus>
+                <LeaseState>available</LeaseState>
+                <ServerEncrypted>true</ServerEncrypted>
+            </Properties>
+            <OrMetadata />
+        </Blob>
+        <Blob>
+            <Name>blob1.txt</Name>
+            <Properties>
+                <Creation-Time>Thu, 01 Jul 2021 10:44:59 GMT</Creation-Time>
+                <Last-Modified>Thu, 01 Jul 2021 10:44:59 GMT</Last-Modified>
+                <Etag>0x8D93C7D463004D6</Etag>
+                <Content-Length>8</Content-Length>
+                <Content-Type>text/plain</Content-Type>
+                <Content-Encoding />
+                <Content-Language />
+                <Content-CRC64 />
+                <Content-MD5>rvr3UC1SmUw7AZV2NqPN0g==</Content-MD5>
+                <Cache-Control />
+                <Content-Disposition />
+                <BlobType>BlockBlob</BlobType>
+                <AccessTier>Hot</AccessTier>
+                <AccessTierInferred>true</AccessTierInferred>
+                <LeaseStatus>unlocked</LeaseStatus>
+                <LeaseState>available</LeaseState>
+                <ServerEncrypted>true</ServerEncrypted>
+            </Properties>
+            <OrMetadata />
+        </Blob>
+        <Blob>
+            <Name>blob2.txt</Name>
+            <Properties>
+                <Creation-Time>Thu, 01 Jul 2021 10:44:59 GMT</Creation-Time>
+                <Last-Modified>Thu, 01 Jul 2021 10:44:59 GMT</Last-Modified>
+                <Etag>0x8D93C7D4636478A</Etag>
+                <Content-Length>8</Content-Length>
+                <Content-Type>text/plain</Content-Type>
+                <Content-Encoding />
+                <Content-Language />
+                <Content-CRC64 />
+                <Content-MD5>rvr3UC1SmUw7AZV2NqPN0g==</Content-MD5>
+                <Cache-Control />
+                <Content-Disposition />
+                <BlobType>BlockBlob</BlobType>
+                <AccessTier>Hot</AccessTier>
+                <AccessTierInferred>true</AccessTierInferred>
+                <LeaseStatus>unlocked</LeaseStatus>
+                <LeaseState>available</LeaseState>
+                <ServerEncrypted>true</ServerEncrypted>
+            </Properties>
+            <OrMetadata />
+        </Blob>
+    </Blobs>
+    <NextMarker />
+</EnumerationResults>";
+
+        let bytes = Bytes::from(S);
+        let _list_blobs_response_internal: ListBlobsResponseInternal = read_xml(&bytes).unwrap();
+    }
+
+    #[test]
+    fn deserde_azurite() {
+        const S: &'static str = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<EnumerationResults ServiceEndpoint=\"http://127.0.0.1:10000/devstoreaccount1\" ContainerName=\"osa2\">
+    <Prefix/>
+    <Marker/>
+    <MaxResults>5000</MaxResults>
+    <Delimiter/>
+    <Blobs>
+        <Blob>
+            <Name>blob0.txt</Name>
+            <Properties>
+                <Creation-Time>Thu, 01 Jul 2021 10:45:02 GMT</Creation-Time>
+                <Last-Modified>Thu, 01 Jul 2021 10:45:02 GMT</Last-Modified>
+                <Etag>0x228281B5D517B20</Etag>
+                <Content-Length>8</Content-Length>
+                <Content-Type>text/plain</Content-Type>
+                <Content-MD5>rvr3UC1SmUw7AZV2NqPN0g==</Content-MD5>
+                <BlobType>BlockBlob</BlobType>
+                <LeaseStatus>unlocked</LeaseStatus>
+                <LeaseState>available</LeaseState>
+                <ServerEncrypted>true</ServerEncrypted>
+                <AccessTier>Hot</AccessTier>
+                <AccessTierInferred>true</AccessTierInferred>
+                <AccessTierChangeTime>Thu, 01 Jul 2021 10:45:02 GMT</AccessTierChangeTime>
+            </Properties>
+        </Blob>
+        <Blob>
+            <Name>blob1.txt</Name>
+            <Properties>
+                <Creation-Time>Thu, 01 Jul 2021 10:45:02 GMT</Creation-Time>
+                <Last-Modified>Thu, 01 Jul 2021 10:45:02 GMT</Last-Modified>
+                <Etag>0x1DD959381A8A860</Etag>
+                <Content-Length>8</Content-Length>
+                <Content-Type>text/plain</Content-Type>
+                <Content-MD5>rvr3UC1SmUw7AZV2NqPN0g==</Content-MD5>
+                <BlobType>BlockBlob</BlobType>
+                <LeaseStatus>unlocked</LeaseStatus>
+                <LeaseState>available</LeaseState>
+                <ServerEncrypted>true</ServerEncrypted>
+                <AccessTier>Hot</AccessTier>
+                <AccessTierInferred>true</AccessTierInferred>
+                <AccessTierChangeTime>Thu, 01 Jul 2021 10:45:02 GMT</AccessTierChangeTime>
+            </Properties>
+        </Blob>
+        <Blob>
+            <Name>blob2.txt</Name>
+            <Properties>
+                <Creation-Time>Thu, 01 Jul 2021 10:45:02 GMT</Creation-Time>
+                <Last-Modified>Thu, 01 Jul 2021 10:45:02 GMT</Last-Modified>
+                <Etag>0x1FBE9C9B0C7B650</Etag>
+                <Content-Length>8</Content-Length>
+                <Content-Type>text/plain</Content-Type>
+                <Content-MD5>rvr3UC1SmUw7AZV2NqPN0g==</Content-MD5>
+                <BlobType>BlockBlob</BlobType>
+                <LeaseStatus>unlocked</LeaseStatus>
+                <LeaseState>available</LeaseState>
+                <ServerEncrypted>true</ServerEncrypted>
+                <AccessTier>Hot</AccessTier>
+                <AccessTierInferred>true</AccessTierInferred>
+                <AccessTierChangeTime>Thu, 01 Jul 2021 10:45:02 GMT</AccessTierChangeTime>
+            </Properties>
+        </Blob>
+    </Blobs>
+    <NextMarker/>
+</EnumerationResults>";
+
+        let bytes = Bytes::from(S);
+        let _list_blobs_response_internal: ListBlobsResponseInternal = read_xml(&bytes).unwrap();
     }
 }

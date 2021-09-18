@@ -6,7 +6,6 @@ use autorust_codegen::{
     get_mgmt_configs, lib_rs, path, Config, PropertyName, SpecConfigs,
 };
 use heck::SnakeCase;
-
 use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
@@ -14,20 +13,27 @@ const OUTPUT_FOLDER: &str = "../mgmt";
 const ONLY_SERVICES: &[&str] = &[
     // "vmware",
     // "network",
+    // "cosmos-db",
+    // "databricks",
+    // "marketplace",
+    // "dataprotection",
+    // "databox",
 ];
 
 const SKIP_SERVICES: &[&str] = &[
-    "automation",                 // TODO #81 DataType::File
+    "automation", // TODO #81 DataType::File
+    "datamigration",
     "deploymentmanager",          // TODO #80 path parameters
     "deviceprovisioningservices", // TODO #82 certificate_name used as parameter more than once
     "dnc",                        // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
     "m365securityandcompliance",  // can't find privateLinkServicesForO365ManagementActivityAPI.json
-    "mixedreality",               // TODO #83 AccountKeyRegenerateRequest not generated
-    "netapp",                     // Ident "10minutely"
-    "network",                    // recursive types need to be boxed
-    "powerplatform",              // https://github.com/Azure/azure-rest-api-specs/pull/11580 incorrect ref & duplicate Operations_List
-    "service-map",                // Ident "Ref:machine"
-    "servicefabric",              // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
+    "marketplace",
+    "mixedreality",  // TODO #83 AccountKeyRegenerateRequest not generated
+    "netapp",        // Ident "10minutely"
+    "network",       // recursive types need to be boxed
+    "powerplatform", // https://github.com/Azure/azure-rest-api-specs/pull/11580 incorrect ref & duplicate Operations_List
+    "service-map",   // Ident "Ref:machine"
+    "servicefabric", // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
     "servicefabricmanagedclusters",
     "synapse", // TODO #80 path parameters
     "web",     // TODO #81 DataType::File
@@ -37,13 +43,18 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("analysisservices", "package-2017-08"),
     ("authorization", "package-2018-05-01-preview"),
     ("authorization", "package-2021-03-01-preview-only"),
+    ("authorization", "package-2021-07-01-preview-only"),
     ("azureactivedirectory", "package-preview-2020-07"),
     ("compute", "package-2020-10-01-preview"),      // TODO #81 DataType::File
     ("compute", "package-2020-10-01-preview-only"), // TODO #81 DataType::File
     ("compute", "package-2021-03-01"),              // TODO #81 DataType::File
     ("compute", "package-2021-03-01-only"),         // TODO #81 DataType::File
+    ("compute", "package-2021-04-01"),              // TODO #81 DataType::File
+    ("compute", "package-2021-07-01"),              // TODO #81 DataType::File
     ("consumption", "package-2019-11"),             // ReservationRecommendationDetails_Get has a path and query param both named "scope"
     ("consumption", "package-2021-05"),
+    ("cosmos-db", "package-2021-06"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14996
+    ("databricks", "package-2021-04-01-preview"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14995
     // datamigration, same error for all
     // SchemaNotFound MigrateSqlServerSqlDbTask.json ValidationStatus, but may be buried
     ("datamigration", "package-2018-07-15-preview"),
@@ -51,8 +62,12 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("datamigration", "package-2018-03-31-preview"),
     ("datamigration", "package-2018-03-15-preview"),
     ("datamigration", "package-2017-11-15-preview"),
+    ("datamigration", "package-2021-06"),
     ("mediaservices", "package-2019-05-preview"), // invalid unicode character of a dash instead of a hyphen https://github.com/Azure/azure-rest-api-specs/pull/11576
-    ("marketplace", "package-composite-v1"),
+    ("marketplace", "package-2020-01-01"),
+    ("marketplace", "package-2020-12-01"),
+    ("marketplace", "package-composite-v1"), // mixing versions
+    ("marketplace", "package-composite-v2"), // mixing versions
     // ("network", "package-2017-03-30-only"), // SchemaNotFound 2017-09-01/network.json SubResource
     // ("network", "package-2020-11"), // recursive types need to be boxed
     // ("network", "package-2021-02"), // recursive types need to be boxed
@@ -75,8 +90,11 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2020-11-01/databox.json", "transferAllDetails", "include"),
     ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-03-01/databox.json", "transferFilterDetails", "include"),
     ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-03-01/databox.json", "transferAllDetails", "include"),
+    ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-05-01/databox.json", "transferFilterDetails", "include"),
+    ("../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2021-05-01/databox.json", "transferAllDetails", "include"),
     // dataprotection
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-01-01/dataprotection.json", "InnerError", "embeddedInnerError"),
+    ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-07-01/dataprotection.json", "InnerError", "embeddedInnerError"),
     // hardwaresecuritymodels
     ("../../../azure-rest-api-specs/specification/hardwaresecuritymodules/resource-manager/Microsoft.HardwareSecurityModules/preview/2018-10-31-preview/dedicatedhsm.json", "Error", "innererror"),
     // logic
@@ -185,6 +203,8 @@ fn gen_crate(spec: &SpecConfigs) -> Result<()> {
                 output_folder: mod_output_folder.into(),
                 input_files,
                 box_properties: box_properties.clone(),
+                print_writing_file: false,
+                ..Config::default()
             })
             .map_err(|source| Error::CodegenError { source })?;
         }
@@ -201,6 +221,7 @@ fn gen_crate(spec: &SpecConfigs) -> Result<()> {
     lib_rs::create(
         &feature_mod_names,
         &path::join(src_folder, "lib.rs").map_err(|source| Error::PathError { source })?,
+        false,
     )
     .map_err(|source| Error::LibRsError { source })?;
 

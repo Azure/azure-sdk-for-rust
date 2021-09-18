@@ -3,6 +3,10 @@
 mod package_2020_05;
 #[cfg(feature = "package-2020-05")]
 pub use package_2020_05::{models, operations, API_VERSION};
+#[cfg(feature = "package-2020-09-preview")]
+mod package_2020_09_preview;
+#[cfg(feature = "package-2020-09-preview")]
+pub use package_2020_09_preview::{models, operations, API_VERSION};
 #[cfg(feature = "package-2020-11-preview")]
 mod package_2020_11_preview;
 #[cfg(feature = "package-2020-11-preview")]

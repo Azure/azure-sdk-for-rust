@@ -3,6 +3,24 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Aggregations {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(flatten)]
+    pub aggregations_kind: AggregationsKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AggregationsKind {
+    pub kind: aggregations_kind::Kind,
+}
+pub mod aggregations_kind {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        CasesAggregation,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MlBehaviorAnalyticsAlertRule {
     #[serde(flatten)]
     pub alert_rule: AlertRule,
@@ -13,16 +31,16 @@ pub struct MlBehaviorAnalyticsAlertRule {
 pub struct MlBehaviorAnalyticsAlertRuleProperties {
     #[serde(rename = "alertRuleTemplateName")]
     pub alert_rule_template_name: String,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "displayName", skip_serializing)]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     pub enabled: bool,
-    #[serde(rename = "lastModifiedUtc", skip_serializing)]
+    #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_utc: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<AlertSeverity>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -58,18 +76,6 @@ pub struct AadDataConnectorProperties {
     pub data_connector_with_alerts_properties: DataConnectorWithAlertsProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AadCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AadCheckRequirementsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AadCheckRequirementsProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AatpDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
@@ -82,18 +88,6 @@ pub struct AatpDataConnectorProperties {
     pub data_connector_tenant_id: DataConnectorTenantId,
     #[serde(flatten)]
     pub data_connector_with_alerts_properties: DataConnectorWithAlertsProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AatpCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AatpCheckRequirementsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AatpCheckRequirementsProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MstiDataConnector {
@@ -134,18 +128,6 @@ pub struct MstiDataConnectorProperties {
     pub data_types: MstiDataConnectorDataTypes,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MstiCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MstiCheckRequirementsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MstiCheckRequirementsProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MtpDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
@@ -164,18 +146,6 @@ pub struct MtpDataConnectorProperties {
     pub data_types: MtpDataConnectorDataTypes,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MtpCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MtpCheckRequirementsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MtpCheckRequirementsProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AscDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
@@ -190,18 +160,6 @@ pub struct AscDataConnectorProperties {
     pub subscription_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AscCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AscCheckRequirementsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AscCheckRequirementsProperties {
-    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
-    pub subscription_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountEntity {
     #[serde(flatten)]
     pub entity: Entity,
@@ -212,29 +170,29 @@ pub struct AccountEntity {
 pub struct AccountEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "aadTenantId", skip_serializing)]
+    #[serde(rename = "aadTenantId", default, skip_serializing_if = "Option::is_none")]
     pub aad_tenant_id: Option<String>,
-    #[serde(rename = "aadUserId", skip_serializing)]
+    #[serde(rename = "aadUserId", default, skip_serializing_if = "Option::is_none")]
     pub aad_user_id: Option<String>,
-    #[serde(rename = "accountName", skip_serializing)]
+    #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
-    #[serde(rename = "displayName", skip_serializing)]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(rename = "hostEntityId", skip_serializing)]
+    #[serde(rename = "hostEntityId", default, skip_serializing_if = "Option::is_none")]
     pub host_entity_id: Option<String>,
-    #[serde(rename = "isDomainJoined", skip_serializing)]
+    #[serde(rename = "isDomainJoined", default, skip_serializing_if = "Option::is_none")]
     pub is_domain_joined: Option<bool>,
-    #[serde(rename = "ntDomain", skip_serializing)]
+    #[serde(rename = "ntDomain", default, skip_serializing_if = "Option::is_none")]
     pub nt_domain: Option<String>,
-    #[serde(rename = "objectGuid", skip_serializing)]
+    #[serde(rename = "objectGuid", default, skip_serializing_if = "Option::is_none")]
     pub object_guid: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub puid: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sid: Option<String>,
-    #[serde(rename = "upnSuffix", skip_serializing)]
+    #[serde(rename = "upnSuffix", default, skip_serializing_if = "Option::is_none")]
     pub upn_suffix: Option<String>,
-    #[serde(rename = "dnsDomain", skip_serializing)]
+    #[serde(rename = "dnsDomain", default, skip_serializing_if = "Option::is_none")]
     pub dns_domain: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -274,27 +232,9 @@ pub struct ActionResponseProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionsList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<ActionResponse>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Aggregations {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(flatten)]
-    pub aggregations_kind: AggregationsKind,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AggregationsKind {
-    pub kind: aggregations_kind::Kind,
-}
-pub mod aggregations_kind {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        CasesAggregation,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRule {
@@ -337,9 +277,9 @@ pub struct AlertRuleTemplateDataSource {
 pub struct AlertRuleTemplatePropertiesBase {
     #[serde(rename = "alertRulesCreatedByTemplateCount", default, skip_serializing_if = "Option::is_none")]
     pub alert_rules_created_by_template_count: Option<i64>,
-    #[serde(rename = "lastUpdatedDateUTC", skip_serializing)]
+    #[serde(rename = "lastUpdatedDateUTC", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_date_utc: Option<String>,
-    #[serde(rename = "createdDateUTC", skip_serializing)]
+    #[serde(rename = "createdDateUTC", default, skip_serializing_if = "Option::is_none")]
     pub created_date_utc: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -361,7 +301,7 @@ pub mod alert_rule_template_properties_base {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRuleTemplatesList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<AlertRuleTemplate>,
 }
@@ -374,7 +314,7 @@ pub enum AlertRuleTriggerOperator {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRulesList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<AlertRule>,
 }
@@ -404,6 +344,1874 @@ pub enum AttackTactic {
     CommandAndControl,
     Impact,
     PreAttack,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AwsCloudTrailDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AwsCloudTrailDataConnectorProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AwsCloudTrailDataConnectorDataTypes {
+    pub logs: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AwsCloudTrailDataConnectorProperties {
+    #[serde(rename = "awsRoleArn", default, skip_serializing_if = "Option::is_none")]
+    pub aws_role_arn: Option<String>,
+    #[serde(rename = "dataTypes")]
+    pub data_types: AwsCloudTrailDataConnectorDataTypes,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureResourceEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AzureResourceEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureResourceEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CasesAggregation {
+    #[serde(flatten)]
+    pub aggregations: Aggregations,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CasesAggregationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CasesAggregationBySeverityProperties {
+    #[serde(rename = "totalCriticalSeverity", default, skip_serializing_if = "Option::is_none")]
+    pub total_critical_severity: Option<i64>,
+    #[serde(rename = "totalHighSeverity", default, skip_serializing_if = "Option::is_none")]
+    pub total_high_severity: Option<i64>,
+    #[serde(rename = "totalInformationalSeverity", default, skip_serializing_if = "Option::is_none")]
+    pub total_informational_severity: Option<i64>,
+    #[serde(rename = "totalLowSeverity", default, skip_serializing_if = "Option::is_none")]
+    pub total_low_severity: Option<i64>,
+    #[serde(rename = "totalMediumSeverity", default, skip_serializing_if = "Option::is_none")]
+    pub total_medium_severity: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CasesAggregationByStatusProperties {
+    #[serde(rename = "totalDismissedStatus", default, skip_serializing_if = "Option::is_none")]
+    pub total_dismissed_status: Option<i64>,
+    #[serde(rename = "totalInProgressStatus", default, skip_serializing_if = "Option::is_none")]
+    pub total_in_progress_status: Option<i64>,
+    #[serde(rename = "totalNewStatus", default, skip_serializing_if = "Option::is_none")]
+    pub total_new_status: Option<i64>,
+    #[serde(rename = "totalResolvedStatus", default, skip_serializing_if = "Option::is_none")]
+    pub total_resolved_status: Option<i64>,
+    #[serde(rename = "totalFalsePositiveStatus", default, skip_serializing_if = "Option::is_none")]
+    pub total_false_positive_status: Option<i32>,
+    #[serde(rename = "totalTruePositiveStatus", default, skip_serializing_if = "Option::is_none")]
+    pub total_true_positive_status: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CasesAggregationProperties {
+    #[serde(rename = "aggregationBySeverity", default, skip_serializing_if = "Option::is_none")]
+    pub aggregation_by_severity: Option<CasesAggregationBySeverityProperties>,
+    #[serde(rename = "aggregationByStatus", default, skip_serializing_if = "Option::is_none")]
+    pub aggregation_by_status: Option<CasesAggregationByStatusProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClientInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
+    pub object_id: Option<String>,
+    #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
+    pub user_principal_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudApplicationEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CloudApplicationEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudApplicationEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(rename = "appId", default, skip_serializing_if = "Option::is_none")]
+    pub app_id: Option<i64>,
+    #[serde(rename = "appName", default, skip_serializing_if = "Option::is_none")]
+    pub app_name: Option<String>,
+    #[serde(rename = "instanceName", default, skip_serializing_if = "Option::is_none")]
+    pub instance_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<CloudErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudErrorBody {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnector {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(flatten)]
+    pub data_connector_kind: DataConnectorKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnectorDataTypeCommon {
+    pub state: data_connector_data_type_common::State,
+}
+pub mod data_connector_data_type_common {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        Enabled,
+        Disabled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnectorKind {
+    pub kind: data_connector_kind::Kind,
+}
+pub mod data_connector_kind {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        AzureActiveDirectory,
+        AzureSecurityCenter,
+        MicrosoftCloudAppSecurity,
+        ThreatIntelligence,
+        ThreatIntelligenceTaxii,
+        Office365,
+        #[serde(rename = "OfficeATP")]
+        OfficeAtp,
+        AmazonWebServicesCloudTrail,
+        AzureAdvancedThreatProtection,
+        MicrosoftDefenderAdvancedThreatProtection,
+        Dynamics365,
+        MicrosoftThreatProtection,
+        MicrosoftThreatIntelligence,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnectorList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<DataConnector>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnectorTenantId {
+    #[serde(rename = "tenantId")]
+    pub tenant_id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnectorWithAlertsProperties {
+    #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
+    pub data_types: Option<AlertsDataTypeOfDataConnector>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DnsEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DnsEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DnsEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(rename = "dnsServerIpEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub dns_server_ip_entity_id: Option<String>,
+    #[serde(rename = "domainName", default, skip_serializing_if = "Option::is_none")]
+    pub domain_name: Option<String>,
+    #[serde(rename = "hostIpAddressEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub host_ip_address_entity_id: Option<String>,
+    #[serde(rename = "ipAddressEntityIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub ip_address_entity_ids: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Dynamics365DataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<Dynamics365DataConnectorProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Dynamics365DataConnectorDataTypes {
+    #[serde(rename = "dynamics365CdsActivities")]
+    pub dynamics365_cds_activities: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Dynamics365DataConnectorProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+    #[serde(rename = "dataTypes")]
+    pub data_types: Dynamics365DataConnectorDataTypes,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Entity {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(flatten)]
+    pub entity_kind: EntityKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityCommonProperties {
+    #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
+    pub additional_data: Option<serde_json::Value>,
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EntityInnerKind {
+    Account,
+    Host,
+    File,
+    AzureResource,
+    CloudApplication,
+    DnsResolution,
+    FileHash,
+    Ip,
+    Malware,
+    Process,
+    RegistryKey,
+    RegistryValue,
+    SecurityGroup,
+    Url,
+    IoTDevice,
+    SecurityAlert,
+    Bookmark,
+    Mailbox,
+    MailCluster,
+    MailMessage,
+    SubmissionMail,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EntityInnerType {
+    Account,
+    Host,
+    File,
+    AzureResource,
+    CloudApplication,
+    #[serde(rename = "DNS")]
+    Dns,
+    FileHash,
+    #[serde(rename = "IP")]
+    Ip,
+    Malware,
+    Process,
+    RegistryKey,
+    RegistryValue,
+    SecurityGroup,
+    #[serde(rename = "URL")]
+    Url,
+    IoTDevice,
+    SecurityAlert,
+    HuntingBookmark,
+    MailCluster,
+    MailMessage,
+    Mailbox,
+    SubmissionMail,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityKind {
+    pub kind: EntityInnerKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQueryKind {
+    pub kind: entity_query_kind::Kind,
+}
+pub mod entity_query_kind {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        Expansion,
+        Insight,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQuery {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(flatten)]
+    pub entity_query_kind: EntityQueryKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExpansionEntityQuery {
+    #[serde(flatten)]
+    pub entity_query: EntityQuery,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ExpansionEntityQueriesProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQueryList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<EntityQuery>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExpansionResultAggregation {
+    #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
+    pub aggregation_type: Option<String>,
+    pub count: i64,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "entityKind")]
+    pub entity_kind: EntityInnerKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExpansionResultsMetadata {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub aggregations: Vec<ExpansionResultAggregation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExpansionEntityQueriesProperties {
+    #[serde(rename = "dataSources", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_sources: Vec<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "inputEntityType", default, skip_serializing_if = "Option::is_none")]
+    pub input_entity_type: Option<EntityInnerType>,
+    #[serde(rename = "inputFields", default, skip_serializing_if = "Vec::is_empty")]
+    pub input_fields: Vec<String>,
+    #[serde(rename = "outputEntityTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub output_entity_types: Vec<EntityInnerType>,
+    #[serde(rename = "queryTemplate", default, skip_serializing_if = "Option::is_none")]
+    pub query_template: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConnectedEntity {
+    #[serde(rename = "targetEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub target_entity_id: Option<String>,
+    #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
+    pub additional_data: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FileEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<FileEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FileEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub directory: Option<String>,
+    #[serde(rename = "fileHashEntityIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub file_hash_entity_ids: Vec<String>,
+    #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
+    pub file_name: Option<String>,
+    #[serde(rename = "hostEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub host_entity_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FileHashEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<FileHashEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FileHashEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub algorithm: Option<file_hash_entity_properties::Algorithm>,
+    #[serde(rename = "hashValue", default, skip_serializing_if = "Option::is_none")]
+    pub hash_value: Option<String>,
+}
+pub mod file_hash_entity_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Algorithm {
+        Unknown,
+        #[serde(rename = "MD5")]
+        Md5,
+        #[serde(rename = "SHA1")]
+        Sha1,
+        #[serde(rename = "SHA256")]
+        Sha256,
+        #[serde(rename = "SHA256AC")]
+        Sha256ac,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FusionAlertRule {
+    #[serde(flatten)]
+    pub alert_rule: AlertRule,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<FusionAlertRuleProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FusionAlertRuleProperties {
+    #[serde(rename = "alertRuleTemplateName")]
+    pub alert_rule_template_name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    pub enabled: bool,
+    #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_utc: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<AlertSeverity>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tactics: Vec<AttackTactic>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FusionAlertRuleTemplate {
+    #[serde(flatten)]
+    pub alert_rule_template: AlertRuleTemplate,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<fusion_alert_rule_template::Properties>,
+}
+pub mod fusion_alert_rule_template {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(flatten)]
+        pub alert_rule_template_properties_base: AlertRuleTemplatePropertiesBase,
+        pub severity: AlertSeverity,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub tactics: Vec<AttackTactic>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ThreatIntelligenceAlertRule {
+    #[serde(flatten)]
+    pub alert_rule: AlertRule,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ThreatIntelligenceAlertRuleProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ThreatIntelligenceAlertRuleProperties {
+    #[serde(rename = "alertRuleTemplateName")]
+    pub alert_rule_template_name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    pub enabled: bool,
+    #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_utc: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<AlertSeverity>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tactics: Vec<AttackTactic>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ThreatIntelligenceAlertRuleTemplate {
+    #[serde(flatten)]
+    pub alert_rule_template: AlertRuleTemplate,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<threat_intelligence_alert_rule_template::Properties>,
+}
+pub mod threat_intelligence_alert_rule_template {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(flatten)]
+        pub alert_rule_template_properties_base: AlertRuleTemplatePropertiesBase,
+        pub severity: AlertSeverity,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub tactics: Vec<AttackTactic>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GeoLocation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub asn: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    #[serde(rename = "countryCode", default, skip_serializing_if = "Option::is_none")]
+    pub country_code: Option<String>,
+    #[serde(rename = "countryName", default, skip_serializing_if = "Option::is_none")]
+    pub country_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latitude: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub longitude: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HostEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<HostEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HostEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(rename = "azureID", default, skip_serializing_if = "Option::is_none")]
+    pub azure_id: Option<String>,
+    #[serde(rename = "dnsDomain", default, skip_serializing_if = "Option::is_none")]
+    pub dns_domain: Option<String>,
+    #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
+    pub host_name: Option<String>,
+    #[serde(rename = "isDomainJoined", default, skip_serializing_if = "Option::is_none")]
+    pub is_domain_joined: Option<bool>,
+    #[serde(rename = "netBiosName", default, skip_serializing_if = "Option::is_none")]
+    pub net_bios_name: Option<String>,
+    #[serde(rename = "ntDomain", default, skip_serializing_if = "Option::is_none")]
+    pub nt_domain: Option<String>,
+    #[serde(rename = "omsAgentID", default, skip_serializing_if = "Option::is_none")]
+    pub oms_agent_id: Option<String>,
+    #[serde(rename = "osFamily", default, skip_serializing_if = "Option::is_none")]
+    pub os_family: Option<host_entity_properties::OsFamily>,
+    #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
+    pub os_version: Option<String>,
+}
+pub mod host_entity_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsFamily {
+        Linux,
+        Windows,
+        Android,
+        #[serde(rename = "IOS")]
+        Ios,
+        Unknown,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Incident {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<IncidentProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HuntingBookmark {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<HuntingBookmarkProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HuntingBookmarkProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<UserInfo>,
+    #[serde(rename = "displayName")]
+    pub display_name: String,
+    #[serde(rename = "eventTime", default, skip_serializing_if = "Option::is_none")]
+    pub event_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub labels: Vec<Label>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
+    pub query: String,
+    #[serde(rename = "queryResult", default, skip_serializing_if = "Option::is_none")]
+    pub query_result: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated: Option<String>,
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
+    pub updated_by: Option<UserInfo>,
+    #[serde(rename = "incidentInfo", default, skip_serializing_if = "Option::is_none")]
+    pub incident_info: Option<IncidentInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentAdditionalData {
+    #[serde(rename = "alertsCount", default, skip_serializing_if = "Option::is_none")]
+    pub alerts_count: Option<i64>,
+    #[serde(rename = "bookmarksCount", default, skip_serializing_if = "Option::is_none")]
+    pub bookmarks_count: Option<i64>,
+    #[serde(rename = "commentsCount", default, skip_serializing_if = "Option::is_none")]
+    pub comments_count: Option<i64>,
+    #[serde(rename = "alertProductNames", default, skip_serializing_if = "Vec::is_empty")]
+    pub alert_product_names: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tactics: Vec<AttackTactic>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentAlertList {
+    pub value: Vec<SecurityAlert>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentBookmarkList {
+    pub value: Vec<HuntingBookmark>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentComment {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<IncidentCommentProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentCommentList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<IncidentComment>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentCommentProperties {
+    #[serde(rename = "createdTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub created_time_utc: Option<String>,
+    #[serde(rename = "lastModifiedTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_time_utc: Option<String>,
+    pub message: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub author: Option<ClientInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentEntitiesResponse {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub entities: Vec<Entity>,
+    #[serde(rename = "metaData", default, skip_serializing_if = "Vec::is_empty")]
+    pub meta_data: Vec<IncidentEntitiesResultsMetadata>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentEntitiesResultsMetadata {
+    pub count: i32,
+    #[serde(rename = "entityKind")]
+    pub entity_kind: EntityInnerKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentLabel {
+    #[serde(rename = "labelName")]
+    pub label_name: String,
+    #[serde(rename = "labelType", default, skip_serializing_if = "Option::is_none")]
+    pub label_type: Option<incident_label::LabelType>,
+}
+pub mod incident_label {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LabelType {
+        User,
+        System,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<Incident>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentOwnerInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(rename = "assignedTo", default, skip_serializing_if = "Option::is_none")]
+    pub assigned_to: Option<String>,
+    #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
+    pub object_id: Option<String>,
+    #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
+    pub user_principal_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum IncidentClassification {
+    Undetermined,
+    TruePositive,
+    BenignPositive,
+    FalsePositive,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum IncidentClassificationReason {
+    SuspiciousActivity,
+    SuspiciousButExpected,
+    IncorrectAlertLogic,
+    InaccurateData,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum IncidentSeverity {
+    High,
+    Medium,
+    Low,
+    Informational,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum IncidentStatus {
+    New,
+    Active,
+    Closed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentProperties {
+    #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
+    pub additional_data: Option<IncidentAdditionalData>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub classification: Option<IncidentClassification>,
+    #[serde(rename = "classificationComment", default, skip_serializing_if = "Option::is_none")]
+    pub classification_comment: Option<String>,
+    #[serde(rename = "classificationReason", default, skip_serializing_if = "Option::is_none")]
+    pub classification_reason: Option<IncidentClassificationReason>,
+    #[serde(rename = "createdTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub created_time_utc: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "firstActivityTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub first_activity_time_utc: Option<String>,
+    #[serde(rename = "incidentUrl", default, skip_serializing_if = "Option::is_none")]
+    pub incident_url: Option<String>,
+    #[serde(rename = "incidentNumber", default, skip_serializing_if = "Option::is_none")]
+    pub incident_number: Option<i64>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub labels: Vec<IncidentLabel>,
+    #[serde(rename = "providerName", default, skip_serializing_if = "Option::is_none")]
+    pub provider_name: Option<String>,
+    #[serde(rename = "providerIncidentId", default, skip_serializing_if = "Option::is_none")]
+    pub provider_incident_id: Option<String>,
+    #[serde(rename = "lastActivityTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub last_activity_time_utc: Option<String>,
+    #[serde(rename = "lastModifiedTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_time_utc: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub owner: Option<IncidentOwnerInfo>,
+    #[serde(rename = "relatedAnalyticRuleIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub related_analytic_rule_ids: Vec<String>,
+    pub severity: IncidentSeverity,
+    pub status: IncidentStatus,
+    pub title: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IpEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<IpEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IpEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub address: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<GeoLocation>,
+    #[serde(rename = "threatIntelligence", default, skip_serializing_if = "Vec::is_empty")]
+    pub threat_intelligence: Vec<ThreatIntelligence>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Label {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MailboxEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MailboxEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MailboxEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(rename = "mailboxPrimaryAddress", default, skip_serializing_if = "Option::is_none")]
+    pub mailbox_primary_address: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub upn: Option<String>,
+    #[serde(rename = "externalDirectoryObjectId", default, skip_serializing_if = "Option::is_none")]
+    pub external_directory_object_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MailClusterEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MailClusterEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MailClusterEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(rename = "networkMessageIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub network_message_ids: Vec<String>,
+    #[serde(rename = "countByDeliveryStatus", default, skip_serializing_if = "Option::is_none")]
+    pub count_by_delivery_status: Option<serde_json::Value>,
+    #[serde(rename = "countByThreatType", default, skip_serializing_if = "Option::is_none")]
+    pub count_by_threat_type: Option<serde_json::Value>,
+    #[serde(rename = "countByProtectionStatus", default, skip_serializing_if = "Option::is_none")]
+    pub count_by_protection_status: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub threats: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<String>,
+    #[serde(rename = "queryTime", default, skip_serializing_if = "Option::is_none")]
+    pub query_time: Option<String>,
+    #[serde(rename = "mailCount", default, skip_serializing_if = "Option::is_none")]
+    pub mail_count: Option<i32>,
+    #[serde(rename = "isVolumeAnomaly", default, skip_serializing_if = "Option::is_none")]
+    pub is_volume_anomaly: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(rename = "clusterSourceIdentifier", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_source_identifier: Option<String>,
+    #[serde(rename = "clusterSourceType", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_source_type: Option<String>,
+    #[serde(rename = "clusterQueryStartTime", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_query_start_time: Option<String>,
+    #[serde(rename = "clusterQueryEndTime", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_query_end_time: Option<String>,
+    #[serde(rename = "clusterGroup", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_group: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MailMessageEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MailMessageEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MailMessageEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(rename = "fileEntityIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub file_entity_ids: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recipient: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub urls: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub threats: Vec<String>,
+    #[serde(rename = "p1Sender", default, skip_serializing_if = "Option::is_none")]
+    pub p1_sender: Option<String>,
+    #[serde(rename = "p1SenderDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub p1_sender_display_name: Option<String>,
+    #[serde(rename = "p1SenderDomain", default, skip_serializing_if = "Option::is_none")]
+    pub p1_sender_domain: Option<String>,
+    #[serde(rename = "senderIP", default, skip_serializing_if = "Option::is_none")]
+    pub sender_ip: Option<String>,
+    #[serde(rename = "p2Sender", default, skip_serializing_if = "Option::is_none")]
+    pub p2_sender: Option<String>,
+    #[serde(rename = "p2SenderDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub p2_sender_display_name: Option<String>,
+    #[serde(rename = "p2SenderDomain", default, skip_serializing_if = "Option::is_none")]
+    pub p2_sender_domain: Option<String>,
+    #[serde(rename = "receiveDate", default, skip_serializing_if = "Option::is_none")]
+    pub receive_date: Option<String>,
+    #[serde(rename = "networkMessageId", default, skip_serializing_if = "Option::is_none")]
+    pub network_message_id: Option<String>,
+    #[serde(rename = "internetMessageId", default, skip_serializing_if = "Option::is_none")]
+    pub internet_message_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subject: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub language: Option<String>,
+    #[serde(rename = "threatDetectionMethods", default, skip_serializing_if = "Vec::is_empty")]
+    pub threat_detection_methods: Vec<String>,
+    #[serde(rename = "bodyFingerprintBin1", default, skip_serializing_if = "Option::is_none")]
+    pub body_fingerprint_bin1: Option<i32>,
+    #[serde(rename = "bodyFingerprintBin2", default, skip_serializing_if = "Option::is_none")]
+    pub body_fingerprint_bin2: Option<i32>,
+    #[serde(rename = "bodyFingerprintBin3", default, skip_serializing_if = "Option::is_none")]
+    pub body_fingerprint_bin3: Option<i32>,
+    #[serde(rename = "bodyFingerprintBin4", default, skip_serializing_if = "Option::is_none")]
+    pub body_fingerprint_bin4: Option<i32>,
+    #[serde(rename = "bodyFingerprintBin5", default, skip_serializing_if = "Option::is_none")]
+    pub body_fingerprint_bin5: Option<i32>,
+    #[serde(rename = "antispamDirection", default, skip_serializing_if = "Option::is_none")]
+    pub antispam_direction: Option<mail_message_entity_properties::AntispamDirection>,
+    #[serde(rename = "deliveryAction", default, skip_serializing_if = "Option::is_none")]
+    pub delivery_action: Option<mail_message_entity_properties::DeliveryAction>,
+    #[serde(rename = "deliveryLocation", default, skip_serializing_if = "Option::is_none")]
+    pub delivery_location: Option<mail_message_entity_properties::DeliveryLocation>,
+}
+pub mod mail_message_entity_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AntispamDirection {
+        Unknown,
+        Inbound,
+        Outbound,
+        Intraorg,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DeliveryAction {
+        Unknown,
+        DeliveredAsSpam,
+        Delivered,
+        Blocked,
+        Replaced,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DeliveryLocation {
+        Unknown,
+        Inbox,
+        JunkFolder,
+        DeletedFolder,
+        Quarantine,
+        External,
+        Failed,
+        Dropped,
+        Forwarded,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubmissionMailEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SubmissionMailEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubmissionMailEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(rename = "networkMessageId", default, skip_serializing_if = "Option::is_none")]
+    pub network_message_id: Option<String>,
+    #[serde(rename = "submissionId", default, skip_serializing_if = "Option::is_none")]
+    pub submission_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub submitter: Option<String>,
+    #[serde(rename = "submissionDate", default, skip_serializing_if = "Option::is_none")]
+    pub submission_date: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recipient: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender: Option<String>,
+    #[serde(rename = "senderIp", default, skip_serializing_if = "Option::is_none")]
+    pub sender_ip: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subject: Option<String>,
+    #[serde(rename = "reportType", default, skip_serializing_if = "Option::is_none")]
+    pub report_type: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct McasDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<McasDataConnectorProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct McasDataConnectorDataTypes {
+    #[serde(flatten)]
+    pub alerts_data_type_of_data_connector: AlertsDataTypeOfDataConnector,
+    #[serde(rename = "discoveryLogs", default, skip_serializing_if = "Option::is_none")]
+    pub discovery_logs: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct McasDataConnectorProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+    #[serde(rename = "dataTypes")]
+    pub data_types: McasDataConnectorDataTypes,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MdatpDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MdatpDataConnectorProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MdatpDataConnectorProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+    #[serde(flatten)]
+    pub data_connector_with_alerts_properties: DataConnectorWithAlertsProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MalwareEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MalwareEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MalwareEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[serde(rename = "fileEntityIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub file_entity_ids: Vec<String>,
+    #[serde(rename = "malwareName", default, skip_serializing_if = "Option::is_none")]
+    pub malware_name: Option<String>,
+    #[serde(rename = "processEntityIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub process_entity_ids: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MicrosoftSecurityIncidentCreationAlertRule {
+    #[serde(flatten)]
+    pub alert_rule: AlertRule,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MicrosoftSecurityIncidentCreationAlertRuleProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MicrosoftSecurityIncidentCreationAlertRuleCommonProperties {
+    #[serde(rename = "displayNamesFilter", default, skip_serializing_if = "Vec::is_empty")]
+    pub display_names_filter: Vec<String>,
+    #[serde(rename = "displayNamesExcludeFilter", default, skip_serializing_if = "Vec::is_empty")]
+    pub display_names_exclude_filter: Vec<String>,
+    #[serde(rename = "productFilter")]
+    pub product_filter: microsoft_security_incident_creation_alert_rule_common_properties::ProductFilter,
+    #[serde(rename = "severitiesFilter", default, skip_serializing_if = "Vec::is_empty")]
+    pub severities_filter: Vec<AlertSeverity>,
+}
+pub mod microsoft_security_incident_creation_alert_rule_common_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProductFilter {
+        #[serde(rename = "Microsoft Cloud App Security")]
+        MicrosoftCloudAppSecurity,
+        #[serde(rename = "Azure Security Center")]
+        AzureSecurityCenter,
+        #[serde(rename = "Azure Advanced Threat Protection")]
+        AzureAdvancedThreatProtection,
+        #[serde(rename = "Azure Active Directory Identity Protection")]
+        AzureActiveDirectoryIdentityProtection,
+        #[serde(rename = "Azure Security Center for IoT")]
+        AzureSecurityCenterForIoT,
+        #[serde(rename = "Office 365 Advanced Threat Protection")]
+        Office365AdvancedThreatProtection,
+        #[serde(rename = "Microsoft Defender Advanced Threat Protection")]
+        MicrosoftDefenderAdvancedThreatProtection,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MicrosoftSecurityIncidentCreationAlertRuleProperties {
+    #[serde(flatten)]
+    pub microsoft_security_incident_creation_alert_rule_common_properties: MicrosoftSecurityIncidentCreationAlertRuleCommonProperties,
+    #[serde(rename = "alertRuleTemplateName", default, skip_serializing_if = "Option::is_none")]
+    pub alert_rule_template_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "displayName")]
+    pub display_name: String,
+    pub enabled: bool,
+    #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_utc: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MicrosoftSecurityIncidentCreationAlertRuleTemplate {
+    #[serde(flatten)]
+    pub alert_rule_template: AlertRuleTemplate,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OfficeAtpDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OfficeAtpDataConnectorProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OfficeAtpDataConnectorProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+    #[serde(flatten)]
+    pub data_connector_with_alerts_properties: DataConnectorWithAlertsProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OfficeDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OfficeDataConnectorProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OfficeDataConnectorDataTypes {
+    pub exchange: serde_json::Value,
+    #[serde(rename = "sharePoint")]
+    pub share_point: serde_json::Value,
+    pub teams: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OfficeDataConnectorProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+    #[serde(rename = "dataTypes")]
+    pub data_types: OfficeDataConnectorDataTypes,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<operation::Display>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+}
+pub mod operation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Display {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationsList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<Operation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProcessEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ProcessEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProcessEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(rename = "accountEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub account_entity_id: Option<String>,
+    #[serde(rename = "commandLine", default, skip_serializing_if = "Option::is_none")]
+    pub command_line: Option<String>,
+    #[serde(rename = "creationTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub creation_time_utc: Option<String>,
+    #[serde(rename = "elevationToken", default, skip_serializing_if = "Option::is_none")]
+    pub elevation_token: Option<process_entity_properties::ElevationToken>,
+    #[serde(rename = "hostEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub host_entity_id: Option<String>,
+    #[serde(rename = "hostLogonSessionEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub host_logon_session_entity_id: Option<String>,
+    #[serde(rename = "imageFileEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub image_file_entity_id: Option<String>,
+    #[serde(rename = "parentProcessEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub parent_process_entity_id: Option<String>,
+    #[serde(rename = "processId", default, skip_serializing_if = "Option::is_none")]
+    pub process_id: Option<String>,
+}
+pub mod process_entity_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ElevationToken {
+        Default,
+        Full,
+        Limited,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegistryKeyEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RegistryKeyEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegistryKeyEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hive: Option<registry_key_entity_properties::Hive>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub key: Option<String>,
+}
+pub mod registry_key_entity_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Hive {
+        #[serde(rename = "HKEY_LOCAL_MACHINE")]
+        HkeyLocalMachine,
+        #[serde(rename = "HKEY_CLASSES_ROOT")]
+        HkeyClassesRoot,
+        #[serde(rename = "HKEY_CURRENT_CONFIG")]
+        HkeyCurrentConfig,
+        #[serde(rename = "HKEY_USERS")]
+        HkeyUsers,
+        #[serde(rename = "HKEY_CURRENT_USER_LOCAL_SETTINGS")]
+        HkeyCurrentUserLocalSettings,
+        #[serde(rename = "HKEY_PERFORMANCE_DATA")]
+        HkeyPerformanceData,
+        #[serde(rename = "HKEY_PERFORMANCE_NLSTEXT")]
+        HkeyPerformanceNlstext,
+        #[serde(rename = "HKEY_PERFORMANCE_TEXT")]
+        HkeyPerformanceText,
+        #[serde(rename = "HKEY_A")]
+        HkeyA,
+        #[serde(rename = "HKEY_CURRENT_USER")]
+        HkeyCurrentUser,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegistryValueEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RegistryValueEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegistryValueEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(rename = "keyEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub key_entity_id: Option<String>,
+    #[serde(rename = "valueData", default, skip_serializing_if = "Option::is_none")]
+    pub value_data: Option<String>,
+    #[serde(rename = "valueName", default, skip_serializing_if = "Option::is_none")]
+    pub value_name: Option<String>,
+    #[serde(rename = "valueType", default, skip_serializing_if = "Option::is_none")]
+    pub value_type: Option<registry_value_entity_properties::ValueType>,
+}
+pub mod registry_value_entity_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ValueType {
+        None,
+        Unknown,
+        String,
+        ExpandString,
+        Binary,
+        DWord,
+        MultiString,
+        QWord,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RelationList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<Relation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Relation {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RelationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RelationProperties {
+    #[serde(rename = "relatedResourceId")]
+    pub related_resource_id: String,
+    #[serde(rename = "relatedResourceName", default, skip_serializing_if = "Option::is_none")]
+    pub related_resource_name: Option<String>,
+    #[serde(rename = "relatedResourceType", default, skip_serializing_if = "Option::is_none")]
+    pub related_resource_type: Option<String>,
+    #[serde(rename = "relatedResourceKind", default, skip_serializing_if = "Option::is_none")]
+    pub related_resource_kind: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceWithEtag {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScheduledAlertRule {
+    #[serde(flatten)]
+    pub alert_rule: AlertRule,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ScheduledAlertRuleProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScheduledAlertRuleCommonProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<String>,
+    #[serde(rename = "queryFrequency", default, skip_serializing_if = "Option::is_none")]
+    pub query_frequency: Option<String>,
+    #[serde(rename = "queryPeriod", default, skip_serializing_if = "Option::is_none")]
+    pub query_period: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<AlertSeverity>,
+    #[serde(rename = "triggerOperator", default, skip_serializing_if = "Option::is_none")]
+    pub trigger_operator: Option<AlertRuleTriggerOperator>,
+    #[serde(rename = "triggerThreshold", default, skip_serializing_if = "Option::is_none")]
+    pub trigger_threshold: Option<i64>,
+    #[serde(rename = "eventGroupingSettings", default, skip_serializing_if = "Option::is_none")]
+    pub event_grouping_settings: Option<EventGroupingSettings>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventGroupingSettings {
+    #[serde(rename = "aggregationKind", default, skip_serializing_if = "Option::is_none")]
+    pub aggregation_kind: Option<EventGroupingAggregationKind>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EventGroupingAggregationKind {
+    SingleAlert,
+    AlertPerResult,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScheduledAlertRuleProperties {
+    #[serde(flatten)]
+    pub scheduled_alert_rule_common_properties: ScheduledAlertRuleCommonProperties,
+    #[serde(rename = "alertRuleTemplateName", default, skip_serializing_if = "Option::is_none")]
+    pub alert_rule_template_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "displayName")]
+    pub display_name: String,
+    pub enabled: bool,
+    #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_utc: Option<String>,
+    #[serde(rename = "suppressionDuration")]
+    pub suppression_duration: String,
+    #[serde(rename = "suppressionEnabled")]
+    pub suppression_enabled: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tactics: Vec<AttackTactic>,
+    #[serde(rename = "incidentConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub incident_configuration: Option<IncidentConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScheduledAlertRuleTemplate {
+    #[serde(flatten)]
+    pub alert_rule_template: AlertRuleTemplate,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<scheduled_alert_rule_template::Properties>,
+}
+pub mod scheduled_alert_rule_template {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(flatten)]
+        pub alert_rule_template_properties_base: AlertRuleTemplatePropertiesBase,
+        #[serde(flatten)]
+        pub scheduled_alert_rule_common_properties: ScheduledAlertRuleCommonProperties,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub tactics: Vec<AttackTactic>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentConfiguration {
+    #[serde(rename = "createIncident")]
+    pub create_incident: bool,
+    #[serde(rename = "groupingConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub grouping_configuration: Option<GroupingConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GroupingConfiguration {
+    pub enabled: bool,
+    #[serde(rename = "reopenClosedIncident")]
+    pub reopen_closed_incident: bool,
+    #[serde(rename = "lookbackDuration")]
+    pub lookback_duration: String,
+    #[serde(rename = "entitiesMatchingMethod")]
+    pub entities_matching_method: grouping_configuration::EntitiesMatchingMethod,
+    #[serde(rename = "groupByEntities", default, skip_serializing_if = "Vec::is_empty")]
+    pub group_by_entities: Vec<String>,
+}
+pub mod grouping_configuration {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum EntitiesMatchingMethod {
+        All,
+        None,
+        Custom,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecurityAlert {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SecurityAlertProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecurityAlertProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(rename = "alertDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub alert_display_name: Option<String>,
+    #[serde(rename = "alertType", default, skip_serializing_if = "Option::is_none")]
+    pub alert_type: Option<String>,
+    #[serde(rename = "compromisedEntity", default, skip_serializing_if = "Option::is_none")]
+    pub compromised_entity: Option<String>,
+    #[serde(rename = "confidenceLevel", default, skip_serializing_if = "Option::is_none")]
+    pub confidence_level: Option<security_alert_properties::ConfidenceLevel>,
+    #[serde(rename = "confidenceReasons", default, skip_serializing_if = "Vec::is_empty")]
+    pub confidence_reasons: Vec<serde_json::Value>,
+    #[serde(rename = "confidenceScore", default, skip_serializing_if = "Option::is_none")]
+    pub confidence_score: Option<f64>,
+    #[serde(rename = "confidenceScoreStatus", default, skip_serializing_if = "Option::is_none")]
+    pub confidence_score_status: Option<security_alert_properties::ConfidenceScoreStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "endTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub end_time_utc: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub intent: Option<security_alert_properties::Intent>,
+    #[serde(rename = "providerAlertId", default, skip_serializing_if = "Option::is_none")]
+    pub provider_alert_id: Option<String>,
+    #[serde(rename = "processingEndTime", default, skip_serializing_if = "Option::is_none")]
+    pub processing_end_time: Option<String>,
+    #[serde(rename = "productComponentName", default, skip_serializing_if = "Option::is_none")]
+    pub product_component_name: Option<String>,
+    #[serde(rename = "productName", default, skip_serializing_if = "Option::is_none")]
+    pub product_name: Option<String>,
+    #[serde(rename = "productVersion", default, skip_serializing_if = "Option::is_none")]
+    pub product_version: Option<String>,
+    #[serde(rename = "remediationSteps", default, skip_serializing_if = "Vec::is_empty")]
+    pub remediation_steps: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<AlertSeverity>,
+    #[serde(rename = "startTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub start_time_utc: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<security_alert_properties::Status>,
+    #[serde(rename = "systemAlertId", default, skip_serializing_if = "Option::is_none")]
+    pub system_alert_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tactics: Vec<AttackTactic>,
+    #[serde(rename = "timeGenerated", default, skip_serializing_if = "Option::is_none")]
+    pub time_generated: Option<String>,
+    #[serde(rename = "vendorName", default, skip_serializing_if = "Option::is_none")]
+    pub vendor_name: Option<String>,
+    #[serde(rename = "alertLink", default, skip_serializing_if = "Option::is_none")]
+    pub alert_link: Option<String>,
+    #[serde(rename = "resourceIdentifiers", default, skip_serializing_if = "Vec::is_empty")]
+    pub resource_identifiers: Vec<serde_json::Value>,
+}
+pub mod security_alert_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ConfidenceLevel {
+        Unknown,
+        Low,
+        High,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ConfidenceScoreStatus {
+        NotApplicable,
+        InProcess,
+        NotFinal,
+        Final,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Intent {
+        Unknown,
+        Probing,
+        Exploitation,
+        Persistence,
+        PrivilegeEscalation,
+        DefenseEvasion,
+        CredentialAccess,
+        Discovery,
+        LateralMovement,
+        Execution,
+        Collection,
+        Exfiltration,
+        CommandAndControl,
+        Impact,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Unknown,
+        New,
+        Resolved,
+        Dismissed,
+        InProgress,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecurityGroupEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SecurityGroupEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecurityGroupEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(rename = "distinguishedName", default, skip_serializing_if = "Option::is_none")]
+    pub distinguished_name: Option<String>,
+    #[serde(rename = "objectGuid", default, skip_serializing_if = "Option::is_none")]
+    pub object_guid: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sid: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SettingList {
+    pub value: Vec<Settings>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Settings {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(flatten)]
+    pub settings_kind: SettingsKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SettingsKind {
+    pub kind: settings_kind::Kind,
+}
+pub mod settings_kind {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        Anomalies,
+        EyesOn,
+        EntityAnalytics,
+        Ueba,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TiDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TiDataConnectorProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TiDataConnectorDataTypes {
+    pub indicators: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TiDataConnectorProperties {
+    #[serde(rename = "tenantId")]
+    pub tenant_id: String,
+    #[serde(rename = "tipLookbackPeriod", default, skip_serializing_if = "Option::is_none")]
+    pub tip_lookback_period: Option<String>,
+    #[serde(rename = "dataTypes")]
+    pub data_types: TiDataConnectorDataTypes,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TiTaxiiDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TiTaxiiDataConnectorProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TiTaxiiDataConnectorDataTypes {
+    #[serde(rename = "taxiiClient")]
+    pub taxii_client: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TiTaxiiDataConnectorProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<String>,
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
+    #[serde(rename = "taxiiServer", default, skip_serializing_if = "Option::is_none")]
+    pub taxii_server: Option<String>,
+    #[serde(rename = "collectionId", default, skip_serializing_if = "Option::is_none")]
+    pub collection_id: Option<String>,
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+    #[serde(rename = "taxiiLookbackPeriod", default, skip_serializing_if = "Option::is_none")]
+    pub taxii_lookback_period: Option<String>,
+    #[serde(rename = "pollingFrequency")]
+    pub polling_frequency: ti_taxii_data_connector_properties::PollingFrequency,
+    #[serde(rename = "dataTypes")]
+    pub data_types: TiTaxiiDataConnectorDataTypes,
+}
+pub mod ti_taxii_data_connector_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PollingFrequency {
+        OnceAMinute,
+        OnceAnHour,
+        OnceADay,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ThreatIntelligence {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<f64>,
+    #[serde(rename = "providerName", default, skip_serializing_if = "Option::is_none")]
+    pub provider_name: Option<String>,
+    #[serde(rename = "reportLink", default, skip_serializing_if = "Option::is_none")]
+    pub report_link: Option<String>,
+    #[serde(rename = "threatDescription", default, skip_serializing_if = "Option::is_none")]
+    pub threat_description: Option<String>,
+    #[serde(rename = "threatName", default, skip_serializing_if = "Option::is_none")]
+    pub threat_name: Option<String>,
+    #[serde(rename = "threatType", default, skip_serializing_if = "Option::is_none")]
+    pub threat_type: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
+    pub object_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Anomalies {
+    #[serde(flatten)]
+    pub settings: Settings,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AnomaliesProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AnomaliesProperties {
+    #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IpSyncer {
+    #[serde(flatten)]
+    pub settings: Settings,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<IpSyncerSettingsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IpSyncerSettingsProperties {
+    #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EyesOn {
+    #[serde(flatten)]
+    pub settings: Settings,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<EyesOnSettingsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EyesOnSettingsProperties {
+    #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityAnalytics {
+    #[serde(flatten)]
+    pub settings: Settings,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<EntityAnalyticsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityAnalyticsProperties {
+    #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Ueba {
+    #[serde(flatten)]
+    pub settings: Settings,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<UebaProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UebaProperties {
+    #[serde(rename = "dataSources", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_sources: Vec<UebaDataSources>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum UebaDataSources {
+    AuditLogs,
+    AzureActivity,
+    SecurityEvent,
+    SigninLogs,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UrlEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<UrlEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UrlEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IoTDeviceEntity {
+    #[serde(flatten)]
+    pub entity: Entity,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<IoTDeviceEntityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IoTDeviceEntityProperties {
+    #[serde(flatten)]
+    pub entity_common_properties: EntityCommonProperties,
+    #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
+    pub device_id: Option<String>,
+    #[serde(rename = "deviceName", default, skip_serializing_if = "Option::is_none")]
+    pub device_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(rename = "iotSecurityAgentId", default, skip_serializing_if = "Option::is_none")]
+    pub iot_security_agent_id: Option<String>,
+    #[serde(rename = "deviceType", default, skip_serializing_if = "Option::is_none")]
+    pub device_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vendor: Option<String>,
+    #[serde(rename = "edgeId", default, skip_serializing_if = "Option::is_none")]
+    pub edge_id: Option<String>,
+    #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
+    pub mac_address: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
+    pub serial_number: Option<String>,
+    #[serde(rename = "firmwareVersion", default, skip_serializing_if = "Option::is_none")]
+    pub firmware_version: Option<String>,
+    #[serde(rename = "operatingSystem", default, skip_serializing_if = "Option::is_none")]
+    pub operating_system: Option<String>,
+    #[serde(rename = "iotHubEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub iot_hub_entity_id: Option<String>,
+    #[serde(rename = "hostEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub host_entity_id: Option<String>,
+    #[serde(rename = "ipAddressEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub ip_address_entity_id: Option<String>,
+    #[serde(rename = "threatIntelligence", default, skip_serializing_if = "Vec::is_empty")]
+    pub threat_intelligence: Vec<ThreatIntelligence>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub protocols: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentInfo {
+    #[serde(rename = "incidentId", default, skip_serializing_if = "Option::is_none")]
+    pub incident_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<incident_info::Severity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(rename = "relationName", default, skip_serializing_if = "Option::is_none")]
+    pub relation_name: Option<String>,
+}
+pub mod incident_info {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Severity {
+        Critical,
+        High,
+        Medium,
+        Low,
+        Informational,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WatchlistList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<Watchlist>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Watchlist {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<WatchlistProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WatchlistProperties {
+    #[serde(rename = "watchlistId", default, skip_serializing_if = "Option::is_none")]
+    pub watchlist_id: Option<String>,
+    #[serde(rename = "displayName")]
+    pub display_name: String,
+    pub provider: String,
+    pub source: watchlist_properties::Source,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated: Option<String>,
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<UserInfo>,
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
+    pub updated_by: Option<UserInfo>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "watchlistType", default, skip_serializing_if = "Option::is_none")]
+    pub watchlist_type: Option<String>,
+    #[serde(rename = "watchlistAlias", default, skip_serializing_if = "Option::is_none")]
+    pub watchlist_alias: Option<String>,
+    #[serde(rename = "isDeleted", default, skip_serializing_if = "Option::is_none")]
+    pub is_deleted: Option<bool>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub labels: Vec<Label>,
+    #[serde(rename = "defaultDuration", default, skip_serializing_if = "Option::is_none")]
+    pub default_duration: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "numberOfLinesToSkip", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_lines_to_skip: Option<i32>,
+    #[serde(rename = "rawContent", default, skip_serializing_if = "Option::is_none")]
+    pub raw_content: Option<String>,
+    #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
+    pub content_type: Option<String>,
+    #[serde(rename = "uploadStatus", default, skip_serializing_if = "Option::is_none")]
+    pub upload_status: Option<String>,
+    #[serde(rename = "watchlistItemsCount", default, skip_serializing_if = "Option::is_none")]
+    pub watchlist_items_count: Option<i32>,
+}
+pub mod watchlist_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Source {
+        #[serde(rename = "Local file")]
+        LocalFile,
+        #[serde(rename = "Remote storage")]
+        RemoteStorage,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WatchlistItemList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<WatchlistItem>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WatchlistItem {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<WatchlistItemProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WatchlistItemProperties {
+    #[serde(rename = "watchlistItemType", default, skip_serializing_if = "Option::is_none")]
+    pub watchlist_item_type: Option<String>,
+    #[serde(rename = "watchlistItemId", default, skip_serializing_if = "Option::is_none")]
+    pub watchlist_item_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "isDeleted", default, skip_serializing_if = "Option::is_none")]
+    pub is_deleted: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated: Option<String>,
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<UserInfo>,
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
+    pub updated_by: Option<UserInfo>,
+    #[serde(rename = "itemsKeyValue")]
+    pub items_key_value: serde_json::Value,
+    #[serde(rename = "entityMapping", default, skip_serializing_if = "Option::is_none")]
+    pub entity_mapping: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRule {
@@ -437,6 +2245,29 @@ pub mod automation_rule_condition {
     pub enum ConditionType {
         Property,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AutomationRuleProperties {
+    #[serde(rename = "displayName")]
+    pub display_name: String,
+    pub order: i32,
+    #[serde(rename = "triggeringLogic")]
+    pub triggering_logic: AutomationRuleTriggeringLogic,
+    pub actions: Vec<AutomationRuleAction>,
+    #[serde(rename = "createdTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub created_time_utc: Option<String>,
+    #[serde(rename = "lastModifiedTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_time_utc: Option<String>,
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<ClientInfo>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<ClientInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AutomationRulesList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<AutomationRule>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRuleRunPlaybookAction {
@@ -581,29 +2412,6 @@ pub mod automation_rule_property_values_condition {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutomationRulesList {
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-    pub value: Vec<AutomationRule>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutomationRuleProperties {
-    #[serde(rename = "displayName")]
-    pub display_name: String,
-    pub order: i32,
-    #[serde(rename = "triggeringLogic")]
-    pub triggering_logic: AutomationRuleTriggeringLogic,
-    pub actions: Vec<AutomationRuleAction>,
-    #[serde(rename = "createdTimeUtc", skip_serializing)]
-    pub created_time_utc: Option<String>,
-    #[serde(rename = "lastModifiedTimeUtc", skip_serializing)]
-    pub last_modified_time_utc: Option<String>,
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<ClientInfo>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<ClientInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRuleTriggeringLogic {
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
@@ -628,54 +2436,173 @@ pub mod automation_rule_triggering_logic {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AwsCloudTrailDataConnector {
+pub struct Bookmark {
     #[serde(flatten)]
-    pub data_connector: DataConnector,
+    pub resource_with_etag: ResourceWithEtag,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AwsCloudTrailDataConnectorProperties>,
+    pub properties: Option<BookmarkProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AwsCloudTrailDataConnectorDataTypes {
-    pub logs: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AwsCloudTrailDataConnectorProperties {
-    #[serde(rename = "awsRoleArn", default, skip_serializing_if = "Option::is_none")]
-    pub aws_role_arn: Option<String>,
-    #[serde(rename = "dataTypes")]
-    pub data_types: AwsCloudTrailDataConnectorDataTypes,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AwsCloudTrailCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureResourceEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
+pub struct BookmarkExpandResponse {
+    #[serde(rename = "metaData", default, skip_serializing_if = "Option::is_none")]
+    pub meta_data: Option<ExpansionResultsMetadata>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AzureResourceEntityProperties>,
+    pub value: Option<bookmark_expand_response::Value>,
+}
+pub mod bookmark_expand_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Value {
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub entities: Vec<Entity>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub edges: Vec<ConnectedEntity>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureResourceEntityProperties {
+pub struct BookmarkExpandParameters {
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(rename = "expansionId", default, skip_serializing_if = "Option::is_none")]
+    pub expansion_id: Option<String>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BookmarkList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<Bookmark>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BookmarkProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<UserInfo>,
+    #[serde(rename = "displayName")]
+    pub display_name: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub labels: Vec<Label>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
+    pub query: String,
+    #[serde(rename = "queryResult", default, skip_serializing_if = "Option::is_none")]
+    pub query_result: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated: Option<String>,
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
+    pub updated_by: Option<UserInfo>,
+    #[serde(rename = "eventTime", default, skip_serializing_if = "Option::is_none")]
+    pub event_time: Option<String>,
+    #[serde(rename = "queryStartTime", default, skip_serializing_if = "Option::is_none")]
+    pub query_start_time: Option<String>,
+    #[serde(rename = "queryEndTime", default, skip_serializing_if = "Option::is_none")]
+    pub query_end_time: Option<String>,
+    #[serde(rename = "incidentInfo", default, skip_serializing_if = "Option::is_none")]
+    pub incident_info: Option<IncidentInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Case {
     #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "resourceId", skip_serializing)]
-    pub resource_id: Option<String>,
-    #[serde(rename = "subscriptionId", skip_serializing)]
-    pub subscription_id: Option<String>,
+    pub resource_with_etag: ResourceWithEtag,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CaseProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RelationBase {
+pub struct CaseComment {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CaseCommentProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CaseCommentList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<CaseComment>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CaseCommentProperties {
+    #[serde(rename = "createdTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub created_time_utc: Option<String>,
+    pub message: String,
+    #[serde(rename = "userInfo", default, skip_serializing_if = "Option::is_none")]
+    pub user_info: Option<UserInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CaseList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<Case>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CaseProperties {
+    #[serde(rename = "caseNumber", default, skip_serializing_if = "Option::is_none")]
+    pub case_number: Option<i64>,
+    #[serde(rename = "closeReason", default, skip_serializing_if = "Option::is_none")]
+    pub close_reason: Option<case_properties::CloseReason>,
+    #[serde(rename = "closedReasonText", default, skip_serializing_if = "Option::is_none")]
+    pub closed_reason_text: Option<String>,
+    #[serde(rename = "createdTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub created_time_utc: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "endTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub end_time_utc: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub labels: Vec<Label>,
+    #[serde(rename = "lastComment", default, skip_serializing_if = "Option::is_none")]
+    pub last_comment: Option<String>,
+    #[serde(rename = "lastUpdatedTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub last_updated_time_utc: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub owner: Option<UserInfo>,
+    #[serde(rename = "relatedAlertIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub related_alert_ids: Vec<String>,
+    #[serde(rename = "relatedAlertProductNames", default, skip_serializing_if = "Vec::is_empty")]
+    pub related_alert_product_names: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tactics: Vec<AttackTactic>,
+    pub severity: case_properties::Severity,
+    #[serde(rename = "startTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub start_time_utc: Option<String>,
+    pub status: case_properties::Status,
+    pub title: String,
+    #[serde(rename = "totalComments", default, skip_serializing_if = "Option::is_none")]
+    pub total_comments: Option<i64>,
+}
+pub mod case_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CloseReason {
+        Resolved,
+        Dismissed,
+        TruePositive,
+        FalsePositive,
+        Other,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Severity {
+        Critical,
+        High,
+        Medium,
+        Low,
+        Informational,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Draft,
+        New,
+        InProgress,
+        Closed,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CaseRelationList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<CaseRelation>,
 }
@@ -714,10 +2641,17 @@ pub struct RelationsModelInputProperties {
     pub target_relation_node: Option<RelationNode>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RelationBase {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(flatten)]
+    pub serde_json_value: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RelationNode {
     #[serde(rename = "relationNodeId", default, skip_serializing_if = "Option::is_none")]
     pub relation_node_id: Option<String>,
-    #[serde(rename = "relationNodeKind", skip_serializing)]
+    #[serde(rename = "relationNodeKind", default, skip_serializing_if = "Option::is_none")]
     pub relation_node_kind: Option<relation_node::RelationNodeKind>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -733,259 +2667,45 @@ pub mod relation_node {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Bookmark {
+pub struct AadCheckRequirements {
     #[serde(flatten)]
-    pub resource_with_etag: ResourceWithEtag,
+    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BookmarkProperties>,
+    pub properties: Option<AadCheckRequirementsProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BookmarkList {
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-    pub value: Vec<Bookmark>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BookmarkProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created: Option<String>,
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<UserInfo>,
-    #[serde(rename = "displayName")]
-    pub display_name: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub labels: Vec<Label>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub notes: Option<String>,
-    pub query: String,
-    #[serde(rename = "queryResult", default, skip_serializing_if = "Option::is_none")]
-    pub query_result: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated: Option<String>,
-    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
-    pub updated_by: Option<UserInfo>,
-    #[serde(rename = "eventTime", default, skip_serializing_if = "Option::is_none")]
-    pub event_time: Option<String>,
-    #[serde(rename = "queryStartTime", default, skip_serializing_if = "Option::is_none")]
-    pub query_start_time: Option<String>,
-    #[serde(rename = "queryEndTime", default, skip_serializing_if = "Option::is_none")]
-    pub query_end_time: Option<String>,
-    #[serde(rename = "incidentInfo", default, skip_serializing_if = "Option::is_none")]
-    pub incident_info: Option<IncidentInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BookmarkExpandParameters {
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
-    #[serde(rename = "expansionId", default, skip_serializing_if = "Option::is_none")]
-    pub expansion_id: Option<String>,
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BookmarkExpandResponse {
-    #[serde(rename = "metaData", default, skip_serializing_if = "Option::is_none")]
-    pub meta_data: Option<ExpansionResultsMetadata>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<bookmark_expand_response::Value>,
-}
-pub mod bookmark_expand_response {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Value {
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub entities: Vec<Entity>,
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub edges: Vec<ConnectedEntity>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Case {
+pub struct AadCheckRequirementsProperties {
     #[serde(flatten)]
-    pub resource_with_etag: ResourceWithEtag,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CaseProperties>,
+    pub data_connector_tenant_id: DataConnectorTenantId,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CaseComment {
+pub struct AatpCheckRequirements {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CaseCommentProperties>,
+    pub properties: Option<AatpCheckRequirementsProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CaseCommentList {
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-    pub value: Vec<CaseComment>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CaseCommentProperties {
-    #[serde(rename = "createdTimeUtc", skip_serializing)]
-    pub created_time_utc: Option<String>,
-    pub message: String,
-    #[serde(rename = "userInfo", default, skip_serializing_if = "Option::is_none")]
-    pub user_info: Option<UserInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CaseList {
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-    pub value: Vec<Case>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CaseProperties {
-    #[serde(rename = "caseNumber", skip_serializing)]
-    pub case_number: Option<i64>,
-    #[serde(rename = "closeReason", default, skip_serializing_if = "Option::is_none")]
-    pub close_reason: Option<case_properties::CloseReason>,
-    #[serde(rename = "closedReasonText", default, skip_serializing_if = "Option::is_none")]
-    pub closed_reason_text: Option<String>,
-    #[serde(rename = "createdTimeUtc", skip_serializing)]
-    pub created_time_utc: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "endTimeUtc", default, skip_serializing_if = "Option::is_none")]
-    pub end_time_utc: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub labels: Vec<Label>,
-    #[serde(rename = "lastComment", skip_serializing)]
-    pub last_comment: Option<String>,
-    #[serde(rename = "lastUpdatedTimeUtc", skip_serializing)]
-    pub last_updated_time_utc: Option<String>,
-    #[serde(skip_serializing)]
-    pub metrics: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub owner: Option<UserInfo>,
-    #[serde(rename = "relatedAlertIds", skip_serializing)]
-    pub related_alert_ids: Vec<String>,
-    #[serde(rename = "relatedAlertProductNames", skip_serializing)]
-    pub related_alert_product_names: Vec<String>,
-    #[serde(skip_serializing)]
-    pub tactics: Vec<AttackTactic>,
-    pub severity: case_properties::Severity,
-    #[serde(rename = "startTimeUtc", default, skip_serializing_if = "Option::is_none")]
-    pub start_time_utc: Option<String>,
-    pub status: case_properties::Status,
-    pub title: String,
-    #[serde(rename = "totalComments", skip_serializing)]
-    pub total_comments: Option<i64>,
-}
-pub mod case_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CloseReason {
-        Resolved,
-        Dismissed,
-        TruePositive,
-        FalsePositive,
-        Other,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Severity {
-        Critical,
-        High,
-        Medium,
-        Low,
-        Informational,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Draft,
-        New,
-        InProgress,
-        Closed,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CasesAggregation {
+pub struct AatpCheckRequirementsProperties {
     #[serde(flatten)]
-    pub aggregations: Aggregations,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CasesAggregationProperties>,
+    pub data_connector_tenant_id: DataConnectorTenantId,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CasesAggregationBySeverityProperties {
-    #[serde(rename = "totalCriticalSeverity", skip_serializing)]
-    pub total_critical_severity: Option<i64>,
-    #[serde(rename = "totalHighSeverity", skip_serializing)]
-    pub total_high_severity: Option<i64>,
-    #[serde(rename = "totalInformationalSeverity", skip_serializing)]
-    pub total_informational_severity: Option<i64>,
-    #[serde(rename = "totalLowSeverity", skip_serializing)]
-    pub total_low_severity: Option<i64>,
-    #[serde(rename = "totalMediumSeverity", skip_serializing)]
-    pub total_medium_severity: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CasesAggregationByStatusProperties {
-    #[serde(rename = "totalDismissedStatus", skip_serializing)]
-    pub total_dismissed_status: Option<i64>,
-    #[serde(rename = "totalInProgressStatus", skip_serializing)]
-    pub total_in_progress_status: Option<i64>,
-    #[serde(rename = "totalNewStatus", skip_serializing)]
-    pub total_new_status: Option<i64>,
-    #[serde(rename = "totalResolvedStatus", skip_serializing)]
-    pub total_resolved_status: Option<i64>,
-    #[serde(rename = "totalFalsePositiveStatus", skip_serializing)]
-    pub total_false_positive_status: Option<i32>,
-    #[serde(rename = "totalTruePositiveStatus", skip_serializing)]
-    pub total_true_positive_status: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CasesAggregationProperties {
-    #[serde(rename = "aggregationBySeverity", default, skip_serializing_if = "Option::is_none")]
-    pub aggregation_by_severity: Option<CasesAggregationBySeverityProperties>,
-    #[serde(rename = "aggregationByStatus", default, skip_serializing_if = "Option::is_none")]
-    pub aggregation_by_status: Option<CasesAggregationByStatusProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClientInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
-    pub object_id: Option<String>,
-    #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
-    pub user_principal_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudApplicationEntity {
+pub struct AscCheckRequirements {
     #[serde(flatten)]
-    pub entity: Entity,
+    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CloudApplicationEntityProperties>,
+    pub properties: Option<AscCheckRequirementsProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudApplicationEntityProperties {
+pub struct AscCheckRequirementsProperties {
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AwsCloudTrailCheckRequirements {
     #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "appId", skip_serializing)]
-    pub app_id: Option<i64>,
-    #[serde(rename = "appName", skip_serializing)]
-    pub app_name: Option<String>,
-    #[serde(rename = "instanceName", skip_serializing)]
-    pub instance_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<CloudErrorBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudErrorBody {
-    #[serde(skip_serializing)]
-    pub code: Option<String>,
-    #[serde(skip_serializing)]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnector {
-    #[serde(flatten)]
-    pub resource_with_etag: ResourceWithEtag,
-    #[serde(flatten)]
-    pub data_connector_kind: DataConnectorKind,
+    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnectorsCheckRequirements {
@@ -1003,102 +2723,11 @@ pub enum DataConnectorLicenseState {
     Unknown,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnectorDataTypeCommon {
-    pub state: data_connector_data_type_common::State,
-}
-pub mod data_connector_data_type_common {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum State {
-        Enabled,
-        Disabled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnectorKind {
-    pub kind: data_connector_kind::Kind,
-}
-pub mod data_connector_kind {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        AzureActiveDirectory,
-        AzureSecurityCenter,
-        MicrosoftCloudAppSecurity,
-        ThreatIntelligence,
-        ThreatIntelligenceTaxii,
-        Office365,
-        #[serde(rename = "OfficeATP")]
-        OfficeAtp,
-        AmazonWebServicesCloudTrail,
-        AzureAdvancedThreatProtection,
-        MicrosoftDefenderAdvancedThreatProtection,
-        Dynamics365,
-        MicrosoftThreatProtection,
-        MicrosoftThreatIntelligence,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnectorList {
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-    pub value: Vec<DataConnector>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnectorRequirementsState {
     #[serde(rename = "authorizationState", default, skip_serializing_if = "Option::is_none")]
     pub authorization_state: Option<DataConnectorAuthorizationState>,
     #[serde(rename = "licenseState", default, skip_serializing_if = "Option::is_none")]
     pub license_state: Option<DataConnectorLicenseState>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnectorTenantId {
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnectorWithAlertsProperties {
-    #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
-    pub data_types: Option<AlertsDataTypeOfDataConnector>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DnsEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DnsEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DnsEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "dnsServerIpEntityId", skip_serializing)]
-    pub dns_server_ip_entity_id: Option<String>,
-    #[serde(rename = "domainName", skip_serializing)]
-    pub domain_name: Option<String>,
-    #[serde(rename = "hostIpAddressEntityId", skip_serializing)]
-    pub host_ip_address_entity_id: Option<String>,
-    #[serde(rename = "ipAddressEntityIds", skip_serializing)]
-    pub ip_address_entity_ids: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Dynamics365DataConnector {
-    #[serde(flatten)]
-    pub data_connector: DataConnector,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<Dynamics365DataConnectorProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Dynamics365DataConnectorDataTypes {
-    #[serde(rename = "dynamics365CdsActivities")]
-    pub dynamics365_cds_activities: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Dynamics365DataConnectorProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
-    #[serde(rename = "dataTypes")]
-    pub data_types: Dynamics365DataConnectorDataTypes,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dynamics365CheckRequirements {
@@ -1109,6 +2738,90 @@ pub struct Dynamics365CheckRequirements {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dynamics365CheckRequirementsProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct McasCheckRequirements {
+    #[serde(flatten)]
+    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<McasCheckRequirementsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct McasCheckRequirementsProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MdatpCheckRequirements {
+    #[serde(flatten)]
+    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MdatpCheckRequirementsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MdatpCheckRequirementsProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MstiCheckRequirements {
+    #[serde(flatten)]
+    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MstiCheckRequirementsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MstiCheckRequirementsProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MtpCheckRequirements {
+    #[serde(flatten)]
+    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MtpCheckRequirementsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MtpCheckRequirementsProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OfficeAtpCheckRequirements {
+    #[serde(flatten)]
+    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OfficeAtpCheckRequirementsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OfficeAtpCheckRequirementsProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TiCheckRequirements {
+    #[serde(flatten)]
+    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TiCheckRequirementsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TiCheckRequirementsProperties {
+    #[serde(flatten)]
+    pub data_connector_tenant_id: DataConnectorTenantId,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TiTaxiiCheckRequirements {
+    #[serde(flatten)]
+    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TiTaxiiCheckRequirementsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TiTaxiiCheckRequirementsProperties {
     #[serde(flatten)]
     pub data_connector_tenant_id: DataConnectorTenantId,
 }
@@ -1225,11 +2938,60 @@ pub struct EnrichmentIpGeodata {
     pub state_code: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Entity {
+pub struct ActivityTimelineItem {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub entity_timeline_item: EntityTimelineItem,
+    #[serde(rename = "queryId")]
+    pub query_id: String,
+    #[serde(rename = "bucketStartTimeUTC")]
+    pub bucket_start_time_utc: String,
+    #[serde(rename = "bucketEndTimeUTC")]
+    pub bucket_end_time_utc: String,
+    #[serde(rename = "firstActivityTimeUTC")]
+    pub first_activity_time_utc: String,
+    #[serde(rename = "lastActivityTimeUTC")]
+    pub last_activity_time_utc: String,
+    pub content: String,
+    pub title: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BookmarkTimelineItem {
     #[serde(flatten)]
-    pub entity_kind: EntityKind,
+    pub entity_timeline_item: EntityTimelineItem,
+    #[serde(rename = "azureResourceId")]
+    pub azure_resource_id: String,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
+    #[serde(rename = "endTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub end_time_utc: Option<String>,
+    #[serde(rename = "startTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub start_time_utc: Option<String>,
+    #[serde(rename = "eventTime", default, skip_serializing_if = "Option::is_none")]
+    pub event_time: Option<String>,
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<UserInfo>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub labels: Vec<Label>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityGetInsightsParameters {
+    #[serde(rename = "startTime")]
+    pub start_time: String,
+    #[serde(rename = "endTime")]
+    pub end_time: String,
+    #[serde(rename = "addDefaultExtendedTimeRange", default, skip_serializing_if = "Option::is_none")]
+    pub add_default_extended_time_range: Option<bool>,
+    #[serde(rename = "insightQueryIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub insight_query_ids: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityGetInsightsResponse {
+    #[serde(rename = "metaData", default, skip_serializing_if = "Option::is_none")]
+    pub meta_data: Option<GetInsightsResultsMetadata>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<EntityInsightItem>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EntityEdges {
@@ -1239,13 +3001,6 @@ pub struct EntityEdges {
     pub additional_data: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityCommonProperties {
-    #[serde(rename = "additionalData", skip_serializing)]
-    pub additional_data: Option<serde_json::Value>,
-    #[serde(rename = "friendlyName", skip_serializing)]
-    pub friendly_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EntityExpandParameters {
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
@@ -1253,17 +3008,6 @@ pub struct EntityExpandParameters {
     pub expansion_id: Option<String>,
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityTimelineParameters {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub kinds: Vec<EntityTimelineKind>,
-    #[serde(rename = "startTime")]
-    pub start_time: String,
-    #[serde(rename = "endTime")]
-    pub end_time: String,
-    #[serde(rename = "numberOfBucket", default, skip_serializing_if = "Option::is_none")]
-    pub number_of_bucket: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EntityExpandResponse {
@@ -1283,103 +3027,42 @@ pub mod entity_expand_response {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityInsightItem {
+    #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
+    pub query_id: Option<String>,
+    #[serde(rename = "queryTimeInterval", default, skip_serializing_if = "Option::is_none")]
+    pub query_time_interval: Option<entity_insight_item::QueryTimeInterval>,
+    #[serde(rename = "tableQueryResults", default, skip_serializing_if = "Option::is_none")]
+    pub table_query_results: Option<InsightsTableResult>,
+    #[serde(rename = "chartQueryResults", default, skip_serializing_if = "Vec::is_empty")]
+    pub chart_query_results: Vec<InsightsTableResult>,
+}
+pub mod entity_insight_item {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct QueryTimeInterval {
+        #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+        pub start_time: Option<String>,
+        #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+        pub end_time: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<Entity>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityTimelineItem {
+    pub kind: EntityTimelineKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EntityTimelineResponse {
     #[serde(rename = "metaData", default, skip_serializing_if = "Option::is_none")]
     pub meta_data: Option<TimelineResultsMetadata>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EntityTimelineItem>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GetQueriesResponse {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<EntityQueryItem>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum EntityInnerKind {
-    Account,
-    Host,
-    File,
-    AzureResource,
-    CloudApplication,
-    DnsResolution,
-    FileHash,
-    Ip,
-    Malware,
-    Process,
-    RegistryKey,
-    RegistryValue,
-    SecurityGroup,
-    Url,
-    IoTDevice,
-    SecurityAlert,
-    Bookmark,
-    Mailbox,
-    MailCluster,
-    MailMessage,
-    SubmissionMail,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum EntityInnerType {
-    Account,
-    Host,
-    File,
-    AzureResource,
-    CloudApplication,
-    #[serde(rename = "DNS")]
-    Dns,
-    FileHash,
-    #[serde(rename = "IP")]
-    Ip,
-    Malware,
-    Process,
-    RegistryKey,
-    RegistryValue,
-    SecurityGroup,
-    #[serde(rename = "URL")]
-    Url,
-    IoTDevice,
-    SecurityAlert,
-    HuntingBookmark,
-    MailCluster,
-    MailMessage,
-    Mailbox,
-    SubmissionMail,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityKind {
-    pub kind: EntityInnerKind,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityList {
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-    pub value: Vec<Entity>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityQueryKind {
-    pub kind: entity_query_kind::Kind,
-}
-pub mod entity_query_kind {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        Expansion,
-        Insight,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityQuery {
-    #[serde(flatten)]
-    pub resource_with_etag: ResourceWithEtag,
-    #[serde(flatten)]
-    pub entity_query_kind: EntityQueryKind,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExpansionEntityQuery {
-    #[serde(flatten)]
-    pub entity_query: EntityQuery,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ExpansionEntityQueriesProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EntityTimelineKind {
@@ -1388,123 +3071,44 @@ pub enum EntityTimelineKind {
     SecurityAlert,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityQueryList {
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-    pub value: Vec<EntityQuery>,
+pub struct EntityTimelineParameters {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub kinds: Vec<EntityTimelineKind>,
+    #[serde(rename = "startTime")]
+    pub start_time: String,
+    #[serde(rename = "endTime")]
+    pub end_time: String,
+    #[serde(rename = "numberOfBucket", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_bucket: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExpansionEntityQueriesProperties {
-    #[serde(rename = "dataSources", default, skip_serializing_if = "Vec::is_empty")]
-    pub data_sources: Vec<String>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
+pub struct EntityQueryItem {
+    #[serde(flatten)]
+    pub entity_query_kind: EntityQueryKind,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQueryItemProperties {
+    #[serde(rename = "dataTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_types: Vec<serde_json::Value>,
     #[serde(rename = "inputEntityType", default, skip_serializing_if = "Option::is_none")]
     pub input_entity_type: Option<EntityInnerType>,
-    #[serde(rename = "inputFields", default, skip_serializing_if = "Vec::is_empty")]
-    pub input_fields: Vec<String>,
-    #[serde(rename = "outputEntityTypes", default, skip_serializing_if = "Vec::is_empty")]
-    pub output_entity_types: Vec<EntityInnerType>,
-    #[serde(rename = "queryTemplate", default, skip_serializing_if = "Option::is_none")]
-    pub query_template: Option<String>,
+    #[serde(rename = "requiredInputFieldsSets", default, skip_serializing_if = "Vec::is_empty")]
+    pub required_input_fields_sets: Vec<Vec<String>>,
+    #[serde(rename = "entitiesFilter", default, skip_serializing_if = "Option::is_none")]
+    pub entities_filter: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExpansionResultAggregation {
-    #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
-    pub aggregation_type: Option<String>,
-    pub count: i64,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "entityKind")]
-    pub entity_kind: EntityInnerKind,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExpansionResultsMetadata {
+pub struct InsightsTableResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub aggregations: Vec<ExpansionResultAggregation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConnectedEntity {
-    #[serde(rename = "targetEntityId", default, skip_serializing_if = "Option::is_none")]
-    pub target_entity_id: Option<String>,
-    #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
-    pub additional_data: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TimelineResultsMetadata {
-    #[serde(rename = "totalCount")]
-    pub total_count: i32,
-    pub aggregations: Vec<TimelineAggregation>,
+    pub columns: Vec<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub errors: Vec<TimelineError>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TimelineError {
-    pub kind: EntityTimelineKind,
-    #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
-    pub query_id: Option<String>,
-    #[serde(rename = "errorMessage")]
-    pub error_message: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TimelineAggregation {
-    pub count: i32,
-    pub kind: EntityTimelineKind,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityTimelineItem {
-    pub kind: EntityTimelineKind,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FileEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<FileEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FileEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(skip_serializing)]
-    pub directory: Option<String>,
-    #[serde(rename = "fileHashEntityIds", skip_serializing)]
-    pub file_hash_entity_ids: Vec<String>,
-    #[serde(rename = "fileName", skip_serializing)]
-    pub file_name: Option<String>,
-    #[serde(rename = "hostEntityId", skip_serializing)]
-    pub host_entity_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FileHashEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<FileHashEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FileHashEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(skip_serializing)]
-    pub algorithm: Option<file_hash_entity_properties::Algorithm>,
-    #[serde(rename = "hashValue", skip_serializing)]
-    pub hash_value: Option<String>,
-}
-pub mod file_hash_entity_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Algorithm {
-        Unknown,
-        #[serde(rename = "MD5")]
-        Md5,
-        #[serde(rename = "SHA1")]
-        Sha1,
-        #[serde(rename = "SHA256")]
-        Sha256,
-        #[serde(rename = "SHA256AC")]
-        Sha256ac,
-    }
+    pub rows: Vec<Vec<String>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InsightQueryItem {
@@ -1564,21 +3168,31 @@ pub mod insight_query_item_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActivityTimelineItem {
-    #[serde(flatten)]
-    pub entity_timeline_item: EntityTimelineItem,
-    #[serde(rename = "queryId")]
-    pub query_id: String,
-    #[serde(rename = "bucketStartTimeUTC")]
-    pub bucket_start_time_utc: String,
-    #[serde(rename = "bucketEndTimeUTC")]
-    pub bucket_end_time_utc: String,
-    #[serde(rename = "firstActivityTimeUTC")]
-    pub first_activity_time_utc: String,
-    #[serde(rename = "lastActivityTimeUTC")]
-    pub last_activity_time_utc: String,
-    pub content: String,
-    pub title: String,
+pub struct GetInsightsResultsMetadata {
+    #[serde(rename = "totalCount")]
+    pub total_count: i32,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub errors: Vec<GetInsightsError>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GetInsightsError {
+    pub kind: get_insights_error::Kind,
+    #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
+    pub query_id: Option<String>,
+    #[serde(rename = "errorMessage")]
+    pub error_message: String,
+}
+pub mod get_insights_error {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        Insight,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GetQueriesResponse {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<EntityQueryItem>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAlertTimelineItem {
@@ -1603,730 +3217,25 @@ pub struct SecurityAlertTimelineItem {
     pub alert_type: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BookmarkTimelineItem {
-    #[serde(flatten)]
-    pub entity_timeline_item: EntityTimelineItem,
-    #[serde(rename = "azureResourceId")]
-    pub azure_resource_id: String,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub notes: Option<String>,
-    #[serde(rename = "endTimeUtc", default, skip_serializing_if = "Option::is_none")]
-    pub end_time_utc: Option<String>,
-    #[serde(rename = "startTimeUtc", default, skip_serializing_if = "Option::is_none")]
-    pub start_time_utc: Option<String>,
-    #[serde(rename = "eventTime", default, skip_serializing_if = "Option::is_none")]
-    pub event_time: Option<String>,
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<UserInfo>,
+pub struct TimelineError {
+    pub kind: EntityTimelineKind,
+    #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
+    pub query_id: Option<String>,
+    #[serde(rename = "errorMessage")]
+    pub error_message: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TimelineResultsMetadata {
+    #[serde(rename = "totalCount")]
+    pub total_count: i32,
+    pub aggregations: Vec<TimelineAggregation>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub labels: Vec<Label>,
+    pub errors: Vec<TimelineError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FusionAlertRule {
-    #[serde(flatten)]
-    pub alert_rule: AlertRule,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<FusionAlertRuleProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FusionAlertRuleProperties {
-    #[serde(rename = "alertRuleTemplateName")]
-    pub alert_rule_template_name: String,
-    #[serde(skip_serializing)]
-    pub description: Option<String>,
-    #[serde(rename = "displayName", skip_serializing)]
-    pub display_name: Option<String>,
-    pub enabled: bool,
-    #[serde(rename = "lastModifiedUtc", skip_serializing)]
-    pub last_modified_utc: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<AlertSeverity>,
-    #[serde(skip_serializing)]
-    pub tactics: Vec<AttackTactic>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FusionAlertRuleTemplate {
-    #[serde(flatten)]
-    pub alert_rule_template: AlertRuleTemplate,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<fusion_alert_rule_template::Properties>,
-}
-pub mod fusion_alert_rule_template {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Properties {
-        #[serde(flatten)]
-        pub alert_rule_template_properties_base: AlertRuleTemplatePropertiesBase,
-        pub severity: AlertSeverity,
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub tactics: Vec<AttackTactic>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreatIntelligenceAlertRule {
-    #[serde(flatten)]
-    pub alert_rule: AlertRule,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ThreatIntelligenceAlertRuleProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreatIntelligenceAlertRuleProperties {
-    #[serde(rename = "alertRuleTemplateName")]
-    pub alert_rule_template_name: String,
-    #[serde(skip_serializing)]
-    pub description: Option<String>,
-    #[serde(rename = "displayName", skip_serializing)]
-    pub display_name: Option<String>,
-    pub enabled: bool,
-    #[serde(rename = "lastModifiedUtc", skip_serializing)]
-    pub last_modified_utc: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<AlertSeverity>,
-    #[serde(skip_serializing)]
-    pub tactics: Vec<AttackTactic>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreatIntelligenceAlertRuleTemplate {
-    #[serde(flatten)]
-    pub alert_rule_template: AlertRuleTemplate,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<threat_intelligence_alert_rule_template::Properties>,
-}
-pub mod threat_intelligence_alert_rule_template {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Properties {
-        #[serde(flatten)]
-        pub alert_rule_template_properties_base: AlertRuleTemplatePropertiesBase,
-        pub severity: AlertSeverity,
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub tactics: Vec<AttackTactic>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GeoLocation {
-    #[serde(skip_serializing)]
-    pub asn: Option<i64>,
-    #[serde(skip_serializing)]
-    pub city: Option<String>,
-    #[serde(rename = "countryCode", skip_serializing)]
-    pub country_code: Option<String>,
-    #[serde(rename = "countryName", skip_serializing)]
-    pub country_name: Option<String>,
-    #[serde(skip_serializing)]
-    pub latitude: Option<f64>,
-    #[serde(skip_serializing)]
-    pub longitude: Option<f64>,
-    #[serde(skip_serializing)]
-    pub state: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HostEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<HostEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HostEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "azureID", skip_serializing)]
-    pub azure_id: Option<String>,
-    #[serde(rename = "dnsDomain", skip_serializing)]
-    pub dns_domain: Option<String>,
-    #[serde(rename = "hostName", skip_serializing)]
-    pub host_name: Option<String>,
-    #[serde(rename = "isDomainJoined", skip_serializing)]
-    pub is_domain_joined: Option<bool>,
-    #[serde(rename = "netBiosName", skip_serializing)]
-    pub net_bios_name: Option<String>,
-    #[serde(rename = "ntDomain", skip_serializing)]
-    pub nt_domain: Option<String>,
-    #[serde(rename = "omsAgentID", skip_serializing)]
-    pub oms_agent_id: Option<String>,
-    #[serde(rename = "osFamily", default, skip_serializing_if = "Option::is_none")]
-    pub os_family: Option<host_entity_properties::OsFamily>,
-    #[serde(rename = "osVersion", skip_serializing)]
-    pub os_version: Option<String>,
-}
-pub mod host_entity_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OsFamily {
-        Linux,
-        Windows,
-        Android,
-        #[serde(rename = "IOS")]
-        Ios,
-        Unknown,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Incident {
-    #[serde(flatten)]
-    pub resource_with_etag: ResourceWithEtag,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IncidentProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HuntingBookmark {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<HuntingBookmarkProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HuntingBookmarkProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created: Option<String>,
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<UserInfo>,
-    #[serde(rename = "displayName")]
-    pub display_name: String,
-    #[serde(rename = "eventTime", default, skip_serializing_if = "Option::is_none")]
-    pub event_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub labels: Vec<Label>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub notes: Option<String>,
-    pub query: String,
-    #[serde(rename = "queryResult", default, skip_serializing_if = "Option::is_none")]
-    pub query_result: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated: Option<String>,
-    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
-    pub updated_by: Option<UserInfo>,
-    #[serde(rename = "incidentInfo", default, skip_serializing_if = "Option::is_none")]
-    pub incident_info: Option<IncidentInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentAdditionalData {
-    #[serde(rename = "alertsCount", skip_serializing)]
-    pub alerts_count: Option<i64>,
-    #[serde(rename = "bookmarksCount", skip_serializing)]
-    pub bookmarks_count: Option<i64>,
-    #[serde(rename = "commentsCount", skip_serializing)]
-    pub comments_count: Option<i64>,
-    #[serde(rename = "alertProductNames", skip_serializing)]
-    pub alert_product_names: Vec<String>,
-    #[serde(skip_serializing)]
-    pub tactics: Vec<AttackTactic>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentAlertList {
-    pub value: Vec<SecurityAlert>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentBookmarkList {
-    pub value: Vec<HuntingBookmark>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentComment {
-    #[serde(flatten)]
-    pub resource_with_etag: ResourceWithEtag,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IncidentCommentProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentCommentList {
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-    pub value: Vec<IncidentComment>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentCommentProperties {
-    #[serde(rename = "createdTimeUtc", skip_serializing)]
-    pub created_time_utc: Option<String>,
-    #[serde(rename = "lastModifiedTimeUtc", skip_serializing)]
-    pub last_modified_time_utc: Option<String>,
-    pub message: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub author: Option<ClientInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentEntitiesResponse {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub entities: Vec<Entity>,
-    #[serde(rename = "metaData", default, skip_serializing_if = "Vec::is_empty")]
-    pub meta_data: Vec<IncidentEntitiesResultsMetadata>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentEntitiesResultsMetadata {
+pub struct TimelineAggregation {
     pub count: i32,
-    #[serde(rename = "entityKind")]
-    pub entity_kind: EntityInnerKind,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentLabel {
-    #[serde(rename = "labelName")]
-    pub label_name: String,
-    #[serde(rename = "labelType", skip_serializing)]
-    pub label_type: Option<incident_label::LabelType>,
-}
-pub mod incident_label {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LabelType {
-        User,
-        System,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentList {
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-    pub value: Vec<Incident>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentOwnerInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
-    #[serde(rename = "assignedTo", default, skip_serializing_if = "Option::is_none")]
-    pub assigned_to: Option<String>,
-    #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
-    pub object_id: Option<String>,
-    #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
-    pub user_principal_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum IncidentClassification {
-    Undetermined,
-    TruePositive,
-    BenignPositive,
-    FalsePositive,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum IncidentClassificationReason {
-    SuspiciousActivity,
-    SuspiciousButExpected,
-    IncorrectAlertLogic,
-    InaccurateData,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum IncidentSeverity {
-    High,
-    Medium,
-    Low,
-    Informational,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum IncidentStatus {
-    New,
-    Active,
-    Closed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentProperties {
-    #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
-    pub additional_data: Option<IncidentAdditionalData>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub classification: Option<IncidentClassification>,
-    #[serde(rename = "classificationComment", default, skip_serializing_if = "Option::is_none")]
-    pub classification_comment: Option<String>,
-    #[serde(rename = "classificationReason", default, skip_serializing_if = "Option::is_none")]
-    pub classification_reason: Option<IncidentClassificationReason>,
-    #[serde(rename = "createdTimeUtc", skip_serializing)]
-    pub created_time_utc: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "firstActivityTimeUtc", default, skip_serializing_if = "Option::is_none")]
-    pub first_activity_time_utc: Option<String>,
-    #[serde(rename = "incidentUrl", skip_serializing)]
-    pub incident_url: Option<String>,
-    #[serde(rename = "incidentNumber", skip_serializing)]
-    pub incident_number: Option<i64>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub labels: Vec<IncidentLabel>,
-    #[serde(rename = "providerName", default, skip_serializing_if = "Option::is_none")]
-    pub provider_name: Option<String>,
-    #[serde(rename = "providerIncidentId", default, skip_serializing_if = "Option::is_none")]
-    pub provider_incident_id: Option<String>,
-    #[serde(rename = "lastActivityTimeUtc", default, skip_serializing_if = "Option::is_none")]
-    pub last_activity_time_utc: Option<String>,
-    #[serde(rename = "lastModifiedTimeUtc", skip_serializing)]
-    pub last_modified_time_utc: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub owner: Option<IncidentOwnerInfo>,
-    #[serde(rename = "relatedAnalyticRuleIds", skip_serializing)]
-    pub related_analytic_rule_ids: Vec<String>,
-    pub severity: IncidentSeverity,
-    pub status: IncidentStatus,
-    pub title: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IpEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(skip_serializing)]
-    pub address: Option<String>,
-    #[serde(skip_serializing)]
-    pub location: Option<GeoLocation>,
-    #[serde(rename = "threatIntelligence", skip_serializing)]
-    pub threat_intelligence: Vec<ThreatIntelligence>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Label {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MailboxEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MailboxEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MailboxEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "mailboxPrimaryAddress", skip_serializing)]
-    pub mailbox_primary_address: Option<String>,
-    #[serde(rename = "displayName", skip_serializing)]
-    pub display_name: Option<String>,
-    #[serde(skip_serializing)]
-    pub upn: Option<String>,
-    #[serde(rename = "externalDirectoryObjectId", skip_serializing)]
-    pub external_directory_object_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MailClusterEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MailClusterEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MailClusterEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "networkMessageIds", skip_serializing)]
-    pub network_message_ids: Vec<String>,
-    #[serde(rename = "countByDeliveryStatus", skip_serializing)]
-    pub count_by_delivery_status: Option<serde_json::Value>,
-    #[serde(rename = "countByThreatType", skip_serializing)]
-    pub count_by_threat_type: Option<serde_json::Value>,
-    #[serde(rename = "countByProtectionStatus", skip_serializing)]
-    pub count_by_protection_status: Option<serde_json::Value>,
-    #[serde(skip_serializing)]
-    pub threats: Vec<String>,
-    #[serde(skip_serializing)]
-    pub query: Option<String>,
-    #[serde(rename = "queryTime", skip_serializing)]
-    pub query_time: Option<String>,
-    #[serde(rename = "mailCount", skip_serializing)]
-    pub mail_count: Option<i32>,
-    #[serde(rename = "isVolumeAnomaly", skip_serializing)]
-    pub is_volume_anomaly: Option<bool>,
-    #[serde(skip_serializing)]
-    pub source: Option<String>,
-    #[serde(rename = "clusterSourceIdentifier", skip_serializing)]
-    pub cluster_source_identifier: Option<String>,
-    #[serde(rename = "clusterSourceType", skip_serializing)]
-    pub cluster_source_type: Option<String>,
-    #[serde(rename = "clusterQueryStartTime", skip_serializing)]
-    pub cluster_query_start_time: Option<String>,
-    #[serde(rename = "clusterQueryEndTime", skip_serializing)]
-    pub cluster_query_end_time: Option<String>,
-    #[serde(rename = "clusterGroup", skip_serializing)]
-    pub cluster_group: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MailMessageEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MailMessageEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MailMessageEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "fileEntityIds", skip_serializing)]
-    pub file_entity_ids: Vec<String>,
-    #[serde(skip_serializing)]
-    pub recipient: Option<String>,
-    #[serde(skip_serializing)]
-    pub urls: Vec<String>,
-    #[serde(skip_serializing)]
-    pub threats: Vec<String>,
-    #[serde(rename = "p1Sender", skip_serializing)]
-    pub p1_sender: Option<String>,
-    #[serde(rename = "p1SenderDisplayName", skip_serializing)]
-    pub p1_sender_display_name: Option<String>,
-    #[serde(rename = "p1SenderDomain", skip_serializing)]
-    pub p1_sender_domain: Option<String>,
-    #[serde(rename = "senderIP", skip_serializing)]
-    pub sender_ip: Option<String>,
-    #[serde(rename = "p2Sender", skip_serializing)]
-    pub p2_sender: Option<String>,
-    #[serde(rename = "p2SenderDisplayName", skip_serializing)]
-    pub p2_sender_display_name: Option<String>,
-    #[serde(rename = "p2SenderDomain", skip_serializing)]
-    pub p2_sender_domain: Option<String>,
-    #[serde(rename = "receiveDate", skip_serializing)]
-    pub receive_date: Option<String>,
-    #[serde(rename = "networkMessageId", skip_serializing)]
-    pub network_message_id: Option<String>,
-    #[serde(rename = "internetMessageId", skip_serializing)]
-    pub internet_message_id: Option<String>,
-    #[serde(skip_serializing)]
-    pub subject: Option<String>,
-    #[serde(skip_serializing)]
-    pub language: Option<String>,
-    #[serde(rename = "threatDetectionMethods", skip_serializing)]
-    pub threat_detection_methods: Vec<String>,
-    #[serde(rename = "bodyFingerprintBin1", default, skip_serializing_if = "Option::is_none")]
-    pub body_fingerprint_bin1: Option<i32>,
-    #[serde(rename = "bodyFingerprintBin2", default, skip_serializing_if = "Option::is_none")]
-    pub body_fingerprint_bin2: Option<i32>,
-    #[serde(rename = "bodyFingerprintBin3", default, skip_serializing_if = "Option::is_none")]
-    pub body_fingerprint_bin3: Option<i32>,
-    #[serde(rename = "bodyFingerprintBin4", default, skip_serializing_if = "Option::is_none")]
-    pub body_fingerprint_bin4: Option<i32>,
-    #[serde(rename = "bodyFingerprintBin5", default, skip_serializing_if = "Option::is_none")]
-    pub body_fingerprint_bin5: Option<i32>,
-    #[serde(rename = "antispamDirection", default, skip_serializing_if = "Option::is_none")]
-    pub antispam_direction: Option<mail_message_entity_properties::AntispamDirection>,
-    #[serde(rename = "deliveryAction", default, skip_serializing_if = "Option::is_none")]
-    pub delivery_action: Option<mail_message_entity_properties::DeliveryAction>,
-    #[serde(rename = "deliveryLocation", default, skip_serializing_if = "Option::is_none")]
-    pub delivery_location: Option<mail_message_entity_properties::DeliveryLocation>,
-}
-pub mod mail_message_entity_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AntispamDirection {
-        Unknown,
-        Inbound,
-        Outbound,
-        Intraorg,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DeliveryAction {
-        Unknown,
-        DeliveredAsSpam,
-        Delivered,
-        Blocked,
-        Replaced,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DeliveryLocation {
-        Unknown,
-        Inbox,
-        JunkFolder,
-        DeletedFolder,
-        Quarantine,
-        External,
-        Failed,
-        Dropped,
-        Forwarded,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubmissionMailEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SubmissionMailEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubmissionMailEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "networkMessageId", skip_serializing)]
-    pub network_message_id: Option<String>,
-    #[serde(rename = "submissionId", skip_serializing)]
-    pub submission_id: Option<String>,
-    #[serde(skip_serializing)]
-    pub submitter: Option<String>,
-    #[serde(rename = "submissionDate", skip_serializing)]
-    pub submission_date: Option<String>,
-    #[serde(skip_serializing)]
-    pub timestamp: Option<String>,
-    #[serde(skip_serializing)]
-    pub recipient: Option<String>,
-    #[serde(skip_serializing)]
-    pub sender: Option<String>,
-    #[serde(rename = "senderIp", skip_serializing)]
-    pub sender_ip: Option<String>,
-    #[serde(skip_serializing)]
-    pub subject: Option<String>,
-    #[serde(rename = "reportType", skip_serializing)]
-    pub report_type: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct McasDataConnector {
-    #[serde(flatten)]
-    pub data_connector: DataConnector,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<McasDataConnectorProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct McasDataConnectorDataTypes {
-    #[serde(flatten)]
-    pub alerts_data_type_of_data_connector: AlertsDataTypeOfDataConnector,
-    #[serde(rename = "discoveryLogs", default, skip_serializing_if = "Option::is_none")]
-    pub discovery_logs: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct McasDataConnectorProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
-    #[serde(rename = "dataTypes")]
-    pub data_types: McasDataConnectorDataTypes,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct McasCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<McasCheckRequirementsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct McasCheckRequirementsProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MdatpDataConnector {
-    #[serde(flatten)]
-    pub data_connector: DataConnector,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MdatpDataConnectorProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MdatpDataConnectorProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
-    #[serde(flatten)]
-    pub data_connector_with_alerts_properties: DataConnectorWithAlertsProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MdatpCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MdatpCheckRequirementsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MdatpCheckRequirementsProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MalwareEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MalwareEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MalwareEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(skip_serializing)]
-    pub category: Option<String>,
-    #[serde(rename = "fileEntityIds", skip_serializing)]
-    pub file_entity_ids: Vec<String>,
-    #[serde(rename = "malwareName", skip_serializing)]
-    pub malware_name: Option<String>,
-    #[serde(rename = "processEntityIds", skip_serializing)]
-    pub process_entity_ids: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MicrosoftSecurityIncidentCreationAlertRule {
-    #[serde(flatten)]
-    pub alert_rule: AlertRule,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MicrosoftSecurityIncidentCreationAlertRuleProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MicrosoftSecurityIncidentCreationAlertRuleCommonProperties {
-    #[serde(rename = "displayNamesFilter", default, skip_serializing_if = "Vec::is_empty")]
-    pub display_names_filter: Vec<String>,
-    #[serde(rename = "displayNamesExcludeFilter", default, skip_serializing_if = "Vec::is_empty")]
-    pub display_names_exclude_filter: Vec<String>,
-    #[serde(rename = "productFilter")]
-    pub product_filter: microsoft_security_incident_creation_alert_rule_common_properties::ProductFilter,
-    #[serde(rename = "severitiesFilter", default, skip_serializing_if = "Vec::is_empty")]
-    pub severities_filter: Vec<AlertSeverity>,
-}
-pub mod microsoft_security_incident_creation_alert_rule_common_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProductFilter {
-        #[serde(rename = "Microsoft Cloud App Security")]
-        MicrosoftCloudAppSecurity,
-        #[serde(rename = "Azure Security Center")]
-        AzureSecurityCenter,
-        #[serde(rename = "Azure Advanced Threat Protection")]
-        AzureAdvancedThreatProtection,
-        #[serde(rename = "Azure Active Directory Identity Protection")]
-        AzureActiveDirectoryIdentityProtection,
-        #[serde(rename = "Azure Security Center for IoT")]
-        AzureSecurityCenterForIoT,
-        #[serde(rename = "Office 365 Advanced Threat Protection")]
-        Office365AdvancedThreatProtection,
-        #[serde(rename = "Microsoft Defender Advanced Threat Protection")]
-        MicrosoftDefenderAdvancedThreatProtection,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MicrosoftSecurityIncidentCreationAlertRuleProperties {
-    #[serde(flatten)]
-    pub microsoft_security_incident_creation_alert_rule_common_properties: MicrosoftSecurityIncidentCreationAlertRuleCommonProperties,
-    #[serde(rename = "alertRuleTemplateName", default, skip_serializing_if = "Option::is_none")]
-    pub alert_rule_template_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "displayName")]
-    pub display_name: String,
-    pub enabled: bool,
-    #[serde(rename = "lastModifiedUtc", skip_serializing)]
-    pub last_modified_utc: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MicrosoftSecurityIncidentCreationAlertRuleTemplate {
-    #[serde(flatten)]
-    pub alert_rule_template: AlertRuleTemplate,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OfficeAtpDataConnector {
-    #[serde(flatten)]
-    pub data_connector: DataConnector,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<OfficeAtpDataConnectorProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OfficeAtpDataConnectorProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
-    #[serde(flatten)]
-    pub data_connector_with_alerts_properties: DataConnectorWithAlertsProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OfficeAtpCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<OfficeAtpCheckRequirementsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OfficeAtpCheckRequirementsProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
+    pub kind: EntityTimelineKind,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeConsent {
@@ -2337,7 +3246,7 @@ pub struct OfficeConsent {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeConsentList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<OfficeConsent>,
 }
@@ -2349,814 +3258,8 @@ pub struct OfficeConsentProperties {
     pub consent_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OfficeDataConnector {
-    #[serde(flatten)]
-    pub data_connector: DataConnector,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<OfficeDataConnectorProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OfficeDataConnectorDataTypes {
-    pub exchange: serde_json::Value,
-    #[serde(rename = "sharePoint")]
-    pub share_point: serde_json::Value,
-    pub teams: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OfficeDataConnectorProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
-    #[serde(rename = "dataTypes")]
-    pub data_types: OfficeDataConnectorDataTypes,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub origin: Option<String>,
-}
-pub mod operation {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub description: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub operation: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub provider: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub resource: Option<String>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationsList {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    pub value: Vec<Operation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProcessEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ProcessEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProcessEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "accountEntityId", skip_serializing)]
-    pub account_entity_id: Option<String>,
-    #[serde(rename = "commandLine", skip_serializing)]
-    pub command_line: Option<String>,
-    #[serde(rename = "creationTimeUtc", skip_serializing)]
-    pub creation_time_utc: Option<String>,
-    #[serde(rename = "elevationToken", default, skip_serializing_if = "Option::is_none")]
-    pub elevation_token: Option<process_entity_properties::ElevationToken>,
-    #[serde(rename = "hostEntityId", skip_serializing)]
-    pub host_entity_id: Option<String>,
-    #[serde(rename = "hostLogonSessionEntityId", skip_serializing)]
-    pub host_logon_session_entity_id: Option<String>,
-    #[serde(rename = "imageFileEntityId", skip_serializing)]
-    pub image_file_entity_id: Option<String>,
-    #[serde(rename = "parentProcessEntityId", skip_serializing)]
-    pub parent_process_entity_id: Option<String>,
-    #[serde(rename = "processId", skip_serializing)]
-    pub process_id: Option<String>,
-}
-pub mod process_entity_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ElevationToken {
-        Default,
-        Full,
-        Limited,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistryKeyEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RegistryKeyEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistryKeyEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(skip_serializing)]
-    pub hive: Option<registry_key_entity_properties::Hive>,
-    #[serde(skip_serializing)]
-    pub key: Option<String>,
-}
-pub mod registry_key_entity_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Hive {
-        #[serde(rename = "HKEY_LOCAL_MACHINE")]
-        HkeyLocalMachine,
-        #[serde(rename = "HKEY_CLASSES_ROOT")]
-        HkeyClassesRoot,
-        #[serde(rename = "HKEY_CURRENT_CONFIG")]
-        HkeyCurrentConfig,
-        #[serde(rename = "HKEY_USERS")]
-        HkeyUsers,
-        #[serde(rename = "HKEY_CURRENT_USER_LOCAL_SETTINGS")]
-        HkeyCurrentUserLocalSettings,
-        #[serde(rename = "HKEY_PERFORMANCE_DATA")]
-        HkeyPerformanceData,
-        #[serde(rename = "HKEY_PERFORMANCE_NLSTEXT")]
-        HkeyPerformanceNlstext,
-        #[serde(rename = "HKEY_PERFORMANCE_TEXT")]
-        HkeyPerformanceText,
-        #[serde(rename = "HKEY_A")]
-        HkeyA,
-        #[serde(rename = "HKEY_CURRENT_USER")]
-        HkeyCurrentUser,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistryValueEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RegistryValueEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistryValueEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "keyEntityId", skip_serializing)]
-    pub key_entity_id: Option<String>,
-    #[serde(rename = "valueData", skip_serializing)]
-    pub value_data: Option<String>,
-    #[serde(rename = "valueName", skip_serializing)]
-    pub value_name: Option<String>,
-    #[serde(rename = "valueType", skip_serializing)]
-    pub value_type: Option<registry_value_entity_properties::ValueType>,
-}
-pub mod registry_value_entity_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ValueType {
-        None,
-        Unknown,
-        String,
-        ExpandString,
-        Binary,
-        DWord,
-        MultiString,
-        QWord,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RelationList {
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-    pub value: Vec<Relation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Relation {
-    #[serde(flatten)]
-    pub resource_with_etag: ResourceWithEtag,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RelationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RelationProperties {
-    #[serde(rename = "relatedResourceId")]
-    pub related_resource_id: String,
-    #[serde(rename = "relatedResourceName", skip_serializing)]
-    pub related_resource_name: Option<String>,
-    #[serde(rename = "relatedResourceType", skip_serializing)]
-    pub related_resource_type: Option<String>,
-    #[serde(rename = "relatedResourceKind", skip_serializing)]
-    pub related_resource_kind: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
-    #[serde(skip_serializing)]
-    pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceWithEtag {
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
-    #[serde(skip_serializing)]
-    pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScheduledAlertRule {
-    #[serde(flatten)]
-    pub alert_rule: AlertRule,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ScheduledAlertRuleProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScheduledAlertRuleCommonProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub query: Option<String>,
-    #[serde(rename = "queryFrequency", default, skip_serializing_if = "Option::is_none")]
-    pub query_frequency: Option<String>,
-    #[serde(rename = "queryPeriod", default, skip_serializing_if = "Option::is_none")]
-    pub query_period: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<AlertSeverity>,
-    #[serde(rename = "triggerOperator", default, skip_serializing_if = "Option::is_none")]
-    pub trigger_operator: Option<AlertRuleTriggerOperator>,
-    #[serde(rename = "triggerThreshold", default, skip_serializing_if = "Option::is_none")]
-    pub trigger_threshold: Option<i64>,
-    #[serde(rename = "eventGroupingSettings", default, skip_serializing_if = "Option::is_none")]
-    pub event_grouping_settings: Option<EventGroupingSettings>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventGroupingSettings {
-    #[serde(rename = "aggregationKind", default, skip_serializing_if = "Option::is_none")]
-    pub aggregation_kind: Option<EventGroupingAggregationKind>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum EventGroupingAggregationKind {
-    SingleAlert,
-    AlertPerResult,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScheduledAlertRuleProperties {
-    #[serde(flatten)]
-    pub scheduled_alert_rule_common_properties: ScheduledAlertRuleCommonProperties,
-    #[serde(rename = "alertRuleTemplateName", default, skip_serializing_if = "Option::is_none")]
-    pub alert_rule_template_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "displayName")]
-    pub display_name: String,
-    pub enabled: bool,
-    #[serde(rename = "lastModifiedUtc", skip_serializing)]
-    pub last_modified_utc: Option<String>,
-    #[serde(rename = "suppressionDuration")]
-    pub suppression_duration: String,
-    #[serde(rename = "suppressionEnabled")]
-    pub suppression_enabled: bool,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tactics: Vec<AttackTactic>,
-    #[serde(rename = "incidentConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub incident_configuration: Option<IncidentConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScheduledAlertRuleTemplate {
-    #[serde(flatten)]
-    pub alert_rule_template: AlertRuleTemplate,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<scheduled_alert_rule_template::Properties>,
-}
-pub mod scheduled_alert_rule_template {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Properties {
-        #[serde(flatten)]
-        pub alert_rule_template_properties_base: AlertRuleTemplatePropertiesBase,
-        #[serde(flatten)]
-        pub scheduled_alert_rule_common_properties: ScheduledAlertRuleCommonProperties,
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub tactics: Vec<AttackTactic>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentConfiguration {
-    #[serde(rename = "createIncident")]
-    pub create_incident: bool,
-    #[serde(rename = "groupingConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub grouping_configuration: Option<GroupingConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GroupingConfiguration {
-    pub enabled: bool,
-    #[serde(rename = "reopenClosedIncident")]
-    pub reopen_closed_incident: bool,
-    #[serde(rename = "lookbackDuration")]
-    pub lookback_duration: String,
-    #[serde(rename = "entitiesMatchingMethod")]
-    pub entities_matching_method: grouping_configuration::EntitiesMatchingMethod,
-    #[serde(rename = "groupByEntities", default, skip_serializing_if = "Vec::is_empty")]
-    pub group_by_entities: Vec<String>,
-}
-pub mod grouping_configuration {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum EntitiesMatchingMethod {
-        All,
-        None,
-        Custom,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecurityAlert {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SecurityAlertProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecurityAlertProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "alertDisplayName", skip_serializing)]
-    pub alert_display_name: Option<String>,
-    #[serde(rename = "alertType", skip_serializing)]
-    pub alert_type: Option<String>,
-    #[serde(rename = "compromisedEntity", skip_serializing)]
-    pub compromised_entity: Option<String>,
-    #[serde(rename = "confidenceLevel", skip_serializing)]
-    pub confidence_level: Option<security_alert_properties::ConfidenceLevel>,
-    #[serde(rename = "confidenceReasons", skip_serializing)]
-    pub confidence_reasons: Vec<serde_json::Value>,
-    #[serde(rename = "confidenceScore", skip_serializing)]
-    pub confidence_score: Option<f64>,
-    #[serde(rename = "confidenceScoreStatus", skip_serializing)]
-    pub confidence_score_status: Option<security_alert_properties::ConfidenceScoreStatus>,
-    #[serde(skip_serializing)]
-    pub description: Option<String>,
-    #[serde(rename = "endTimeUtc", skip_serializing)]
-    pub end_time_utc: Option<String>,
-    #[serde(skip_serializing)]
-    pub intent: Option<security_alert_properties::Intent>,
-    #[serde(rename = "providerAlertId", skip_serializing)]
-    pub provider_alert_id: Option<String>,
-    #[serde(rename = "processingEndTime", skip_serializing)]
-    pub processing_end_time: Option<String>,
-    #[serde(rename = "productComponentName", skip_serializing)]
-    pub product_component_name: Option<String>,
-    #[serde(rename = "productName", skip_serializing)]
-    pub product_name: Option<String>,
-    #[serde(rename = "productVersion", skip_serializing)]
-    pub product_version: Option<String>,
-    #[serde(rename = "remediationSteps", skip_serializing)]
-    pub remediation_steps: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<AlertSeverity>,
-    #[serde(rename = "startTimeUtc", skip_serializing)]
-    pub start_time_utc: Option<String>,
-    #[serde(skip_serializing)]
-    pub status: Option<security_alert_properties::Status>,
-    #[serde(rename = "systemAlertId", skip_serializing)]
-    pub system_alert_id: Option<String>,
-    #[serde(skip_serializing)]
-    pub tactics: Vec<AttackTactic>,
-    #[serde(rename = "timeGenerated", skip_serializing)]
-    pub time_generated: Option<String>,
-    #[serde(rename = "vendorName", skip_serializing)]
-    pub vendor_name: Option<String>,
-    #[serde(rename = "alertLink", skip_serializing)]
-    pub alert_link: Option<String>,
-    #[serde(rename = "resourceIdentifiers", skip_serializing)]
-    pub resource_identifiers: Vec<serde_json::Value>,
-}
-pub mod security_alert_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ConfidenceLevel {
-        Unknown,
-        Low,
-        High,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ConfidenceScoreStatus {
-        NotApplicable,
-        InProcess,
-        NotFinal,
-        Final,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Intent {
-        Unknown,
-        Probing,
-        Exploitation,
-        Persistence,
-        PrivilegeEscalation,
-        DefenseEvasion,
-        CredentialAccess,
-        Discovery,
-        LateralMovement,
-        Execution,
-        Collection,
-        Exfiltration,
-        CommandAndControl,
-        Impact,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Unknown,
-        New,
-        Resolved,
-        Dismissed,
-        InProgress,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecurityGroupEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SecurityGroupEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecurityGroupEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "distinguishedName", skip_serializing)]
-    pub distinguished_name: Option<String>,
-    #[serde(rename = "objectGuid", skip_serializing)]
-    pub object_guid: Option<String>,
-    #[serde(skip_serializing)]
-    pub sid: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SettingList {
-    pub value: Vec<Settings>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Settings {
-    #[serde(flatten)]
-    pub resource_with_etag: ResourceWithEtag,
-    #[serde(flatten)]
-    pub settings_kind: SettingsKind,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SettingsKind {
-    pub kind: settings_kind::Kind,
-}
-pub mod settings_kind {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        EyesOn,
-        EntityAnalytics,
-        Ueba,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TiDataConnector {
-    #[serde(flatten)]
-    pub data_connector: DataConnector,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TiDataConnectorProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TiDataConnectorDataTypes {
-    pub indicators: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TiDataConnectorProperties {
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-    #[serde(rename = "tipLookbackPeriod", default, skip_serializing_if = "Option::is_none")]
-    pub tip_lookback_period: Option<String>,
-    #[serde(rename = "dataTypes")]
-    pub data_types: TiDataConnectorDataTypes,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TiCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TiCheckRequirementsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TiCheckRequirementsProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TiTaxiiDataConnector {
-    #[serde(flatten)]
-    pub data_connector: DataConnector,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TiTaxiiDataConnectorProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TiTaxiiDataConnectorDataTypes {
-    #[serde(rename = "taxiiClient")]
-    pub taxii_client: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TiTaxiiDataConnectorProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
-    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
-    pub workspace_id: Option<String>,
-    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
-    pub friendly_name: Option<String>,
-    #[serde(rename = "taxiiServer", default, skip_serializing_if = "Option::is_none")]
-    pub taxii_server: Option<String>,
-    #[serde(rename = "collectionId", default, skip_serializing_if = "Option::is_none")]
-    pub collection_id: Option<String>,
-    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
-    pub user_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>,
-    #[serde(rename = "taxiiLookbackPeriod", default, skip_serializing_if = "Option::is_none")]
-    pub taxii_lookback_period: Option<String>,
-    #[serde(rename = "pollingFrequency")]
-    pub polling_frequency: ti_taxii_data_connector_properties::PollingFrequency,
-    #[serde(rename = "dataTypes")]
-    pub data_types: TiTaxiiDataConnectorDataTypes,
-}
-pub mod ti_taxii_data_connector_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PollingFrequency {
-        OnceAMinute,
-        OnceAnHour,
-        OnceADay,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TiTaxiiCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TiTaxiiCheckRequirementsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TiTaxiiCheckRequirementsProperties {
-    #[serde(flatten)]
-    pub data_connector_tenant_id: DataConnectorTenantId,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreatIntelligence {
-    #[serde(skip_serializing)]
-    pub confidence: Option<f64>,
-    #[serde(rename = "providerName", skip_serializing)]
-    pub provider_name: Option<String>,
-    #[serde(rename = "reportLink", skip_serializing)]
-    pub report_link: Option<String>,
-    #[serde(rename = "threatDescription", skip_serializing)]
-    pub threat_description: Option<String>,
-    #[serde(rename = "threatName", skip_serializing)]
-    pub threat_name: Option<String>,
-    #[serde(rename = "threatType", skip_serializing)]
-    pub threat_type: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpSyncer {
-    #[serde(flatten)]
-    pub settings: Settings,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IpSyncerSettingsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpSyncerSettingsProperties {
-    #[serde(rename = "isEnabled", skip_serializing)]
-    pub is_enabled: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EyesOn {
-    #[serde(flatten)]
-    pub settings: Settings,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<EyesOnSettingsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EyesOnSettingsProperties {
-    #[serde(rename = "isEnabled", skip_serializing)]
-    pub is_enabled: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityAnalytics {
-    #[serde(flatten)]
-    pub settings: Settings,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<EntityAnalyticsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityAnalyticsProperties {
-    #[serde(rename = "isEnabled", skip_serializing)]
-    pub is_enabled: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Ueba {
-    #[serde(flatten)]
-    pub settings: Settings,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<UebaProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UebaProperties {
-    #[serde(rename = "dataSources", default, skip_serializing_if = "Vec::is_empty")]
-    pub data_sources: Vec<UebaDataSources>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum UebaDataSources {
-    AuditLogs,
-    AzureActivity,
-    SecurityEvent,
-    SigninLogs,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UrlEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<UrlEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UrlEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(skip_serializing)]
-    pub url: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IoTDeviceEntity {
-    #[serde(flatten)]
-    pub entity: Entity,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IoTDeviceEntityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IoTDeviceEntityProperties {
-    #[serde(flatten)]
-    pub entity_common_properties: EntityCommonProperties,
-    #[serde(rename = "deviceId", skip_serializing)]
-    pub device_id: Option<String>,
-    #[serde(rename = "deviceName", skip_serializing)]
-    pub device_name: Option<String>,
-    #[serde(skip_serializing)]
-    pub source: Option<String>,
-    #[serde(rename = "iotSecurityAgentId", skip_serializing)]
-    pub iot_security_agent_id: Option<String>,
-    #[serde(rename = "deviceType", skip_serializing)]
-    pub device_type: Option<String>,
-    #[serde(skip_serializing)]
-    pub vendor: Option<String>,
-    #[serde(rename = "edgeId", skip_serializing)]
-    pub edge_id: Option<String>,
-    #[serde(rename = "macAddress", skip_serializing)]
-    pub mac_address: Option<String>,
-    #[serde(skip_serializing)]
-    pub model: Option<String>,
-    #[serde(rename = "serialNumber", skip_serializing)]
-    pub serial_number: Option<String>,
-    #[serde(rename = "firmwareVersion", skip_serializing)]
-    pub firmware_version: Option<String>,
-    #[serde(rename = "operatingSystem", skip_serializing)]
-    pub operating_system: Option<String>,
-    #[serde(rename = "iotHubEntityId", skip_serializing)]
-    pub iot_hub_entity_id: Option<String>,
-    #[serde(rename = "hostEntityId", skip_serializing)]
-    pub host_entity_id: Option<String>,
-    #[serde(rename = "ipAddressEntityId", skip_serializing)]
-    pub ip_address_entity_id: Option<String>,
-    #[serde(rename = "threatIntelligence", skip_serializing)]
-    pub threat_intelligence: Vec<ThreatIntelligence>,
-    #[serde(skip_serializing)]
-    pub protocols: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserInfo {
-    #[serde(skip_serializing)]
-    pub email: Option<String>,
-    #[serde(skip_serializing)]
-    pub name: Option<String>,
-    #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
-    pub object_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentInfo {
-    #[serde(rename = "incidentId", default, skip_serializing_if = "Option::is_none")]
-    pub incident_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<incident_info::Severity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub title: Option<String>,
-    #[serde(rename = "relationName", default, skip_serializing_if = "Option::is_none")]
-    pub relation_name: Option<String>,
-}
-pub mod incident_info {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Severity {
-        Critical,
-        High,
-        Medium,
-        Low,
-        Informational,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WatchlistList {
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-    pub value: Vec<Watchlist>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Watchlist {
-    #[serde(flatten)]
-    pub resource_with_etag: ResourceWithEtag,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WatchlistProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WatchlistProperties {
-    #[serde(rename = "watchlistId", default, skip_serializing_if = "Option::is_none")]
-    pub watchlist_id: Option<String>,
-    #[serde(rename = "displayName")]
-    pub display_name: String,
-    pub provider: String,
-    pub source: watchlist_properties::Source,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated: Option<String>,
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<UserInfo>,
-    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
-    pub updated_by: Option<UserInfo>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "watchlistType", default, skip_serializing_if = "Option::is_none")]
-    pub watchlist_type: Option<String>,
-    #[serde(rename = "watchlistAlias", default, skip_serializing_if = "Option::is_none")]
-    pub watchlist_alias: Option<String>,
-    #[serde(rename = "isDeleted", default, skip_serializing_if = "Option::is_none")]
-    pub is_deleted: Option<bool>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub labels: Vec<Label>,
-    #[serde(rename = "defaultDuration", default, skip_serializing_if = "Option::is_none")]
-    pub default_duration: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "numberOfLinesToSkip", default, skip_serializing_if = "Option::is_none")]
-    pub number_of_lines_to_skip: Option<i32>,
-    #[serde(rename = "rawContent", default, skip_serializing_if = "Option::is_none")]
-    pub raw_content: Option<String>,
-    #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
-    pub content_type: Option<String>,
-    #[serde(rename = "uploadStatus", default, skip_serializing_if = "Option::is_none")]
-    pub upload_status: Option<String>,
-    #[serde(rename = "watchlistItemsCount", default, skip_serializing_if = "Option::is_none")]
-    pub watchlist_items_count: Option<i32>,
-}
-pub mod watchlist_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Source {
-        #[serde(rename = "Local file")]
-        LocalFile,
-        #[serde(rename = "Remote storage")]
-        RemoteStorage,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WatchlistItemList {
-    #[serde(rename = "nextLink", skip_serializing)]
-    pub next_link: Option<String>,
-    pub value: Vec<WatchlistItem>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WatchlistItem {
-    #[serde(flatten)]
-    pub resource_with_etag: ResourceWithEtag,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WatchlistItemProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WatchlistItemProperties {
-    #[serde(rename = "watchlistItemType", default, skip_serializing_if = "Option::is_none")]
-    pub watchlist_item_type: Option<String>,
-    #[serde(rename = "watchlistItemId", default, skip_serializing_if = "Option::is_none")]
-    pub watchlist_item_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "isDeleted", default, skip_serializing_if = "Option::is_none")]
-    pub is_deleted: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated: Option<String>,
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<UserInfo>,
-    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
-    pub updated_by: Option<UserInfo>,
-    #[serde(rename = "itemsKeyValue")]
-    pub items_key_value: serde_json::Value,
-    #[serde(rename = "entityMapping", default, skip_serializing_if = "Option::is_none")]
-    pub entity_mapping: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligenceInformationList {
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<ThreatIntelligenceInformation>,
 }
@@ -3374,92 +3477,34 @@ pub struct ThreatIntelligenceMetricEntity {
     pub metric_value: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityGetInsightsParameters {
-    #[serde(rename = "startTime")]
-    pub start_time: String,
-    #[serde(rename = "endTime")]
-    pub end_time: String,
-    #[serde(rename = "addDefaultExtendedTimeRange", default, skip_serializing_if = "Option::is_none")]
-    pub add_default_extended_time_range: Option<bool>,
-    #[serde(rename = "insightQueryIds", default, skip_serializing_if = "Vec::is_empty")]
-    pub insight_query_ids: Vec<String>,
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityGetInsightsResponse {
-    #[serde(rename = "metaData", default, skip_serializing_if = "Option::is_none")]
-    pub meta_data: Option<GetInsightsResultsMetadata>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<EntityInsightItem>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GetInsightsResultsMetadata {
-    #[serde(rename = "totalCount")]
-    pub total_count: i32,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub errors: Vec<GetInsightsError>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GetInsightsError {
-    pub kind: get_insights_error::Kind,
-    #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
-    pub query_id: Option<String>,
-    #[serde(rename = "errorMessage")]
-    pub error_message: String,
-}
-pub mod get_insights_error {
+pub mod system_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        Insight,
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityQueryItem {
-    #[serde(flatten)]
-    pub entity_query_kind: EntityQueryKind,
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityQueryItemProperties {
-    #[serde(rename = "dataTypes", default, skip_serializing_if = "Vec::is_empty")]
-    pub data_types: Vec<serde_json::Value>,
-    #[serde(rename = "inputEntityType", default, skip_serializing_if = "Option::is_none")]
-    pub input_entity_type: Option<EntityInnerType>,
-    #[serde(rename = "requiredInputFieldsSets", default, skip_serializing_if = "Vec::is_empty")]
-    pub required_input_fields_sets: Vec<Vec<String>>,
-    #[serde(rename = "entitiesFilter", default, skip_serializing_if = "Option::is_none")]
-    pub entities_filter: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityInsightItem {
-    #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
-    pub query_id: Option<String>,
-    #[serde(rename = "queryTimeInterval", default, skip_serializing_if = "Option::is_none")]
-    pub query_time_interval: Option<entity_insight_item::QueryTimeInterval>,
-    #[serde(rename = "tableQueryResults", default, skip_serializing_if = "Option::is_none")]
-    pub table_query_results: Option<InsightsTableResult>,
-    #[serde(rename = "chartQueryResults", default, skip_serializing_if = "Vec::is_empty")]
-    pub chart_query_results: Vec<InsightsTableResult>,
-}
-pub mod entity_insight_item {
-    use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct QueryTimeInterval {
-        #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-        pub start_time: Option<String>,
-        #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-        pub end_time: Option<String>,
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InsightsTableResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub columns: Vec<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub rows: Vec<Vec<String>>,
 }

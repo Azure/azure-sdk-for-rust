@@ -1,6 +1,4 @@
-use azure_core::headers::{
-    self, continuation_token_from_headers_optional, string_from_headers_mandatory,
-};
+use azure_core::headers::{self, continuation_token_from_headers_optional, get_str_from_headers};
 use http::response::Response;
 use serde_json::Value;
 
@@ -24,7 +22,7 @@ impl std::convert::TryFrom<Response<bytes::Bytes>> for QueryResponse {
         Ok(QueryResponse {
             result: serde_json::from_slice(body)?,
             continuation_token: continuation_token_from_headers_optional(headers)?,
-            item_type: string_from_headers_mandatory(headers, headers::ITEM_TYPE)?.to_string(),
+            item_type: get_str_from_headers(headers, headers::ITEM_TYPE)?.to_string(),
         })
     }
 }

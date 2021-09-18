@@ -5,7 +5,7 @@ on:
   push:
 
 env:
-  RUSTFLAGS: -Dwarnings
+  RUSTFLAGS: --deny warnings --allow unused_attributes
   CARGO_INCREMENTAL: 0
 
 jobs:
@@ -85,7 +85,7 @@ jobs:
 
   test-integration:
     name: Integration Tests
-    runs-on: windows-2019
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
@@ -99,11 +99,8 @@ jobs:
 
     - name: integration tests
       run: |
-        sqllocaldb create MSSQLLocalDB
-        sqllocaldb start MSSQLLocalDB
-
-        &"C:\Program Files (x86)\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe" start
-
+        npm install azurite@3.13.1
+        npx azurite &
         cargo test --features test_integration
 
     - name: display free disk space
@@ -137,3 +134,42 @@ jobs:
       run: df -h /
       if: ${{ always() }}
 
+  test-autorust:
+    name: test AutoRust
+    runs-on: ubuntu-20.04
+    steps:
+    - name: git clone
+      uses: actions/checkout@v2
+      with:
+        path: azure-sdk-for-rust
+    - name: install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+        components: rustfmt
+    - name: fmt check
+      run: |
+        cd azure-sdk-for-rust/services/autorust
+        cargo fmt --all -- --check
+    - name: unit tests
+      run:  |
+        cd azure-sdk-for-rust/services/autorust
+        cargo test --lib
+    - name: git clone Azure/azure-rest-api-specs
+      uses: actions/checkout@v2
+      with:
+        repository: Azure/azure-rest-api-specs
+        path: azure-rest-api-specs
+    - name: git clone OAI/OpenAPI-Specification
+      uses: actions/checkout@v2
+      with:
+        repository: OAI/OpenAPI-Specification
+        path: OpenAPI-Specification
+    - name: integration tests
+      run: |
+        cd azure-sdk-for-rust/services/autorust
+        cargo test --package autorust_openapi --test openapi_spec_examples
+        cargo test --package autorust_openapi --test azure_rest_api_specs
+        cargo test --package autorust_codegen --test azure_rest_api_specs

@@ -18,7 +18,7 @@ use serde::de::DeserializeOwned;
 
 /// User-defined content in JSON format.
 ///
-/// You can learn more about Documents [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/documents).
+/// You can learn more about Documents [here](https://docs.microsoft.com/rest/api/cosmos-db/documents).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(missing_docs)]
 pub struct Document<T> {
@@ -89,6 +89,18 @@ impl AddAsHeader for QueryCrossPartition {
             self.as_bool_str(),
         )
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), azure_core::HTTPHeaderError> {
+        request.headers_mut().append(
+            headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION,
+            http::header::HeaderValue::from_str(self.as_bool_str())?,
+        );
+
+        Ok(())
+    }
 }
 
 /// Whether to parallelize across partitions
@@ -115,6 +127,18 @@ impl AddAsHeader for ParallelizeCrossPartition {
             self.as_bool_str(),
         )
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), azure_core::HTTPHeaderError> {
+        request.headers_mut().append(
+            headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY,
+            http::header::HeaderValue::from_str(self.as_bool_str())?,
+        );
+
+        Ok(())
+    }
 }
 
 /// Whether the operation is an upsert
@@ -138,6 +162,18 @@ impl AddAsHeader for IsUpsert {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(headers::HEADER_DOCUMENTDB_IS_UPSERT, self.as_bool_str())
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), azure_core::HTTPHeaderError> {
+        request.headers_mut().append(
+            headers::HEADER_DOCUMENTDB_IS_UPSERT,
+            http::header::HeaderValue::from_str(self.as_bool_str())?,
+        );
+
+        Ok(())
+    }
 }
 
 /// Whether to use an incremental change feed
@@ -154,6 +190,22 @@ impl AddAsHeader for ChangeFeed {
             Self::Incremental => builder.header(headers::HEADER_A_IM, "Incremental feed"),
             Self::None => builder,
         }
+    }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), azure_core::HTTPHeaderError> {
+        match self {
+            Self::Incremental => {
+                request.headers_mut().append(
+                    headers::HEADER_A_IM,
+                    http::header::HeaderValue::from_str("Incremental feed")?,
+                );
+            }
+            Self::None => {}
+        }
+        Ok(())
     }
 }
 
@@ -178,6 +230,18 @@ impl AddAsHeader for TenativeWritesAllowance {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(headers::HEADER_ALLOW_MULTIPLE_WRITES, self.as_bool_str())
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), azure_core::HTTPHeaderError> {
+        request.headers_mut().append(
+            headers::HEADER_ALLOW_MULTIPLE_WRITES,
+            http::header::HeaderValue::from_str(self.as_bool_str())?,
+        );
+
+        Ok(())
+    }
 }
 
 /// Collections of partition keys grouped by physical partitions
@@ -194,5 +258,17 @@ impl<'a> PartitionRangeId<'a> {
 impl AddAsHeader for PartitionRangeId<'_> {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(headers::HEADER_DOCUMENTDB_PARTITIONRANGEID, self.0)
+    }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), azure_core::HTTPHeaderError> {
+        request.headers_mut().append(
+            headers::HEADER_DOCUMENTDB_PARTITIONRANGEID,
+            http::header::HeaderValue::from_str(self.0)?,
+        );
+
+        Ok(())
     }
 }

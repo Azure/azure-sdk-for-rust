@@ -1,8 +1,6 @@
-use azure_core::prelude::*;
+use azure_core::Context;
 use azure_cosmos::prelude::*;
-
 use futures::stream::StreamExt;
-
 use std::error::Error;
 
 #[tokio::main]
@@ -30,22 +28,21 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
-    let http_client = azure_core::new_http_client();
-    let client = CosmosClient::new(http_client, account, authorization_token);
+    let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
 
-    let list_databases_response = client.list_databases().execute().await?;
-    println!("list_databases_response = {:#?}", list_databases_response);
+    let mut list_databases_stream =
+        Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()));
+    while let Some(list_databases_response) = list_databases_stream.next().await {
+        println!("list_databases_response = {:#?}", list_databases_response?);
+    }
+    drop(list_databases_stream);
 
     let db = client
-        .create_database(
-            azure_core::Context::new(),
-            &database_name,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(Context::new(), &database_name, CreateDatabaseOptions::new())
         .await?;
     println!("created database = {:#?}", db);
 

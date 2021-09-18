@@ -1,5 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::prelude::*;
+use azure_core::Context;
 use azure_cosmos::prelude::*;
 use collection::*;
 use serde::{Deserialize, Serialize};
@@ -60,16 +60,21 @@ async fn permission_token_usage() {
         .unwrap();
 
     let user_client = database_client.clone().into_user_client(USER_NAME);
-    user_client.create_user().execute().await.unwrap();
+    user_client
+        .create_user(Context::new(), CreateUserOptions::new())
+        .await
+        .unwrap();
 
     // create the RO permission
     let permission_client = user_client.into_permission_client(PERMISSION);
     let permission_mode = create_collection_response.collection.read_permission();
 
     let create_permission_response = permission_client
-        .create_permission()
-        .expiry_seconds(18000u64) // 5 hours, max!
-        .execute(&permission_mode)
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
+            &permission_mode,
+        )
         .await
         .unwrap();
 
@@ -103,24 +108,27 @@ async fn permission_token_usage() {
     };
 
     new_collection_client
-        .create_document()
-        .is_upsert(true)
-        .execute(&document)
+        .create_document(
+            Context::new(),
+            &document,
+            CreateDocumentOptions::new().is_upsert(true),
+        )
         .await
         .unwrap_err();
 
     permission_client
-        .delete_permission()
-        .execute()
+        .delete_permission(Context::new(), DeletePermissionOptions::new())
         .await
         .unwrap();
 
     // All includes read and write.
     let permission_mode = create_collection_response.collection.all_permission();
     let create_permission_response = permission_client
-        .create_permission()
-        .expiry_seconds(18000u64) // 5 hours, max!
-        .execute(&permission_mode)
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
+            &permission_mode,
+        )
         .await
         .unwrap();
 
@@ -135,9 +143,11 @@ async fn permission_token_usage() {
     // now we have an "All" authorization_token
     // so the create_document should succeed!
     let create_document_response = new_collection_client
-        .create_document()
-        .is_upsert(true)
-        .execute(&document)
+        .create_document(
+            Context::new(),
+            &document,
+            CreateDocumentOptions::new().is_upsert(true),
+        )
         .await
         .unwrap();
     println!(

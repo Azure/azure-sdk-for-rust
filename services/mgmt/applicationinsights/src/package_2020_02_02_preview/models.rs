@@ -4,11 +4,11 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentsResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -31,11 +31,11 @@ pub struct ApplicationInsightsComponent {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationInsightsComponentProperties {
-    #[serde(rename = "ApplicationId", skip_serializing)]
+    #[serde(rename = "ApplicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
-    #[serde(rename = "AppId", skip_serializing)]
+    #[serde(rename = "AppId", default, skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
-    #[serde(rename = "Name", skip_serializing)]
+    #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "Application_Type")]
     pub application_type: application_insights_component_properties::ApplicationType,
@@ -43,23 +43,23 @@ pub struct ApplicationInsightsComponentProperties {
     pub flow_type: Option<application_insights_component_properties::FlowType>,
     #[serde(rename = "Request_Source", default, skip_serializing_if = "Option::is_none")]
     pub request_source: Option<application_insights_component_properties::RequestSource>,
-    #[serde(rename = "InstrumentationKey", skip_serializing)]
+    #[serde(rename = "InstrumentationKey", default, skip_serializing_if = "Option::is_none")]
     pub instrumentation_key: Option<String>,
-    #[serde(rename = "CreationDate", skip_serializing)]
+    #[serde(rename = "CreationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
-    #[serde(rename = "TenantId", skip_serializing)]
+    #[serde(rename = "TenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "HockeyAppId", default, skip_serializing_if = "Option::is_none")]
     pub hockey_app_id: Option<String>,
-    #[serde(rename = "HockeyAppToken", skip_serializing)]
+    #[serde(rename = "HockeyAppToken", default, skip_serializing_if = "Option::is_none")]
     pub hockey_app_token: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[serde(rename = "SamplingPercentage", default, skip_serializing_if = "Option::is_none")]
     pub sampling_percentage: Option<f64>,
-    #[serde(rename = "ConnectionString", skip_serializing)]
+    #[serde(rename = "ConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub connection_string: Option<String>,
-    #[serde(rename = "RetentionInDays", skip_serializing)]
+    #[serde(rename = "RetentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_in_days: Option<i64>,
     #[serde(rename = "DisableIpMasking", default, skip_serializing_if = "Option::is_none")]
     pub disable_ip_masking: Option<bool>,
@@ -67,9 +67,9 @@ pub struct ApplicationInsightsComponentProperties {
     pub immediate_purge_data_on30_days: Option<bool>,
     #[serde(rename = "WorkspaceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_resource_id: Option<String>,
-    #[serde(rename = "LaMigrationDate", skip_serializing)]
+    #[serde(rename = "LaMigrationDate", default, skip_serializing_if = "Option::is_none")]
     pub la_migration_date: Option<String>,
-    #[serde(rename = "PrivateLinkScopedResources", skip_serializing)]
+    #[serde(rename = "PrivateLinkScopedResources", default, skip_serializing_if = "Vec::is_empty")]
     pub private_link_scoped_resources: Vec<PrivateLinkScopedResource>,
     #[serde(rename = "publicNetworkAccessForIngestion", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_ingestion: Option<PublicNetworkAccessType>,
@@ -167,21 +167,21 @@ pub struct ErrorResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
-    #[serde(rename = "additionalInfo", skip_serializing)]
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }

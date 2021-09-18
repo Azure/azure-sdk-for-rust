@@ -21,7 +21,7 @@ impl std::convert::TryFrom<&Response<Bytes>> for GetQueueACLResponse {
         debug!("headers == {:?}", headers);
 
         let a: Result<Vec<QueueStoredAccessPolicy>, PermissionError> =
-            StoredAccessPolicyList::from_xml(&std::str::from_utf8(body)?[3..])?
+            StoredAccessPolicyList::from_xml(body)?
                 .stored_access
                 .into_iter()
                 .map(|sap| sap.try_into())

@@ -66,6 +66,18 @@ impl AddAsHeader for BA512Range {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(http::header::RANGE, &format!("{}", self))
     }
+
+    fn add_as_header2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
+        request.headers_mut().append(
+            http::header::RANGE,
+            http::HeaderValue::from_str(&self.to_string())?,
+        );
+
+        Ok(())
+    }
 }
 
 impl FromStr for BA512Range {
@@ -92,6 +104,7 @@ impl fmt::Display for BA512Range {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::Not512ByteAlignedError::{EndRange, StartRange};
 
     #[test]
     fn test_512range_parse() {
@@ -102,27 +115,33 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "ParseIntError(ParseIntError { kind: InvalidDigit })")]
     fn test_512range_parse_panic_1() {
-        "abba/2000".parse::<BA512Range>().unwrap();
+        let err = "abba/2000".parse::<BA512Range>().unwrap_err();
+        assert!(matches!(err, Parse512AlignedError::ParseIntError(_)));
     }
 
     #[test]
-    #[should_panic(expected = "SplitNotFound")]
     fn test_512range_parse_panic_2() {
-        "1000-2000".parse::<BA512Range>().unwrap();
+        let err = "1000-2000".parse::<BA512Range>().unwrap_err();
+        assert_eq!(err, Parse512AlignedError::SplitNotFound);
     }
 
     #[test]
-    #[should_panic(expected = "Not512ByteAlignedError(StartRange(7))")]
     fn test_512range_invalid_start_range() {
-        "7/511".parse::<BA512Range>().unwrap();
+        let err = "7/511".parse::<BA512Range>().unwrap_err();
+        assert_eq!(
+            err,
+            Parse512AlignedError::Not512ByteAlignedError(StartRange(7))
+        );
     }
 
     #[test]
-    #[should_panic(expected = "Not512ByteAlignedError(EndRange(100))")]
     fn test_512range_invalid_end_range() {
-        "0/100".parse::<BA512Range>().unwrap();
+        let err = "0/100".parse::<BA512Range>().unwrap_err();
+        assert_eq!(
+            err,
+            Parse512AlignedError::Not512ByteAlignedError(EndRange(100))
+        );
     }
 
     #[test]

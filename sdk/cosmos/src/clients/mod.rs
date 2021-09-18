@@ -13,8 +13,7 @@
 //! let database_name: String = todo!("Think of some database name");
 //!
 //! // Create an http client, then a `CosmosClient`, and then a `DatabaseClient`
-//! let http_client = azure_core::new_http_client();
-//! let client = CosmosClient::new(http_client, account, authorization_token);
+//! let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
 //! let client = client.into_database_client(database_name);
 //! ```
 

@@ -20,15 +20,15 @@ pub struct WorkspaceProperties {
     pub user_storage_account_id: String,
     #[serde(rename = "ownerEmail")]
     pub owner_email: String,
-    #[serde(rename = "workspaceType", skip_serializing)]
+    #[serde(rename = "workspaceType", default, skip_serializing_if = "Option::is_none")]
     pub workspace_type: Option<workspace_properties::WorkspaceType>,
-    #[serde(rename = "workspaceState", skip_serializing)]
+    #[serde(rename = "workspaceState", default, skip_serializing_if = "Option::is_none")]
     pub workspace_state: Option<workspace_properties::WorkspaceState>,
-    #[serde(rename = "workspaceId", skip_serializing)]
+    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
-    #[serde(rename = "creationTime", skip_serializing)]
+    #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
-    #[serde(rename = "studioEndpoint", skip_serializing)]
+    #[serde(rename = "studioEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub studio_endpoint: Option<String>,
     #[serde(rename = "keyVaultIdentifierId", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_identifier_id: Option<String>,
@@ -125,11 +125,11 @@ pub struct OperationListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]

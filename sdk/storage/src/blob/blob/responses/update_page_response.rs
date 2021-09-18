@@ -1,4 +1,5 @@
 use crate::headers::content_md5_from_headers;
+use crate::ConsistencyMD5;
 use azure_core::headers::{
     date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
     request_server_encrypted_from_headers, sequence_number_from_headers,
@@ -11,7 +12,7 @@ use http::HeaderMap;
 pub struct UpdatePageResponse {
     pub etag: String,
     pub last_modified: DateTime<Utc>,
-    pub content_md5: [u8; 16],
+    pub content_md5: ConsistencyMD5,
     pub sequence_number: u64,
     pub request_id: RequestId,
     pub date: DateTime<Utc>,

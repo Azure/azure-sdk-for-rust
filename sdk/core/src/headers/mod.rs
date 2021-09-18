@@ -1,17 +1,56 @@
 mod utilities;
 
+use crate::{Error, RequestId};
+use chrono::{DateTime, Utc};
 use http::request::Builder;
+use http::HeaderMap;
+use std::convert::TryFrom;
 
 pub use http::header::{IF_MODIFIED_SINCE, USER_AGENT};
 pub use utilities::*;
 
 pub const MS_DATE: &str = "x-ms-date";
 
+#[derive(Debug, Clone)]
+pub struct CommonStorageResponseHeaders {
+    pub request_id: RequestId,
+    pub client_request_id: Option<String>,
+    pub version: String,
+    pub date: DateTime<Utc>,
+    pub server: String,
+}
+
+impl TryFrom<&HeaderMap> for CommonStorageResponseHeaders {
+    type Error = Error;
+
+    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
+        Ok(Self {
+            request_id: request_id_from_headers(headers)?,
+            client_request_id: client_request_id_from_headers_optional(headers),
+            version: version_from_headers(headers)?.to_owned(),
+            date: date_from_headers(headers)?,
+            server: server_from_headers(headers)?.to_owned(),
+        })
+    }
+}
+
+/// Implement this trait to allow a custom struct to express itself as a HTTP header.
+/// Ad interim we require two functions: `add_as_header` and `add_as_header2`. Make sure
+/// your implementations are functionally equivalent between the two. In other words, the
+/// effect should be the same regardless of which function the SDK calls.
+///
+/// While not restricted by the type system, please add HTTP headers only. In particular, do not
+/// interact with the body of the request.
+///
+/// As soon as the migration to the pipeline architecture will be complete we will phase out
+/// `add_as_header`.
 pub trait AddAsHeader {
     fn add_as_header(&self, builder: Builder) -> Builder;
-    fn add_as_header2(&self, _request: &mut crate::Request) {
-        unimplemented!()
-    }
+
+    fn add_as_header2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<(), crate::errors::HTTPHeaderError>;
 }
 
 #[must_use]
@@ -30,15 +69,25 @@ pub fn add_optional_header<T: AddAsHeader>(item: &Option<T>, mut builder: Builde
     builder
 }
 
-pub fn add_optional_header2<T: AddAsHeader>(item: &Option<T>, request: &mut crate::Request) {
-    if let Some(item) = item {
-        item.add_as_header2(request);
-    }
+pub fn add_optional_header2<T: AddAsHeader>(
+    item: &Option<T>,
+    request: &mut crate::Request,
+) -> Result<(), crate::errors::HTTPHeaderError> {
+    Ok(if let Some(item) = item {
+        item.add_as_header2(request)?
+    })
 }
 
 #[must_use]
 pub fn add_mandatory_header<T: AddAsHeader>(item: &T, builder: Builder) -> Builder {
     item.add_as_header(builder)
+}
+
+pub fn add_mandatory_header2<T: AddAsHeader>(
+    item: &T,
+    request: &mut crate::Request,
+) -> Result<(), crate::errors::HTTPHeaderError> {
+    item.add_as_header2(request)
 }
 
 pub const SERVER: &str = "server";
@@ -93,4 +142,5 @@ pub const VERSION: &str = "x-ms-version";
 pub const PROPERTIES: &str = "x-ms-properties";
 pub const NAMESPACE_ENABLED: &str = "x-ms-namespace-enabled";
 pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
+pub const ITEM_COUNT: &str = "x-ms-item-count";
 pub const ITEM_TYPE: &str = "x-ms-item-type";

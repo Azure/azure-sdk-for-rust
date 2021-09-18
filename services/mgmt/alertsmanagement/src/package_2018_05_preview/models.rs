@@ -47,11 +47,11 @@ pub struct ErrorResponseBody {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -70,13 +70,13 @@ pub struct AlertsList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertProperties {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<alert_properties::Severity>,
-    #[serde(rename = "signalType", skip_serializing)]
+    #[serde(rename = "signalType", default, skip_serializing_if = "Option::is_none")]
     pub signal_type: Option<alert_properties::SignalType>,
-    #[serde(rename = "alertState", skip_serializing)]
+    #[serde(rename = "alertState", default, skip_serializing_if = "Option::is_none")]
     pub alert_state: Option<alert_properties::AlertState>,
-    #[serde(rename = "monitorCondition", skip_serializing)]
+    #[serde(rename = "monitorCondition", default, skip_serializing_if = "Option::is_none")]
     pub monitor_condition: Option<alert_properties::MonitorCondition>,
     #[serde(rename = "targetResource", default, skip_serializing_if = "Option::is_none")]
     pub target_resource: Option<String>,
@@ -86,21 +86,21 @@ pub struct AlertProperties {
     pub target_resource_group: Option<String>,
     #[serde(rename = "targetResourceType", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_type: Option<String>,
-    #[serde(rename = "monitorService", skip_serializing)]
+    #[serde(rename = "monitorService", default, skip_serializing_if = "Option::is_none")]
     pub monitor_service: Option<alert_properties::MonitorService>,
-    #[serde(rename = "sourceCreatedId", skip_serializing)]
+    #[serde(rename = "sourceCreatedId", default, skip_serializing_if = "Option::is_none")]
     pub source_created_id: Option<String>,
-    #[serde(rename = "smartGroupId", skip_serializing)]
+    #[serde(rename = "smartGroupId", default, skip_serializing_if = "Option::is_none")]
     pub smart_group_id: Option<String>,
-    #[serde(rename = "smartGroupingReason", skip_serializing)]
+    #[serde(rename = "smartGroupingReason", default, skip_serializing_if = "Option::is_none")]
     pub smart_grouping_reason: Option<String>,
-    #[serde(rename = "startDateTime", skip_serializing)]
+    #[serde(rename = "startDateTime", default, skip_serializing_if = "Option::is_none")]
     pub start_date_time: Option<String>,
-    #[serde(rename = "lastModifiedDateTime", skip_serializing)]
+    #[serde(rename = "lastModifiedDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_date_time: Option<String>,
-    #[serde(rename = "lastModifiedUserName", skip_serializing)]
+    #[serde(rename = "lastModifiedUserName", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_user_name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub payload: Option<serde_json::Value>,
 }
 pub mod alert_properties {
@@ -166,7 +166,7 @@ pub struct AlertModification {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertModificationProperties {
-    #[serde(rename = "alertId", skip_serializing)]
+    #[serde(rename = "alertId", default, skip_serializing_if = "Option::is_none")]
     pub alert_id: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub modifications: Vec<AlertModificationItem>,
@@ -206,7 +206,7 @@ pub struct SmartGroupModification {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmartGroupModificationProperties {
-    #[serde(rename = "smartGroupId", skip_serializing)]
+    #[serde(rename = "smartGroupId", default, skip_serializing_if = "Option::is_none")]
     pub smart_group_id: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub modifications: Vec<SmartGroupModificationItem>,
@@ -358,15 +358,15 @@ pub struct SmartGroup {
 pub struct SmartGroupProperties {
     #[serde(rename = "alertsCount", default, skip_serializing_if = "Option::is_none")]
     pub alerts_count: Option<i64>,
-    #[serde(rename = "smartGroupState", skip_serializing)]
+    #[serde(rename = "smartGroupState", default, skip_serializing_if = "Option::is_none")]
     pub smart_group_state: Option<smart_group_properties::SmartGroupState>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<smart_group_properties::Severity>,
-    #[serde(rename = "startDateTime", skip_serializing)]
+    #[serde(rename = "startDateTime", default, skip_serializing_if = "Option::is_none")]
     pub start_date_time: Option<String>,
-    #[serde(rename = "lastModifiedDateTime", skip_serializing)]
+    #[serde(rename = "lastModifiedDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_date_time: Option<String>,
-    #[serde(rename = "lastModifiedUserName", skip_serializing)]
+    #[serde(rename = "lastModifiedUserName", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_user_name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub resources: Vec<SmartGroupAggregatedProperty>,

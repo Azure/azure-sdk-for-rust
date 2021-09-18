@@ -1,3 +1,4 @@
+use azure_core::Context;
 use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos.
 use azure_cosmos::prelude::*;
@@ -53,8 +54,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     // Next we will create a Cosmos client.
-    let http_client = azure_core::new_http_client();
-    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
+    let client = CosmosClient::new(
+        account.clone(),
+        authorization_token,
+        CosmosOptions::default(),
+    );
 
     // We know the database so we can obtain a database client.
     let database_client = client.into_database_client(database_name);
@@ -76,9 +80,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // insert it and store the returned session token for later use!
         session_token = Some(
             collection_client
-                .create_document()
-                .is_upsert(true) // this option will overwrite a preexisting document (if any)
-                .execute(&document_to_insert)
+                .create_document(
+                    Context::new(),
+                    &document_to_insert,
+                    CreateDocumentOptions::new().is_upsert(true),
+                )
                 .await?
                 .session_token, // get only the session token, if everything else was ok!
         );

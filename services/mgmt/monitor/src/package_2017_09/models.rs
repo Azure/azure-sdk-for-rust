@@ -4,11 +4,11 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -28,6 +28,8 @@ pub struct MetricTrigger {
     pub metric_namespace: Option<String>,
     #[serde(rename = "metricResourceUri")]
     pub metric_resource_uri: String,
+    #[serde(rename = "metricResourceLocation", default, skip_serializing_if = "Option::is_none")]
+    pub metric_resource_location: Option<String>,
     #[serde(rename = "timeGrain")]
     pub time_grain: String,
     pub statistic: metric_trigger::Statistic,
@@ -50,6 +52,7 @@ pub mod metric_trigger {
         Min,
         Max,
         Sum,
+        Count,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TimeAggregation {
@@ -92,6 +95,7 @@ pub mod scale_action {
         ChangeCount,
         PercentChangeCount,
         ExactCount,
+        ServiceAllowedNextValue,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -187,6 +191,8 @@ pub struct AutoscaleSetting {
     pub name: Option<String>,
     #[serde(rename = "targetResourceUri", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_uri: Option<String>,
+    #[serde(rename = "targetResourceLocation", default, skip_serializing_if = "Option::is_none")]
+    pub target_resource_location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoscaleSettingResource {
@@ -259,15 +265,15 @@ pub mod operation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Incident {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "ruleName", skip_serializing)]
+    #[serde(rename = "ruleName", default, skip_serializing_if = "Option::is_none")]
     pub rule_name: Option<String>,
-    #[serde(rename = "isActive", skip_serializing)]
+    #[serde(rename = "isActive", default, skip_serializing_if = "Option::is_none")]
     pub is_active: Option<bool>,
-    #[serde(rename = "activatedTime", skip_serializing)]
+    #[serde(rename = "activatedTime", default, skip_serializing_if = "Option::is_none")]
     pub activated_time: Option<String>,
-    #[serde(rename = "resolvedTime", skip_serializing)]
+    #[serde(rename = "resolvedTime", default, skip_serializing_if = "Option::is_none")]
     pub resolved_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -418,7 +424,7 @@ pub struct AlertRule {
     pub action: Option<RuleAction>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<RuleAction>,
-    #[serde(rename = "lastUpdatedTime", skip_serializing)]
+    #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -474,11 +480,11 @@ pub struct LogProfileCollection {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyOnlyResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -794,17 +800,17 @@ pub struct HttpRequestInfo {
 pub struct EventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub authorization: Option<SenderAuthorization>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub claims: Option<serde_json::Value>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub caller: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "eventDataId", skip_serializing)]
+    #[serde(rename = "eventDataId", default, skip_serializing_if = "Option::is_none")]
     pub event_data_id: Option<String>,
-    #[serde(rename = "correlationId", skip_serializing)]
+    #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[serde(rename = "eventName", default, skip_serializing_if = "Option::is_none")]
     pub event_name: Option<LocalizableString>,
@@ -812,33 +818,33 @@ pub struct EventData {
     pub category: Option<LocalizableString>,
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
     pub http_request: Option<HttpRequestInfo>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<event_data::Level>,
-    #[serde(rename = "resourceGroupName", skip_serializing)]
+    #[serde(rename = "resourceGroupName", default, skip_serializing_if = "Option::is_none")]
     pub resource_group_name: Option<String>,
     #[serde(rename = "resourceProviderName", default, skip_serializing_if = "Option::is_none")]
     pub resource_provider_name: Option<LocalizableString>,
-    #[serde(rename = "resourceId", skip_serializing)]
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<LocalizableString>,
-    #[serde(rename = "operationId", skip_serializing)]
+    #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
     pub operation_id: Option<String>,
     #[serde(rename = "operationName", default, skip_serializing_if = "Option::is_none")]
     pub operation_name: Option<LocalizableString>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<LocalizableString>,
     #[serde(rename = "subStatus", default, skip_serializing_if = "Option::is_none")]
     pub sub_status: Option<LocalizableString>,
-    #[serde(rename = "eventTimestamp", skip_serializing)]
+    #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub event_timestamp: Option<String>,
-    #[serde(rename = "submissionTimestamp", skip_serializing)]
+    #[serde(rename = "submissionTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub submission_timestamp: Option<String>,
-    #[serde(rename = "subscriptionId", skip_serializing)]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
-    #[serde(rename = "tenantId", skip_serializing)]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
 pub mod event_data {
@@ -961,10 +967,12 @@ pub struct Metric {
     #[serde(rename = "type")]
     pub type_: String,
     pub name: LocalizableString,
-    #[serde(rename = "displayDescription")]
-    pub display_description: String,
+    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
     pub unit: Unit,
     pub timeseries: Vec<TimeSeriesElement>,
 }
@@ -984,9 +992,9 @@ pub struct BaselineMetadataValue {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaselineResponse {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,

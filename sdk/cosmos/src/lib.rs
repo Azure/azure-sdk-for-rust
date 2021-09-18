@@ -2,7 +2,7 @@
 # The Cosmos DB crate.
 
 `azure-cosmos` offers functionality needed to interact with Cosmos DB from Rust. As an abstraction over the [Cosmos DB
-Rest API](https://docs.microsoft.com/en-us/rest/api/cosmos-db/), anything that is possible through that Rest API
+Rest API](https://docs.microsoft.com/rest/api/cosmos-db/), anything that is possible through that Rest API
 should also be possible with this crate.
 
 ## Examples
@@ -10,6 +10,7 @@ should also be possible with this crate.
 ```no_run
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos DB.
 use azure_cosmos::prelude::*;
+use azure_core::Context;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -55,8 +56,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     // Next we will create a Cosmos client.
-    let http_client = azure_core::new_http_client();
-    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
+    let client = CosmosClient::new(account.clone(), authorization_token, CosmosOptions::default());
 
     // We know the database so we can obtain a database client.
     let database_client = client.into_database_client(database_name);
@@ -76,9 +76,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
         // insert it
         collection_client
-            .create_document()
-            .is_upsert(true) // this option will overwrite a preexisting document (if any)
-            .execute(&document_to_insert)
+            .create_document(
+                Context::new(),
+                &document_to_insert,
+                CreateDocumentOptions::new().is_upsert(true),
+            )
             .await?;
     }
     // wow that was easy and fast, wasn't it? :)
@@ -106,16 +108,20 @@ pub mod requests;
 pub mod resources;
 pub mod responses;
 
+mod authorization_policy;
 mod consistency_level;
 mod cosmos_entity;
 mod errors;
 mod headers;
 mod resource_quota;
+mod time_nonce;
 mod to_json_vector;
 
+pub(crate) use authorization_policy::AuthorizationPolicy;
 pub use consistency_level::ConsistencyLevel;
 pub use cosmos_entity::CosmosEntity;
 pub use resource_quota::ResourceQuota;
+pub(crate) use time_nonce::TimeNonce;
 
 pub use errors::Error;
 

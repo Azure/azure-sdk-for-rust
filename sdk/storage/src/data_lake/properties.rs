@@ -37,7 +37,7 @@ impl<'a, 'b> Properties<'a, 'b> {
 impl<'a, 'b> AddAsHeader for Properties<'a, 'b> {
     fn add_as_header(&self, builder: Builder) -> Builder {
         // the header is a comma separated list of key=base64(value) see
-        // [https://docs.microsoft.com/en-us/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers](https://docs.microsoft.com/en-us/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers)
+        // [https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers](https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers)
         let mut s = String::new();
         self.0.iter().for_each(|(k, v)| {
             s.push_str(&format!("{}={},", k.as_ref(), base64::encode(v.as_ref())));
@@ -46,6 +46,27 @@ impl<'a, 'b> AddAsHeader for Properties<'a, 'b> {
         // since we added a comma to the last entry, we will strip it to the exported header (this
         // is safe since we know that comma is 1 byte in UTF8):
         builder.header(HEADER, &s[..s.len() - 1])
+    }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), azure_core::HTTPHeaderError> {
+        // the header is a comma separated list of key=base64(value) see
+        // [https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers](https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers)
+
+        let s = self
+            .0
+            .iter()
+            .map(|(k, v)| format!("{}={}", k.as_ref(), base64::encode(v.as_ref())))
+            .collect::<Vec<_>>()
+            .join(",");
+
+        request
+            .headers_mut()
+            .append(HEADER, http::header::HeaderValue::from_str(&s)?);
+
+        Ok(())
     }
 }
 

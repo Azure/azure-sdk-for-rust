@@ -1,4 +1,5 @@
 use crate::headers;
+use crate::operations::*;
 use crate::responses::*;
 use azure_core::AddAsHeader;
 use http::request;
@@ -6,7 +7,7 @@ use serde::de::DeserializeOwned;
 
 /// The consistency guarantee provided by Cosmos.
 ///
-/// You can learn more about consistency levels in Cosmos [here](https://docs.microsoft.com/en-us/azure/cosmos-db/consistency-levels).
+/// You can learn more about consistency levels in Cosmos [here](https://docs.microsoft.com/azure/cosmos-db/consistency-levels).
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConsistencyLevel {
     /// A linearizability guarantee
@@ -27,7 +28,7 @@ impl ConsistencyLevel {
             Self::Strong => "Strong",
             Self::Bounded => "Bounded",
             Self::Session(_) => "Session",
-            Self::ConsistentPrefix => "Prefix", //this is guessed since it's missing here: https://docs.microsoft.com/en-us/rest/api/cosmos-db/common-cosmosdb-rest-request-headers
+            Self::ConsistentPrefix => "Prefix", //this is guessed since it's missing here: https://docs.microsoft.com/rest/api/cosmos-db/common-cosmosdb-rest-request-headers
             Self::Eventual => "Eventual",
         }
     }
@@ -120,5 +121,26 @@ impl AddAsHeader for ConsistencyLevel {
         } else {
             builder
         }
+    }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), azure_core::HTTPHeaderError> {
+        request.headers_mut().append(
+            headers::HEADER_CONSISTENCY_LEVEL,
+            http::header::HeaderValue::from_str(self.to_consistency_level_header())?,
+        );
+
+        // if we have a Session consistency level we make sure to pass
+        // the x-ms-session-token header too.
+        if let ConsistencyLevel::Session(session_token) = self {
+            request.headers_mut().append(
+                headers::HEADER_SESSION_TOKEN,
+                http::header::HeaderValue::from_str(session_token)?,
+            );
+        }
+
+        Ok(())
     }
 }

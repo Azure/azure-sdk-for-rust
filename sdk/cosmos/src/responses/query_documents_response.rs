@@ -102,9 +102,6 @@ where
         let headers = response.headers();
         let body = response.body();
 
-        debug!("headers == {:#?}", headers);
-        debug!("body == {}", std::str::from_utf8(body)?);
-
         let inner: Value = serde_json::from_slice(body)?;
         let mut results = Vec::new();
         if let Value::Array(documents) = &inner["Documents"] {
@@ -270,28 +267,22 @@ pub struct QueryDocumentsResponseDocuments<T> {
 impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsResponseDocuments<T> {
     type Error = crate::Error;
 
-    #[inline]
     fn try_from(q: QueryDocumentsResponse<T>) -> Result<Self, Self::Error> {
-        // first check if there is a Raw document. In case we bail out
-        if q.results.iter().any(|r| match r {
-            QueryResult::Document(_) => false,
-            QueryResult::Raw(_) => true,
-        }) {
-            return Err(crate::Error::RawElementError);
-        }
-
         Ok(Self {
             query_response_meta: q.query_response_meta,
             results: q
                 .results
                 .into_iter()
                 .map(|r| match r {
-                    QueryResult::Document(document) => document,
+                    QueryResult::Document(document) => Ok(document),
                     QueryResult::Raw(_) => {
-                        panic!("this should have been caugth by the previous check")
+                        // Bail if there is a raw document
+                        Err(crate::Error::ElementIsRaw(
+                            "QueryDocumentsResponseDocuments".to_owned(),
+                        ))
                     }
                 })
-                .collect(),
+                .collect::<Result<Vec<DocumentQueryResult<T>>, Self::Error>>()?,
             last_state_change: q.last_state_change,
             resource_quota: q.resource_quota,
             resource_usage: q.resource_usage,

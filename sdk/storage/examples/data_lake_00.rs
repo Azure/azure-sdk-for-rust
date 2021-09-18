@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let file_system = data_lake.as_file_system_client(file_system_name)?;
 
     // let's add some metadata. We call them "properties" to be consistent with the REST API definition from
-    // [https://docs.microsoft.com/en-us/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers](https://docs.microsoft.com/en-us/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers)
+    // [https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers](https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers)
     let mut properties = Properties::new();
     properties.insert("AddedVia", "Azure SDK for Rust");
     properties.insert("CreatedAt", chrono::Utc::now().to_string());

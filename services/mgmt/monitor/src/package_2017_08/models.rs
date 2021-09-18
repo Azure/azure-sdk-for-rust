@@ -4,11 +4,11 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -28,6 +28,8 @@ pub struct MetricTrigger {
     pub metric_namespace: Option<String>,
     #[serde(rename = "metricResourceUri")]
     pub metric_resource_uri: String,
+    #[serde(rename = "metricResourceLocation", default, skip_serializing_if = "Option::is_none")]
+    pub metric_resource_location: Option<String>,
     #[serde(rename = "timeGrain")]
     pub time_grain: String,
     pub statistic: metric_trigger::Statistic,
@@ -50,6 +52,7 @@ pub mod metric_trigger {
         Min,
         Max,
         Sum,
+        Count,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TimeAggregation {
@@ -92,6 +95,7 @@ pub mod scale_action {
         ChangeCount,
         PercentChangeCount,
         ExactCount,
+        ServiceAllowedNextValue,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -187,6 +191,8 @@ pub struct AutoscaleSetting {
     pub name: Option<String>,
     #[serde(rename = "targetResourceUri", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_uri: Option<String>,
+    #[serde(rename = "targetResourceLocation", default, skip_serializing_if = "Option::is_none")]
+    pub target_resource_location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoscaleSettingResource {
@@ -259,15 +265,15 @@ pub mod operation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Incident {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "ruleName", skip_serializing)]
+    #[serde(rename = "ruleName", default, skip_serializing_if = "Option::is_none")]
     pub rule_name: Option<String>,
-    #[serde(rename = "isActive", skip_serializing)]
+    #[serde(rename = "isActive", default, skip_serializing_if = "Option::is_none")]
     pub is_active: Option<bool>,
-    #[serde(rename = "activatedTime", skip_serializing)]
+    #[serde(rename = "activatedTime", default, skip_serializing_if = "Option::is_none")]
     pub activated_time: Option<String>,
-    #[serde(rename = "resolvedTime", skip_serializing)]
+    #[serde(rename = "resolvedTime", default, skip_serializing_if = "Option::is_none")]
     pub resolved_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -418,7 +424,7 @@ pub struct AlertRule {
     pub action: Option<RuleAction>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<RuleAction>,
-    #[serde(rename = "lastUpdatedTime", skip_serializing)]
+    #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -474,11 +480,11 @@ pub struct LogProfileCollection {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyOnlyResource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

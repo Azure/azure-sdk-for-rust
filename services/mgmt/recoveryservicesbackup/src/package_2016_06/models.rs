@@ -505,7 +505,7 @@ pub struct ProtectionContainer {
     pub registration_status: Option<String>,
     #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
     pub health_status: Option<String>,
-    #[serde(rename = "containerType", skip_serializing)]
+    #[serde(rename = "containerType", default, skip_serializing_if = "Option::is_none")]
     pub container_type: Option<String>,
     #[serde(rename = "protectableObjectType", default, skip_serializing_if = "Option::is_none")]
     pub protectable_object_type: Option<String>,

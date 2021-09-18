@@ -1,3 +1,4 @@
+use azure_core::Context;
 use azure_cosmos::prelude::*;
 use std::error::Error;
 
@@ -18,24 +19,33 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
-    let http_client = azure_core::new_http_client();
-    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
+    let client = CosmosClient::new(
+        account.clone(),
+        authorization_token,
+        CosmosOptions::default(),
+    );
 
     let database_client = client.into_database_client(database_name);
     let user_client = database_client.clone().into_user_client(user_name.clone());
 
-    let create_user_response = user_client.create_user().execute().await?;
+    let create_user_response = user_client
+        .create_user(Context::new(), CreateUserOptions::new())
+        .await?;
     println!("create_user_response == {:#?}", create_user_response);
 
     let list_users_response = database_client.list_users().execute().await?;
     println!("list_users_response == {:#?}", list_users_response);
 
-    let get_user_response = user_client.get_user().execute().await?;
+    let get_user_response = user_client
+        .get_user(Context::new(), GetUserOptions::new())
+        .await?;
     println!("get_user_response == {:#?}", get_user_response);
 
     let new_user = format!("{}replaced", user_name);
 
-    let replace_user_response = user_client.replace_user().execute(&new_user).await?;
+    let replace_user_response = user_client
+        .replace_user(Context::new(), &new_user, ReplaceUserOptions::new())
+        .await?;
     println!("replace_user_response == {:#?}", replace_user_response);
 
     let user_client = database_client.into_user_client(new_user);

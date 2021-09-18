@@ -4,11 +4,11 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Project {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
@@ -21,27 +21,27 @@ pub struct Project {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProjectProperties {
-    #[serde(rename = "createdTimestamp", skip_serializing)]
+    #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
-    #[serde(rename = "updatedTimestamp", skip_serializing)]
+    #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
-    #[serde(rename = "discoveryStatus", skip_serializing)]
+    #[serde(rename = "discoveryStatus", default, skip_serializing_if = "Option::is_none")]
     pub discovery_status: Option<project_properties::DiscoveryStatus>,
     #[serde(rename = "customerWorkspaceId", default, skip_serializing_if = "Option::is_none")]
     pub customer_workspace_id: Option<String>,
     #[serde(rename = "customerWorkspaceLocation", default, skip_serializing_if = "Option::is_none")]
     pub customer_workspace_location: Option<String>,
-    #[serde(rename = "lastDiscoveryTimestamp", skip_serializing)]
+    #[serde(rename = "lastDiscoveryTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub last_discovery_timestamp: Option<String>,
-    #[serde(rename = "lastDiscoverySessionId", skip_serializing)]
+    #[serde(rename = "lastDiscoverySessionId", default, skip_serializing_if = "Option::is_none")]
     pub last_discovery_session_id: Option<String>,
-    #[serde(rename = "numberOfGroups", skip_serializing)]
+    #[serde(rename = "numberOfGroups", default, skip_serializing_if = "Option::is_none")]
     pub number_of_groups: Option<i32>,
-    #[serde(rename = "numberOfMachines", skip_serializing)]
+    #[serde(rename = "numberOfMachines", default, skip_serializing_if = "Option::is_none")]
     pub number_of_machines: Option<i32>,
-    #[serde(rename = "numberOfAssessments", skip_serializing)]
+    #[serde(rename = "numberOfAssessments", default, skip_serializing_if = "Option::is_none")]
     pub number_of_assessments: Option<i32>,
-    #[serde(rename = "lastAssessmentTimestamp", skip_serializing)]
+    #[serde(rename = "lastAssessmentTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub last_assessment_timestamp: Option<String>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<project_properties::ProvisioningState>,
@@ -67,35 +67,35 @@ pub mod project_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Group {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub properties: GroupProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupProperties {
     pub machines: Vec<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub assessments: Vec<String>,
-    #[serde(rename = "createdTimestamp", skip_serializing)]
+    #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
-    #[serde(rename = "updatedTimestamp", skip_serializing)]
+    #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Assessment {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub properties: AssessmentProperties,
 }
@@ -120,25 +120,25 @@ pub struct AssessmentProperties {
     pub azure_hybrid_use_benefit: assessment_properties::AzureHybridUseBenefit,
     #[serde(rename = "discountPercentage")]
     pub discount_percentage: f64,
-    #[serde(rename = "confidenceRatingInPercentage", skip_serializing)]
+    #[serde(rename = "confidenceRatingInPercentage", default, skip_serializing_if = "Option::is_none")]
     pub confidence_rating_in_percentage: Option<f64>,
     #[serde(rename = "sizingCriterion")]
     pub sizing_criterion: assessment_properties::SizingCriterion,
-    #[serde(rename = "pricesTimestamp", skip_serializing)]
+    #[serde(rename = "pricesTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub prices_timestamp: Option<String>,
-    #[serde(rename = "createdTimestamp", skip_serializing)]
+    #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
-    #[serde(rename = "updatedTimestamp", skip_serializing)]
+    #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
-    #[serde(rename = "monthlyComputeCost", skip_serializing)]
+    #[serde(rename = "monthlyComputeCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_compute_cost: Option<f64>,
-    #[serde(rename = "monthlyBandwidthCost", skip_serializing)]
+    #[serde(rename = "monthlyBandwidthCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_bandwidth_cost: Option<f64>,
-    #[serde(rename = "monthlyStorageCost", skip_serializing)]
+    #[serde(rename = "monthlyStorageCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_storage_cost: Option<f64>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<assessment_properties::Status>,
-    #[serde(rename = "numberOfMachines", skip_serializing)]
+    #[serde(rename = "numberOfMachines", default, skip_serializing_if = "Option::is_none")]
     pub number_of_machines: Option<i32>,
 }
 pub mod assessment_properties {
@@ -363,64 +363,64 @@ pub mod assessment_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Disk {
-    #[serde(rename = "gigabytesAllocated", skip_serializing)]
+    #[serde(rename = "gigabytesAllocated", default, skip_serializing_if = "Option::is_none")]
     pub gigabytes_allocated: Option<f64>,
-    #[serde(rename = "gigabytesConsumed", skip_serializing)]
+    #[serde(rename = "gigabytesConsumed", default, skip_serializing_if = "Option::is_none")]
     pub gigabytes_consumed: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkAdapter {
-    #[serde(rename = "macAddress", skip_serializing)]
+    #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
-    #[serde(rename = "ipAddresses", skip_serializing)]
+    #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_addresses: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Machine {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MachineProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineProperties {
-    #[serde(rename = "bootType", skip_serializing)]
+    #[serde(rename = "bootType", default, skip_serializing_if = "Option::is_none")]
     pub boot_type: Option<machine_properties::BootType>,
-    #[serde(rename = "datacenterContainer", skip_serializing)]
+    #[serde(rename = "datacenterContainer", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_container: Option<String>,
-    #[serde(rename = "datacenterManagementServer", skip_serializing)]
+    #[serde(rename = "datacenterManagementServer", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_management_server: Option<String>,
-    #[serde(rename = "datacenterMachineId", skip_serializing)]
+    #[serde(rename = "datacenterMachineId", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_machine_id: Option<String>,
-    #[serde(rename = "datacenterManagementServerId", skip_serializing)]
+    #[serde(rename = "datacenterManagementServerId", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_management_server_id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "displayName", skip_serializing)]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(rename = "megabytesOfMemory", skip_serializing)]
+    #[serde(rename = "megabytesOfMemory", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_of_memory: Option<f64>,
-    #[serde(rename = "numberOfCores", skip_serializing)]
+    #[serde(rename = "numberOfCores", default, skip_serializing_if = "Option::is_none")]
     pub number_of_cores: Option<i64>,
-    #[serde(rename = "operatingSystem", skip_serializing)]
+    #[serde(rename = "operatingSystem", default, skip_serializing_if = "Option::is_none")]
     pub operating_system: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<String>,
-    #[serde(rename = "createdTimestamp", skip_serializing)]
+    #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
-    #[serde(rename = "updatedTimestamp", skip_serializing)]
+    #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
-    #[serde(rename = "discoveredTimestamp", skip_serializing)]
+    #[serde(rename = "discoveredTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub discovered_timestamp: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disks: Option<serde_json::Value>,
-    #[serde(rename = "networkAdapters", skip_serializing)]
+    #[serde(rename = "networkAdapters", default, skip_serializing_if = "Option::is_none")]
     pub network_adapters: Option<serde_json::Value>,
 }
 pub mod machine_properties {
@@ -436,47 +436,79 @@ pub mod machine_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessedDisk {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "gigabytesProvisioned", skip_serializing)]
+    #[serde(rename = "gigabytesProvisioned", default, skip_serializing_if = "Option::is_none")]
     pub gigabytes_provisioned: Option<f64>,
-    #[serde(rename = "gigabytesConsumed", skip_serializing)]
+    #[serde(rename = "gigabytesConsumed", default, skip_serializing_if = "Option::is_none")]
     pub gigabytes_consumed: Option<f64>,
-    #[serde(rename = "megabytesPerSecondOfRead", skip_serializing)]
+    #[serde(rename = "megabytesPerSecondOfRead", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_per_second_of_read: Option<f64>,
-    #[serde(rename = "megabytesPerSecondOfReadDataPointsExpected", skip_serializing)]
+    #[serde(
+        rename = "megabytesPerSecondOfReadDataPointsExpected",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub megabytes_per_second_of_read_data_points_expected: Option<i32>,
-    #[serde(rename = "megabytesPerSecondOfReadDataPointsReceived", skip_serializing)]
+    #[serde(
+        rename = "megabytesPerSecondOfReadDataPointsReceived",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub megabytes_per_second_of_read_data_points_received: Option<i32>,
-    #[serde(rename = "megabytesPerSecondOfWrite", skip_serializing)]
+    #[serde(rename = "megabytesPerSecondOfWrite", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_per_second_of_write: Option<f64>,
-    #[serde(rename = "megabytesPerSecondOfWriteDataPointsExpected", skip_serializing)]
+    #[serde(
+        rename = "megabytesPerSecondOfWriteDataPointsExpected",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub megabytes_per_second_of_write_data_points_expected: Option<i32>,
-    #[serde(rename = "megabytesPerSecondOfWriteDataPointsReceived", skip_serializing)]
+    #[serde(
+        rename = "megabytesPerSecondOfWriteDataPointsReceived",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub megabytes_per_second_of_write_data_points_received: Option<i32>,
-    #[serde(rename = "numberOfReadOperationsPerSecond", skip_serializing)]
+    #[serde(rename = "numberOfReadOperationsPerSecond", default, skip_serializing_if = "Option::is_none")]
     pub number_of_read_operations_per_second: Option<f64>,
-    #[serde(rename = "numberOfReadOperationsPerSecondDataPointsExpected", skip_serializing)]
+    #[serde(
+        rename = "numberOfReadOperationsPerSecondDataPointsExpected",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub number_of_read_operations_per_second_data_points_expected: Option<i32>,
-    #[serde(rename = "numberOfReadOperationsPerSecondDataPointsReceived", skip_serializing)]
+    #[serde(
+        rename = "numberOfReadOperationsPerSecondDataPointsReceived",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub number_of_read_operations_per_second_data_points_received: Option<i32>,
-    #[serde(rename = "numberOfWriteOperationsPerSecond", skip_serializing)]
+    #[serde(rename = "numberOfWriteOperationsPerSecond", default, skip_serializing_if = "Option::is_none")]
     pub number_of_write_operations_per_second: Option<f64>,
-    #[serde(rename = "numberOfWriteOperationsPerSecondDataPointsExpected", skip_serializing)]
+    #[serde(
+        rename = "numberOfWriteOperationsPerSecondDataPointsExpected",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub number_of_write_operations_per_second_data_points_expected: Option<i32>,
-    #[serde(rename = "numberOfWriteOperationsPerSecondDataPointsReceived", skip_serializing)]
+    #[serde(
+        rename = "numberOfWriteOperationsPerSecondDataPointsReceived",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub number_of_write_operations_per_second_data_points_received: Option<i32>,
-    #[serde(rename = "monthlyStorageCost", skip_serializing)]
+    #[serde(rename = "monthlyStorageCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_storage_cost: Option<f64>,
-    #[serde(rename = "recommendedDiskType", skip_serializing)]
+    #[serde(rename = "recommendedDiskType", default, skip_serializing_if = "Option::is_none")]
     pub recommended_disk_type: Option<assessed_disk::RecommendedDiskType>,
-    #[serde(rename = "recommendedDiskSize", skip_serializing)]
+    #[serde(rename = "recommendedDiskSize", default, skip_serializing_if = "Option::is_none")]
     pub recommended_disk_size: Option<assessed_disk::RecommendedDiskSize>,
-    #[serde(rename = "gigabytesForRecommendedDiskSize", skip_serializing)]
+    #[serde(rename = "gigabytesForRecommendedDiskSize", default, skip_serializing_if = "Option::is_none")]
     pub gigabytes_for_recommended_disk_size: Option<i32>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub suitability: Option<assessed_disk::Suitability>,
-    #[serde(rename = "suitabilityExplanation", skip_serializing)]
+    #[serde(rename = "suitabilityExplanation", default, skip_serializing_if = "Option::is_none")]
     pub suitability_explanation: Option<assessed_disk::SuitabilityExplanation>,
 }
 pub mod assessed_disk {
@@ -541,29 +573,45 @@ pub mod assessed_disk {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessedNetworkAdapter {
-    #[serde(rename = "macAddress", skip_serializing)]
+    #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
-    #[serde(rename = "ipAddresses", skip_serializing)]
+    #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_addresses: Vec<String>,
-    #[serde(rename = "monthlyBandwidthCosts", skip_serializing)]
+    #[serde(rename = "monthlyBandwidthCosts", default, skip_serializing_if = "Option::is_none")]
     pub monthly_bandwidth_costs: Option<f64>,
-    #[serde(rename = "megabytesPerSecondReceived", skip_serializing)]
+    #[serde(rename = "megabytesPerSecondReceived", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_per_second_received: Option<f64>,
-    #[serde(rename = "megabytesPerSecondReceivedDataPointsExpected", skip_serializing)]
+    #[serde(
+        rename = "megabytesPerSecondReceivedDataPointsExpected",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub megabytes_per_second_received_data_points_expected: Option<i32>,
-    #[serde(rename = "megabytesPerSecondOfReadDataPointsReceived", skip_serializing)]
+    #[serde(
+        rename = "megabytesPerSecondOfReadDataPointsReceived",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub megabytes_per_second_of_read_data_points_received: Option<i32>,
-    #[serde(rename = "megabytesPerSecondTransmitted", skip_serializing)]
+    #[serde(rename = "megabytesPerSecondTransmitted", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_per_second_transmitted: Option<f64>,
-    #[serde(rename = "megabytesPerSecondTransmittedDataPointsExpected", skip_serializing)]
+    #[serde(
+        rename = "megabytesPerSecondTransmittedDataPointsExpected",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub megabytes_per_second_transmitted_data_points_expected: Option<i32>,
-    #[serde(rename = "megabytesPerSecondTransmittedDataPointsReceived", skip_serializing)]
+    #[serde(
+        rename = "megabytesPerSecondTransmittedDataPointsReceived",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub megabytes_per_second_transmitted_data_points_received: Option<i32>,
     #[serde(rename = "netGigabytesTransmittedPerMonth", default, skip_serializing_if = "Option::is_none")]
     pub net_gigabytes_transmitted_per_month: Option<f64>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub suitability: Option<assessed_network_adapter::Suitability>,
-    #[serde(rename = "suitabilityExplanation", skip_serializing)]
+    #[serde(rename = "suitabilityExplanation", default, skip_serializing_if = "Option::is_none")]
     pub suitability_explanation: Option<assessed_network_adapter::SuitabilityExplanation>,
 }
 pub mod assessed_network_adapter {
@@ -585,78 +633,94 @@ pub mod assessed_network_adapter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessedMachine {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AssessedMachineProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessedMachineProperties {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<String>,
-    #[serde(rename = "discoveredTimestamp", skip_serializing)]
+    #[serde(rename = "discoveredTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub discovered_timestamp: Option<String>,
-    #[serde(rename = "bootType", skip_serializing)]
+    #[serde(rename = "bootType", default, skip_serializing_if = "Option::is_none")]
     pub boot_type: Option<assessed_machine_properties::BootType>,
-    #[serde(rename = "datacenterContainer", skip_serializing)]
+    #[serde(rename = "datacenterContainer", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_container: Option<String>,
-    #[serde(rename = "datacenterManagementServer", skip_serializing)]
+    #[serde(rename = "datacenterManagementServer", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_management_server: Option<String>,
-    #[serde(rename = "datacenterMachineId", skip_serializing)]
+    #[serde(rename = "datacenterMachineId", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_machine_id: Option<String>,
-    #[serde(rename = "datacenterManagementServerId", skip_serializing)]
+    #[serde(rename = "datacenterManagementServerId", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_management_server_id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "displayName", skip_serializing)]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(rename = "megabytesOfMemory", skip_serializing)]
+    #[serde(rename = "megabytesOfMemory", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_of_memory: Option<f64>,
-    #[serde(rename = "numberOfCores", skip_serializing)]
+    #[serde(rename = "numberOfCores", default, skip_serializing_if = "Option::is_none")]
     pub number_of_cores: Option<i32>,
-    #[serde(rename = "operatingSystem", skip_serializing)]
+    #[serde(rename = "operatingSystem", default, skip_serializing_if = "Option::is_none")]
     pub operating_system: Option<String>,
-    #[serde(rename = "monthlyBandwidthCost", skip_serializing)]
+    #[serde(rename = "monthlyBandwidthCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_bandwidth_cost: Option<f64>,
-    #[serde(rename = "monthlyStorageCost", skip_serializing)]
+    #[serde(rename = "monthlyStorageCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_storage_cost: Option<f64>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disks: Option<serde_json::Value>,
-    #[serde(rename = "networkAdapters", skip_serializing)]
+    #[serde(rename = "networkAdapters", default, skip_serializing_if = "Option::is_none")]
     pub network_adapters: Option<serde_json::Value>,
-    #[serde(rename = "recommendedSize", skip_serializing)]
+    #[serde(rename = "recommendedSize", default, skip_serializing_if = "Option::is_none")]
     pub recommended_size: Option<assessed_machine_properties::RecommendedSize>,
-    #[serde(rename = "numberOfCoresForRecommendedSize", skip_serializing)]
+    #[serde(rename = "numberOfCoresForRecommendedSize", default, skip_serializing_if = "Option::is_none")]
     pub number_of_cores_for_recommended_size: Option<i32>,
-    #[serde(rename = "megabytesOfMemoryForRecommendedSize", skip_serializing)]
+    #[serde(rename = "megabytesOfMemoryForRecommendedSize", default, skip_serializing_if = "Option::is_none")]
     pub megabytes_of_memory_for_recommended_size: Option<f64>,
-    #[serde(rename = "monthlyComputeCostForRecommendedSize", skip_serializing)]
+    #[serde(rename = "monthlyComputeCostForRecommendedSize", default, skip_serializing_if = "Option::is_none")]
     pub monthly_compute_cost_for_recommended_size: Option<f64>,
-    #[serde(rename = "percentageCoresUtilization", skip_serializing)]
+    #[serde(rename = "percentageCoresUtilization", default, skip_serializing_if = "Option::is_none")]
     pub percentage_cores_utilization: Option<f64>,
-    #[serde(rename = "percentageMemoryUtilization", skip_serializing)]
+    #[serde(rename = "percentageMemoryUtilization", default, skip_serializing_if = "Option::is_none")]
     pub percentage_memory_utilization: Option<f64>,
-    #[serde(rename = "percentageCoresUtilizationDataPointsExpected", skip_serializing)]
+    #[serde(
+        rename = "percentageCoresUtilizationDataPointsExpected",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub percentage_cores_utilization_data_points_expected: Option<i32>,
-    #[serde(rename = "percentageCoresUtilizationDataPointsReceived", skip_serializing)]
+    #[serde(
+        rename = "percentageCoresUtilizationDataPointsReceived",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub percentage_cores_utilization_data_points_received: Option<i32>,
-    #[serde(rename = "percentageMemoryUtilizationDataPointsExpected", skip_serializing)]
+    #[serde(
+        rename = "percentageMemoryUtilizationDataPointsExpected",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub percentage_memory_utilization_data_points_expected: Option<i32>,
-    #[serde(rename = "percentageMemoryUtilizationDataPointsReceived", skip_serializing)]
+    #[serde(
+        rename = "percentageMemoryUtilizationDataPointsReceived",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub percentage_memory_utilization_data_points_received: Option<i32>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub suitability: Option<assessed_machine_properties::Suitability>,
-    #[serde(rename = "suitabilityExplanation", skip_serializing)]
+    #[serde(rename = "suitabilityExplanation", default, skip_serializing_if = "Option::is_none")]
     pub suitability_explanation: Option<assessed_machine_properties::SuitabilityExplanation>,
-    #[serde(rename = "createdTimestamp", skip_serializing)]
+    #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
-    #[serde(rename = "updatedTimestamp", skip_serializing)]
+    #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
 }
 pub mod assessed_machine_properties {
@@ -904,45 +968,45 @@ pub mod assessed_machine_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProjectKey {
-    #[serde(rename = "workspaceId", skip_serializing)]
+    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
-    #[serde(rename = "workspaceKey", skip_serializing)]
+    #[serde(rename = "workspaceKey", default, skip_serializing_if = "Option::is_none")]
     pub workspace_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationDisplay {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DownloadUrl {
-    #[serde(rename = "assessmentReportUrl", skip_serializing)]
+    #[serde(rename = "assessmentReportUrl", default, skip_serializing_if = "Option::is_none")]
     pub assessment_report_url: Option<String>,
-    #[serde(rename = "expirationTime", skip_serializing)]
+    #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
     pub expiration_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VmFamily {
-    #[serde(rename = "familyName", skip_serializing)]
+    #[serde(rename = "familyName", default, skip_serializing_if = "Option::is_none")]
     pub family_name: Option<String>,
-    #[serde(rename = "targetLocations", skip_serializing)]
+    #[serde(rename = "targetLocations", default, skip_serializing_if = "Vec::is_empty")]
     pub target_locations: Vec<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub category: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -977,9 +1041,9 @@ pub struct OperationResultList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessmentOptionsResultList {
-    #[serde(rename = "vmFamilies", skip_serializing)]
+    #[serde(rename = "vmFamilies", default, skip_serializing_if = "Vec::is_empty")]
     pub vm_families: Vec<VmFamily>,
-    #[serde(rename = "reservedInstanceVmFamilies", skip_serializing)]
+    #[serde(rename = "reservedInstanceVmFamilies", default, skip_serializing_if = "Vec::is_empty")]
     pub reserved_instance_vm_families: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1014,11 +1078,11 @@ pub mod check_name_availability_parameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityResult {
-    #[serde(rename = "nameAvailable", skip_serializing)]
+    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_result::Reason>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
 pub mod check_name_availability_result {

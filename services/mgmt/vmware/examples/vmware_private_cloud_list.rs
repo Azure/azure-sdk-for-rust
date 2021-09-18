@@ -3,9 +3,9 @@ Lists the private clouds, similar to:
 az vmware private-cloud list --query [].id
 
 az extension documentation:
-https://docs.microsoft.com/en-us/cli/azure/ext/vmware/vmware/private-cloud?view=azure-cli-latest#ext_vmware_az_vmware_private_cloud_list
+https://docs.microsoft.com/cli/azure/ext/vmware/vmware/private-cloud?view=azure-cli-latest#ext_vmware_az_vmware_private_cloud_list
 API documentation:
-https://docs.microsoft.com/en-us/rest/api/vmware/privateclouds/list
+https://docs.microsoft.com/rest/api/vmware/privateclouds/list
 
 cargo run --example vmware_private_cloud_list
 */

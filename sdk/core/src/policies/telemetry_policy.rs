@@ -1,14 +1,10 @@
+use crate::options::TelemetryOptions;
 use crate::policies::{Policy, PolicyResult};
-use crate::{Context, Request, Response};
+use crate::{PipelineContext, Request, Response};
 
 use http::{header::USER_AGENT, HeaderValue};
 use std::env::consts::{ARCH, OS};
 use std::sync::Arc;
-
-#[derive(Clone, Debug, Default)]
-pub struct TelemetryOptions {
-    pub application_id: Option<String>,
-}
 
 #[derive(Clone, Debug)]
 pub struct TelemetryPolicy {
@@ -16,12 +12,6 @@ pub struct TelemetryPolicy {
 }
 
 /// Sets the User-Agent header with useful information in a typical format for Azure SDKs.
-///
-/// Client libraries should create a `TelemetryPolicy` using `option_env!()` like so:
-/// ```
-/// use azure_core::policies::{TelemetryOptions, TelemetryPolicy};
-/// let policy = TelemetryPolicy::new(option_env!("CARGO_PKG_NAME"), option_env!("CARGO_PKG_VERSION"), &TelemetryOptions::default());
-/// ```
 impl<'a> TelemetryPolicy {
     pub fn new(
         crate_name: Option<&'a str>,
@@ -63,17 +53,20 @@ impl<'a> TelemetryPolicy {
             ),
         };
 
-        TelemetryPolicy { header: header }
+        TelemetryPolicy { header }
     }
 }
 
 #[async_trait::async_trait]
-impl Policy for TelemetryPolicy {
+impl<C> Policy<C> for TelemetryPolicy
+where
+    C: Send + Sync,
+{
     async fn send(
         &self,
-        ctx: &mut Context,
+        ctx: &mut PipelineContext<C>,
         request: &mut Request,
-        next: &[Arc<dyn Policy>],
+        next: &[Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response> {
         request
             .headers_mut()

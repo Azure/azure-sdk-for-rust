@@ -4,11 +4,11 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -28,16 +28,16 @@ pub struct ErrorResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDefinition {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComplianceStatus {
-    #[serde(rename = "complianceState", skip_serializing)]
+    #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
     pub compliance_state: Option<ComplianceState>,
     #[serde(rename = "lastConfigApplied", default, skip_serializing_if = "Option::is_none")]
     pub last_config_applied: Option<String>,
@@ -97,15 +97,15 @@ pub mod source_control_configuration {
         pub operator_params: Option<String>,
         #[serde(rename = "operatorScope", default, skip_serializing_if = "Option::is_none")]
         pub operator_scope: Option<properties::OperatorScope>,
-        #[serde(rename = "repositoryPublicKey", skip_serializing)]
+        #[serde(rename = "repositoryPublicKey", default, skip_serializing_if = "Option::is_none")]
         pub repository_public_key: Option<String>,
         #[serde(rename = "enableHelmOperator", default, skip_serializing_if = "Option::is_none")]
         pub enable_helm_operator: Option<properties::EnableHelmOperator>,
         #[serde(rename = "helmOperatorProperties", default, skip_serializing_if = "Option::is_none")]
         pub helm_operator_properties: Option<HelmOperatorProperties>,
-        #[serde(rename = "provisioningState", skip_serializing)]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
-        #[serde(rename = "complianceStatus", skip_serializing)]
+        #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
         pub compliance_status: Option<ComplianceStatus>,
     }
     pub mod properties {
@@ -140,9 +140,9 @@ pub mod source_control_configuration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceControlConfigurationList {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SourceControlConfiguration>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -170,6 +170,6 @@ pub mod resource_provider_operation {
 pub struct ResourceProviderOperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceProviderOperation>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

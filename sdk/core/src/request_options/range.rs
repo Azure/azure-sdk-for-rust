@@ -1,10 +1,8 @@
 use super::BA512Range;
-use crate::AddAsHeader;
-use crate::ParseError;
+use crate::{AddAsHeader, ParsingError};
 use http::request::Builder;
 use std::convert::From;
 use std::fmt;
-use std::num::ParseIntError;
 use std::str::FromStr;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -63,18 +61,16 @@ impl From<std::ops::Range<usize>> for Range {
     }
 }
 
-impl From<ParseIntError> for ParseError {
-    fn from(pie: ParseIntError) -> ParseError {
-        ParseError::ParseIntError(pie)
-    }
-}
-
 impl FromStr for Range {
-    type Err = ParseError;
-    fn from_str(s: &str) -> Result<Range, ParseError> {
+    type Err = ParsingError;
+    fn from_str(s: &str) -> Result<Range, Self::Err> {
         let v = s.split('/').collect::<Vec<&str>>();
         if v.len() != 2 {
-            return Err(ParseError::SplitNotFound('/'));
+            return Err(ParsingError::TokenNotFound {
+                item: "Range",
+                token: "/".to_owned(),
+                full: s.to_owned(),
+            });
         }
 
         let cp_start = v[0].parse::<u64>()?;
@@ -95,7 +91,7 @@ impl fmt::Display for Range {
 
 impl<'a> AddAsHeader for Range {
     // here we ask for the CRC64 value if we can (that is,
-    // the range is smaller than 4MB).
+    // if the range is smaller than 4MB).
     fn add_as_header(&self, builder: Builder) -> Builder {
         let builder = builder.header("x-ms-range", &format!("{}", self));
         if self.len() < 1024 * 1024 * 4 {
@@ -103,6 +99,25 @@ impl<'a> AddAsHeader for Range {
         } else {
             builder
         }
+    }
+
+    fn add_as_header2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<(), crate::errors::HTTPHeaderError> {
+        request.headers_mut().append(
+            "x-ms-range",
+            http::HeaderValue::from_str(&format!("{}", self))?,
+        );
+
+        if self.len() < 1024 * 1024 * 4 {
+            request.headers_mut().append(
+                "x-ms-range-get-content-crc64",
+                http::HeaderValue::from_str("true")?,
+            );
+        }
+
+        Ok(())
     }
 }
 
@@ -119,15 +134,22 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "ParseIntError(ParseIntError { kind: InvalidDigit })")]
     fn test_range_parse_panic_1() {
-        "abba/2000".parse::<Range>().unwrap();
+        let err = "abba/2000".parse::<Range>().unwrap_err();
+        assert!(matches!(err, ParsingError::ParseIntError(_)));
     }
 
     #[test]
-    #[should_panic(expected = "SplitNotFound")]
     fn test_range_parse_panic_2() {
-        "1000-2000".parse::<Range>().unwrap();
+        let err = "1000-2000".parse::<Range>().unwrap_err();
+        assert_eq!(
+            err,
+            ParsingError::TokenNotFound {
+                item: "Range",
+                token: "/".to_string(),
+                full: "1000-2000".to_string()
+            }
+        );
     }
 
     #[test]

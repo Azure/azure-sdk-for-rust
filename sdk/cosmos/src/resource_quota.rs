@@ -104,13 +104,13 @@ pub(crate) fn resource_quotas_from_str(
 #[derive(Debug, thiserror::Error)]
 pub enum ResourceQuotaParsingError {
     #[error(
-        "String has an unrecognized part. Part: \"{}\", Full string: \"{}\"",
+        "resource quota has an unrecognized part - part: \"{}\" full string: \"{}\"",
         part,
         full_string
     )]
     UnrecognizedPart { part: String, full_string: String },
     #[error(
-        "Failed to parse resource quota string '{}' as number: {}",
+        "failed to parse resource quota string '{}' as number: {}",
         string,
         error
     )]

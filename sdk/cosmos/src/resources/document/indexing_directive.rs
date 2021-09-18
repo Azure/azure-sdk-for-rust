@@ -32,7 +32,10 @@ impl std::str::FromStr for IndexingDirective {
             "Default" => Ok(IndexingDirective::Default),
             "Exclude" => Ok(IndexingDirective::Exclude),
             "Include" => Ok(IndexingDirective::Include),
-            _ => Err(ParsingError::ElementNotFound(s.to_owned())),
+            _ => Err(ParsingError::UnknownVariant {
+                item: "IndexingDirective",
+                variant: s.to_owned(),
+            }),
         }
     }
 }
@@ -54,5 +57,22 @@ impl azure_core::AddAsHeader for IndexingDirective {
                 builder.header(headers::HEADER_INDEXING_DIRECTIVE, "Include")
             }
         }
+    }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), azure_core::HTTPHeaderError> {
+        let (header_name, header_value) = match self {
+            IndexingDirective::Default => return Ok(()),
+            IndexingDirective::Exclude => (headers::HEADER_INDEXING_DIRECTIVE, "Exclude"),
+            IndexingDirective::Include => (headers::HEADER_INDEXING_DIRECTIVE, "Include"),
+        };
+
+        request.headers_mut().append(
+            header_name,
+            http::header::HeaderValue::from_str(header_value)?,
+        );
+        Ok(())
     }
 }

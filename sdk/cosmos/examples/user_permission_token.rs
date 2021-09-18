@@ -1,3 +1,4 @@
+use azure_core::Context;
 use azure_cosmos::prelude::*;
 use std::error::Error;
 
@@ -21,8 +22,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
-    let http_client = azure_core::new_http_client();
-    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
+    let client = CosmosClient::new(
+        account.clone(),
+        authorization_token,
+        CosmosOptions::default(),
+    );
 
     let database_client = client.clone().into_database_client(database_name.clone());
     let collection_client = database_client
@@ -33,7 +37,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let get_collection_response = collection_client.get_collection().execute().await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
-    let create_user_response = user_client.create_user().execute().await?;
+    let create_user_response = user_client
+        .create_user(Context::new(), CreateUserOptions::default())
+        .await?;
     println!("create_user_response == {:#?}", create_user_response);
 
     // test list documents
@@ -53,10 +59,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let permission_mode = get_collection_response.collection.read_permission();
 
     let create_permission_response = permission_client
-        .create_permission()
-        .expiry_seconds(18000u64) // 5 hours, max!
-        .execute(&permission_mode)
-        .await?;
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
+            &permission_mode,
+        )
+        .await
+        .unwrap();
     println!(
         "create_permission_response == {:#?}",
         create_permission_response
@@ -109,24 +118,34 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .clone()
         .into_database_client(database_name.clone())
         .into_collection_client(collection_name.clone())
-        .create_document()
-        .is_upsert(true)
-        .execute_with_partition_key(&document, &"Gianluigi Bombatomica")
+        .create_document(
+            Context::new(),
+            &document,
+            CreateDocumentOptions::new()
+                .is_upsert(true)
+                .partition_key(&"Gianluigi Bombatomica")
+                .unwrap(),
+        )
         .await
     {
         Ok(_) => panic!("this should not happen!"),
         Err(error) => println!("Insert failed: {:#?}", error),
     }
 
-    permission_client.delete_permission().execute().await?;
+    permission_client
+        .delete_permission(Context::new(), DeletePermissionOptions::new())
+        .await?;
 
     // All includes read and write.
     let permission_mode = get_collection_response.collection.all_permission();
     let create_permission_response = permission_client
-        .create_permission()
-        .expiry_seconds(18000u64) // 5 hours, max!
-        .execute(&permission_mode)
-        .await?;
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
+            &permission_mode,
+        )
+        .await
+        .unwrap();
     println!(
         "create_permission_response == {:#?}",
         create_permission_response
@@ -148,9 +167,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_document_response = client
         .into_database_client(database_name)
         .into_collection_client(collection_name)
-        .create_document()
-        .is_upsert(true)
-        .execute_with_partition_key(&document, &"Gianluigi Bombatomica")
+        .create_document(
+            Context::new(),
+            &document,
+            CreateDocumentOptions::new()
+                .is_upsert(true)
+                .partition_key(&"Gianluigi Bombatomica")
+                .unwrap(),
+        )
         .await?;
     println!(
         "create_document_response == {:#?}",

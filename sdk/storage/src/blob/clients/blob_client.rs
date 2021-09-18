@@ -173,3 +173,57 @@ impl BlobClient {
             .prepare_request(url, method, http_header_adder, request_body)
     }
 }
+
+#[cfg(test)]
+#[cfg(feature = "test_integration")]
+mod integration_tests {
+    use super::*;
+    use crate::blob::clients::AsBlobClient;
+
+    fn get_emulator_client(container_name: &str) -> Arc<ContainerClient> {
+        let storage_account = StorageAccountClient::new_emulator_default().as_storage_client();
+        storage_account.as_container_client(container_name)
+    }
+
+    #[tokio::test]
+    async fn test_get_properties() {
+        let container_name = uuid::Uuid::new_v4().to_string();
+        let container_client = get_emulator_client(&container_name);
+
+        container_client
+            .create()
+            .execute()
+            .await
+            .expect("create container should succeed");
+
+        let md5 = md5::compute("world");
+        container_client
+            .as_blob_client("hello.txt")
+            .put_block_blob("world")
+            .execute()
+            .await
+            .expect("put block blob should succeed");
+        let properties = container_client
+            .as_blob_client("hello.txt")
+            .get_properties()
+            .execute()
+            .await
+            .expect("get properties should succeed");
+        assert_eq!(properties.blob.name, "hello.txt");
+        assert_eq!(
+            properties
+                .blob
+                .properties
+                .content_md5
+                .expect("has content_md5")
+                .as_slice(),
+            &md5.0
+        );
+
+        container_client
+            .delete()
+            .execute()
+            .await
+            .expect("delete container should succeed");
+    }
+}

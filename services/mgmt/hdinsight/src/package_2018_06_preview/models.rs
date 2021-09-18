@@ -113,9 +113,9 @@ pub struct VirtualNetworkProfile {
 pub struct DataDisksGroups {
     #[serde(rename = "disksPerNode", default, skip_serializing_if = "Option::is_none")]
     pub disks_per_node: Option<i32>,
-    #[serde(rename = "storageAccountType", skip_serializing)]
+    #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_type: Option<String>,
-    #[serde(rename = "diskSizeGB", skip_serializing)]
+    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -401,7 +401,7 @@ pub struct RuntimeScriptAction {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<String>,
     pub roles: Vec<String>,
-    #[serde(rename = "applicationName", skip_serializing)]
+    #[serde(rename = "applicationName", default, skip_serializing_if = "Option::is_none")]
     pub application_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -415,14 +415,14 @@ pub struct ExecuteScriptActionParameters {
 pub struct ClusterListPersistedScriptActionsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RuntimeScriptAction>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScriptActionExecutionSummary {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[serde(rename = "instanceCount", skip_serializing)]
+    #[serde(rename = "instanceCount", default, skip_serializing_if = "Option::is_none")]
     pub instance_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -434,16 +434,16 @@ pub struct RuntimeScriptActionDetail {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterListRuntimeScriptActionDetailResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RuntimeScriptActionDetail>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterIdentity {
-    #[serde(rename = "principalId", skip_serializing)]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", skip_serializing)]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<cluster_identity::Type>,
@@ -465,7 +465,7 @@ pub mod cluster_identity {
 pub struct ClusterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Cluster>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -525,11 +525,11 @@ pub struct UpdateGatewaySettingsParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GatewaySettings {
-    #[serde(rename = "restAuthCredential.isEnabled", skip_serializing)]
+    #[serde(rename = "restAuthCredential.isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub rest_auth_credential_is_enabled: Option<String>,
-    #[serde(rename = "restAuthCredential.username", skip_serializing)]
+    #[serde(rename = "restAuthCredential.username", default, skip_serializing_if = "Option::is_none")]
     pub rest_auth_credential_username: Option<String>,
-    #[serde(rename = "restAuthCredential.password", skip_serializing)]
+    #[serde(rename = "restAuthCredential.password", default, skip_serializing_if = "Option::is_none")]
     pub rest_auth_credential_password: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -559,11 +559,11 @@ pub struct UpdateClusterIdentityCertificateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -677,9 +677,9 @@ pub struct ErrorResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScriptActionExecutionHistoryList {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RuntimeScriptActionDetail>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -705,18 +705,18 @@ pub struct ScriptActionPersistedGetResponseSpec {
 pub struct ScriptActionsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RuntimeScriptActionDetail>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationGetHttpsEndpoint {
     #[serde(rename = "accessModes", default, skip_serializing_if = "Vec::is_empty")]
     pub access_modes: Vec<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[serde(rename = "destinationPort", default, skip_serializing_if = "Option::is_none")]
     pub destination_port: Option<i32>,
-    #[serde(rename = "publicPort", skip_serializing)]
+    #[serde(rename = "publicPort", default, skip_serializing_if = "Option::is_none")]
     pub public_port: Option<i32>,
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
@@ -748,17 +748,17 @@ pub struct ApplicationProperties {
     pub https_endpoints: Vec<ApplicationGetHttpsEndpoint>,
     #[serde(rename = "sshEndpoints", default, skip_serializing_if = "Vec::is_empty")]
     pub ssh_endpoints: Vec<ApplicationGetEndpoint>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[serde(rename = "applicationType", default, skip_serializing_if = "Option::is_none")]
     pub application_type: Option<String>,
-    #[serde(rename = "applicationState", skip_serializing)]
+    #[serde(rename = "applicationState", default, skip_serializing_if = "Option::is_none")]
     pub application_state: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<Errors>,
-    #[serde(rename = "createdDate", skip_serializing)]
+    #[serde(rename = "createdDate", default, skip_serializing_if = "Option::is_none")]
     pub created_date: Option<String>,
-    #[serde(rename = "marketplaceIdentifier", skip_serializing)]
+    #[serde(rename = "marketplaceIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_identifier: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -776,7 +776,7 @@ pub struct Application {
 pub struct ApplicationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Application>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -856,7 +856,7 @@ pub struct CapabilitiesResult {
     pub vmsize_filters: Vec<VmSizeCompatibilityFilter>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub features: Vec<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quota: Option<QuotaCapability>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -874,7 +874,7 @@ pub struct Usage {
     pub current_value: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizedName>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -890,7 +890,7 @@ pub struct BillingResponseListResult {
     pub vm_sizes_with_encryption_at_host: Vec<String>,
     #[serde(rename = "vmSizeFilters", default, skip_serializing_if = "Vec::is_empty")]
     pub vm_size_filters: Vec<VmSizeCompatibilityFilterV2>,
-    #[serde(rename = "vmSizeProperties", skip_serializing)]
+    #[serde(rename = "vmSizeProperties", default, skip_serializing_if = "Vec::is_empty")]
     pub vm_size_properties: Vec<VmSizeProperty>,
     #[serde(rename = "billingResources", default, skip_serializing_if = "Vec::is_empty")]
     pub billing_resources: Vec<BillingResources>,
@@ -991,9 +991,9 @@ pub struct NameAvailabilityCheckRequestParameters {
 pub struct NameAvailabilityCheckResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

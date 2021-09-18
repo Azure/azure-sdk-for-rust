@@ -15,7 +15,7 @@
 /// ```
 /// struct MyStruct<'a> { foo: Option<&'a str> };
 /// impl <'a> MyStruct<'a> {
-///     fn with_foo(self, foo: &'a str) -> Self {
+///     fn foo(self, foo: &'a str) -> Self {
 ///         Self {
 ///             foo: Some(foo),
 ///             ..self
@@ -26,6 +26,7 @@
 #[macro_export]
 macro_rules! setters {
     (@single $name:ident : $typ:ty => $transform:expr) => {
+        // TODO: Declare using idiomatic with_$name when https://github.com/Azure/azure-sdk-for-rust/issues/292 is resolved.
         pub fn $name<T: ::std::convert::Into<$typ>>(self, $name: T) -> Self {
             let $name: $typ = $name.into();
             Self  {
@@ -90,7 +91,10 @@ macro_rules! create_enum {
                     $(
                         $value => Ok($name::$variant),
                     )*
-                    _ => Err($crate::ParsingError::ElementNotFound(s.to_owned())),
+                    _ => Err($crate::ParsingError::UnknownVariant {
+                        item: stringify!($name),
+                        variant: s.to_owned()
+                    })
                 }
             }
         }
@@ -167,8 +171,28 @@ macro_rules! response_from_headers {
 
 #[cfg(test)]
 mod test {
+    use crate::ParsingError;
     create_enum!(Colors, (Black, "Black"), (White, "White"), (Red, "Red"));
     create_enum!(ColorsMonochrome, (Black, "Black"), (White, "White"));
+
+    struct Options {
+        a: Option<String>,
+        b: u32,
+    }
+
+    #[allow(dead_code)]
+    impl Options {
+        setters! {
+            a: String => Some(a),
+            b: u32 => b,
+        }
+    }
+
+    impl Default for Options {
+        fn default() -> Self {
+            Options { a: None, b: 1 }
+        }
+    }
 
     #[test]
     fn test_color_parse_1() {
@@ -183,8 +207,22 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "ElementNotFound(\"Red\")")]
     fn test_color_parse_err_1() {
-        "Red".parse::<ColorsMonochrome>().unwrap();
+        let err = "Red".parse::<ColorsMonochrome>().unwrap_err();
+        assert_eq!(
+            err,
+            ParsingError::UnknownVariant {
+                item: "ColorsMonochrome",
+                variant: "Red".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_setters() {
+        let options = Options::default().a("test".to_owned());
+
+        assert_eq!(Some("test".to_owned()), options.a);
+        assert_eq!(1, options.b);
     }
 }

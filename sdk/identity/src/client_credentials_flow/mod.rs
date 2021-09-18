@@ -35,7 +35,7 @@
 //! }
 //! ```
 //!
-//! You can learn more about this athorization flow [here](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow).
+//! You can learn more about this athorization flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow).
 
 mod login_response;
 

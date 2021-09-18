@@ -22,9 +22,9 @@ pub mod management_lock_properties {
 pub struct ManagementLockObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagementLockProperties>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

@@ -5,7 +5,7 @@ pub type Parameters = crate::to_json_vector::ToJsonVector;
 
 /// A piece of application logic that is registered and executed against a collection as a single transaction
 ///
-/// You can learn more about stored procedures [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/stored-procedures).
+/// You can learn more about stored procedures [here](https://docs.microsoft.com/rest/api/cosmos-db/stored-procedures).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StoredProcedure {
     /// The procedure id

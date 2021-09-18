@@ -31,7 +31,7 @@ impl<'a> SetQueueACLBuilder<'a> {
     /// keep in mind Azure supports a limited number of
     /// stored access policies for each queue.
     /// More info here
-    /// [https://docs.microsoft.com/en-us/rest/api/storageservices/set-queue-acl#remarks](https://docs.microsoft.com/en-us/rest/api/storageservices/set-queue-acl#remarks).
+    /// [https://docs.microsoft.com/rest/api/storageservices/set-queue-acl#remarks](https://docs.microsoft.com/rest/api/storageservices/set-queue-acl#remarks).
     pub async fn execute(
         &self,
         queue_stored_access_policies: &[QueueStoredAccessPolicy],

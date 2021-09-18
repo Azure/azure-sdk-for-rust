@@ -1,3 +1,4 @@
+use azure_core::Context;
 use azure_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -36,8 +37,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
-    let http_client = azure_core::new_http_client();
-    let client = CosmosClient::new(http_client, account, authorization_token);
+    let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
     let client = client.into_database_client(database_name);
     let client = client.into_collection_client(collection_name);
 
@@ -50,9 +50,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // let's add an entity.
     let create_document_response = client
-        .create_document()
-        .is_upsert(true)
-        .execute(&doc)
+        .create_document(
+            Context::new(),
+            &doc,
+            CreateDocumentOptions::new().is_upsert(true),
+        )
         .await?;
 
     println!(
@@ -60,23 +62,23 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         create_document_response
     );
 
-    let document_client = client
+    let get_document_response = client
         .clone()
-        .into_document_client(doc.id.clone(), &doc.id)?;
-
-    let get_document_response = document_client
-        .get_document()
-        .consistency_level(&create_document_response)
-        .execute::<serde_json::Value>()
+        .into_document_client(doc.id.clone(), &doc.id)?
+        .get_document::<serde_json::Value>(
+            Context::new(),
+            GetDocumentOptions::new().consistency_level(&create_document_response),
+        )
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 
-    let document_client = client.clone().into_document_client("ciccia", &doc.id)?;
-
-    let get_document_response = document_client
-        .get_document()
-        .consistency_level(&get_document_response)
-        .execute::<serde_json::Value>()
+    let get_document_response = client
+        .clone()
+        .into_document_client("ciccia", &doc.id)?
+        .get_document::<serde_json::Value>(
+            Context::new(),
+            GetDocumentOptions::new().consistency_level(&create_document_response),
+        )
         .await?;
     println!(
         "get_document_response == {:#?}\n\n\n",

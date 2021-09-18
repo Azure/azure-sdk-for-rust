@@ -306,11 +306,11 @@ pub struct BackupScheduleGroupProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaseModel {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -537,9 +537,9 @@ pub struct FileShareProperties {
     pub admin_user: String,
     #[serde(rename = "provisionedCapacityInBytes")]
     pub provisioned_capacity_in_bytes: i64,
-    #[serde(rename = "usedCapacityInBytes", skip_serializing)]
+    #[serde(rename = "usedCapacityInBytes", default, skip_serializing_if = "Option::is_none")]
     pub used_capacity_in_bytes: Option<i64>,
-    #[serde(rename = "localUsedCapacityInBytes", skip_serializing)]
+    #[serde(rename = "localUsedCapacityInBytes", default, skip_serializing_if = "Option::is_none")]
     pub local_used_capacity_in_bytes: Option<i64>,
     #[serde(rename = "monitoringStatus")]
     pub monitoring_status: file_share_properties::MonitoringStatus,
@@ -594,9 +594,9 @@ pub struct IscsiDiskProperties {
     pub data_policy: iscsi_disk_properties::DataPolicy,
     #[serde(rename = "provisionedCapacityInBytes")]
     pub provisioned_capacity_in_bytes: i64,
-    #[serde(rename = "usedCapacityInBytes", skip_serializing)]
+    #[serde(rename = "usedCapacityInBytes", default, skip_serializing_if = "Option::is_none")]
     pub used_capacity_in_bytes: Option<i64>,
-    #[serde(rename = "localUsedCapacityInBytes", skip_serializing)]
+    #[serde(rename = "localUsedCapacityInBytes", default, skip_serializing_if = "Option::is_none")]
     pub local_used_capacity_in_bytes: Option<i64>,
     #[serde(rename = "monitoringStatus")]
     pub monitoring_status: iscsi_disk_properties::MonitoringStatus,
@@ -864,7 +864,7 @@ pub struct ManagerProperties {
     pub cis_intrinsic_settings: Option<ManagerIntrinsicSettings>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<ManagerSku>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1069,11 +1069,11 @@ pub mod raw_certificate_data {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1326,7 +1326,7 @@ pub mod updates_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UploadCertificateRequest {
     pub properties: RawCertificateData,
-    #[serde(rename = "contractVersion", skip_serializing)]
+    #[serde(rename = "contractVersion", default, skip_serializing_if = "Option::is_none")]
     pub contract_version: Option<upload_certificate_request::ContractVersion>,
 }
 pub mod upload_certificate_request {

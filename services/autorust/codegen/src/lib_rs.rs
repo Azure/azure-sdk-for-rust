@@ -1,35 +1,29 @@
 use crate::{codegen::create_generated_by_header, identifier::ident, write_file};
 use proc_macro2::TokenStream;
 use quote::quote;
-
 use std::path::Path;
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("IdentModNameError")]
-    IdentModNameError {
-        source: crate::identifier::Error,
-        feature_name: String,
-        mod_name: String,
-    },
+    #[error("creating module name for feature {feature}: {source}")]
+    ModName { source: crate::identifier::Error, feature: String },
     #[error("WriteFileError")]
-    WriteFileError { source: crate::Error },
+    WriteFile(#[source] crate::Error),
 }
 
-pub fn create(feature_mod_names: &Vec<(String, String)>, path: &Path) -> Result<()> {
-    write_file(path, &create_body(feature_mod_names)?).map_err(|source| Error::WriteFileError { source })?;
+pub fn create(feature_mod_names: &Vec<(String, String)>, path: &Path, print_writing_file: bool) -> Result<()> {
+    write_file(path, &create_body(feature_mod_names)?, print_writing_file).map_err(Error::WriteFile)?;
     Ok(())
 }
 
 fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream> {
     let mut cfgs = TokenStream::new();
     for (feature_name, mod_name) in feature_mod_names {
-        let mod_name = ident(mod_name).map_err(|source| Error::IdentModNameError {
+        let mod_name = ident(mod_name).map_err(|source| Error::ModName {
             source,
-            feature_name: feature_name.to_owned(),
-            mod_name: mod_name.to_owned(),
+            feature: feature_name.to_owned(),
         })?;
         cfgs.extend(quote! {
             #[cfg(feature = #feature_name)]

@@ -26,17 +26,17 @@ pub struct AzureBareMetalInstanceProperties {
     pub os_profile: Option<OsProfile>,
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<NetworkProfile>,
-    #[serde(rename = "azureBareMetalInstanceId", skip_serializing)]
+    #[serde(rename = "azureBareMetalInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub azure_bare_metal_instance_id: Option<String>,
-    #[serde(rename = "powerState", skip_serializing)]
+    #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
     pub power_state: Option<azure_bare_metal_instance_properties::PowerState>,
-    #[serde(rename = "proximityPlacementGroup", skip_serializing)]
+    #[serde(rename = "proximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
     pub proximity_placement_group: Option<String>,
-    #[serde(rename = "hwRevision", skip_serializing)]
+    #[serde(rename = "hwRevision", default, skip_serializing_if = "Option::is_none")]
     pub hw_revision: Option<String>,
     #[serde(rename = "partnerNodeId", default, skip_serializing_if = "Option::is_none")]
     pub partner_node_id: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<azure_bare_metal_instance_properties::ProvisioningState>,
 }
 pub mod azure_bare_metal_instance_properties {
@@ -69,9 +69,9 @@ pub mod azure_bare_metal_instance_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HardwareProfile {
-    #[serde(rename = "hardwareType", skip_serializing)]
+    #[serde(rename = "hardwareType", default, skip_serializing_if = "Option::is_none")]
     pub hardware_type: Option<hardware_profile::HardwareType>,
-    #[serde(rename = "azureBareMetalInstanceSize", skip_serializing)]
+    #[serde(rename = "azureBareMetalInstanceSize", default, skip_serializing_if = "Option::is_none")]
     pub azure_bare_metal_instance_size: Option<hardware_profile::AzureBareMetalInstanceSize>,
 }
 pub mod hardware_profile {
@@ -136,12 +136,12 @@ pub struct Disk {
     pub name: Option<String>,
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageProfile {
-    #[serde(rename = "nfsIpAddress", skip_serializing)]
+    #[serde(rename = "nfsIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub nfs_ip_address: Option<String>,
     #[serde(rename = "osDisks", default, skip_serializing_if = "Vec::is_empty")]
     pub os_disks: Vec<Disk>,
@@ -150,9 +150,9 @@ pub struct StorageProfile {
 pub struct OsProfile {
     #[serde(rename = "computerName", default, skip_serializing_if = "Option::is_none")]
     pub computer_name: Option<String>,
-    #[serde(rename = "osType", skip_serializing)]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[serde(rename = "sshPublicKey", default, skip_serializing_if = "Option::is_none")]
     pub ssh_public_key: Option<String>,
@@ -161,7 +161,7 @@ pub struct OsProfile {
 pub struct NetworkProfile {
     #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
     pub network_interfaces: Vec<IpAddress>,
-    #[serde(rename = "circuitId", skip_serializing)]
+    #[serde(rename = "circuitId", default, skip_serializing_if = "Option::is_none")]
     pub circuit_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -176,7 +176,7 @@ pub struct OperationList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<Display>,
@@ -190,15 +190,15 @@ pub struct Result {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Display {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -208,11 +208,11 @@ pub struct ErrorResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDefinition {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -230,10 +230,10 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

@@ -4,11 +4,11 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -35,13 +35,13 @@ pub struct Error {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocationCollection {
     pub value: Vec<Location>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupsCollection {
     pub value: Vec<GroupItem>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -59,7 +59,7 @@ pub struct GroupProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationCollection {
     pub value: Vec<Application>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -92,13 +92,13 @@ pub mod application_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IosmamPolicyCollection {
     pub value: Vec<IOsmamPolicy>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AndroidMamPolicyCollection {
     pub value: Vec<AndroidMamPolicy>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -156,11 +156,11 @@ pub struct MamPolicyProperties {
     pub access_recheck_online_timeout: Option<String>,
     #[serde(rename = "offlineWipeTimeout", default, skip_serializing_if = "Option::is_none")]
     pub offline_wipe_timeout: Option<String>,
-    #[serde(rename = "numOfApps", skip_serializing)]
+    #[serde(rename = "numOfApps", default, skip_serializing_if = "Option::is_none")]
     pub num_of_apps: Option<i64>,
-    #[serde(rename = "groupStatus", skip_serializing)]
+    #[serde(rename = "groupStatus", default, skip_serializing_if = "Option::is_none")]
     pub group_status: Option<mam_policy_properties::GroupStatus>,
-    #[serde(rename = "lastModifiedTime", skip_serializing)]
+    #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
 }
 pub mod mam_policy_properties {
@@ -303,7 +303,7 @@ pub mod android_mam_policy_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceCollection {
     pub value: Vec<Device>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -339,7 +339,7 @@ pub struct WipeDeviceOperationResultProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationResultCollection {
     pub value: Vec<OperationResult>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -376,29 +376,29 @@ pub struct StatusesDefault {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatusesProperties {
-    #[serde(rename = "deployedPolicies", skip_serializing)]
+    #[serde(rename = "deployedPolicies", default, skip_serializing_if = "Option::is_none")]
     pub deployed_policies: Option<i64>,
-    #[serde(rename = "enrolledUsers", skip_serializing)]
+    #[serde(rename = "enrolledUsers", default, skip_serializing_if = "Option::is_none")]
     pub enrolled_users: Option<i64>,
-    #[serde(rename = "flaggedUsers", skip_serializing)]
+    #[serde(rename = "flaggedUsers", default, skip_serializing_if = "Option::is_none")]
     pub flagged_users: Option<i64>,
-    #[serde(rename = "lastModifiedTime", skip_serializing)]
+    #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
-    #[serde(rename = "policyAppliedUsers", skip_serializing)]
+    #[serde(rename = "policyAppliedUsers", default, skip_serializing_if = "Option::is_none")]
     pub policy_applied_users: Option<i64>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[serde(rename = "wipeFailedApps", skip_serializing)]
+    #[serde(rename = "wipeFailedApps", default, skip_serializing_if = "Option::is_none")]
     pub wipe_failed_apps: Option<i64>,
-    #[serde(rename = "wipePendingApps", skip_serializing)]
+    #[serde(rename = "wipePendingApps", default, skip_serializing_if = "Option::is_none")]
     pub wipe_pending_apps: Option<i64>,
-    #[serde(rename = "wipeSucceededApps", skip_serializing)]
+    #[serde(rename = "wipeSucceededApps", default, skip_serializing_if = "Option::is_none")]
     pub wipe_succeeded_apps: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FlaggedUserCollection {
     pub value: Vec<FlaggedUser>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -410,15 +410,15 @@ pub struct FlaggedUser {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FlaggedUserProperties {
-    #[serde(rename = "errorCount", skip_serializing)]
+    #[serde(rename = "errorCount", default, skip_serializing_if = "Option::is_none")]
     pub error_count: Option<i64>,
-    #[serde(rename = "friendlyName", skip_serializing)]
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FlaggedEnrolledAppCollection {
     pub value: Vec<FlaggedEnrolledApp>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -430,21 +430,21 @@ pub struct FlaggedEnrolledApp {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FlaggedEnrolledAppProperties {
-    #[serde(rename = "deviceType", skip_serializing)]
+    #[serde(rename = "deviceType", default, skip_serializing_if = "Option::is_none")]
     pub device_type: Option<String>,
-    #[serde(rename = "friendlyName", skip_serializing)]
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
-    #[serde(rename = "lastModifiedTime", skip_serializing)]
+    #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub platform: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<FlaggedEnrolledAppError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FlaggedEnrolledAppError {
-    #[serde(rename = "errorCode", skip_serializing)]
+    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<String>,
 }

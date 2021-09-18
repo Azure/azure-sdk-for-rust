@@ -40,17 +40,17 @@ pub struct ApplicationProperties {
     pub application_definition_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub outputs: Option<serde_json::Value>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "billingDetails", default, skip_serializing_if = "Option::is_none")]
     pub billing_details: Option<ApplicationBillingDetailsDefinition>,
     #[serde(rename = "jitAccessPolicy", default, skip_serializing_if = "Option::is_none")]
     pub jit_access_policy: Option<ApplicationJitAccessPolicy>,
-    #[serde(rename = "publisherTenantId", skip_serializing)]
+    #[serde(rename = "publisherTenantId", default, skip_serializing_if = "Option::is_none")]
     pub publisher_tenant_id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub authorizations: Vec<ApplicationAuthorization>,
     #[serde(rename = "managementMode", default, skip_serializing_if = "Option::is_none")]
     pub management_mode: Option<ApplicationManagementMode>,
@@ -58,11 +58,11 @@ pub struct ApplicationProperties {
     pub customer_support: Option<ApplicationPackageContact>,
     #[serde(rename = "supportUrls", default, skip_serializing_if = "Option::is_none")]
     pub support_urls: Option<ApplicationPackageSupportUrls>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub artifacts: Vec<ApplicationArtifact>,
-    #[serde(rename = "createdBy", skip_serializing)]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<ApplicationClientDetails>,
-    #[serde(rename = "updatedBy", skip_serializing)]
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<ApplicationClientDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -73,9 +73,9 @@ pub struct ApplicationPropertiesPatchable {
     pub application_definition_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub outputs: Option<serde_json::Value>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -156,9 +156,9 @@ pub struct Sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Identity {
-    #[serde(rename = "principalId", skip_serializing)]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", skip_serializing)]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
@@ -178,18 +178,18 @@ pub mod identity {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAssignedResourceIdentity {
-    #[serde(rename = "principalId", skip_serializing)]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", skip_serializing)]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -367,19 +367,19 @@ pub struct JitRequestDefinitionListResult {
 pub struct JitRequestProperties {
     #[serde(rename = "applicationResourceId")]
     pub application_resource_id: String,
-    #[serde(rename = "publisherTenantId", skip_serializing)]
+    #[serde(rename = "publisherTenantId", default, skip_serializing_if = "Option::is_none")]
     pub publisher_tenant_id: Option<String>,
     #[serde(rename = "jitAuthorizationPolicies")]
     pub jit_authorization_policies: Vec<JitAuthorizationPolicies>,
     #[serde(rename = "jitSchedulingPolicy")]
     pub jit_scheduling_policy: JitSchedulingPolicy,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "jitRequestState", skip_serializing)]
+    #[serde(rename = "jitRequestState", default, skip_serializing_if = "Option::is_none")]
     pub jit_request_state: Option<JitRequestState>,
-    #[serde(rename = "createdBy", skip_serializing)]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<ApplicationClientDetails>,
-    #[serde(rename = "updatedBy", skip_serializing)]
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<ApplicationClientDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -391,7 +391,7 @@ pub struct JitAuthorizationPolicies {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JitSchedulingPolicy {
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type")]
     pub type_: JitSchedulingType,
     pub duration: String,
     #[serde(rename = "startTime")]

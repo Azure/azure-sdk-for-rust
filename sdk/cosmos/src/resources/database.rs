@@ -4,7 +4,7 @@ use super::Resource;
 
 /// A logical namespace for collections, users, and permissions.
 ///
-/// You can learn more about Databases [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/databases).
+/// You can learn more about Databases [here](https://docs.microsoft.com/rest/api/cosmos-db/databases).
 #[derive(Serialize, Clone, PartialEq, PartialOrd, Deserialize, Debug)]
 pub struct Database {
     /// The database id

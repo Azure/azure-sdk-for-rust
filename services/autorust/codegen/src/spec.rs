@@ -103,7 +103,7 @@ impl Spec {
         let schema = self
             .schemas
             .get(&ref_key)
-            .map_or(Err(Error::SchemaNotFound { ref_key: ref_key.clone() }), Ok)?
+            .ok_or_else(|| Error::SchemaNotFound { ref_key: ref_key.clone() })?
             .clone();
         Ok(ResolvedSchema {
             ref_key: Some(ref_key),
@@ -126,7 +126,7 @@ impl Spec {
         Ok(self
             .parameters
             .get(&ref_key)
-            .map_or(Err(Error::ParameterNotFound { ref_key }), Ok)?
+            .ok_or_else(|| Error::ParameterNotFound { ref_key })?
             .clone())
     }
 

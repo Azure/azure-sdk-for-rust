@@ -2,15 +2,12 @@
 #![warn(rust_2018_idioms)]
 
 #[macro_use]
-extern crate log;
-#[macro_use]
 extern crate serde_derive;
 
 #[macro_use]
 mod macros;
 
 mod bytes_stream;
-pub mod client_options;
 mod constants;
 mod context;
 mod errors;
@@ -18,9 +15,11 @@ pub mod headers;
 mod http_client;
 pub mod incompletevector;
 mod models;
+mod options;
 pub mod parsing;
 pub mod pipeline;
-pub mod policies;
+mod pipeline_context;
+mod policies;
 pub mod prelude;
 mod request;
 mod request_options;
@@ -36,13 +35,15 @@ use std::fmt::Debug;
 use uuid::Uuid;
 
 pub use bytes_stream::*;
-pub use client_options::ClientOptions;
 pub use constants::*;
 pub use context::Context;
 pub use errors::*;
 pub use headers::AddAsHeader;
 pub use http_client::{new_http_client, to_json, HttpClient};
 pub use models::*;
+pub use options::*;
+pub use pipeline_context::PipelineContext;
+pub use policies::{Policy, PolicyResult};
 pub use request::*;
 pub use response::*;
 pub use seekable_stream::*;

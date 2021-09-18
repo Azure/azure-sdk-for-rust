@@ -60,7 +60,7 @@ pub struct WorkspaceProperties {
 pub struct WorkspaceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workspace>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -93,7 +93,7 @@ pub struct ApplicationGroupProperties {
     pub friendly_name: Option<String>,
     #[serde(rename = "hostPoolArmPath")]
     pub host_pool_arm_path: String,
-    #[serde(rename = "workspaceArmPath", skip_serializing)]
+    #[serde(rename = "workspaceArmPath", default, skip_serializing_if = "Option::is_none")]
     pub workspace_arm_path: Option<String>,
     #[serde(rename = "applicationGroupType")]
     pub application_group_type: application_group_properties::ApplicationGroupType,
@@ -126,7 +126,7 @@ pub struct ApplicationGroupPatchProperties {
 pub struct ApplicationGroupList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplicationGroup>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -159,7 +159,7 @@ pub struct HostPoolProperties {
     pub registration_info: Option<RegistrationInfo>,
     #[serde(rename = "vmTemplate", default, skip_serializing_if = "Option::is_none")]
     pub vm_template: Option<String>,
-    #[serde(rename = "applicationGroupReferences", skip_serializing)]
+    #[serde(rename = "applicationGroupReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub application_group_references: Vec<String>,
     #[serde(rename = "ssoContext", default, skip_serializing_if = "Option::is_none")]
     pub sso_context: Option<String>,
@@ -290,7 +290,7 @@ pub struct SendMessage {
 pub struct HostPoolList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HostPool>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -370,7 +370,7 @@ pub struct MsixPackageDependencies {
 pub struct MsixPackageList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MsixPackage>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -403,9 +403,9 @@ pub struct ApplicationProperties {
     pub icon_path: Option<String>,
     #[serde(rename = "iconIndex", default, skip_serializing_if = "Option::is_none")]
     pub icon_index: Option<i64>,
-    #[serde(rename = "iconHash", skip_serializing)]
+    #[serde(rename = "iconHash", default, skip_serializing_if = "Option::is_none")]
     pub icon_hash: Option<String>,
-    #[serde(rename = "iconContent", skip_serializing)]
+    #[serde(rename = "iconContent", default, skip_serializing_if = "Option::is_none")]
     pub icon_content: Option<String>,
 }
 pub mod application_properties {
@@ -426,7 +426,7 @@ pub mod application_properties {
 pub struct ApplicationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Application>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -488,16 +488,16 @@ pub struct DesktopProperties {
     pub description: Option<String>,
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
-    #[serde(rename = "iconHash", skip_serializing)]
+    #[serde(rename = "iconHash", default, skip_serializing_if = "Option::is_none")]
     pub icon_hash: Option<String>,
-    #[serde(rename = "iconContent", skip_serializing)]
+    #[serde(rename = "iconContent", default, skip_serializing_if = "Option::is_none")]
     pub icon_content: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DesktopList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Desktop>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -540,7 +540,7 @@ pub struct StartMenuItem {
 pub struct StartMenuItemList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StartMenuItem>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -583,7 +583,7 @@ pub struct ExpandMsixImage {
 pub struct ExpandMsixImageList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpandMsixImage>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -608,15 +608,15 @@ pub struct SessionHostProperties {
     pub agent_version: Option<String>,
     #[serde(rename = "allowNewSession", default, skip_serializing_if = "Option::is_none")]
     pub allow_new_session: Option<bool>,
-    #[serde(rename = "virtualMachineId", skip_serializing)]
+    #[serde(rename = "virtualMachineId", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_id: Option<String>,
-    #[serde(rename = "resourceId", skip_serializing)]
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[serde(rename = "assignedUser", default, skip_serializing_if = "Option::is_none")]
     pub assigned_user: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<session_host_properties::Status>,
-    #[serde(rename = "statusTimestamp", skip_serializing)]
+    #[serde(rename = "statusTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub status_timestamp: Option<String>,
     #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
@@ -624,7 +624,7 @@ pub struct SessionHostProperties {
     pub sx_s_stack_version: Option<String>,
     #[serde(rename = "updateState", default, skip_serializing_if = "Option::is_none")]
     pub update_state: Option<session_host_properties::UpdateState>,
-    #[serde(rename = "lastUpdateTime", skip_serializing)]
+    #[serde(rename = "lastUpdateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_update_time: Option<String>,
     #[serde(rename = "updateErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub update_error_message: Option<String>,
@@ -667,7 +667,7 @@ pub struct SessionHostPatchProperties {
 pub struct SessionHostList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SessionHost>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -711,7 +711,7 @@ pub mod user_session_properties {
 pub struct UserSessionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<UserSession>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -724,10 +724,10 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

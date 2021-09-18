@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCollectionListResult {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobCollectionDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -25,9 +25,9 @@ pub struct JobHistoryListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCollectionDefinition {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -83,11 +83,11 @@ pub struct JobCollectionQuota {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDefinition {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
@@ -107,32 +107,32 @@ pub struct JobProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobHistoryDefinition {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobHistoryDefinitionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobHistoryDefinitionProperties {
-    #[serde(rename = "startTime", skip_serializing)]
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
-    #[serde(rename = "endTime", skip_serializing)]
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
-    #[serde(rename = "expectedExecutionTime", skip_serializing)]
+    #[serde(rename = "expectedExecutionTime", default, skip_serializing_if = "Option::is_none")]
     pub expected_execution_time: Option<String>,
-    #[serde(rename = "actionName", skip_serializing)]
+    #[serde(rename = "actionName", default, skip_serializing_if = "Option::is_none")]
     pub action_name: Option<job_history_definition_properties::ActionName>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<JobExecutionStatus>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(rename = "retryCount", skip_serializing)]
+    #[serde(rename = "retryCount", default, skip_serializing_if = "Option::is_none")]
     pub retry_count: Option<i64>,
-    #[serde(rename = "repeatCount", skip_serializing)]
+    #[serde(rename = "repeatCount", default, skip_serializing_if = "Option::is_none")]
     pub repeat_count: Option<i64>,
 }
 pub mod job_history_definition_properties {
@@ -483,14 +483,14 @@ pub enum JobExecutionStatus {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobStatus {
-    #[serde(rename = "executionCount", skip_serializing)]
+    #[serde(rename = "executionCount", default, skip_serializing_if = "Option::is_none")]
     pub execution_count: Option<i64>,
-    #[serde(rename = "failureCount", skip_serializing)]
+    #[serde(rename = "failureCount", default, skip_serializing_if = "Option::is_none")]
     pub failure_count: Option<i64>,
-    #[serde(rename = "faultedCount", skip_serializing)]
+    #[serde(rename = "faultedCount", default, skip_serializing_if = "Option::is_none")]
     pub faulted_count: Option<i64>,
-    #[serde(rename = "lastExecutionTime", skip_serializing)]
+    #[serde(rename = "lastExecutionTime", default, skip_serializing_if = "Option::is_none")]
     pub last_execution_time: Option<String>,
-    #[serde(rename = "nextExecutionTime", skip_serializing)]
+    #[serde(rename = "nextExecutionTime", default, skip_serializing_if = "Option::is_none")]
     pub next_execution_time: Option<String>,
 }

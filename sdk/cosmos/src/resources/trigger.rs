@@ -4,7 +4,7 @@
 
 /// A piece of logic that can be executed before or after creating, deleting, & replacing a document.
 ///
-/// You can learn more about triggers [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/triggers).
+/// You can learn more about triggers [here](https://docs.microsoft.com/rest/api/cosmos-db/triggers).
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Trigger {
     /// The trigger id

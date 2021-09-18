@@ -12,7 +12,11 @@ mod block_list;
 pub use self::block_list::BlockList;
 pub mod requests;
 pub mod responses;
-use crate::headers::{CONTENT_MD5, COPY_ID};
+use crate::headers::CONTENT_CRC64;
+use crate::{
+    headers::{CONTENT_MD5, COPY_ID},
+    ConsistencyCRC64, ConsistencyMD5,
+};
 use crate::{AccessTier, CopyId, CopyProgress};
 use azure_core::headers::{
     BLOB_SEQUENCE_NUMBER, BLOB_TYPE, COPY_COMPLETION_TIME, COPY_PROGRESS, COPY_SOURCE, COPY_STATUS,
@@ -62,7 +66,36 @@ create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+use serde::{self, Deserialize, Deserializer};
+fn deserialize_crc64_optional<'de, D>(
+    deserializer: D,
+) -> Result<Option<crate::ConsistencyCRC64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: Option<String> = Option::deserialize(deserializer)?;
+
+    Ok(s.filter(|s| s.len() > 0)
+        .map(crate::ConsistencyCRC64::decode)
+        .transpose()
+        .map_err(serde::de::Error::custom)?)
+}
+
+fn deserialize_md5_optional<'de, D>(
+    deserializer: D,
+) -> Result<Option<crate::ConsistencyMD5>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: Option<String> = Option::deserialize(deserializer)?;
+
+    Ok(s.filter(|s| s.len() > 0)
+        .map(crate::ConsistencyMD5::decode)
+        .transpose()
+        .map_err(serde::de::Error::custom)?)
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Blob {
     pub name: String,
@@ -73,7 +106,7 @@ pub struct Blob {
     pub properties: BlobProperties,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct BlobProperties {
     #[cfg(not(feature = "azurite_workaround"))]
@@ -102,9 +135,13 @@ pub struct BlobProperties {
     #[serde(rename = "Content-Disposition")]
     pub content_disposition: Option<String>,
     #[serde(rename = "Content-MD5")]
-    pub content_md5: Option<String>,
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_md5_optional")]
+    pub content_md5: Option<ConsistencyMD5>,
     #[serde(rename = "Content-CRC64")]
-    pub content_crc64: Option<String>,
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_crc64_optional")]
+    pub content_crc64: Option<ConsistencyCRC64>,
     #[serde(rename = "Cache-Control")]
     pub cache_control: Option<String>,
     #[serde(rename = "x-ms-blob-sequence-number")]
@@ -206,8 +243,17 @@ impl Blob {
         let content_language = h.get_as_string(header::CONTENT_LANGUAGE);
         trace!("content_language == {:?}", content_language);
 
-        let content_md5 = h.get_as_string(CONTENT_MD5).unwrap_or_else(String::new);
+        let content_md5 = h
+            .get_header(CONTENT_MD5)
+            .map(|header| ConsistencyMD5::decode(header.as_bytes()))
+            .transpose()?;
         trace!("content_md5 == {:?}", content_md5);
+
+        let content_crc64 = h
+            .get_header(CONTENT_CRC64)
+            .map(|header| ConsistencyCRC64::decode(header.as_bytes()))
+            .transpose()?;
+        trace!("content_crc64 == {:?}", content_crc64);
 
         let cache_control = h.get_as_string(header::CACHE_CONTROL);
 
@@ -274,9 +320,6 @@ impl Blob {
         } else {
             Some(metadata)
         };
-
-        let content_md5 = h.get_as_string("x-ms-blob-content-md5");
-        let content_crc64 = h.get_as_string("x-ms-content-crc64");
 
         // TODO: Retrieve the snapshot time from
         // the headers

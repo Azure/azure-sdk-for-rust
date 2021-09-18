@@ -1,4 +1,4 @@
-use crate::QueueServiceProperties;
+use crate::{xml::read_xml, QueueServiceProperties};
 use azure_core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::response::Response;
@@ -18,10 +18,8 @@ impl std::convert::TryFrom<&Response<Bytes>> for GetQueueServicePropertiesRespon
         let body = response.body();
 
         debug!("headers == {:?}", headers);
-
-        debug!("receieved == {:#?}", &std::str::from_utf8(body)?[3..]);
-        let queue_service_properties: QueueServiceProperties =
-            serde_xml_rs::from_reader(&body[3..])?;
+        debug!("body == {:#?}", body);
+        let queue_service_properties: QueueServiceProperties = read_xml(body)?;
         debug!("deserde == {:#?}", response);
 
         Ok(GetQueueServicePropertiesResponse {

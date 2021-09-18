@@ -82,7 +82,7 @@ pub struct RecordSetProperties {
     pub metadata: Option<serde_json::Value>,
     #[serde(rename = "TTL", default, skip_serializing_if = "Option::is_none")]
     pub ttl: Option<i64>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
     #[serde(rename = "ARecords", default, skip_serializing_if = "Vec::is_empty")]
     pub a_records: Vec<ARecord>,
@@ -107,11 +107,11 @@ pub struct RecordSetProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecordSet {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -127,18 +127,18 @@ pub struct RecordSetUpdateParameters {
 pub struct RecordSetListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RecordSet>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ZoneProperties {
-    #[serde(rename = "maxNumberOfRecordSets", skip_serializing)]
+    #[serde(rename = "maxNumberOfRecordSets", default, skip_serializing_if = "Option::is_none")]
     pub max_number_of_record_sets: Option<i64>,
-    #[serde(rename = "maxNumberOfRecordsPerRecordSet", skip_serializing)]
+    #[serde(rename = "maxNumberOfRecordsPerRecordSet", default, skip_serializing_if = "Option::is_none")]
     pub max_number_of_records_per_record_set: Option<i64>,
-    #[serde(rename = "numberOfRecordSets", skip_serializing)]
+    #[serde(rename = "numberOfRecordSets", default, skip_serializing_if = "Option::is_none")]
     pub number_of_record_sets: Option<i64>,
-    #[serde(rename = "nameServers", skip_serializing)]
+    #[serde(rename = "nameServers", default, skip_serializing_if = "Vec::is_empty")]
     pub name_servers: Vec<String>,
     #[serde(rename = "zoneType", default, skip_serializing_if = "Option::is_none")]
     pub zone_type: Option<zone_properties::ZoneType>,
@@ -164,7 +164,7 @@ pub struct Zone {
 pub struct ZoneListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Zone>,
-    #[serde(rename = "nextLink", skip_serializing)]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -198,10 +198,10 @@ pub struct TrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

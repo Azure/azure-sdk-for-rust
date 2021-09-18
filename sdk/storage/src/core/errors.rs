@@ -1,10 +1,9 @@
+use std::cmp::PartialEq;
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error(transparent)]
     CoreError(#[from] azure_core::Error),
-    #[error("Parse error: {0}")]
-    ParseError(#[from] azure_core::ParseError),
     #[error("Parsing error: {0}")]
     ParsingError(#[from] azure_core::ParsingError),
     #[error("Permission error: {0}")]
@@ -63,9 +62,22 @@ pub enum Error {
     #[error("UnexpectedXMLError: {0}")]
     UnexpectedXMLError(String),
     #[error("digest length {0} bytes instead of 16")]
-    DigestNot16BytesLong(u64),
+    DigestNot16BytesLong(usize),
     #[error("CRC64 length {0} bytes instead of 8")]
-    CRC64Not8BytesLong(u64),
+    CRC64Not8BytesLong(usize),
     #[error("At least one of these headers must be present: {0:?}")]
     HeadersNotFound(Vec<String>),
+}
+
+#[non_exhaustive]
+#[derive(Debug, PartialEq, thiserror::Error)]
+pub enum AzurePathParseError {
+    #[error("path separator not found")]
+    PathSeparatorNotFoundError,
+    #[error("multiple path separators found")]
+    MultiplePathSeparatorsFoundError,
+    #[error("missing container name")]
+    MissingContainerError,
+    #[error("missing blob name")]
+    MissingBlobError,
 }

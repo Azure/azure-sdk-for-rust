@@ -1,12 +1,13 @@
-use crate::policies::{Context, Policy, PolicyResult, Request, Response};
+use crate::policies::{Policy, PolicyResult, Request, Response};
 use crate::sleep::sleep;
+use crate::PipelineContext;
 use chrono::{DateTime, Local};
 use std::sync::Arc;
 use std::time::Duration;
 
-/// Retry policy with exponential backoff.
+/// Retry policy with exponential back-off.
 ///
-/// Retry policy with exponential backoff (with an added random delay up to 256 ms). Each retry
+/// Retry policy with exponential back-off (with an added random delay up to 256 ms). Each retry
 /// will happen at least after an exponential wait time. So if x is the first retry wait, the
 /// second will be x*2, the third x*4 and so on. The policy will retry until the maximum number of
 /// retries have been reached or the maximum allowed delay has passed (whichever comes first). The
@@ -18,17 +19,15 @@ pub struct ExponentialRetryPolicy {
     max_delay: Duration,
 }
 
-impl Default for ExponentialRetryPolicy {
-    fn default() -> Self {
-        Self {
-            delay: Duration::from_secs(3),
-            max_retries: 3,
-            max_delay: Duration::from_secs(30),
+impl ExponentialRetryPolicy {
+    pub(crate) fn new(delay: Duration, max_retries: u32, max_delay: Duration) -> Self {
+        ExponentialRetryPolicy {
+            delay,
+            max_retries,
+            max_delay,
         }
     }
-}
 
-impl ExponentialRetryPolicy {
     fn is_expired(
         &self,
         first_retry_time: &mut Option<DateTime<Local>>,
@@ -48,12 +47,15 @@ impl ExponentialRetryPolicy {
 }
 
 #[async_trait::async_trait]
-impl Policy for ExponentialRetryPolicy {
+impl<C> Policy<C> for ExponentialRetryPolicy
+where
+    C: Send + Sync,
+{
     async fn send(
         &self,
-        ctx: &mut Context,
+        ctx: &mut PipelineContext<C>,
         request: &mut Request,
-        next: &[Arc<dyn Policy>],
+        next: &[Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response> {
         let mut first_retry_time = None;
         let mut current_retries = 0;

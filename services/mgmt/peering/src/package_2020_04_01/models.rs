@@ -74,7 +74,7 @@ pub struct PeeringProperties {
     pub exchange: Option<PeeringPropertiesExchange>,
     #[serde(rename = "peeringLocation", default, skip_serializing_if = "Option::is_none")]
     pub peering_location: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<peering_properties::ProvisioningState>,
 }
 pub mod peering_properties {
@@ -91,7 +91,7 @@ pub mod peering_properties {
 pub struct PeeringPropertiesDirect {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub connections: Vec<DirectConnection>,
-    #[serde(rename = "useForPeeringService", skip_serializing)]
+    #[serde(rename = "useForPeeringService", default, skip_serializing_if = "Option::is_none")]
     pub use_for_peering_service: Option<bool>,
     #[serde(rename = "peerAsn", default, skip_serializing_if = "Option::is_none")]
     pub peer_asn: Option<SubResource>,
@@ -121,7 +121,7 @@ pub struct PeeringPropertiesExchange {
 pub struct DirectConnection {
     #[serde(rename = "bandwidthInMbps", default, skip_serializing_if = "Option::is_none")]
     pub bandwidth_in_mbps: Option<i32>,
-    #[serde(rename = "provisionedBandwidthInMbps", skip_serializing)]
+    #[serde(rename = "provisionedBandwidthInMbps", default, skip_serializing_if = "Option::is_none")]
     pub provisioned_bandwidth_in_mbps: Option<i32>,
     #[serde(rename = "sessionAddressProvider", default, skip_serializing_if = "Option::is_none")]
     pub session_address_provider: Option<direct_connection::SessionAddressProvider>,
@@ -129,13 +129,13 @@ pub struct DirectConnection {
     pub use_for_peering_service: Option<bool>,
     #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
     pub peering_db_facility_id: Option<i32>,
-    #[serde(rename = "connectionState", skip_serializing)]
+    #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
     pub connection_state: Option<direct_connection::ConnectionState>,
     #[serde(rename = "bgpSession", default, skip_serializing_if = "Option::is_none")]
     pub bgp_session: Option<BgpSession>,
     #[serde(rename = "connectionIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub connection_identifier: Option<String>,
-    #[serde(rename = "errorMessage", skip_serializing)]
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
 }
 pub mod direct_connection {
@@ -166,13 +166,13 @@ pub struct SubResource {
 pub struct ExchangeConnection {
     #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
     pub peering_db_facility_id: Option<i32>,
-    #[serde(rename = "connectionState", skip_serializing)]
+    #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
     pub connection_state: Option<exchange_connection::ConnectionState>,
     #[serde(rename = "bgpSession", default, skip_serializing_if = "Option::is_none")]
     pub bgp_session: Option<BgpSession>,
     #[serde(rename = "connectionIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub connection_identifier: Option<String>,
-    #[serde(rename = "errorMessage", skip_serializing)]
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
 }
 pub mod exchange_connection {
@@ -203,9 +203,9 @@ pub struct BgpSession {
     pub peer_session_i_pv4_address: Option<String>,
     #[serde(rename = "peerSessionIPv6Address", default, skip_serializing_if = "Option::is_none")]
     pub peer_session_i_pv6_address: Option<String>,
-    #[serde(rename = "sessionStateV4", skip_serializing)]
+    #[serde(rename = "sessionStateV4", default, skip_serializing_if = "Option::is_none")]
     pub session_state_v4: Option<bgp_session::SessionStateV4>,
-    #[serde(rename = "sessionStateV6", skip_serializing)]
+    #[serde(rename = "sessionStateV6", default, skip_serializing_if = "Option::is_none")]
     pub session_state_v6: Option<bgp_session::SessionStateV6>,
     #[serde(rename = "maxPrefixesAdvertisedV4", default, skip_serializing_if = "Option::is_none")]
     pub max_prefixes_advertised_v4: Option<i32>,
@@ -254,22 +254,22 @@ pub struct OperationListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplayInfo>,
-    #[serde(rename = "isDataAction", skip_serializing)]
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationDisplayInfo {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -289,7 +289,7 @@ pub struct PeerAsnProperties {
     pub peer_name: Option<String>,
     #[serde(rename = "validationState", default, skip_serializing_if = "Option::is_none")]
     pub validation_state: Option<peer_asn_properties::ValidationState>,
-    #[serde(rename = "errorMessage", skip_serializing)]
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
 }
 pub mod peer_asn_properties {
@@ -439,9 +439,9 @@ pub struct PeeringRegisteredAsn {
 pub struct PeeringRegisteredAsnProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub asn: Option<i32>,
-    #[serde(rename = "peeringServicePrefixKey", skip_serializing)]
+    #[serde(rename = "peeringServicePrefixKey", default, skip_serializing_if = "Option::is_none")]
     pub peering_service_prefix_key: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<peering_registered_asn_properties::ProvisioningState>,
 }
 pub mod peering_registered_asn_properties {
@@ -472,13 +472,13 @@ pub struct PeeringRegisteredPrefix {
 pub struct PeeringRegisteredPrefixProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
-    #[serde(rename = "prefixValidationState", skip_serializing)]
+    #[serde(rename = "prefixValidationState", default, skip_serializing_if = "Option::is_none")]
     pub prefix_validation_state: Option<peering_registered_prefix_properties::PrefixValidationState>,
-    #[serde(rename = "peeringServicePrefixKey", skip_serializing)]
+    #[serde(rename = "peeringServicePrefixKey", default, skip_serializing_if = "Option::is_none")]
     pub peering_service_prefix_key: Option<String>,
-    #[serde(rename = "errorMessage", skip_serializing)]
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<peering_registered_prefix_properties::ProvisioningState>,
 }
 pub mod peering_registered_prefix_properties {
@@ -522,19 +522,19 @@ pub struct PeeringReceivedRouteListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeeringReceivedRoute {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
-    #[serde(rename = "nextHop", skip_serializing)]
+    #[serde(rename = "nextHop", default, skip_serializing_if = "Option::is_none")]
     pub next_hop: Option<String>,
-    #[serde(rename = "asPath", skip_serializing)]
+    #[serde(rename = "asPath", default, skip_serializing_if = "Option::is_none")]
     pub as_path: Option<String>,
-    #[serde(rename = "originAsValidationState", skip_serializing)]
+    #[serde(rename = "originAsValidationState", default, skip_serializing_if = "Option::is_none")]
     pub origin_as_validation_state: Option<String>,
-    #[serde(rename = "rpkiValidationState", skip_serializing)]
+    #[serde(rename = "rpkiValidationState", default, skip_serializing_if = "Option::is_none")]
     pub rpki_validation_state: Option<String>,
-    #[serde(rename = "trustAnchor", skip_serializing)]
+    #[serde(rename = "trustAnchor", default, skip_serializing_if = "Option::is_none")]
     pub trust_anchor: Option<String>,
-    #[serde(rename = "receivedTimestamp", skip_serializing)]
+    #[serde(rename = "receivedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub received_timestamp: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -583,17 +583,17 @@ pub struct PeeringServicePrefix {
 pub struct PeeringServicePrefixProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
-    #[serde(rename = "prefixValidationState", skip_serializing)]
+    #[serde(rename = "prefixValidationState", default, skip_serializing_if = "Option::is_none")]
     pub prefix_validation_state: Option<peering_service_prefix_properties::PrefixValidationState>,
-    #[serde(rename = "learnedType", skip_serializing)]
+    #[serde(rename = "learnedType", default, skip_serializing_if = "Option::is_none")]
     pub learned_type: Option<peering_service_prefix_properties::LearnedType>,
-    #[serde(rename = "errorMessage", skip_serializing)]
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub events: Vec<PeeringServicePrefixEvent>,
     #[serde(rename = "peeringServicePrefixKey", default, skip_serializing_if = "Option::is_none")]
     pub peering_service_prefix_key: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<peering_service_prefix_properties::ProvisioningState>,
 }
 pub mod peering_service_prefix_properties {
@@ -624,15 +624,15 @@ pub mod peering_service_prefix_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeeringServicePrefixEvent {
-    #[serde(rename = "eventTimestamp", skip_serializing)]
+    #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub event_timestamp: Option<String>,
-    #[serde(rename = "eventType", skip_serializing)]
+    #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
     pub event_type: Option<String>,
-    #[serde(rename = "eventSummary", skip_serializing)]
+    #[serde(rename = "eventSummary", default, skip_serializing_if = "Option::is_none")]
     pub event_summary: Option<String>,
-    #[serde(rename = "eventLevel", skip_serializing)]
+    #[serde(rename = "eventLevel", default, skip_serializing_if = "Option::is_none")]
     pub event_level: Option<String>,
-    #[serde(rename = "eventDescription", skip_serializing)]
+    #[serde(rename = "eventDescription", default, skip_serializing_if = "Option::is_none")]
     pub event_description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -684,7 +684,7 @@ pub struct PeeringServiceProperties {
     pub peering_service_location: Option<String>,
     #[serde(rename = "peeringServiceProvider", default, skip_serializing_if = "Option::is_none")]
     pub peering_service_provider: Option<String>,
-    #[serde(rename = "provisioningState", skip_serializing)]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<peering_service_properties::ProvisioningState>,
 }
 pub mod peering_service_properties {
@@ -711,17 +711,17 @@ pub struct ErrorResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "type", skip_serializing)]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

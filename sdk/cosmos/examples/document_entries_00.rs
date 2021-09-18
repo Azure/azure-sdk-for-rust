@@ -1,6 +1,5 @@
 use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
-use azure_cosmos::responses::GetDocumentResponse;
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -45,8 +44,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let authorization_token = permission::AuthorizationToken::primary_from_base64(&master_key)?;
 
-    let http_client = new_http_client();
-    let client = CosmosClient::new(http_client, account, authorization_token);
+    let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
     let client = client.into_database_client(database_name);
     let client = client.into_collection_client(collection_name);
 
@@ -60,7 +58,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         };
 
         // let's add an entity.
-        response = Some(client.create_document().execute(&doc).await?);
+        response = Some(
+            client
+                .create_document(Context::new(), &doc, CreateDocumentOptions::new())
+                .await?,
+        );
     }
 
     println!("Created 5 documents.");
@@ -126,15 +128,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let response = client
         .clone()
         .into_document_client(id.clone(), partition_key)?
-        .get_document()
-        .consistency_level(session_token)
-        .execute::<MySampleStruct>()
+        .get_document::<MySampleStruct>(
+            Context::new(),
+            GetDocumentOptions::new().consistency_level(session_token),
+        )
         .await?;
 
-    assert!(match response {
-        GetDocumentResponse::Found(_) => true,
-        _ => false,
-    });
+    assert!(matches!(response, GetDocumentResponse::Found(_)));
     println!("response == {:#?}", response);
 
     let mut doc = match response {
@@ -166,15 +166,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let response = client
         .clone()
         .into_document_client(id.clone(), &id)?
-        .get_document()
-        .consistency_level(&response)
-        .execute::<MySampleStruct>()
+        .get_document::<MySampleStruct>(
+            Context::new(),
+            GetDocumentOptions::new().consistency_level(&response),
+        )
         .await?;
 
-    assert!(match response {
-        GetDocumentResponse::NotFound(_) => true,
-        _ => false,
-    });
+    assert!(matches!(response, GetDocumentResponse::NotFound(_)));
     println!("response == {:#?}", response);
 
     for i in 0u64..5 {

@@ -25,8 +25,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
-    let http_client = azure_core::new_http_client();
-    let client = CosmosClient::new(http_client, account.clone(), authorization_token);
+    let client = CosmosClient::new(
+        account.clone(),
+        authorization_token,
+        CosmosOptions::default(),
+    );
 
     let database_client = client.into_database_client(database_name);
     let collection_client = database_client
@@ -51,7 +54,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         get_collection2_response
     );
 
-    let create_user_response = user_client.create_user().execute().await?;
+    let create_user_response = user_client
+        .create_user(Context::new(), CreateUserOptions::default())
+        .await?;
     println!("create_user_response == {:#?}", create_user_response);
 
     // create the first permission!
@@ -59,11 +64,15 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let permission_mode = get_collection_response.collection.read_permission();
 
     let create_permission_response = permission_client
-        .create_permission()
-        .consistency_level(&create_user_response)
-        .expiry_seconds(18000u64) // 5 hours, max!
-        .execute(&permission_mode)
-        .await?;
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new()
+                .consistency_level(&create_user_response)
+                .expiry_seconds(18000u64),
+            &permission_mode,
+        )
+        .await
+        .unwrap();
     println!(
         "create_permission_response == {:#?}",
         create_permission_response
@@ -74,10 +83,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let permission_mode = get_collection2_response.collection.all_permission();
 
     let create_permission2_response = permission_client
-        .create_permission()
-        .consistency_level(&create_user_response)
-        .execute(&permission_mode)
-        .await?;
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new().consistency_level(&create_user_response),
+            &permission_mode,
+        )
+        .await
+        .unwrap();
+
     println!(
         "create_permission2_response == {:#?}",
         create_permission2_response
@@ -97,38 +110,46 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let get_permission_response = permission_client
-        .get_permission()
-        .consistency_level(ConsistencyLevel::Session(
-            list_permissions_response.session_token,
-        ))
-        .execute()
-        .await?;
+        .get_permission(
+            Context::new(),
+            GetPermissionOptions::new().consistency_level(ConsistencyLevel::Session(
+                list_permissions_response.session_token,
+            )),
+        )
+        .await
+        .unwrap();
     println!("get_permission_response == {:#?}", get_permission_response);
 
-    let get_permission_response = get_permission_response.unwrap();
     let permission_mode = &get_permission_response.permission.permission_mode;
 
     // renew permission extending its validity for 60 seconds more.
     let replace_permission_response = permission_client
-        .replace_permission()
-        .expiry_seconds(60u64)
-        .consistency_level(ConsistencyLevel::Session(
-            get_permission_response.session_token,
-        ))
-        .execute(permission_mode)
-        .await?;
+        .replace_permission(
+            Context::new(),
+            ReplacePermissionOptions::new()
+                .expiry_seconds(600u64)
+                .consistency_level(ConsistencyLevel::Session(
+                    get_permission_response.session_token,
+                )),
+            permission_mode,
+        )
+        .await
+        .unwrap();
     println!(
         "replace_permission_response == {:#?}",
         replace_permission_response
     );
 
     let delete_permission_response = permission_client
-        .delete_permission()
-        .consistency_level(ConsistencyLevel::Session(
-            replace_permission_response.session_token,
-        ))
-        .execute()
-        .await?;
+        .delete_permission(
+            Context::new(),
+            DeletePermissionOptions::new().consistency_level(ConsistencyLevel::Session(
+                replace_permission_response.session_token,
+            )),
+        )
+        .await
+        .unwrap();
+
     println!(
         "delete_permission_response == {:#?}",
         delete_permission_response
