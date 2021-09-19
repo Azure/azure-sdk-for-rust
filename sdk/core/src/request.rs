@@ -66,8 +66,8 @@ impl Serialize for Request {
         state.serialize_field(FIELDS[2], &hm)?;
         state.serialize_field(
             FIELDS[3],
-            match &self.body {
-                Body::Bytes(bytes) => bytes as &[u8],
+            &match &self.body {
+                Body::Bytes(bytes) => base64::encode(bytes as &[u8]),
                 Body::SeekableStream(_) => unimplemented!(),
             },
         )?;
@@ -190,7 +190,7 @@ impl<'de> Visitor<'de> for RequestVisitor {
             )));
         }
 
-        let body: (&str, Vec<u8>) = match map.next_entry()? {
+        let body: (&str, String) = match map.next_entry()? {
             Some((a, b)) => (a, b),
             None => return Err(serde::de::Error::custom("missing body")),
         };
@@ -200,6 +200,8 @@ impl<'de> Visitor<'de> for RequestVisitor {
                 body.0, FIELDS[3]
             )));
         }
+
+        let body = base64::decode(&body.1).map_err(serde::de::Error::custom)?;
 
         let mut hm = HeaderMap::new();
         for (k, v) in headers.1.into_iter() {
@@ -214,7 +216,7 @@ impl<'de> Visitor<'de> for RequestVisitor {
             Uri::from_str(uri.1).expect("expected a valid uri"),
             Method::from_str(method.1).expect("expected a valid HTTP method"),
             hm,
-            bytes::Bytes::from(body.1).into(),
+            bytes::Bytes::from(body).into(),
         ))
     }
 }

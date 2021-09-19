@@ -18,7 +18,7 @@ Building each crate should be as straight forward as `cargo build`, but check ea
 
 ### Mock testing framework
 
-This library comes with a testing framework that executes against prerecorded sessions to quickly validate code changes without incurring in Azure costs. You can read more about it in the [Mock testing framework's README](mock_transport_REAMDE.md).
+This library comes with a testing framework that executes against prerecorded sessions to quickly validate code changes without incurring in Azure costs. You can read more about it in the [Mock testing framework's README](docs/mock_transport_REAMDE.md).
 
 ## Contributing
 

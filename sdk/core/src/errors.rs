@@ -240,7 +240,7 @@ pub enum TraversingError {
 #[derive(Debug, thiserror::Error)]
 pub enum MockFrameworkError {
     #[error("the mock testing framework has not been initialized")]
-    UninitializedTransaction(),
+    UninitializedTransaction,
     #[error("{0}: {1}")]
     IOError(&'static str, std::io::Error),
     #[error("received request have header {0} but it was not present in the read request")]

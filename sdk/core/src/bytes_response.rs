@@ -7,7 +7,7 @@ use serde::ser::{Serialize, SerializeStruct, Serializer};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 
-const FIELDS: &'static [&'static str] = &["status", "headers", "body"];
+const FIELDS: &[&str] = &["status", "headers", "body"];
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct BytesResponse {
@@ -29,7 +29,7 @@ impl Serialize for BytesResponse {
         let mut state = serializer.serialize_struct("Response", 3)?;
         state.serialize_field(FIELDS[0], &self.status.as_u16())?;
         state.serialize_field(FIELDS[1], &hm)?;
-        state.serialize_field(FIELDS[2], &self.body as &[u8])?;
+        state.serialize_field(FIELDS[2], &base64::encode(&self.body as &[u8]))?;
 
         state.end()
     }
@@ -80,7 +80,7 @@ impl<'de> Visitor<'de> for ByteResponseVisitor {
             )));
         }
 
-        let body: (&str, Vec<u8>) = match map.next_entry()? {
+        let body: (&str, String) = match map.next_entry()? {
             Some((a, b)) => (a, b),
             None => return Err(serde::de::Error::custom("missing body")),
         };
@@ -90,6 +90,8 @@ impl<'de> Visitor<'de> for ByteResponseVisitor {
                 body.0, FIELDS[2]
             )));
         }
+
+        let body = base64::decode(&body.1).map_err(serde::de::Error::custom)?;
 
         let mut hm = HeaderMap::new();
         for (k, v) in headers.1.into_iter() {
@@ -103,7 +105,7 @@ impl<'de> Visitor<'de> for ByteResponseVisitor {
         Ok(Self::Value::new(
             StatusCode::from_u16(status.1).map_err(serde::de::Error::custom)?,
             hm,
-            Bytes::from(body.1),
+            Bytes::from(body),
         ))
     }
 }

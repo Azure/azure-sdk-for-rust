@@ -14,6 +14,7 @@ edition = "2018"
 
 [dependencies]
 async-trait = "0.1"
+base64 = "0.13"
 bytes = "1.0"
 chrono = "0.4"
 dyn-clone = "1.0"

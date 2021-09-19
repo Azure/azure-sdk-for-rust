@@ -4,6 +4,8 @@ use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    env_logger::init();
+
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
     let master_key =

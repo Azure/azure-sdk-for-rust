@@ -1,4 +1,3 @@
-#[cfg(feature = "mock_transport_framework")]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MockTransaction {
     pub(crate) name: String,
