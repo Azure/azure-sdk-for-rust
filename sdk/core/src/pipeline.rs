@@ -89,27 +89,23 @@ where
             pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
 
             #[cfg(feature = "mock_transport_framework")]
-            match std::env::var("TESTING_MODE") {
-                Ok(mode) => match mode.as_ref() {
-                    "RECORD" => {
-                        warn!("mock testing framework record mode enabled");
-                        pipeline.push(Arc::new(crate::policies::MockTransportRecorderPolicy::new(
-                            options.transport.clone(),
-                        )));
-                    }
-                    "PLAY" => {
-                        warn!("mock testing framework reply mode enabled");
-                        pipeline.push(Arc::new(crate::policies::MockTransportPlayerPolicy::new(
-                            options.transport.clone(),
-                        )));
-                    }
-                    _ => {
-                        warn!(
-                            "invalid TESTING_MODE selected. Supported options are PLAY and RECORD"
-                        );
-                        pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
-                    }
-                },
+            match std::env::var("TESTING_MODE").as_deref() {
+                Ok("RECORD") => {
+                    warn!("mock testing framework record mode enabled");
+                    pipeline.push(Arc::new(crate::policies::MockTransportRecorderPolicy::new(
+                        options.transport.clone(),
+                    )));
+                }
+                Ok("PLAY") => {
+                    warn!("mock testing framework reply mode enabled");
+                    pipeline.push(Arc::new(crate::policies::MockTransportPlayerPolicy::new(
+                        options.transport.clone(),
+                    )));
+                }
+                Ok(_) => {
+                    warn!("invalid TESTING_MODE selected. Supported options are PLAY and RECORD");
+                    pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
+                }
                 Err(_) => {} // ignore missing env variable and non-unicode ones
             }
         }

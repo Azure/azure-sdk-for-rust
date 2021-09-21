@@ -1,8 +1,11 @@
 use crate::bytes_response::BytesResponse;
+use crate::bytes_response::SerializedBytesResponse;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::policies::{Policy, PolicyResult};
 use crate::{MockFrameworkError, TransportOptions};
 use crate::{PipelineContext, Request, Response};
+
+use std::convert::TryInto;
 use std::io::Read;
 use std::sync::Arc;
 
@@ -61,7 +64,8 @@ where
         };
 
         let expected_request: Request = serde_json::from_str(&expected_request)?;
-        let expected_response: BytesResponse = serde_json::from_str(&expected_response)?;
+        let expected_response: BytesResponse =
+            serde_json::from_str::<SerializedBytesResponse<'_>>(&expected_response)?.try_into()?;
 
         // check if the passed request matches the one read from disk
         // We will ignore some headers that are bound to change every time

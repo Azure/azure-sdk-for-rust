@@ -1,113 +1,15 @@
 #[cfg(feature = "mock_transport_framework")]
 use crate::{collect_pinned_stream, BytesStream, Response, StreamError};
 use bytes::Bytes;
-use http::{HeaderMap, StatusCode};
-use serde::de::Visitor;
-use serde::ser::{Serialize, SerializeStruct, Serializer};
-use serde::{Deserialize, Deserializer};
+use http::{header, HeaderMap, StatusCode};
+use serde::Deserialize;
 use std::collections::HashMap;
-
-const FIELDS: &[&str] = &["status", "headers", "body"];
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct BytesResponse {
     status: StatusCode,
     headers: HeaderMap,
     body: Bytes,
-}
-
-impl Serialize for BytesResponse {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut hm = HashMap::new();
-        for (h, v) in self.headers.iter() {
-            hm.insert(h.to_string(), v.to_str().unwrap());
-        }
-
-        let mut state = serializer.serialize_struct("Response", 3)?;
-        state.serialize_field(FIELDS[0], &self.status.as_u16())?;
-        state.serialize_field(FIELDS[1], &hm)?;
-        state.serialize_field(FIELDS[2], &base64::encode(&self.body as &[u8]))?;
-
-        state.end()
-    }
-}
-
-impl<'de> Deserialize<'de> for BytesResponse {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_struct("Response", FIELDS, ByteResponseVisitor)
-    }
-}
-
-struct ByteResponseVisitor;
-
-impl<'de> Visitor<'de> for ByteResponseVisitor {
-    type Value = BytesResponse;
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str("struct BytesResponse")
-    }
-
-    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-    where
-        A: serde::de::MapAccess<'de>,
-    {
-        let status: (&str, u16) = match map.next_entry()? {
-            Some((a, b)) => (a, b),
-            None => return Err(serde::de::Error::custom("missing status code")),
-        };
-
-        if status.0 != FIELDS[0] {
-            return Err(serde::de::Error::custom(format!(
-                "unexpected field {}, expected {}",
-                status.0, FIELDS[0]
-            )));
-        }
-
-        let headers: (&str, HashMap<&str, String>) = match map.next_entry()? {
-            Some((a, b)) => (a, b),
-            None => return Err(serde::de::Error::custom("missing header map")),
-        };
-        if headers.0 != FIELDS[1] {
-            return Err(serde::de::Error::custom(format!(
-                "unexpected field {}, expected {}",
-                headers.0, FIELDS[1]
-            )));
-        }
-
-        let body: (&str, String) = match map.next_entry()? {
-            Some((a, b)) => (a, b),
-            None => return Err(serde::de::Error::custom("missing body")),
-        };
-        if body.0 != FIELDS[2] {
-            return Err(serde::de::Error::custom(format!(
-                "unexpected field {}, expected {}",
-                body.0, FIELDS[2]
-            )));
-        }
-
-        let body = base64::decode(&body.1).map_err(serde::de::Error::custom)?;
-
-        let mut hm = HeaderMap::new();
-        for (k, v) in headers.1.into_iter() {
-            hm.append(
-                http::header::HeaderName::from_lowercase(k.as_bytes())
-                    .map_err(serde::de::Error::custom)?,
-                http::HeaderValue::from_str(&v).map_err(serde::de::Error::custom)?,
-            );
-        }
-
-        Ok(Self::Value::new(
-            StatusCode::from_u16(status.1).map_err(serde::de::Error::custom)?,
-            hm,
-            Bytes::from(body),
-        ))
-    }
 }
 
 impl BytesResponse {
@@ -136,5 +38,46 @@ impl BytesResponse {
 
     pub(crate) fn deconstruct(self) -> (StatusCode, HeaderMap, Bytes) {
         (self.status, self.headers, self.body)
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub(crate) struct SerializedBytesResponse<'a> {
+    status: u16,
+    #[serde(borrow)]
+    headers: HashMap<&'a str, &'a str>,
+    body: String,
+}
+
+impl<'a> From<&'a BytesResponse> for SerializedBytesResponse<'a> {
+    fn from(r: &'a BytesResponse) -> Self {
+        let mut headers = HashMap::new();
+        for (h, v) in r.headers.iter() {
+            headers.insert(h.as_str(), v.to_str().unwrap());
+        }
+        let status = r.status.as_u16();
+        let body = base64::encode(&r.body as &[u8]);
+        Self {
+            status,
+            headers,
+            body,
+        }
+    }
+}
+
+impl std::convert::TryFrom<SerializedBytesResponse<'_>> for BytesResponse {
+    type Error = Box<dyn std::error::Error + Send + Sync>;
+
+    fn try_from(r: SerializedBytesResponse<'_>) -> Result<Self, Self::Error> {
+        let mut headers = HeaderMap::new();
+        for (&n, &v) in r.headers.iter() {
+            let name = header::HeaderName::from_lowercase(n.as_bytes())?;
+            let value = header::HeaderValue::from_str(v)?;
+            headers.insert(name, value);
+        }
+        let body = Bytes::from(base64::decode(r.body)?);
+        let status = StatusCode::from_u16(r.status)?;
+
+        Ok(Self::new(status, headers, body))
     }
 }
