@@ -95,6 +95,18 @@ where
         self.http_client.as_ref()
     }
 
+    pub fn replace_policy(
+        &mut self,
+        policy: Arc<dyn Policy<C>>,
+        position: usize,
+    ) -> Arc<dyn Policy<C>> {
+        std::mem::replace(&mut self.pipeline[position], policy)
+    }
+
+    pub fn policies(&self) -> &[Arc<dyn Policy<C>>] {
+        &self.pipeline
+    }
+
     pub async fn send(
         &self,
         ctx: &mut PipelineContext<C>,
