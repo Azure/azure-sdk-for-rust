@@ -5,7 +5,6 @@ use crate::table::TransactionOperation;
 use azure_core::headers::{add_mandatory_header, add_optional_header};
 use azure_core::prelude::*;
 use http::{method::Method, StatusCode};
-use serde::Serialize;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
