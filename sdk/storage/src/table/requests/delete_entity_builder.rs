@@ -64,7 +64,7 @@ impl<'a> DeleteEntityBuilder<'a> {
 
     pub fn to_transaction_operation<E>(
         &self,
-        entity: &E,
+        _entity: &E,
     ) -> Result<TransactionOperation, Box<dyn std::error::Error + Send + Sync>>
     where
         E: Serialize,
@@ -75,8 +75,10 @@ impl<'a> DeleteEntityBuilder<'a> {
             .method(Method::DELETE)
             .uri(url.as_str());
         let request = add_optional_header(&self.client_request_id, request);
+        let request = request.header("Accept", "application/json;odata=minimalmetadata");
+        let request = request.header("If-Match", "*");
 
-        let request = request.body(serde_json::to_string(entity)?)?;
+        let request = request.body("".to_owned())?;
 
         Ok(TransactionOperation::new(request))
     }
