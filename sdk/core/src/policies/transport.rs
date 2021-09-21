@@ -25,11 +25,11 @@ impl<C> Policy<C> for TransportPolicy
 where
     C: Send + Sync,
 {
-    async fn send<'a, 'b, 'c>(
-        &'a self,
-        _ctx: &'b mut PipelineContext<'a, C>,
-        request: &'c mut Request,
-        next: &'a [Arc<dyn Policy<C>>],
+    async fn send(
+        &self,
+        _ctx: &mut PipelineContext<C>,
+        request: &mut Request,
+        next: &[Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response> {
         // there must be no more policies
         assert_eq!(0, next.len());

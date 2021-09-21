@@ -1,4 +1,5 @@
 use crate::Context;
+use std::sync::Mutex;
 
 /// Pipeline internal execution context.
 ///
@@ -9,21 +10,21 @@ use crate::Context;
 /// long as it's Send and Sync. For example, Cosmos uses the
 /// PipelineContext to pass the ResourceType down to its
 /// AuthorizationPolicy.
-pub struct PipelineContext<'a, C>
+pub struct PipelineContext<C>
 where
     C: Send + Sync,
 {
-    inner_context: &'a mut Context,
+    inner_context: Mutex<Context>,
     contents: C,
 }
 
-impl<'a, C> PipelineContext<'a, C>
+impl<C> PipelineContext<C>
 where
     C: Send + Sync,
 {
-    pub fn new(inner_context: &'a mut Context, contents: C) -> Self {
+    pub fn new(inner_context: Context, contents: C) -> Self {
         Self {
-            inner_context,
+            inner_context: Mutex::new(inner_context),
             contents,
         }
     }
@@ -38,17 +39,5 @@ where
 
     pub fn get_contents_mut(&mut self) -> &mut C {
         &mut self.contents
-    }
-
-    pub fn set_inner_context(&mut self, inner_context: &'a mut Context) {
-        self.inner_context = inner_context;
-    }
-
-    pub fn get_inner_context(&self) -> &Context {
-        self.inner_context
-    }
-
-    pub fn get_inner_context_mut(&mut self) -> &mut Context {
-        &mut self.inner_context
     }
 }

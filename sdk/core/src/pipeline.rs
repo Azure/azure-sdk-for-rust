@@ -122,10 +122,10 @@ where
         self.http_client.as_ref()
     }
 
-    pub async fn send<'a>(
-        &'a self,
-        ctx: &'a mut PipelineContext<'a, C>,
-        request: &'a mut Request,
+    pub async fn send(
+        &self,
+        ctx: &mut PipelineContext<C>,
+        request: &mut Request,
     ) -> Result<Response, Error> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])

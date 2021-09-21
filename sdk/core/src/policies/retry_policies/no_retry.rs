@@ -15,11 +15,11 @@ impl<C> Policy<C> for NoRetryPolicy
 where
     C: Send + Sync,
 {
-    async fn send<'a, 'b, 'c>(
-        &'a self,
-        ctx: &'b mut PipelineContext<'a, C>,
-        request: &'c mut Request,
-        next: &'a [Arc<dyn Policy<C>>],
+    async fn send(
+        &self,
+        ctx: &mut PipelineContext<C>,
+        request: &mut Request,
+        next: &[Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response> {
         // just call the following policies and bubble up the error
         next[0].send(ctx, request, &next[1..]).await
