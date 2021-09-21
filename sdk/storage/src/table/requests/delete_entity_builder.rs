@@ -62,13 +62,9 @@ impl<'a> DeleteEntityBuilder<'a> {
         Ok((&response).try_into()?)
     }
 
-    pub fn to_transaction_operation<E>(
+    pub fn to_transaction_operation(
         &self,
-        _entity: &E,
-    ) -> Result<TransactionOperation, Box<dyn std::error::Error + Send + Sync>>
-    where
-        E: Serialize,
-    {
+    ) -> Result<TransactionOperation, Box<dyn std::error::Error + Send + Sync>> {
         let url = self.entity_client.url();
 
         let request = http::Request::builder()
