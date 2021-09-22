@@ -44,7 +44,7 @@ tokio = { version = "1.0", features = ["default"] }
 [features]
 default = ["enable_reqwest"]
 enable_reqwest = ["reqwest/default-tls"]
-enable_reqwest_rustls = ["reqwest", "reqwest/rustls-tls"]
+enable_reqwest_rustls = ["reqwest/rustls-tls"]
 enable_hyper = ["hyper", "hyper-rustls"]
 test_e2e = []
 azurite_workaround = []
