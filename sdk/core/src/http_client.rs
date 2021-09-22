@@ -12,7 +12,7 @@ use hyper_rustls::HttpsConnector;
 use serde::Serialize;
 use std::sync::Arc;
 
-#[cfg(any(feature = "enable_reqwest", feature="enable_reqwest_rustls"))]
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 pub fn new_http_client() -> Arc<dyn HttpClient> {
     Arc::new(reqwest::Client::new())
 }
@@ -119,7 +119,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 //    }
 //}
 
-#[cfg(any(feature = "enable_reqwest", feature="enable_reqwest_rustls"))]
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for reqwest::Client {
