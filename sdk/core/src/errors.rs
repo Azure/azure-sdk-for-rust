@@ -55,7 +55,7 @@ pub enum Error {
 
 #[cfg(feature = "enable_hyper")]
 type HttpClientError = hyper::Error;
-#[cfg(feature = "enable_reqwest")]
+#[cfg(any(feature = "enable_reqwest", feature="enable_reqwest_rustls"))]
 type HttpClientError = reqwest::Error;
 
 #[non_exhaustive]
