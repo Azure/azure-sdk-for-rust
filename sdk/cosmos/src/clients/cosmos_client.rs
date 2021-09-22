@@ -145,7 +145,7 @@ impl CosmosClient {
     /// Create a database
     pub async fn create_database<S: AsRef<str>>(
         &self,
-        ctx: &mut Context,
+        ctx: Context,
         database_name: S,
         options: CreateDatabaseOptions,
     ) -> Result<CreateDatabaseResponse, crate::Error> {

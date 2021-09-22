@@ -42,18 +42,17 @@ impl BytesResponse {
 }
 
 #[derive(Serialize, Deserialize)]
-pub(crate) struct SerializedBytesResponse<'a> {
+pub(crate) struct SerializedBytesResponse {
     status: u16,
-    #[serde(borrow)]
-    headers: HashMap<&'a str, &'a str>,
+    headers: HashMap<String, String>,
     body: String,
 }
 
-impl<'a> From<&'a BytesResponse> for SerializedBytesResponse<'a> {
-    fn from(r: &'a BytesResponse) -> Self {
+impl From<BytesResponse> for SerializedBytesResponse {
+    fn from(r: BytesResponse) -> Self {
         let mut headers = HashMap::new();
         for (h, v) in r.headers.iter() {
-            headers.insert(h.as_str(), v.to_str().unwrap());
+            headers.insert(h.as_str().into(), v.to_str().unwrap().into());
         }
         let status = r.status.as_u16();
         let body = base64::encode(&r.body as &[u8]);
@@ -65,14 +64,14 @@ impl<'a> From<&'a BytesResponse> for SerializedBytesResponse<'a> {
     }
 }
 
-impl std::convert::TryFrom<SerializedBytesResponse<'_>> for BytesResponse {
+impl std::convert::TryFrom<SerializedBytesResponse> for BytesResponse {
     type Error = Box<dyn std::error::Error + Send + Sync>;
 
-    fn try_from(r: SerializedBytesResponse<'_>) -> Result<Self, Self::Error> {
+    fn try_from(r: SerializedBytesResponse) -> Result<Self, Self::Error> {
         let mut headers = HeaderMap::new();
-        for (&n, &v) in r.headers.iter() {
+        for (n, v) in r.headers.iter() {
             let name = header::HeaderName::from_lowercase(n.as_bytes())?;
-            let value = header::HeaderValue::from_str(v)?;
+            let value = header::HeaderValue::from_str(&v)?;
             headers.insert(name, value);
         }
         let body = Bytes::from(base64::decode(r.body)?);

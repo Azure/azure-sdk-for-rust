@@ -1,5 +1,4 @@
 use crate::Context;
-use std::sync::Mutex;
 
 /// Pipeline internal execution context.
 ///
@@ -14,7 +13,7 @@ pub struct PipelineContext<C>
 where
     C: Send + Sync,
 {
-    inner_context: Mutex<Context>,
+    inner_context: Context,
     contents: C,
 }
 
@@ -24,7 +23,7 @@ where
 {
     pub fn new(inner_context: Context, contents: C) -> Self {
         Self {
-            inner_context: Mutex::new(inner_context),
+            inner_context,
             contents,
         }
     }
@@ -39,5 +38,13 @@ where
 
     pub fn get_contents_mut(&mut self) -> &mut C {
         &mut self.contents
+    }
+
+    pub fn get_inner_context(&self) -> &Context {
+        &self.inner_context
+    }
+
+    pub fn get_inner_context_mut(&mut self) -> &mut Context {
+        &mut self.inner_context
     }
 }

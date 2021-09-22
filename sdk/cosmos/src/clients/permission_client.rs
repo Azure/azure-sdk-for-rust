@@ -47,7 +47,7 @@ impl PermissionClient {
     /// Create the permission
     pub async fn create_permission(
         &self,
-        ctx: &mut Context,
+        ctx: Context,
         options: CreatePermissionOptions,
         permission_mode: &PermissionMode<'_>,
     ) -> Result<PermissionResponse<'_>, crate::Error> {
@@ -77,7 +77,7 @@ impl PermissionClient {
     /// Replace the permission
     pub async fn replace_permission(
         &self,
-        ctx: &mut Context,
+        ctx: Context,
         options: ReplacePermissionOptions,
         permission_mode: &PermissionMode<'_>,
     ) -> Result<PermissionResponse<'_>, crate::Error> {
@@ -100,7 +100,7 @@ impl PermissionClient {
     /// Get the permission
     pub async fn get_permission(
         &self,
-        ctx: &mut Context,
+        ctx: Context,
         options: GetPermissionOptions,
     ) -> Result<PermissionResponse<'_>, crate::Error> {
         let mut request = self.prepare_request_with_permission_name(http::Method::GET);
@@ -122,7 +122,7 @@ impl PermissionClient {
     /// Delete the permission
     pub async fn delete_permission(
         &self,
-        ctx: &mut Context,
+        ctx: Context,
         options: DeletePermissionOptions,
     ) -> Result<DeletePermissionResponse, crate::Error> {
         let mut request = self.prepare_request_with_permission_name(http::Method::DELETE);

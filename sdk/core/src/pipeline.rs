@@ -3,7 +3,7 @@ use crate::policies::TransportPolicy;
 use crate::policies::{Policy, TelemetryPolicy};
 use crate::{ClientOptions, Error, HttpClient, PipelineContext, Request, Response};
 #[cfg(feature = "mock_transport_framework")]
-use log::warn;
+use log::{info, warn};
 use std::sync::Arc;
 
 /// Execution pipeline.
@@ -89,24 +89,26 @@ where
             pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
 
             #[cfg(feature = "mock_transport_framework")]
-            match std::env::var("TESTING_MODE").as_deref() {
-                Ok("RECORD") => {
-                    warn!("mock testing framework record mode enabled");
+            match std::env::var("TESTING_MODE").as_deref().unwrap_or("PLAY") {
+                "RECORD" => {
+                    info!("mock testing framework record mode enabled");
                     pipeline.push(Arc::new(crate::policies::MockTransportRecorderPolicy::new(
+                        std::env::var("CARGO_BIN_NAME").unwrap(),
                         options.transport.clone(),
                     )));
                 }
-                Ok("PLAY") => {
-                    warn!("mock testing framework reply mode enabled");
+                "PLAY" => {
+                    info!("mock testing framework reply mode enabled");
                     pipeline.push(Arc::new(crate::policies::MockTransportPlayerPolicy::new(
+                        std::env::var("CARGO_BIN_NAME")
+                            .unwrap_or("create_database_and_collection".into()),
                         options.transport.clone(),
                     )));
                 }
-                Ok(_) => {
+                _ => {
                     warn!("invalid TESTING_MODE selected. Supported options are PLAY and RECORD");
                     pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
                 }
-                Err(_) => {} // ignore missing env variable and non-unicode ones
             }
         }
 

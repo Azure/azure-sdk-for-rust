@@ -55,17 +55,13 @@ async fn permission_token_usage() {
         .offer(Offer::Throughput(400))
         .indexing_policy(indexing_policy);
     let create_collection_response = database_client
-        .create_collection(
-            &mut Context::new(),
-            COLLECTION_NAME,
-            create_collection_options,
-        )
+        .create_collection(Context::new(), COLLECTION_NAME, create_collection_options)
         .await
         .unwrap();
 
     let user_client = database_client.clone().into_user_client(USER_NAME);
     user_client
-        .create_user(&mut Context::new(), CreateUserOptions::new())
+        .create_user(Context::new(), CreateUserOptions::new())
         .await
         .unwrap();
 
@@ -75,7 +71,7 @@ async fn permission_token_usage() {
 
     let create_permission_response = permission_client
         .create_permission(
-            &mut Context::new(),
+            Context::new(),
             CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
             &permission_mode,
         )
@@ -113,7 +109,7 @@ async fn permission_token_usage() {
 
     new_collection_client
         .create_document(
-            &mut Context::new(),
+            Context::new(),
             &document,
             CreateDocumentOptions::new().is_upsert(true),
         )
@@ -121,7 +117,7 @@ async fn permission_token_usage() {
         .unwrap_err();
 
     permission_client
-        .delete_permission(&mut Context::new(), DeletePermissionOptions::new())
+        .delete_permission(Context::new(), DeletePermissionOptions::new())
         .await
         .unwrap();
 
@@ -129,7 +125,7 @@ async fn permission_token_usage() {
     let permission_mode = create_collection_response.collection.all_permission();
     let create_permission_response = permission_client
         .create_permission(
-            &mut Context::new(),
+            Context::new(),
             CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
             &permission_mode,
         )
@@ -148,7 +144,7 @@ async fn permission_token_usage() {
     // so the create_document should succeed!
     let create_document_response = new_collection_client
         .create_document(
-            &mut Context::new(),
+            Context::new(),
             &document,
             CreateDocumentOptions::new().is_upsert(true),
         )

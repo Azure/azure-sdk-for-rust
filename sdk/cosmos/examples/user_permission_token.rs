@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("get_collection_response == {:#?}", get_collection_response);
 
     let create_user_response = user_client
-        .create_user(&mut Context::new(), CreateUserOptions::default())
+        .create_user(Context::new(), CreateUserOptions::default())
         .await?;
     println!("create_user_response == {:#?}", create_user_response);
 
@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let create_permission_response = permission_client
         .create_permission(
-            &mut Context::new(),
+            Context::new(),
             CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
             &permission_mode,
         )
@@ -119,7 +119,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_database_client(database_name.clone())
         .into_collection_client(collection_name.clone())
         .create_document(
-            &mut Context::new(),
+            Context::new(),
             &document,
             CreateDocumentOptions::new()
                 .is_upsert(true)
@@ -133,14 +133,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     }
 
     permission_client
-        .delete_permission(&mut Context::new(), DeletePermissionOptions::new())
+        .delete_permission(Context::new(), DeletePermissionOptions::new())
         .await?;
 
     // All includes read and write.
     let permission_mode = get_collection_response.collection.all_permission();
     let create_permission_response = permission_client
         .create_permission(
-            &mut Context::new(),
+            Context::new(),
             CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
             &permission_mode,
         )
@@ -168,7 +168,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_database_client(database_name)
         .into_collection_client(collection_name)
         .create_document(
-            &mut Context::new(),
+            Context::new(),
             &document,
             CreateDocumentOptions::new()
                 .is_upsert(true)

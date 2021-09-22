@@ -54,7 +54,7 @@ async fn create_and_delete_document() {
         .offer(Offer::Throughput(400))
         .indexing_policy(indexing_policy);
     database_client
-        .create_collection(&mut Context::new(), COLLECTION_NAME, options)
+        .create_collection(Context::new(), COLLECTION_NAME, options)
         .await
         .unwrap();
 
@@ -68,11 +68,7 @@ async fn create_and_delete_document() {
         hello: 42,
     };
     collection_client
-        .create_document(
-            &mut Context::new(),
-            &document_data,
-            CreateDocumentOptions::new(),
-        )
+        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
         .await
         .unwrap();
 
@@ -91,7 +87,7 @@ async fn create_and_delete_document() {
         .unwrap();
 
     let document_after_get = document_client
-        .get_document::<MyDocument>(&mut Context::new(), GetDocumentOptions::new())
+        .get_document::<MyDocument>(Context::new(), GetDocumentOptions::new())
         .await
         .unwrap();
 
@@ -145,7 +141,7 @@ async fn query_documents() {
         .indexing_policy(indexing_policy)
         .offer(Offer::S2);
     database_client
-        .create_collection(&mut Context::new(), COLLECTION_NAME, options)
+        .create_collection(Context::new(), COLLECTION_NAME, options)
         .await
         .unwrap();
 
@@ -159,11 +155,7 @@ async fn query_documents() {
         hello: 42,
     };
     collection_client
-        .create_document(
-            &mut Context::new(),
-            &document_data,
-            CreateDocumentOptions::new(),
-        )
+        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
         .await
         .unwrap();
 
@@ -223,7 +215,7 @@ async fn replace_document() {
         .indexing_policy(indexing_policy)
         .offer(Offer::S2);
     database_client
-        .create_collection(&mut Context::new(), COLLECTION_NAME, options)
+        .create_collection(Context::new(), COLLECTION_NAME, options)
         .await
         .unwrap();
 
@@ -237,11 +229,7 @@ async fn replace_document() {
         hello: 42,
     };
     collection_client
-        .create_document(
-            &mut Context::new(),
-            &document_data,
-            CreateDocumentOptions::new(),
-        )
+        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
         .await
         .unwrap();
 
@@ -272,7 +260,7 @@ async fn replace_document() {
         .into_document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
         .unwrap();
     let document_after_get = document_client
-        .get_document::<MyDocument>(&mut Context::new(), GetDocumentOptions::new())
+        .get_document::<MyDocument>(Context::new(), GetDocumentOptions::new())
         .await
         .unwrap();
 

@@ -14,16 +14,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let database_name = "sample";
 
-    let mut context = Context::new();
-    context.start_mock_transaction("create_database_and_collection");
-
+    let context = Context::new();
     let authorization_token = permission::AuthorizationToken::primary_from_base64(&master_key)?;
-
     let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
 
     println!("before create database");
     let db = client
-        .create_database(&mut context, &database_name, CreateDatabaseOptions::new())
+        .create_database(
+            context.clone(),
+            &database_name,
+            CreateDatabaseOptions::new(),
+        )
         .await?;
     println!("create_database_response = {:#?}", db);
 
@@ -31,11 +32,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let db_client = client.clone().into_database_client(database_name.clone());
 
     let create_collection_response = db_client
-        .create_collection(
-            &mut context,
-            "panzadoro",
-            CreateCollectionOptions::new("/id"),
-        )
+        .create_collection(context, "panzadoro", CreateCollectionOptions::new("/id"))
         .await?;
 
     println!(

@@ -1,21 +1,42 @@
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+
+#[derive(Debug, Clone)]
 pub struct MockTransaction {
     pub(crate) name: String,
-    pub(crate) number: u32,
+    pub(crate) number: Arc<AtomicUsize>,
 }
 
-#[cfg(feature = "mock_transport_framework")]
 impl MockTransaction {
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
-            number: 0,
+            number: Arc::new(AtomicUsize::new(0)),
         }
     }
+
     pub fn name(&self) -> &str {
         &self.name
     }
-    pub fn number(&self) -> u32 {
-        self.number
+
+    pub fn number(&self) -> usize {
+        self.number.load(Ordering::SeqCst)
+    }
+
+    pub fn increment_number(&self) -> usize {
+        self.number.fetch_add(1, Ordering::SeqCst)
+    }
+
+    pub(crate) fn file_path(&self) -> Result<PathBuf, crate::MockFrameworkError> {
+        let path: PathBuf = PathBuf::from("SessionRecords").join(self.name());
+
+        if !path.exists() {
+            std::fs::create_dir(&path).map_err(|e| {
+                crate::MockFrameworkError::IOError("cannot create transaction folder", e)
+            })?;
+        }
+
+        Ok(path)
     }
 }

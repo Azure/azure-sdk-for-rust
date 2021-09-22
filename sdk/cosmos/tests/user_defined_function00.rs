@@ -41,7 +41,7 @@ async fn user_defined_function00() -> Result<(), azure_cosmos::Error> {
     // create a temp collection
     let _create_collection_response = database_client
         .create_collection(
-            &mut Context::new(),
+            Context::new(),
             COLLECTION_NAME,
             CreateCollectionOptions::new("/id"),
         )
