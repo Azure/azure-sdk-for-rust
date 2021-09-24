@@ -26,6 +26,8 @@ impl<'a> CreatePathOptions<'a> {
     {
         azure_core::headers::add_optional_header2(&self.if_match_condition, req)?;
 
+        req.set_body(bytes::Bytes::new().into()); // TODO: needed?
+
         Ok(())
     }
 }
