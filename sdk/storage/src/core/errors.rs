@@ -67,6 +67,14 @@ pub enum Error {
     CRC64Not8BytesLong(usize),
     #[error("At least one of these headers must be present: {0:?}")]
     HeadersNotFound(Vec<String>),
+    #[error("error writing the header value: {0}")]
+    InvalidHeaderValue(#[from] azure_core::HTTPHeaderError),
+}
+
+impl From<azure_core::HttpError> for Error {
+    fn from(error: azure_core::HttpError) -> Self {
+        Self::CoreError(azure_core::Error::HttpError(error))
+    }
 }
 
 #[non_exhaustive]
