@@ -1,6 +1,6 @@
 pub mod clients;
-pub mod operations;
 mod file_system;
+pub mod operations;
 pub mod requests;
 pub mod responses;
 pub use file_system::FileSystem;

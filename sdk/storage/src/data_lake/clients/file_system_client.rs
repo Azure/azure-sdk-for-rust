@@ -1,8 +1,8 @@
-use azure_core::{Context, HttpClient, PipelineContext};
-use azure_core::pipeline::Pipeline;
-use crate::data_lake::requests::*;
 use crate::data_lake::operations::*;
+use crate::data_lake::requests::*;
 use crate::{data_lake::clients::DataLakeClient, Properties};
+use azure_core::pipeline::Pipeline;
+use azure_core::{Context, HttpClient, PipelineContext};
 use bytes::Bytes;
 
 use std::sync::Arc;
@@ -68,10 +68,7 @@ impl FileSystemClient {
         path_name: &str,
         options: CreatePathOptions<'_>,
     ) -> Result<CreatePathResponse, crate::Error> {
-        let mut request = self.prepare_request_pipeline(
-            &path_name,
-            http::Method::PUT,
-        );
+        let mut request = self.prepare_request_pipeline(&path_name, http::Method::PUT);
         let contents: Vec<i32> = Vec::new();
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
@@ -115,7 +112,7 @@ impl FileSystemClient {
         http::request::Builder::new()
             .method(http_method)
             .uri(uri)
-            .body(bytes::Bytes::new())// TODO: can we actually upload the file here? docs don't say, but thought I read that we can't; how can I not specify a body?
+            .body(bytes::Bytes::new()) // TODO: can we actually upload the file here? docs don't say, but thought I read that we can't; how can I not specify a body?
             .unwrap()
             .into()
     }

@@ -1,7 +1,7 @@
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
-use azure_storage::data_lake::prelude::*;
 use azure_storage::data_lake::operations::*;
+use azure_storage::data_lake::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
 use std::num::NonZeroU32;
@@ -30,16 +30,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let file_system = data_lake.as_file_system_client(file_system_name)?;
 
     // let's create the file system
-    let response = file_system
-        .create()
-        .execute()
-        .await?;
+    let response = file_system.create().execute().await?;
     println!("response == {:?}", response);
 
     // let's [create a path](https://docs.microsoft.com/en-us/rest/api/storageservices/datalakestoragegen2/path/create)
     let response = file_system
         // TODO: Only supports files right now, not directories
-        .create_path(Context::new(), "test_file_123.txt", CreatePathOptions::default())
+        .create_path(
+            Context::new(),
+            "test_file_123.txt",
+            CreatePathOptions::default(),
+        )
         .await?;
     println!("response == {:?}", response);
 

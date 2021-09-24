@@ -1,7 +1,7 @@
 use crate::core::prelude::*;
 use crate::data_lake::requests::*;
-use azure_core::prelude::*;
 use azure_core::pipeline::Pipeline;
+use azure_core::prelude::*;
 use azure_core::ClientOptions;
 use bytes::Bytes;
 use http::method::Method;

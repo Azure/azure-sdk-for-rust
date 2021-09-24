@@ -19,11 +19,7 @@ impl<'a> CreatePathOptions<'a> {
         if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
     }
 
-    pub(crate) fn decorate_request(
-        &self,
-        req: &mut HttpRequest,
-    ) -> Result<(), crate::Error>
-    {
+    pub(crate) fn decorate_request(&self, req: &mut HttpRequest) -> Result<(), crate::Error> {
         azure_core::headers::add_optional_header2(&self.if_match_condition, req)?;
 
         req.set_body(bytes::Bytes::new().into()); // TODO: needed?
@@ -41,8 +37,6 @@ impl CreatePathResponse {
     pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
         let (status_code, _headers, _pinned_stream) = response.deconstruct();
 
-        Ok(CreatePathResponse {
-            status_code,
-        })
+        Ok(CreatePathResponse { status_code })
     }
 }
