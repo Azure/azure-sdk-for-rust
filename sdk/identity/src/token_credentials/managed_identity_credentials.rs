@@ -1,5 +1,6 @@
 use super::TokenCredential;
 use azure_core::TokenResponse;
+use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
 use oauth2::AccessToken;
 use serde::Deserialize;
@@ -88,6 +89,7 @@ impl azure_core::TokenCredential for ManagedIdentityCredential {
 #[derive(Debug, Clone, Deserialize)]
 struct MsiTokenResponse {
     pub access_token: AccessToken,
+    #[serde(with = "ts_seconds")]
     pub expires_on: DateTime<Utc>,
     pub token_type: String,
     pub resource: String,

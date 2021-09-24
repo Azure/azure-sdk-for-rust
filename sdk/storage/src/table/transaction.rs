@@ -32,7 +32,7 @@ impl Transaction {
         let mut s = String::new();
 
         s.push_str(&format!(
-            "--transaction_{}\nContent-Type: multipart/mixed; boundary=changeset_{}\n\n",
+            "--batch_{}\nContent-Type: multipart/mixed; boundary=changeset_{}\n\n",
             self.batch_uuid.to_hyphenated_ref(),
             self.change_set_uuid.to_hyphenated_ref()
         ));
@@ -56,7 +56,7 @@ impl Transaction {
         }
 
         s.push_str(&format!(
-            "\n--changeset_{}--\n--transaction_{}\n",
+            "\n--changeset_{}--\n--batch_{}\n",
             self.change_set_uuid.to_hyphenated_ref(),
             self.batch_uuid.to_hyphenated_ref(),
         ));
