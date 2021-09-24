@@ -41,7 +41,7 @@ impl<DS: Into<String>, A: Into<String>> AsCustomDataLakeClient<DS, A> for Arc<St
 
 #[derive(Debug, Clone)]
 pub struct DataLakeClient {
-    pipeline: Pipeline<Context>,
+    pipeline: Pipeline<Vec<i32>>,
     storage_client: Arc<StorageClient>,
     account: String,
     custom_dns_suffix: Option<String>,
@@ -68,12 +68,15 @@ impl DataLakeClient {
             }
         ))?;
 
+        let options = &ClientOptions::default();
+        let per_call_policies = Vec::new();
+        let per_retry_policies = Vec::new();
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
-            &ClientOptions::default(),
-            Vec::new(),
-            Vec::new(),
+            options,
+            per_call_policies,
+            per_retry_policies,
         );
 
         Ok(Arc::new(Self {
@@ -112,7 +115,7 @@ impl DataLakeClient {
             .prepare_request(url, method, http_header_adder, request_body)
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline<Context> {
+    pub(crate) fn pipeline(&self) -> &Pipeline<Vec<i32>> {
         &self.pipeline
     }
 }
