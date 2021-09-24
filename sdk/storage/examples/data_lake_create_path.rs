@@ -40,7 +40,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let response = file_system
         // TODO: Only supports files right now, not directories
         .create_path(Context::new(), "test_file_123.txt", CreatePathOptions::default())
-        .execute()
         .await?;
     println!("response == {:?}", response);
 
