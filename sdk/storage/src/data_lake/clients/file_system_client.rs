@@ -72,7 +72,8 @@ impl FileSystemClient {
             &path_name,
             http::Method::PUT,
         );
-        let mut pipeline_context = PipelineContext::new(ctx, Vec::new());
+        let contents: Vec<i32> = Vec::new();
+        let mut pipeline_context = PipelineContext::new(ctx, contents);
 
         options.decorate_request(&mut request)?;
         let response = self
@@ -119,7 +120,7 @@ impl FileSystemClient {
             .into()
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline<Context> {
+    pub(crate) fn pipeline(&self) -> &Pipeline<Vec<i32>> {
         &self.data_lake_client.pipeline()
     }
 }
