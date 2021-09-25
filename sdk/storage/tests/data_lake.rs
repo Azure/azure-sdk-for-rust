@@ -5,6 +5,7 @@ use azure_storage::data_lake::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
 use std::num::NonZeroU32;
+use http::StatusCode;
 
 #[tokio::test]
 async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -14,7 +15,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     let master_key = std::env::var("ADSL_STORAGE_MASTER_KEY")
         .expect("Set env variable ADSL_STORAGE_MASTER_KEY first!");
 
-    let file_system_name = "azuresdke2etest";
+    let file_system_name = "azuresdke2etest5";
 
     let http_client = new_http_client();
 
@@ -30,13 +31,26 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     let mut properties = Properties::new();
     properties.insert("AddedVia", "Azure SDK for Rust");
     properties.insert("CreatedAt", chrono::Utc::now().to_string());
+    println!("creating file system...");
     let response = file_system
         .create()
         .properties(&properties)
         .execute()
         .await?;
-    println!("response == {:?}", response);
+    println!("create file system response == {:?}", response);
+    println!();
 
+    println!("creating path...");
+    let create_path_response = file_system
+        .create_path(Context::new(), "file.txt", CreatePathOptions::new())
+        .await
+        .unwrap();
+    println!("create path response == {:?}", create_path_response);
+    println!();
+
+    // assert_eq!(create_path_response.status_code, StatusCode::FORBIDDEN);
+
+    println!("listing file system...");
     let mut stream = Box::pin(
         data_lake
             .list()
@@ -45,21 +59,29 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     );
 
     while let Some(response) = stream.next().await {
-        println!("response == {:?}\n\n", response);
+        println!("list stream response == {:?}\n\n", response);
     }
+    println!();
 
+    println!("setting properties...");
     properties.insert("ModifiedBy", "Iota");
     let response = file_system
         .set_properties(Some(&properties))
         .execute()
         .await?;
-    println!("response == {:?}\n\n", response);
+    println!("set properties response == {:?}\n\n", response);
+    println!();
 
+    println!("getting properties...");
     let response = file_system.get_properties().execute().await?;
-    println!("response == {:?}\n\n", response);
+    println!("get properties response == {:?}\n\n", response);
+    println!();
 
+    println!("deleting file system...");
     let response = file_system.delete().execute().await?;
-    println!("response == {:?}\n\n", response);
+    println!("file system delete response == {:?}\n\n", response);
+    println!();
+    println!("data lake test done.");
 
     Ok(())
 }
