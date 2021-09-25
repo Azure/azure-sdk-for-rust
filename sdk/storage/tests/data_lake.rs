@@ -35,7 +35,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         .properties(&properties)
         .execute()
         .await?;
-    println!("repsonse == {:?}", response);
+    println!("response == {:?}", response);
 
     let mut stream = Box::pin(
         data_lake
