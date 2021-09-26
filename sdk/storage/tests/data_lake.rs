@@ -5,7 +5,7 @@ use azure_storage::data_lake::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
 use std::num::NonZeroU32;
-use http::StatusCode;
+use chrono::{Utc};
 
 #[tokio::test]
 async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -15,7 +15,8 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     let master_key = std::env::var("ADSL_STORAGE_MASTER_KEY")
         .expect("Set env variable ADSL_STORAGE_MASTER_KEY first!");
 
-    let file_system_name = "azuresdke2etest5";
+    let now = Utc::now();
+    let file_system_name = format!("azurerustsdk-e2etest-datalake-{}", now.timestamp());
 
     let http_client = new_http_client();
 
@@ -26,29 +27,32 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         .as_storage_client()
         .as_data_lake_client(account)?;
 
-    let file_system = data_lake.as_file_system_client(file_system_name)?;
+    let file_system = data_lake.as_file_system_client(&file_system_name)?;
 
     let mut properties = Properties::new();
     properties.insert("AddedVia", "Azure SDK for Rust");
     properties.insert("CreatedAt", chrono::Utc::now().to_string());
-    println!("creating file system...");
-    let response = file_system
+    println!("creating file system '{}'...", &file_system_name);
+    let create_file_system_response = file_system
         .create()
         .properties(&properties)
         .execute()
         .await?;
-    println!("create file system response == {:?}", response);
+    println!("create file system response == {:?}", create_file_system_response);
     println!();
 
     println!("creating path...");
     let create_path_response = file_system
         .create_path(Context::new(), "file.txt", CreatePathOptions::new())
-        .await
-        .unwrap();
-    println!("create path response == {:?}", create_path_response);
-    println!();
+        .await;
 
-    // assert_eq!(create_path_response.status_code, StatusCode::FORBIDDEN);
+    match create_path_response {
+        Result::Ok(response) =>
+            println!("create path response == {:?}", response),
+        Result::Err(err) =>
+            println!("create path response error == {:?}", err),
+    }
+    println!();
 
     println!("listing file system...");
     let mut stream = Box::pin(
@@ -59,9 +63,9 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     );
 
     while let Some(response) = stream.next().await {
-        println!("list stream response == {:?}\n\n", response);
+        println!("list stream response == {:?}", response);
+        println!();
     }
-    println!();
 
     println!("setting properties...");
     properties.insert("ModifiedBy", "Iota");
@@ -69,17 +73,17 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         .set_properties(Some(&properties))
         .execute()
         .await?;
-    println!("set properties response == {:?}\n\n", response);
+    println!("set properties response == {:?}", response);
     println!();
 
     println!("getting properties...");
     let response = file_system.get_properties().execute().await?;
-    println!("get properties response == {:?}\n\n", response);
+    println!("get properties response == {:?}", response);
     println!();
 
     println!("deleting file system...");
     let response = file_system.delete().execute().await?;
-    println!("file system delete response == {:?}\n\n", response);
+    println!("file system delete response == {:?}", response);
     println!();
     println!("data lake test done.");
 
