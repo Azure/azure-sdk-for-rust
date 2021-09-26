@@ -1,7 +1,6 @@
 use crate::AddAsHeader;
 use http::request::Builder;
 
-/// The max number of items in the collection
 #[derive(Debug, Clone, Copy)]
 pub struct ContentLength(i32);
 
