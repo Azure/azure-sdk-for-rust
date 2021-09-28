@@ -40,7 +40,10 @@ async fn create_and_delete_collection() {
         .clone()
         .into_collection_client(COLLECTION_NAME);
 
-    let collection_after_get = collection_client.get_collection().execute().await.unwrap();
+    let collection_after_get = collection_client
+        .get_collection(Context::new(), GetCollectionOptions::new())
+        .await
+        .unwrap();
     assert!(collection.collection.rid == collection_after_get.collection.rid);
 
     // check GetPartitionKeyRanges: https://docs.microsoft.com/rest/api/cosmos-db/get-partition-key-ranges
@@ -52,8 +55,7 @@ async fn create_and_delete_collection() {
 
     // delete the collection
     collection_client
-        .delete_collection()
-        .execute()
+        .delete_collection(Context::new(), DeleteCollectionOptions::new())
         .await
         .unwrap();
     let collections = database_client.list_collections().execute().await.unwrap();
@@ -128,10 +130,11 @@ async fn replace_collection() {
         .clone()
         .into_collection_client(COLLECTION_NAME);
 
-    let _replace_collection_reponse = collection_client
-        .replace_collection()
-        .indexing_policy(&new_ip)
-        .execute("/id")
+    let _replace_collection_response = collection_client
+        .replace_collection(
+            Context::new(),
+            ReplaceCollectionOptions::new("/id").indexing_policy(new_ip),
+        )
         .await
         .unwrap();
 

@@ -187,8 +187,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .clone()
         .into_database_client(DATABASE.to_owned())
         .into_collection_client(COLLECTION.to_owned())
-        .delete_collection()
-        .execute()
+        .delete_collection(Context::new(), DeleteCollectionOptions::new())
         .await?;
     println!("collection deleted");
 

@@ -65,7 +65,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
         let db_collection = db_client.clone().into_collection_client("panzadoro");
 
-        let get_collection_response = db_collection.get_collection().execute().await?;
+        let get_collection_response = db_collection
+            .get_collection(Context::new(), GetCollectionOptions::new())
+            .await?;
         println!("get_collection_response == {:#?}", get_collection_response);
 
         let stream = db_client.list_collections();
@@ -75,7 +77,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             println!("res == {:#?}", res);
         }
 
-        let delete_response = db_collection.delete_collection().execute().await?;
+        let delete_response = db_collection
+            .delete_collection(Context::new(), DeleteCollectionOptions::new())
+            .await?;
         println!("collection deleted: {:#?}", delete_response);
     }
 
