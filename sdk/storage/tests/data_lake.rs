@@ -49,10 +49,16 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         .create_path(Context::new(), "file.txt", CreatePathOptions::new())
         .await;
 
-    match create_path_response {
-        Result::Ok(response) => println!("create path response == {:?}", response),
-        Result::Err(err) => println!("create path response error == {:?}", err),
-    }
+    let create_path_worked = match create_path_response {
+        Result::Ok(response) => {
+            println!("create path response == {:?}", response);
+            true
+        },
+        Result::Err(err) => {
+            println!("create path response error == {:?}", err);
+            false
+        },
+    };
     println!();
 
     println!("listing file system...");
@@ -87,6 +93,8 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     println!("file system delete response == {:?}", response);
     println!();
     println!("data lake test done.");
+
+    assert!(create_path_worked);
 
     Ok(())
 }
