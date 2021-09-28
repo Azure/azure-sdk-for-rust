@@ -1,3 +1,4 @@
+mod authorization_policy;
 pub mod clients;
 mod file_system;
 pub mod operations;

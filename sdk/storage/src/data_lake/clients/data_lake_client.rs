@@ -1,4 +1,5 @@
 use crate::core::prelude::*;
+use crate::data_lake::authorization_policy::AuthorizationPolicy;
 use crate::data_lake::requests::*;
 use azure_core::pipeline::Pipeline;
 use azure_core::prelude::*;
@@ -12,20 +13,29 @@ use url::Url;
 const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";
 
 pub trait AsDataLakeClient<A: Into<String>> {
-    fn as_data_lake_client(&self, account: A) -> Result<Arc<DataLakeClient>, url::ParseError>;
+    fn as_data_lake_client(
+        &self,
+        account: A,
+        bearer_token: String,
+    ) -> Result<Arc<DataLakeClient>, url::ParseError>;
 }
 
 pub trait AsCustomDataLakeClient<DS: Into<String>, A: Into<String>> {
     fn as_data_lake_client_with_custom_dns_suffix(
         &self,
         account: A,
+        bearer_token: String,
         dns_suffix: DS,
     ) -> Result<Arc<DataLakeClient>, url::ParseError>;
 }
 
 impl<A: Into<String>> AsDataLakeClient<A> for Arc<StorageClient> {
-    fn as_data_lake_client(&self, account: A) -> Result<Arc<DataLakeClient>, url::ParseError> {
-        DataLakeClient::new(self.clone(), account.into(), None)
+    fn as_data_lake_client(
+        &self,
+        account: A,
+        bearer_token: String,
+    ) -> Result<Arc<DataLakeClient>, url::ParseError> {
+        DataLakeClient::new(self.clone(), account.into(), bearer_token, None)
     }
 }
 
@@ -33,9 +43,15 @@ impl<DS: Into<String>, A: Into<String>> AsCustomDataLakeClient<DS, A> for Arc<St
     fn as_data_lake_client_with_custom_dns_suffix(
         &self,
         account: A,
+        bearer_token: String,
         dns_suffix: DS,
     ) -> Result<Arc<DataLakeClient>, url::ParseError> {
-        DataLakeClient::new(self.clone(), account.into(), Some(dns_suffix.into()))
+        DataLakeClient::new(
+            self.clone(),
+            account.into(),
+            bearer_token,
+            Some(dns_suffix.into()),
+        )
     }
 }
 
@@ -44,6 +60,7 @@ pub struct DataLakeClient {
     pipeline: Pipeline<Vec<i32>>,
     storage_client: Arc<StorageClient>,
     account: String,
+    bearer_token: String,
     custom_dns_suffix: Option<String>,
     url: Url, // TODO: Use CloudLocation similar to CosmosClient
 }
@@ -52,6 +69,7 @@ impl DataLakeClient {
     pub(crate) fn new(
         storage_client: Arc<StorageClient>,
         account: String,
+        bearer_token: String,
         custom_dns_suffix: Option<String>,
     ) -> Result<Arc<Self>, url::ParseError> {
         // we precalculate the url once in the constructor
@@ -70,7 +88,22 @@ impl DataLakeClient {
 
         let options = &ClientOptions::default();
         let per_call_policies = Vec::new();
-        let per_retry_policies = Vec::new();
+        // let per_retry_policies = Vec::new();
+        /*
+                HAVE TO IMPLEMENT A STORAGE SPECIFIC AuthorizationPolicy
+                THAT DOES WHAT THE AZURE STORAGE REST API AUTH SAYS TO DO (SIGNATURE WITH BEARER TOKEN)
+                GETTING THE BEARER TOKEN IS ALREADY IMPLEMENTED in DefaultCredential
+                    REALLY? HOW DOES IT WORK IN A RUST SERVICE - NEEDS CERT!?
+        */
+        let auth_policy: Arc<dyn azure_core::Policy<Vec<i32>>> =
+            Arc::new(AuthorizationPolicy::new(bearer_token.clone()));
+
+        let mut per_retry_policies = Vec::new();
+        // take care of adding the AuthorizationPolicy as **last** retry policy.
+        // Policies can change the url and/or the headers and the AuthorizationPolicy
+        // must be able to inspect them or the resulting token will be invalid.
+        per_retry_policies.push(auth_policy);
+
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -83,6 +116,7 @@ impl DataLakeClient {
             pipeline,
             storage_client,
             account,
+            bearer_token,
             custom_dns_suffix,
             url,
         }))

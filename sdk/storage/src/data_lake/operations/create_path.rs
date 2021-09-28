@@ -1,5 +1,5 @@
-use azure_core::prelude::IfMatchCondition;
 use azure_core::prelude::ContentLength;
+use azure_core::prelude::IfMatchCondition;
 use http::StatusCode;
 
 use azure_core::{Request as HttpRequest, Response as HttpResponse};

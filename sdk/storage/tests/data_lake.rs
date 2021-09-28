@@ -2,10 +2,10 @@
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage::data_lake::prelude::*;
+use chrono::Utc;
 use futures::stream::StreamExt;
 use std::error::Error;
 use std::num::NonZeroU32;
-use chrono::{Utc};
 
 #[tokio::test]
 async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -25,7 +25,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 
     let data_lake = storage_account_client
         .as_storage_client()
-        .as_data_lake_client(account)?;
+        .as_data_lake_client(account, "bearer token".to_owned())?;
 
     let file_system = data_lake.as_file_system_client(&file_system_name)?;
 
@@ -38,7 +38,10 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         .properties(&properties)
         .execute()
         .await?;
-    println!("create file system response == {:?}", create_file_system_response);
+    println!(
+        "create file system response == {:?}",
+        create_file_system_response
+    );
     println!();
 
     println!("creating path...");
@@ -47,10 +50,8 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         .await;
 
     match create_path_response {
-        Result::Ok(response) =>
-            println!("create path response == {:?}", response),
-        Result::Err(err) =>
-            println!("create path response error == {:?}", err),
+        Result::Ok(response) => println!("create path response == {:?}", response),
+        Result::Err(err) => println!("create path response error == {:?}", err),
     }
     println!();
 
