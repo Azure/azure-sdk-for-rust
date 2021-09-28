@@ -22,11 +22,10 @@ impl Policy<Vec<i32>> for AuthorizationPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy<Vec<i32>>>],
     ) -> PolicyResult<Response> {
-        let auth = "nonsense";
 
         request
             .headers_mut()
-            .append(AUTHORIZATION, HeaderValue::from_str(&auth)?);
+            .append(AUTHORIZATION, HeaderValue::from_str(&self.bearer_token)?);
 
         // now next[0] is safe (will not panic) because we checked
         // at the beginning of the function.
