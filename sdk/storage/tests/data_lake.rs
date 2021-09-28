@@ -1,13 +1,13 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::prelude::*;
+use azure_identity::token_credentials::DefaultCredential;
+use azure_identity::token_credentials::TokenCredential;
 use azure_storage::core::prelude::*;
 use azure_storage::data_lake::prelude::*;
 use chrono::Utc;
 use futures::stream::StreamExt;
 use std::error::Error;
 use std::num::NonZeroU32;
-use azure_identity::token_credentials::DefaultCredential;
-use azure_identity::token_credentials::TokenCredential;
 
 #[tokio::test]
 async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -60,11 +60,11 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         Result::Ok(response) => {
             println!("create path response == {:?}", response);
             true
-        },
+        }
         Result::Err(err) => {
             println!("create path response error == {:?}", err);
             false
-        },
+        }
     };
     println!();
 

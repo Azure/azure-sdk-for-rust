@@ -22,7 +22,6 @@ impl Policy<Vec<i32>> for AuthorizationPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy<Vec<i32>>>],
     ) -> PolicyResult<Response> {
-
         request
             .headers_mut()
             .append(AUTHORIZATION, HeaderValue::from_str(&self.bearer_token)?);
