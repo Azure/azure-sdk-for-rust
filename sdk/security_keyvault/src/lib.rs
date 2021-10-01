@@ -74,6 +74,9 @@ pub enum Error {
 
     #[error("Maximum Query results is 25, given {0}.")]
     MaxQueryTooHigh(usize),
+
+    #[error("Encryption algorithm mismatch")]
+    EncryptionAlgorithmMismatch,
 }
 
 #[cfg(test)]

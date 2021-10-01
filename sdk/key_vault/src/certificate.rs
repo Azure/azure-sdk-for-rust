@@ -574,8 +574,8 @@ mod tests {
                 json!({
                     "id": "https://test-keyvault.vault.azure.net/certificates/test-certificate/002ade539442463aba45c0efb42e3e84",
                     "x5t": "fLi3U52HunIVNXubkEnf8tP6Wbo",
-                    "kid": "https://myvault.vault.azure.net/keys/test-certificate/002ade539442463aba45c0efb42e3e84",
-                    "sid": "https://myvault.vault.azure.net/secrets/test-certificate/002ade539442463aba45c0efb42e3e84",
+                    "kid": "https://test-keyvault.vault.azure.net/keys/test-certificate/002ade539442463aba45c0efb42e3e84",
+                    "sid": "https://test-keyvault.vault.azure.net/secrets/test-certificate/002ade539442463aba45c0efb42e3e84",
                     "cer": "MIICODCCAeagAwIBAgIQqHmpBAv+CY9IJFoUhlbziTAJBgUrDgMCHQUAMBYxFDASBgNVBAMTC1Jvb3QgQWdlbmN5MB4XDTE1MDQyOTIxNTM0MVoXDTM5MTIzMTIzNTk1OVowFzEVMBMGA1UEAxMMS2V5VmF1bHRUZXN0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5bVAT73zr4+N4WVv2+SvTunAw08ksS4BrJW/nNliz3S9XuzMBMXvmYzU5HJ8TtEgluBiZZYd5qsMJD+OXHSNbsLdmMhni0jYX09h3XlC2VJw2sGKeYF+xEaavXm337aZZaZyjrFBrrUl51UePaN+kVFXNlBb3N3TYpqa7KokXenJQuR+i9Gv9a77c0UsSsDSryxppYhKK7HvTZCpKrhVtulF5iPMswWe9np3uggfMamyIsK/0L7X9w9B2qN7993RR0A00nOk4H6CnkuwO77dSsD0KJsk6FyAoZBzRXDZh9+d9R76zCL506NcQy/jl0lCiQYwsUX73PG5pxOh02OwKwIDAQABo0swSTBHBgNVHQEEQDA+gBAS5AktBh0dTwCNYSHcFmRjoRgwFjEUMBIGA1UEAxMLUm9vdCBBZ2VuY3mCEAY3bACqAGSKEc+41KpcNfQwCQYFKw4DAh0FAANBAGqIjo2geVagzuzaZOe1ClGKhZeiCKfWAxklaGN+qlGUbVS4IN4V1lot3VKnzabasmkEHeNxPwLn1qvSD0cX9CE=",
                     "attributes": {
                         "enabled": true,
@@ -584,7 +584,7 @@ mod tests {
                         "recoveryLevel": "Recoverable+Purgeable"
                     },
                     "policy": {
-                        "id": "https://myvault.vault.azure.net/certificates/selfSignedCert01/policy",
+                        "id": "https://test-keyvault.vault.azure.net/certificates/selfSignedCert01/policy",
                         "key_props": {
                             "exportable": true,
                             "kty": "RSA",
@@ -623,12 +623,12 @@ mod tests {
             client.get_certificate(&"test-certificate").await.unwrap();
 
         assert_eq!(
-            "https://test-keyvault.vault.azure.net/certificates/test-certificate/002ade539442463aba45c0efb42e3e84",
-            certificate.id()
+            "https://test-keyvault.vault.azure.net/keys/test-certificate/002ade539442463aba45c0efb42e3e84",
+            certificate.key_id()
         );
-        assert_eq!(true, *certificate.enabled());
-        assert!(diff(time_created, *certificate.time_created()) < Duration::seconds(1));
-        assert!(diff(time_updated, *certificate.time_updated()) < Duration::seconds(1));
+        assert_eq!(true, *certificate.properties.enabled());
+        assert!(diff(time_created, *certificate.properties.created_on()) < Duration::seconds(1));
+        assert!(diff(time_updated, *certificate.properties.updated_on()) < Duration::seconds(1));
     }
 
     #[tokio::test]
@@ -641,7 +641,6 @@ mod tests {
         let _m1 = mock("GET", "/certificates/test-certificate/versions")
             .match_query(Matcher::AllOf(vec![
                 Matcher::UrlEncoded("api-version".into(), API_VERSION.into()),
-                Matcher::UrlEncoded("maxresults".into(), DEFAULT_MAX_RESULTS.to_string()),
             ]))
             .with_header("content-type", "application/json")
             .with_body(
@@ -691,7 +690,7 @@ mod tests {
         let mut client = mock_client!(&"test-keyvault", &creds,);
 
         let certificate_versions = client
-            .get_certificate_versions(&"test-certificate", None)
+            .list_properties_of_certificate_versions(&"test-certificate", None)
             .await
             .unwrap();
 
@@ -700,15 +699,15 @@ mod tests {
             "https://test-keyvault.vault.azure.net/certificates/test-certificate/VERSION_1",
             certificate_1.id()
         );
-        assert!(diff(time_created_1, *certificate_1.time_created()) < Duration::seconds(1));
-        assert!(diff(time_updated_1, *certificate_1.time_updated()) < Duration::seconds(1));
+        assert!(diff(time_created_1, *certificate_1.created_on()) < Duration::seconds(1));
+        assert!(diff(time_updated_1, *certificate_1.updated_on()) < Duration::seconds(1));
 
         let certificate_2 = &certificate_versions[1];
         assert_eq!(
             "https://test-keyvault.vault.azure.net/certificates/test-certificate/VERSION_2",
             certificate_2.id()
         );
-        assert!(diff(time_created_2, *certificate_2.time_created()) < Duration::seconds(1));
-        assert!(diff(time_updated_2, *certificate_2.time_updated()) < Duration::seconds(1));
+        assert!(diff(time_created_2, *certificate_2.created_on()) < Duration::seconds(1));
+        assert!(diff(time_updated_2, *certificate_2.updated_on()) < Duration::seconds(1));
     }
 }
