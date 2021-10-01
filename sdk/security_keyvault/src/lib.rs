@@ -86,9 +86,20 @@ mod tests {
     use oauth2::AccessToken;
 
     #[macro_export]
-    macro_rules! mock_client {
+    macro_rules! mock_key_client {
         ($keyvault_name:expr, $creds:expr, ) => {{
-            KeyClient {
+            crate::client::KeyClient {
+                vault_url: url::Url::parse(&mockito::server_url()).unwrap(),
+                endpoint: "".to_string(),
+                token_credential: $creds,
+                token: None,
+            }
+        }};
+    }
+    #[macro_export]
+    macro_rules! mock_cert_client {
+        ($keyvault_name:expr, $creds:expr, ) => {{
+            crate::client::CertificateClient {
                 vault_url: url::Url::parse(&mockito::server_url()).unwrap(),
                 endpoint: "".to_string(),
                 token_credential: $creds,

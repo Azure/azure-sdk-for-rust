@@ -161,13 +161,13 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_key_vault::CertificateClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::new(
+    ///     let mut client = CertificateClient::new(
     ///         &"KEYVAULT_URL",
     ///         &creds,
     ///     ).unwrap();
@@ -187,13 +187,13 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_key_vault::CertificateClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    /// let mut client = KeyClient::new(
+    /// let mut client = CertificateClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
@@ -241,13 +241,13 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// Lists all the certificates in the Key Vault.
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_key_vault::CertificateClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::new(
+    ///     let mut client = CertificateClient::new(
     ///          &"KEYVAULT_URL",
     ///          &creds,
     ///     ).unwrap();
@@ -309,13 +309,13 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_key_vault::CertificateClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::new(
+    ///     let mut client = CertificateClient::new(
     ///         &"KEYVAULT_URL",
     ///         &creds,
     ///     ).unwrap();
@@ -429,13 +429,13 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_key_vault::CertificateClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::new(
+    ///     let mut client = CertificateClient::new(
     ///         &"KEYVAULT_URL",
     ///         &creds,
     ///     ).unwrap();
@@ -467,13 +467,13 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_key_vault::CertificateClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::new(
+    ///     let mut client = CertificateClient::new(
     ///         &"KEYVAULT_URL",
     ///         &creds,
     ///     ).unwrap();
@@ -514,13 +514,13 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::{KeyClient, RecoveryLevel};
+    /// use azure_key_vault::{CertificateClient, RecoveryLevel};
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
     ///     let creds = DefaultCredential::default();
-    ///     let mut client = KeyClient::new(
+    ///     let mut client = CertificateClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
@@ -551,8 +551,8 @@ mod tests {
     use mockito::{mock, Matcher};
     use serde_json::json;
 
-    use crate::client::API_VERSION;
-    use crate::mock_client;
+    use crate::client::*;
+    use crate::mock_cert_client;
     use crate::tests::MockCredential;
 
     fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
@@ -617,7 +617,7 @@ mod tests {
 
         let creds = MockCredential;
         dbg!(mockito::server_url());
-        let mut client = mock_client!(&"test-keyvault", &creds,);
+        let mut client = mock_cert_client!(&"test-keyvault", &creds,);
 
         let certificate: KeyVaultCertificate =
             client.get_certificate(&"test-certificate").await.unwrap();
@@ -687,7 +687,7 @@ mod tests {
             .create();
 
         let creds = MockCredential;
-        let mut client = mock_client!(&"test-keyvault", &creds,);
+        let mut client = mock_cert_client!(&"test-keyvault", &creds,);
 
         let certificate_versions = client
             .list_properties_of_certificate_versions(&"test-certificate", None)
