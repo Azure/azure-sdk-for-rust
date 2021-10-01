@@ -1,5 +1,4 @@
 use crate::bytes_response::BytesResponse;
-use crate::bytes_response::SerializedBytesResponse;
 use crate::mock_transaction::MockTransaction;
 use crate::policies::{Policy, PolicyResult};
 use crate::{MockFrameworkError, TransportOptions};
@@ -50,7 +49,7 @@ where
             let mut request_contents_stream = std::fs::File::create(&request_path).unwrap();
             request_contents_stream
                 .write_all(request_contents.as_str().as_bytes())
-                .map_err(|e| MockFrameworkError::IOError("cannot write request file", e))?;
+                .map_err(|e| MockFrameworkError::IOError("cannot write request file".into(), e))?;
         }
 
         let response = { self.transport_options.http_client.execute_request2(request) };
@@ -59,13 +58,12 @@ where
         // we need to duplicate the response because we are about to consume the response stream.
         // We replace the HTTP stream with a memory-backed stream.
         let (response, bytes_response) = BytesResponse::duplicate(response).await?;
-        let bytes_response: SerializedBytesResponse = bytes_response.into();
         let response_contents = serde_json::to_string(&bytes_response).unwrap();
         {
             let mut response_contents_stream = std::fs::File::create(&response_path).unwrap();
             response_contents_stream
                 .write_all(response_contents.as_str().as_bytes())
-                .map_err(|e| MockFrameworkError::IOError("cannot write response file", e))?;
+                .map_err(|e| MockFrameworkError::IOError("cannot write response file".into(), e))?;
         }
 
         self.transaction.increment_number();

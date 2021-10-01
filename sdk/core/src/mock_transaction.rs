@@ -33,7 +33,10 @@ impl MockTransaction {
 
         if !path.exists() {
             std::fs::create_dir(&path).map_err(|e| {
-                crate::MockFrameworkError::IOError("cannot create transaction folder", e)
+                crate::MockFrameworkError::IOError(
+                    format!("cannot create transaction folder: {}", path.display()),
+                    e,
+                )
             })?;
         }
 
