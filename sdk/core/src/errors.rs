@@ -242,7 +242,7 @@ pub enum MockFrameworkError {
     #[error("the mock testing framework has not been initialized")]
     UninitializedTransaction,
     #[error("{0}: {1}")]
-    IOError(&'static str, std::io::Error),
+    IOError(String, std::io::Error),
     #[error("received request have header {0} but it was not present in the read request")]
     MissingRequestHeader(String),
     #[error("different number of headers in request. Recevied: {0}, Read: {1}")]

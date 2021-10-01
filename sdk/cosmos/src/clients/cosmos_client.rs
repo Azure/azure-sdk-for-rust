@@ -35,18 +35,26 @@ pub struct CosmosClient {
 }
 
 /// Options for specifying how a Cosmos client will behave
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct CosmosOptions {
     options: ClientOptions<CosmosContext>,
 }
 
+#[cfg(feature = "mock_transport_framework")]
 impl CosmosOptions {
-    /// Create options based on the provided http client
-    pub fn with_client(client: Arc<dyn HttpClient>) -> Self {
+    /// Create new options with a given transaction name
+    pub fn new_with_transaction_name(transaction_name: String) -> Self {
         Self {
-            options: ClientOptions::default()
-                .retry(RetryOptions::default().mode(RetryMode::Fixed))
-                .transport(TransportOptions::new(client)),
+            options: ClientOptions::new_with_transaction_name(transaction_name),
+        }
+    }
+}
+
+#[cfg(not(feature = "mock_transport_framework"))]
+impl Default for CosmosOptions {
+    fn default() -> Self {
+        Self {
+            options: Default::default(),
         }
     }
 }
@@ -145,7 +153,7 @@ impl CosmosClient {
     /// Create a database
     pub async fn create_database<S: AsRef<str>>(
         &self,
-        ctx: &mut Context,
+        ctx: Context,
         database_name: S,
         options: CreateDatabaseOptions,
     ) -> Result<CreateDatabaseResponse, crate::Error> {

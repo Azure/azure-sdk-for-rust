@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let database_client = client.into_database_client(database_name.clone());
 
     let response = database_client
-        .get_database(&mut Context::new(), GetDatabaseOptions::new())
+        .get_database(Context::new(), GetDatabaseOptions::new())
         .await?;
     println!("response == {:?}", response);
 

@@ -37,7 +37,7 @@ impl DatabaseClient {
     /// Get the database
     pub async fn get_database(
         &self,
-        ctx: &mut Context,
+        ctx: Context,
         options: GetDatabaseOptions,
     ) -> Result<GetDatabaseResponse, crate::Error> {
         let mut request = self
@@ -69,7 +69,7 @@ impl DatabaseClient {
     /// Create a collection
     pub async fn create_collection<S: AsRef<str>>(
         &self,
-        ctx: &mut Context,
+        ctx: Context,
         collection_name: S,
         options: CreateCollectionOptions,
     ) -> Result<CreateCollectionResponse, crate::Error> {

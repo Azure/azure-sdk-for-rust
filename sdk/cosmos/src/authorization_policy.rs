@@ -49,11 +49,11 @@ impl From<ResourceType> for CosmosContext {
 
 #[async_trait::async_trait]
 impl Policy<CosmosContext> for AuthorizationPolicy {
-    async fn send<'a, 'b, 'c>(
-        &'a self,
-        ctx: &'b mut PipelineContext<'a, CosmosContext>,
-        request: &'c mut Request,
-        next: &'a [Arc<dyn Policy<CosmosContext>>],
+    async fn send(
+        &self,
+        ctx: &mut PipelineContext<CosmosContext>,
+        request: &mut Request,
+        next: &[Arc<dyn Policy<CosmosContext>>],
     ) -> PolicyResult<Response> {
         trace!("called AuthorizationPolicy::send. self == {:#?}", self);
 

@@ -3,7 +3,7 @@ use crate::policies::TransportPolicy;
 use crate::policies::{Policy, TelemetryPolicy};
 use crate::{ClientOptions, Error, HttpClient, PipelineContext, Request, Response};
 #[cfg(feature = "mock_transport_framework")]
-use log::warn;
+use log::{info, warn};
 use std::sync::Arc;
 
 /// Execution pipeline.
@@ -89,28 +89,25 @@ where
             pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
 
             #[cfg(feature = "mock_transport_framework")]
-            match std::env::var("TESTING_MODE") {
-                Ok(mode) => match mode.as_ref() {
-                    "RECORD" => {
-                        warn!("mock testing framework record mode enabled");
-                        pipeline.push(Arc::new(crate::policies::MockTransportRecorderPolicy::new(
-                            options.transport.clone(),
-                        )));
-                    }
-                    "PLAY" => {
-                        warn!("mock testing framework reply mode enabled");
-                        pipeline.push(Arc::new(crate::policies::MockTransportPlayerPolicy::new(
-                            options.transport.clone(),
-                        )));
-                    }
-                    _ => {
-                        warn!(
-                            "invalid TESTING_MODE selected. Supported options are PLAY and RECORD"
-                        );
-                        pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
-                    }
-                },
-                Err(_) => {} // ignore missing env variable and non-unicode ones
+            match std::env::var("TESTING_MODE").as_deref().unwrap_or("PLAY") {
+                "RECORD" => {
+                    info!("mock testing framework record mode enabled");
+                    pipeline.push(Arc::new(crate::policies::MockTransportRecorderPolicy::new(
+                        options.transport.transaction_name.clone(),
+                        options.transport.clone(),
+                    )));
+                }
+                "PLAY" => {
+                    info!("mock testing framework reply mode enabled");
+                    pipeline.push(Arc::new(crate::policies::MockTransportPlayerPolicy::new(
+                        options.transport.transaction_name.clone(),
+                        options.transport.clone(),
+                    )));
+                }
+                _ => {
+                    warn!("invalid TESTING_MODE selected. Supported options are PLAY and RECORD");
+                    pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
+                }
             }
         }
 
@@ -126,10 +123,10 @@ where
         self.http_client.as_ref()
     }
 
-    pub async fn send<'a>(
-        &'a self,
-        ctx: &'a mut PipelineContext<'a, C>,
-        request: &'a mut Request,
+    pub async fn send(
+        &self,
+        ctx: &mut PipelineContext<C>,
+        request: &mut Request,
     ) -> Result<Response, Error> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])

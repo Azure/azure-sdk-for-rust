@@ -59,7 +59,7 @@ async fn trigger() -> Result<(), azure_cosmos::Error> {
     let _create_collection_response = {
         database_client
             .create_collection(
-                &mut Context::new(),
+                Context::new(),
                 COLLECTION_NAME,
                 CreateCollectionOptions::new("/id"),
             )

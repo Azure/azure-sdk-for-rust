@@ -66,7 +66,7 @@ impl CollectionClient {
     /// create a document in a collection
     pub async fn create_document<'a, D: Serialize + CosmosEntity<'a>>(
         &self,
-        ctx: &mut Context,
+        ctx: Context,
         document: &'a D,
         options: CreateDocumentOptions<'_>,
     ) -> Result<CreateDocumentResponse, crate::Error> {

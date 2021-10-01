@@ -81,7 +81,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         session_token = Some(
             collection_client
                 .create_document(
-                    &mut Context::new(),
+                    Context::new(),
                     &document_to_insert,
                     CreateDocumentOptions::new().is_upsert(true),
                 )
