@@ -3,7 +3,7 @@ mod client;
 pub mod key;
 pub mod secret;
 
-pub use client::{CertificateClient, KeyClient};
+pub use client::KeyClient;
 
 use std::fmt;
 
