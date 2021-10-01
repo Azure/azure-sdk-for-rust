@@ -251,7 +251,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///          &"KEYVAULT_URL",
     ///          &creds,
     ///     ).unwrap();
-    ///     let certificates = client.list_certificates().await.unwrap();
+    ///     let certificates = client.list_properties_of_certificates(None).await.unwrap();
     ///     dbg!(&certificates);
     /// }
     ///
@@ -319,7 +319,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///         &"KEYVAULT_URL",
     ///         &creds,
     ///     ).unwrap();
-    ///     let certificate_versions = client.get_certificate_versions(&"CERTIFICATE_NAME").await.unwrap();
+    ///     let certificate_versions = client.list_properties_of_certificate_versions(&"CERTIFICATE_NAME", None).await.unwrap();
     ///     dbg!(&certificate_versions);
     /// }
     ///
@@ -439,7 +439,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///         &"KEYVAULT_URL",
     ///         &creds,
     ///     ).unwrap();
-    ///     client.restore_certificate(&"KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").await.unwrap();
+    ///     client.restore_certificate(b"KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
