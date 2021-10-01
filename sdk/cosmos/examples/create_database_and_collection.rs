@@ -16,7 +16,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let context = Context::new();
     let authorization_token = permission::AuthorizationToken::primary_from_base64(&master_key)?;
-    let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
+    #[cfg(not(feature = "mock_transport_framework"))]
+    let options = CosmosOptions::default();
+    #[cfg(feature = "mock_transport_framework")]
+    let options = CosmosOptions::new_with_transaction_name("create_database_and_collection".into());
+    let client = CosmosClient::new(account, authorization_token, options);
 
     println!("before create database");
     let db = client

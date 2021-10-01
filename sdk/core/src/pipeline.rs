@@ -93,15 +93,14 @@ where
                 "RECORD" => {
                     info!("mock testing framework record mode enabled");
                     pipeline.push(Arc::new(crate::policies::MockTransportRecorderPolicy::new(
-                        std::env::var("CARGO_BIN_NAME").unwrap(),
+                        options.transport.transaction_name.clone(),
                         options.transport.clone(),
                     )));
                 }
                 "PLAY" => {
                     info!("mock testing framework reply mode enabled");
                     pipeline.push(Arc::new(crate::policies::MockTransportPlayerPolicy::new(
-                        std::env::var("CARGO_BIN_NAME")
-                            .unwrap_or("create_database_and_collection".into()),
+                        options.transport.transaction_name.clone(),
                         options.transport.clone(),
                     )));
                 }
