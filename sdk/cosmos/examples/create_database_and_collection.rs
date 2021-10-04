@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     #[cfg(not(feature = "mock_transport_framework"))]
     let options = CosmosOptions::default();
     #[cfg(feature = "mock_transport_framework")]
-    let options = CosmosOptions::new_with_transaction_name("create_database_and_collection".into());
+    let options = CosmosOptions::new("create_database_and_collection");
     let client = CosmosClient::new(account, authorization_token, options);
 
     println!("before create database");

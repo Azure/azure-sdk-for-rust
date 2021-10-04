@@ -40,12 +40,16 @@ pub struct CosmosOptions {
     options: ClientOptions<CosmosContext>,
 }
 
-#[cfg(feature = "mock_transport_framework")]
 impl CosmosOptions {
     /// Create new options with a given transaction name
-    pub fn new_with_transaction_name(transaction_name: String) -> Self {
+    pub fn new(
+        #[cfg(feature = "mock_transport_framework")] transaction_name: impl Into<String>,
+    ) -> Self {
         Self {
-            options: ClientOptions::new_with_transaction_name(transaction_name),
+            #[cfg(feature = "mock_transport_framework")]
+            options: ClientOptions::new(transaction_name.into()),
+            #[cfg(not(feature = "mock_transport_framework"))]
+            options: ClientOptions::default(),
         }
     }
 }
@@ -181,8 +185,7 @@ impl CosmosClient {
         Ok(CreateDatabaseResponse::try_from(response).await?)
     }
 
-    // TODO: Figure out Context mutable borrow lifetime and re-enable.
-    ///// List all databases
+    //// List all databases
     //pub fn list_databases(
     //    &self,
     //    ctx: Context,
