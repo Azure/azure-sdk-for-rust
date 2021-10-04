@@ -27,9 +27,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 
     let resource_id = "https://storage.azure.com/";
     println!("getting bearer token for '{}'...", resource_id);
-    let bearer_token = DefaultCredential::default()
-        .get_token(resource_id)
-        .await?;
+    let bearer_token = DefaultCredential::default().get_token(resource_id).await?;
 
     println!("token value = {}", bearer_token.token.secret());
     println!("token expires on= {}", bearer_token.expires_on);
