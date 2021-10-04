@@ -80,7 +80,7 @@ fn new_pipeline_from_options(
     Pipeline::new(
         option_env!("CARGO_PKG_NAME"),
         option_env!("CARGO_PKG_VERSION"),
-        &options.options,
+        options.options,
         Vec::new(),
         per_retry_policies,
     )

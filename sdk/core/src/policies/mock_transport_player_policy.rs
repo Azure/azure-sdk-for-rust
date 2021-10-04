@@ -13,10 +13,11 @@ pub struct MockTransportPlayerPolicy {
 }
 
 impl MockTransportPlayerPolicy {
-    pub fn new(name: impl Into<String>, transport_options: TransportOptions) -> Self {
+    pub fn new(transport_options: TransportOptions) -> Self {
+        let transaction = MockTransaction::new(transport_options.transaction_name.clone());
         Self {
             transport_options,
-            transaction: MockTransaction::new(name),
+            transaction,
         }
     }
 }

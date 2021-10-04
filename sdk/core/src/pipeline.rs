@@ -54,7 +54,7 @@ where
     pub fn new(
         crate_name: Option<&'static str>,
         crate_version: Option<&'static str>,
-        options: &ClientOptions<C>,
+        options: ClientOptions<C>,
         per_call_policies: Vec<Arc<dyn Policy<C>>>,
         per_retry_policies: Vec<Arc<dyn Policy<C>>>,
     ) -> Self {
@@ -77,42 +77,43 @@ where
 
         pipeline.extend_from_slice(&per_retry_policies);
         pipeline.extend_from_slice(&options.per_retry_policies);
+        let http_client = options.transport.http_client.clone();
 
         // TODO: Add transport policy for WASM once https://github.com/Azure/azure-sdk-for-rust/issues/293 is resolved.
         #[cfg(not(target_arch = "wasm32"))]
         {
+            #[allow(unused_mut)]
+            let mut policy: Arc<dyn Policy<_>> =
+                Arc::new(TransportPolicy::new(options.transport.clone()));
+
             // This code replaces the default transport policy at runtime if these two conditions
             // are met:
             // 1. The mock_transport_framework is enabled
             // 2. The environmental variable TESTING_MODE is either RECORD or PLAY
-            #[cfg(not(feature = "mock_transport_framework"))]
-            pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
-
             #[cfg(feature = "mock_transport_framework")]
             match std::env::var("TESTING_MODE").as_deref().unwrap_or("PLAY") {
                 "RECORD" => {
                     info!("mock testing framework record mode enabled");
-                    pipeline.push(Arc::new(crate::policies::MockTransportRecorderPolicy::new(
-                        options.transport.transaction_name.clone(),
-                        options.transport.clone(),
-                    )));
+                    policy = Arc::new(crate::policies::MockTransportRecorderPolicy::new(
+                        options.transport,
+                    ))
                 }
                 "PLAY" => {
                     info!("mock testing framework reply mode enabled");
-                    pipeline.push(Arc::new(crate::policies::MockTransportPlayerPolicy::new(
-                        options.transport.transaction_name.clone(),
-                        options.transport.clone(),
-                    )));
+                    policy = Arc::new(crate::policies::MockTransportPlayerPolicy::new(
+                        options.transport,
+                    ))
                 }
                 _ => {
                     warn!("invalid TESTING_MODE selected. Supported options are PLAY and RECORD");
-                    pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
                 }
-            }
+            };
+
+            pipeline.push(policy);
         }
 
         Self {
-            http_client: options.transport.http_client.clone(),
+            http_client,
             pipeline,
         }
     }
