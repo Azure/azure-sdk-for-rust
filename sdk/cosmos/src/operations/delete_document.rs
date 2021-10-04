@@ -1,10 +1,9 @@
 use crate::headers::from_headers::*;
-use crate::prelude::DeleteDocumentResponse;
 use crate::prelude::*;
 use azure_core::headers::session_token_from_headers;
 use azure_core::prelude::*;
 
-use azure_core::Request as HttpRequest;
+use azure_core::{Request as HttpRequest, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 use http::response::Response;
 
@@ -16,7 +15,7 @@ pub struct DeleteDocumentOptions<'a> {
     allow_tentative_writes: TenativeWritesAllowance,
 }
 
-impl DeleteDocumentOptions<'a> {
+impl<'a> DeleteDocumentOptions<'a> {
     pub(crate) fn new(document_client: &'a DocumentClient) -> DeleteDocumentOptions<'a> {
         Self {
             if_match_condition: None,
