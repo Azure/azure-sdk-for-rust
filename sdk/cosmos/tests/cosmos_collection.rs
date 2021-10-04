@@ -14,7 +14,7 @@ async fn create_and_delete_collection() {
 
     client
         .create_database(
-            &mut azure_core::Context::new(),
+            azure_core::Context::new(),
             DATABASE_NAME,
             CreateDatabaseOptions::new(),
         )
@@ -70,7 +70,7 @@ async fn replace_collection() {
 
     client
         .create_database(
-            &mut azure_core::Context::new(),
+            azure_core::Context::new(),
             DATABASE_NAME,
             CreateDatabaseOptions::new(),
         )
