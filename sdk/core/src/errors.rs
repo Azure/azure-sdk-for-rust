@@ -236,6 +236,25 @@ pub enum TraversingError {
     ParsingError(#[from] ParsingError),
 }
 
+#[cfg(feature = "mock_transport_framework")]
+#[derive(Debug, thiserror::Error)]
+pub enum MockFrameworkError {
+    #[error("the mock testing framework has not been initialized")]
+    UninitializedTransaction,
+    #[error("{0}: {1}")]
+    IOError(String, std::io::Error),
+    #[error("received request have header {0} but it was not present in the read request")]
+    MissingRequestHeader(String),
+    #[error("different number of headers in request. Recevied: {0}, Read: {1}")]
+    MismatchedRequestHeadersCount(usize, usize),
+    #[error("request header {0} value is different. Received: {1}, Read: {2}")]
+    MismatchedRequestHeader(String, String, String),
+    #[error("mismatched HTTP request method. Received: {0}, Read: {1}")]
+    MismatchedRequestHTTPMethod(http::Method, http::Method),
+    #[error("mismatched request body. Received: {0:?}, Read: {1:?}")]
+    MismatchedRequestBody(Vec<u8>, Vec<u8>),
+}
+
 #[cfg(feature = "enable_hyper")]
 #[inline]
 pub async fn extract_status_headers_and_body(

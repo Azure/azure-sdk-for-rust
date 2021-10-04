@@ -1,3 +1,5 @@
+use crate::bytes_response::BytesResponse;
+use crate::BytesStream;
 use crate::StreamError;
 use bytes::Bytes;
 use futures::Stream;
@@ -41,7 +43,7 @@ pub struct Response {
 }
 
 impl Response {
-    fn new(status: StatusCode, headers: HeaderMap, body: PinnedStream) -> Self {
+    pub(crate) fn new(status: StatusCode, headers: HeaderMap, body: PinnedStream) -> Self {
         Self {
             status,
             headers,
@@ -88,4 +90,18 @@ pub async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> Result<By
     }
 
     Ok(final_result.into())
+}
+
+impl From<BytesResponse> for Response {
+    fn from(bytes_response: BytesResponse) -> Self {
+        let (status, headers, body) = bytes_response.deconstruct();
+
+        let bytes_stream: BytesStream = body.into();
+
+        Self {
+            status,
+            headers,
+            body: Box::pin(bytes_stream),
+        }
+    }
 }

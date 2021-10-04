@@ -1,0 +1,11 @@
+{
+  "uri": "https://mindflavor2.documents.azure.com/dbs",
+  "method": "POST",
+  "headers": {
+    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.55.0; linux; x86_64)",
+    "x-ms-date": "Sun, 19 Sep 2021 10:01:01 GMT",
+    "x-ms-version": "2018-12-31",
+    "authorization": "<<STRIPPED>>"
+  },
+  "body": "eyJpZCI6InNhbXBsZSJ9"
+}
