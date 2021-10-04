@@ -22,7 +22,6 @@ impl Policy<Vec<i32>> for AuthorizationPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy<Vec<i32>>>],
     ) -> PolicyResult<Response> {
-
         let auth_header_value = format!("Bearer {}", &self.bearer_token);
 
         request
