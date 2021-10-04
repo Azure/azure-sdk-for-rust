@@ -1,12 +1,12 @@
-use crate::prelude::*;
-use crate::prelude::{DeleteDocumentResponse};
 use crate::headers::from_headers::*;
-use azure_core::prelude::*;
+use crate::prelude::DeleteDocumentResponse;
+use crate::prelude::*;
 use azure_core::headers::session_token_from_headers;
+use azure_core::prelude::*;
 
+use azure_core::Request as HttpRequest;
 use chrono::{DateTime, Utc};
 use http::response::Response;
-use azure_core::Request as HttpRequest;
 
 #[derive(Debug, Clone)]
 pub struct DeleteDocumentOptions<'a> {
@@ -46,7 +46,6 @@ impl DeleteDocumentOptions<'a> {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub struct DeleteDocumentResponse {
     pub charge: f64,
@@ -55,7 +54,7 @@ pub struct DeleteDocumentResponse {
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for DeleteDocumentResponse {
     type Error = crate::Error;
-    
+
     fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
         let headers = response.headers();
 

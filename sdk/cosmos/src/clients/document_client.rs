@@ -1,5 +1,7 @@
 use super::{AttachmentClient, CollectionClient, CosmosClient, DatabaseClient};
-use crate::prelude::{GetDocumentOptions, GetDocumentResponse, DeleteDocumentOptions, DeleteDocumentResponse};
+use crate::prelude::{
+    DeleteDocumentOptions, DeleteDocumentResponse, GetDocumentOptions, GetDocumentResponse,
+};
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 use azure_core::{Context, HttpClient, PipelineContext, Request};
@@ -98,8 +100,8 @@ impl DocumentClient {
 
         options.decorate_request(&mut request);
 
-        let response = self.
-            cosmos_client()
+        let response = self
+            .cosmos_client()
             .pipeline()
             .send(&mut ctx, &mut request)
             .await?
@@ -120,10 +122,7 @@ impl DocumentClient {
         AttachmentClient::new(self, attachment_name)
     }
 
-    pub(crate) fn prepare_request_with_document_name(
-        &self,
-        method: http::Method,
-    ) -> Request {
+    pub(crate) fn prepare_request_with_document_name(&self, method: http::Method) -> Request {
         self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/docs/{}",
