@@ -2,8 +2,6 @@
 use crate::policies::TransportPolicy;
 use crate::policies::{Policy, TelemetryPolicy};
 use crate::{ClientOptions, Error, HttpClient, PipelineContext, Request, Response};
-#[cfg(feature = "mock_transport_framework")]
-use log::{info, warn};
 use std::sync::Arc;
 
 /// Execution pipeline.
@@ -91,21 +89,24 @@ where
             // 1. The mock_transport_framework is enabled
             // 2. The environmental variable TESTING_MODE is either RECORD or PLAY
             #[cfg(feature = "mock_transport_framework")]
-            match std::env::var("TESTING_MODE").as_deref().unwrap_or("PLAY") {
+            match std::env::var("TESTING_MODE").as_deref().unwrap_or("REPLAY") {
                 "RECORD" => {
-                    info!("mock testing framework record mode enabled");
+                    log::warn!("mock testing framework record mode enabled");
                     policy = Arc::new(crate::policies::MockTransportRecorderPolicy::new(
                         options.transport,
                     ))
                 }
-                "PLAY" => {
-                    info!("mock testing framework reply mode enabled");
+                "REPLAY" => {
+                    log::info!("mock testing framework replay mode enabled");
                     policy = Arc::new(crate::policies::MockTransportPlayerPolicy::new(
                         options.transport,
                     ))
                 }
-                _ => {
-                    warn!("invalid TESTING_MODE selected. Supported options are PLAY and RECORD");
+                m => {
+                    log::error!(
+                        "invalid TESTING_MODE '{}' selected. Supported options are REPLAY and RECORD",
+                        m
+                    );
                 }
             };
 

@@ -38,7 +38,7 @@ where
 
         // deserialize to file both the request and the response
         let (expected_request, expected_response) = {
-            let mut request_path = self.transaction.file_path()?;
+            let mut request_path = self.transaction.file_path(false)?;
             let mut response_path = request_path.clone();
 
             let number = self.transaction.number();

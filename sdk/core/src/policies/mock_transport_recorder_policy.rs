@@ -38,7 +38,7 @@ where
         assert_eq!(0, next.len());
 
         // serialize to file both the request and the response
-        let mut request_path = self.transaction.file_path()?;
+        let mut request_path = self.transaction.file_path(true)?;
         let mut response_path = request_path.clone();
 
         let number = self.transaction.number();

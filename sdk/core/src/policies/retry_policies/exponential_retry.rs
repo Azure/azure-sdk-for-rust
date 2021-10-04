@@ -64,6 +64,7 @@ where
             match next[0].send(ctx, request, &next[1..]).await {
                 Ok(response) => return Ok(response),
                 Err(error) => {
+                    log::error!("Error occurred when making request: {}", error);
                     if self.is_expired(&mut first_retry_time, &mut current_retries) {
                         return Err(error);
                     } else {
