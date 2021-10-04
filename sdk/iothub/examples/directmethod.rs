@@ -13,7 +13,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let module_id = std::env::args()
         .nth(2)
-        .expect("Please pass the device id as the second parameter");
+        .expect("Please pass the module id as the second parameter");
 
     let method_name = std::env::args()
         .nth(3)
