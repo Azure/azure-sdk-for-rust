@@ -71,6 +71,7 @@ where
         request
             .headers_mut()
             .insert(USER_AGENT, HeaderValue::from_str(&self.header)?);
+        println!("{:?}", request.headers().get(USER_AGENT));
 
         next[0].send(ctx, request, &next[1..]).await
     }
