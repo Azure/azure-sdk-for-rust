@@ -60,7 +60,6 @@ pub struct DataLakeClient {
     pipeline: Pipeline<Vec<i32>>,
     storage_client: Arc<StorageClient>,
     account: String,
-    bearer_token: String,
     custom_dns_suffix: Option<String>,
     url: Url, // TODO: Use CloudLocation similar to CosmosClient
 }
@@ -116,7 +115,6 @@ impl DataLakeClient {
             pipeline,
             storage_client,
             account,
-            bearer_token,
             custom_dns_suffix,
             url,
         }))
