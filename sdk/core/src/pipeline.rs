@@ -2,6 +2,8 @@
 use crate::policies::TransportPolicy;
 use crate::policies::{Policy, TelemetryPolicy};
 use crate::{ClientOptions, Error, HttpClient, PipelineContext, Request, Response};
+#[cfg(feature = "mock_transport_framework")]
+use log::{info, warn};
 use std::sync::Arc;
 
 /// Execution pipeline.
@@ -79,8 +81,34 @@ where
         // TODO: Add transport policy for WASM once https://github.com/Azure/azure-sdk-for-rust/issues/293 is resolved.
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let transport_policy = TransportPolicy::new(&options.transport);
-            pipeline.push(Arc::new(transport_policy));
+            // This code replaces the default transport policy at runtime if these two conditions
+            // are met:
+            // 1. The mock_transport_framework is enabled
+            // 2. The environmental variable TESTING_MODE is either RECORD or PLAY
+            #[cfg(not(feature = "mock_transport_framework"))]
+            pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
+
+            #[cfg(feature = "mock_transport_framework")]
+            match std::env::var("TESTING_MODE").as_deref().unwrap_or("PLAY") {
+                "RECORD" => {
+                    info!("mock testing framework record mode enabled");
+                    pipeline.push(Arc::new(crate::policies::MockTransportRecorderPolicy::new(
+                        options.transport.transaction_name.clone(),
+                        options.transport.clone(),
+                    )));
+                }
+                "PLAY" => {
+                    info!("mock testing framework reply mode enabled");
+                    pipeline.push(Arc::new(crate::policies::MockTransportPlayerPolicy::new(
+                        options.transport.transaction_name.clone(),
+                        options.transport.clone(),
+                    )));
+                }
+                _ => {
+                    warn!("invalid TESTING_MODE selected. Supported options are PLAY and RECORD");
+                    pipeline.push(Arc::new(TransportPolicy::new(options.transport.clone())));
+                }
+            }
         }
 
         Self {
@@ -93,6 +121,18 @@ where
     pub fn http_client(&self) -> &dyn HttpClient {
         // TODO: Request methods should be defined directly on the pipeline instead of exposing the HttpClient.
         self.http_client.as_ref()
+    }
+
+    pub fn replace_policy(
+        &mut self,
+        policy: Arc<dyn Policy<C>>,
+        position: usize,
+    ) -> Arc<dyn Policy<C>> {
+        std::mem::replace(&mut self.pipeline[position], policy)
+    }
+
+    pub fn policies(&self) -> &[Arc<dyn Policy<C>>] {
+        &self.pipeline
     }
 
     pub async fn send(

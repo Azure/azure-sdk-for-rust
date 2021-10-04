@@ -22,7 +22,7 @@ impl Future for Sleep {
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if self.thread.is_none() {
             let waker = cx.waker().clone();
-            let duration = self.duration.clone();
+            let duration = self.duration;
             self.get_mut().thread = Some(thread::spawn(move || {
                 thread::sleep(duration);
                 waker.wake();

@@ -16,6 +16,10 @@ Each supported Azure service is its own separate crate. If a particular service 
 
 Building each crate should be as straight forward as `cargo build`, but check each crate's README for more specific information.
 
+### Mock testing framework
+
+This library comes with a testing framework that executes against prerecorded sessions to quickly validate code changes without incurring in Azure costs. You can read more about it in the [Mock testing framework's README](docs/mock_transport_REAMDE.md).
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a

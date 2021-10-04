@@ -139,7 +139,7 @@ pub(crate) fn generate_resource_link(uri: &str) -> &str {
     // return an empty string. This is necessary because the previous check included a leading
     // slash.
     if ENDING_STRINGS
-        .into_iter()
+        .iter()
         .map(|ending| &ending[1..]) // this is safe since every ENDING_STRING starts with a slash
         .any(|item| uri == item)
     {
@@ -182,7 +182,7 @@ pub(crate) fn generate_authorization(
         str_unencoded
     );
 
-    form_urlencoded::byte_serialize(&str_unencoded.as_bytes()).collect::<String>()
+    form_urlencoded::byte_serialize(str_unencoded.as_bytes()).collect::<String>()
 }
 
 /// This function generates a valid authorization string, according to the documentation.

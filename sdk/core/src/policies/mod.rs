@@ -1,8 +1,16 @@
+#[cfg(feature = "mock_transport_framework")]
+mod mock_transport_player_policy;
+#[cfg(feature = "mock_transport_framework")]
+mod mock_transport_recorder_policy;
 mod retry_policies;
 mod telemetry_policy;
 mod transport;
 
 use crate::{PipelineContext, Request, Response};
+#[cfg(feature = "mock_transport_framework")]
+pub use mock_transport_player_policy::MockTransportPlayerPolicy;
+#[cfg(feature = "mock_transport_framework")]
+pub use mock_transport_recorder_policy::MockTransportRecorderPolicy;
 pub use retry_policies::*;
 use std::error::Error;
 use std::sync::Arc;
