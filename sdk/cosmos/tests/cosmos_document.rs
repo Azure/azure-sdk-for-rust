@@ -33,7 +33,7 @@ async fn create_and_delete_document() {
 
     client
         .create_database(
-            &mut azure_core::Context::new(),
+            azure_core::Context::new(),
             DATABASE_NAME,
             CreateDatabaseOptions::new(),
         )
@@ -121,7 +121,7 @@ async fn query_documents() {
 
     client
         .create_database(
-            &mut azure_core::Context::new(),
+            azure_core::Context::new(),
             DATABASE_NAME,
             CreateDatabaseOptions::new(),
         )
@@ -195,7 +195,7 @@ async fn replace_document() {
 
     client
         .create_database(
-            &mut azure_core::Context::new(),
+            azure_core::Context::new(),
             DATABASE_NAME,
             CreateDatabaseOptions::new(),
         )

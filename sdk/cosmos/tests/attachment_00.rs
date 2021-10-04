@@ -38,7 +38,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
     // create a temp database
     let _create_database_response = client
         .create_database(
-            &mut azure_core::Context::new(),
+            azure_core::Context::new(),
             DATABASE_NAME,
             CreateDatabaseOptions::new(),
         )
