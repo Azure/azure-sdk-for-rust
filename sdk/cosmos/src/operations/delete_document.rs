@@ -5,7 +5,6 @@ use azure_core::prelude::*;
 
 use azure_core::{Request as HttpRequest, Response as HttpResponse};
 use chrono::{DateTime, Utc};
-use http::response::Response;
 
 #[derive(Debug, Clone)]
 pub struct DeleteDocumentOptions<'a> {
@@ -51,18 +50,30 @@ pub struct DeleteDocumentResponse {
     pub session_token: String,
 }
 
-impl std::convert::TryFrom<Response<bytes::Bytes>> for DeleteDocumentResponse {
-    type Error = crate::Error;
-
-    fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+impl<'a> DeleteDocumentResponse {
+    pub async fn try_from(response: HttpResponse) -> Result<DeleteDocumentResponse, crate::Error> {
         let headers = response.headers();
-
         let charge = request_charge_from_headers(headers)?;
         let session_token = session_token_from_headers(headers)?;
 
         Ok(Self {
-            charge,
-            session_token,
+            charge: charge,
+            session_token: session_token,
         })
     }
 }
+// impl std::convert::TryFrom<Response<bytes::Bytes>> for DeleteDocumentResponse {
+//     type Error = crate::Error;
+
+//     fn try_from(response: Response) -> Result<Self, crate::Error> {
+//         let headers = response.headers();
+
+//         let charge = request_charge_from_headers(headers)?;
+//         let session_token = session_token_from_headers(headers)?;
+
+//         Ok(Self {
+//             charge,
+//             session_token,
+//         })
+//     }
+// }

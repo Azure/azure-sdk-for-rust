@@ -103,10 +103,12 @@ impl DocumentClient {
         let response = self
             .cosmos_client()
             .pipeline()
-            .send(&mut ctx, &mut request)
+            .send(&mut pipeline_context, &mut request)
             .await?
             .validate(http::StatusCode::OK)
             .await?;
+
+        DeleteDocumentResponse::try_from(response).await
     }
 
     /// List all attachments for a document
@@ -131,7 +133,6 @@ impl DocumentClient {
                 self.document_name()
             ),
             method,
-            ResourceType::Documents,
         )
     }
 
