@@ -25,10 +25,15 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     let storage_account_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
 
-    println!("getting bearer token...");
+    let resource_id = "https://storage.azure.com/";
+    println!("getting bearer token for '{}'...", resource_id);
     let bearer_token = DefaultCredential::default()
-        .get_token("https://storage.azure.com/")
+        .get_token(resource_id)
         .await?;
+
+    println!("token value = {}", bearer_token.token.secret());
+    println!("token expires on= {}", bearer_token.expires_on);
+    println!();
 
     let data_lake = storage_account_client
         .as_storage_client()
