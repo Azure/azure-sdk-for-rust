@@ -52,26 +52,24 @@ where
         }
     }
 }
-#[cfg(feature = "mock_transport_framework")]
-impl<C> ClientOptions<C>
-where
-    C: Send + Sync,
-{
-    pub fn new_with_transaction_name(transaction_name: String) -> Self {
-        Self {
-            per_call_policies: Vec::new(),
-            per_retry_policies: Vec::new(),
-            retry: RetryOptions::default(),
-            telemetry: TelemetryOptions::default(),
-            transport: TransportOptions::new_with_transaction_name(transaction_name),
-        }
-    }
-}
 
 impl<C> ClientOptions<C>
 where
     C: Send + Sync,
 {
+    pub fn new(#[cfg(feature = "mock_transport_framework")] transaction_name: String) -> Self {
+        Self {
+            per_call_policies: Vec::new(),
+            per_retry_policies: Vec::new(),
+            retry: RetryOptions::default(),
+            telemetry: TelemetryOptions::default(),
+            #[cfg(not(feature = "mock_transport_framework"))]
+            transport: TransportOptions::default(),
+            #[cfg(feature = "mock_transport_framework")]
+            transport: TransportOptions::new(transaction_name),
+        }
+    }
+
     /// A mutable reference to per-call policies.
     pub fn per_call_policies_mut(&mut self) -> &mut Vec<Arc<dyn Policy<C>>> {
         &mut self.per_call_policies
@@ -188,37 +186,53 @@ impl TelemetryOptions {
     }
 }
 
-/// Transport options.
-#[derive(Clone, Debug)]
-pub struct TransportOptions {
-    /// The HTTP client implementation to use for requests.
-    pub(crate) http_client: Arc<dyn HttpClient>,
-    #[cfg(feature = "mock_transport_framework")]
-    pub(crate) transaction_name: String,
-}
-
-impl TransportOptions {
-    #[cfg(not(feature = "mock_transport_framework"))]
-    /// Creates a new `TransportOptions` using the given `HttpClient`.
-    pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
-        Self { http_client }
-    }
-
-    #[cfg(feature = "mock_transport_framework")]
-    pub fn new_with_transaction_name(transaction_name: String) -> Self {
-        Self {
-            http_client: new_http_client(),
-            transaction_name,
-        }
-    }
-}
-
 #[cfg(not(feature = "mock_transport_framework"))]
-impl Default for TransportOptions {
-    /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
-    fn default() -> Self {
-        TransportOptions {
-            http_client: new_http_client(),
+mod transport_options {
+    use super::*;
+
+    /// Transport options.
+    #[derive(Clone, Debug)]
+    pub struct TransportOptions {
+        /// The HTTP client implementation to use for requests.
+        pub(crate) http_client: Arc<dyn HttpClient>,
+    }
+
+    impl TransportOptions {
+        /// Creates a new `TransportOptions` using the given `HttpClient`.
+        pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
+            Self { http_client }
+        }
+    }
+
+    impl Default for TransportOptions {
+        /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
+        fn default() -> Self {
+            Self::new(new_http_client())
         }
     }
 }
+
+#[cfg(feature = "mock_transport_framework")]
+mod transport_options {
+    use super::*;
+
+    /// Transport options.
+    #[derive(Clone, Debug)]
+    pub struct TransportOptions {
+        /// The HTTP client implementation to use for requests.
+        pub(crate) http_client: Arc<dyn HttpClient>,
+        /// The name of the transaction used when reading or writing mock requests and responses.
+        pub(crate) transaction_name: String,
+    }
+
+    impl TransportOptions {
+        pub fn new(transaction_name: String) -> Self {
+            Self {
+                transaction_name,
+                http_client: new_http_client(),
+            }
+        }
+    }
+}
+
+pub use transport_options::*;

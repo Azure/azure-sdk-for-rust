@@ -14,10 +14,11 @@ pub struct MockTransportRecorderPolicy {
 }
 
 impl MockTransportRecorderPolicy {
-    pub fn new(name: impl Into<String>, transport_options: TransportOptions) -> Self {
+    pub fn new(transport_options: TransportOptions) -> Self {
+        let transaction = MockTransaction::new(transport_options.transaction_name.clone());
         Self {
             transport_options,
-            transaction: MockTransaction::new(name),
+            transaction,
         }
     }
 }
@@ -37,7 +38,7 @@ where
         assert_eq!(0, next.len());
 
         // serialize to file both the request and the response
-        let mut request_path = self.transaction.file_path()?;
+        let mut request_path = self.transaction.file_path(true)?;
         let mut response_path = request_path.clone();
 
         let number = self.transaction.number();

@@ -88,13 +88,13 @@ impl Policy<CosmosContext> for AuthorizationPolicy {
 
         request
             .headers_mut()
-            .append(HEADER_DATE, HeaderValue::from_str(&time_nonce.to_string())?);
+            .insert(HEADER_DATE, HeaderValue::from_str(&time_nonce.to_string())?);
         request
             .headers_mut()
-            .append(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION));
+            .insert(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION));
         request
             .headers_mut()
-            .append(AUTHORIZATION, HeaderValue::from_str(&auth)?);
+            .insert(AUTHORIZATION, HeaderValue::from_str(&auth)?);
 
         // now next[0] is safe (will not panic) because we checked
         // at the beginning of the function.

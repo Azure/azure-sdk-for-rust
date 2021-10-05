@@ -13,10 +13,11 @@ pub struct MockTransportPlayerPolicy {
 }
 
 impl MockTransportPlayerPolicy {
-    pub fn new(name: impl Into<String>, transport_options: TransportOptions) -> Self {
+    pub fn new(transport_options: TransportOptions) -> Self {
+        let transaction = MockTransaction::new(transport_options.transaction_name.clone());
         Self {
             transport_options,
-            transaction: MockTransaction::new(name),
+            transaction,
         }
     }
 }
@@ -37,7 +38,7 @@ where
 
         // deserialize to file both the request and the response
         let (expected_request, expected_response) = {
-            let mut request_path = self.transaction.file_path()?;
+            let mut request_path = self.transaction.file_path(false)?;
             let mut response_path = request_path.clone();
 
             let number = self.transaction.number();
@@ -56,14 +57,15 @@ where
         // check if the passed request matches the one read from disk
         // We will ignore some headers that are bound to change every time
         // We'll probabily want to make the exclusion list dynamic at some point.
-        const SKIPPED_HEADERS: &[&'static str] = &["Date", "x-ms-date", "authorization"];
+        const SKIPPED_HEADERS: &[&'static str] =
+            &["Date", "x-ms-date", "authorization", "user-agent"];
         let actual_headers = request
             .headers()
             .iter()
-            .filter(|h| {
+            .filter(|(h, _)| {
                 SKIPPED_HEADERS
                     .iter()
-                    .find(|to_skip| to_skip == &&h.0.as_str())
+                    .find(|to_skip| to_skip == &&h.as_str())
                     .is_none()
             })
             .collect::<Vec<_>>();
@@ -71,10 +73,10 @@ where
         let expected_headers = expected_request
             .headers()
             .iter()
-            .filter(|h| {
+            .filter(|(h, _)| {
                 SKIPPED_HEADERS
                     .iter()
-                    .find(|to_skip| to_skip == &&h.0.as_str())
+                    .find(|to_skip| to_skip == &&h.as_str())
                     .is_none()
             })
             .collect::<Vec<_>>();
@@ -83,25 +85,26 @@ where
         // 1. There are no extra headers (in both the received and read request).
         // 2. Each header has the same value.
         if actual_headers.len() != expected_headers.len() {
+            println!("{:?}\n{:?}", actual_headers, expected_headers);
             return Err(Box::new(MockFrameworkError::MismatchedRequestHeadersCount(
                 actual_headers.len(),
                 expected_headers.len(),
             )));
         }
 
-        for actual_header_to_match in actual_headers.iter() {
-            let read_header_to_match = expected_headers
+        for (actual_header_key, actual_header_value) in actual_headers.iter() {
+            let (_, expected_header_value) = expected_headers
                 .iter()
-                .find(|h| actual_header_to_match.0.as_str() == h.0.as_str())
+                .find(|(h, _)| actual_header_key.as_str() == h.as_str())
                 .ok_or(MockFrameworkError::MissingRequestHeader(
-                    actual_header_to_match.0.as_str().to_owned(),
+                    actual_header_key.as_str().to_owned(),
                 ))?;
 
-            if actual_header_to_match.1 != read_header_to_match.1 {
+            if actual_header_value != expected_header_value {
                 return Err(Box::new(MockFrameworkError::MismatchedRequestHeader(
-                    actual_header_to_match.0.as_str().to_owned(),
-                    actual_header_to_match.1.to_str().unwrap().to_owned(),
-                    read_header_to_match.1.to_str().unwrap().to_owned(),
+                    actual_header_key.as_str().to_owned(),
+                    actual_header_value.to_str().unwrap().to_owned(),
+                    expected_header_value.to_str().unwrap().to_owned(),
                 )));
             }
         }
@@ -113,20 +116,20 @@ where
             )));
         }
 
-        let received_body = match request.body() {
+        let actual_body = match request.body() {
             crate::Body::Bytes(bytes) => &bytes as &[u8],
             crate::Body::SeekableStream(_) => unimplemented!(),
         };
 
-        let read_body = match expected_request.body() {
+        let expected_body = match expected_request.body() {
             crate::Body::Bytes(bytes) => &bytes as &[u8],
             crate::Body::SeekableStream(_) => unimplemented!(),
         };
 
-        if received_body != read_body {
+        if actual_body != expected_body {
             return Err(Box::new(MockFrameworkError::MismatchedRequestBody(
-                received_body.to_vec(),
-                read_body.to_vec(),
+                actual_body.to_vec(),
+                expected_body.to_vec(),
             )));
         }
 

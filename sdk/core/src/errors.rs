@@ -243,15 +243,19 @@ pub enum MockFrameworkError {
     UninitializedTransaction,
     #[error("{0}: {1}")]
     IOError(String, std::io::Error),
+    #[error("{0}")]
+    TransactionStorageError(String),
+    #[error("{0}")]
+    MissingTransaction(String),
     #[error("received request have header {0} but it was not present in the read request")]
     MissingRequestHeader(String),
-    #[error("different number of headers in request. Recevied: {0}, Read: {1}")]
+    #[error("different number of headers in request. Actual: {0}, Expected: {1}")]
     MismatchedRequestHeadersCount(usize, usize),
-    #[error("request header {0} value is different. Received: {1}, Read: {2}")]
+    #[error("request header {0} value is different. Actual: {1}, Expected: {2}")]
     MismatchedRequestHeader(String, String, String),
-    #[error("mismatched HTTP request method. Received: {0}, Read: {1}")]
+    #[error("mismatched HTTP request method. Actual: {0}, Expected: {1}")]
     MismatchedRequestHTTPMethod(http::Method, http::Method),
-    #[error("mismatched request body. Received: {0:?}, Read: {1:?}")]
+    #[error("mismatched request body. Actual: {0:?}, Expected: {1:?}")]
     MismatchedRequestBody(Vec<u8>, Vec<u8>),
 }
 

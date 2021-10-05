@@ -1,5 +1,3 @@
-#[cfg(feature = "mock_transport_framework")]
-use crate::{collect_pinned_stream, BytesStream, Response, StreamError};
 use bytes::Bytes;
 use http::{header, HeaderMap, StatusCode};
 use serde::{Deserialize, Serialize};
@@ -22,7 +20,11 @@ impl BytesResponse {
     }
 
     #[cfg(feature = "mock_transport_framework")]
-    pub(crate) async fn duplicate(response: Response) -> Result<(Response, Self), StreamError> {
+    pub(crate) async fn duplicate(
+        response: crate::Response,
+    ) -> Result<(crate::Response, Self), crate::StreamError> {
+        use crate::{collect_pinned_stream, BytesStream, Response};
+
         let (status_code, header_map, pinned_stream) = response.deconstruct();
         let response_bytes = collect_pinned_stream(pinned_stream).await?;
 
