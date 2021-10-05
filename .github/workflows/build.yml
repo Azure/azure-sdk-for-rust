@@ -60,7 +60,7 @@ jobs:
     #   run: cargo check -p azure_core --no-default-features --features enable_hyper
 
     - name: sdk tests
-      run: cargo test --all
+      run: cargo test --all --features mock_transport_framework
 
   test-services:
     name: Services Tests
@@ -97,7 +97,7 @@ jobs:
 
     - uses: Swatinem/rust-cache@v1
 
-    - name: integration tests
+    - name: emulator integration tests
       run: |
         npm install azurite@3.13.1
         npx azurite &

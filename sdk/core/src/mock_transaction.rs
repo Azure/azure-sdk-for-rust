@@ -40,7 +40,15 @@ impl MockTransaction {
         })?);
         path.push("test");
         path.push("transactions");
-        path.push(self.name());
+        let name = self.name();
+        if name.is_empty() {
+            panic!(
+                "`ClientOptions` and `TransportOptions` must be created with a non-empty transaction \
+            name when using the `mock_transport_framework` feature. You can do this by using \
+            `ClientOptions::new_with_transaction_name`"
+            );
+        }
+        path.push(name);
 
         if !path.exists() {
             if create_when_not_exist {

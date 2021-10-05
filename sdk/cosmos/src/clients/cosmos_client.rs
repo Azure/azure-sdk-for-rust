@@ -41,20 +41,20 @@ pub struct CosmosOptions {
 }
 
 impl CosmosOptions {
+    /// Create new options
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    #[cfg(feature = "mock_transport_framework")]
     /// Create new options with a given transaction name
-    pub fn new(
-        #[cfg(feature = "mock_transport_framework")] transaction_name: impl Into<String>,
-    ) -> Self {
+    pub fn new_with_transaction_name(name: String) -> Self {
         Self {
-            #[cfg(feature = "mock_transport_framework")]
-            options: ClientOptions::new(transaction_name.into()),
-            #[cfg(not(feature = "mock_transport_framework"))]
-            options: ClientOptions::default(),
+            options: ClientOptions::new_with_transaction_name(name.into()),
         }
     }
 }
 
-#[cfg(not(feature = "mock_transport_framework"))]
 impl Default for CosmosOptions {
     fn default() -> Self {
         Self {
@@ -100,6 +100,16 @@ impl CosmosClient {
             auth_token,
             cloud_location,
         }
+    }
+
+    #[cfg(feature = "mock_transport_framework")]
+    /// Create new options with a given transaction name
+    pub fn new_with_transaction(transaction_name: impl Into<String>) -> Self {
+        Self::new(
+            String::new(),
+            AuthorizationToken::Primary(Vec::new()),
+            CosmosOptions::new_with_transaction_name(transaction_name.into()),
+        )
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in the Chinese Azure cloud.
