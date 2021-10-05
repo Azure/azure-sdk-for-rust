@@ -50,11 +50,7 @@ impl AttachmentClient {
         &self.attachment_name
     }
 
-    /// Initiate a request to get an attachment.
-    // pub fn get(&self) -> requests::GetAttachmentBuilder<'_, '_> {
-    //     requests::GetAttachmentBuilder::new(self)
-    // }
-
+    /// Get an attachment.
     pub async fn get(
         &self,
         ctx: Context,
