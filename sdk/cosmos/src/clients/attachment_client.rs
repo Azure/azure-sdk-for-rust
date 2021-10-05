@@ -1,7 +1,8 @@
+use crate::prelude::{GetAttachmentOptions, GetAttachmentResponse};
 use crate::requests;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
-use azure_core::HttpClient;
+use azure_core::{Context, HttpClient, PipelineContext};
 
 use super::*;
 
@@ -50,8 +51,39 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to get an attachment.
-    pub fn get(&self) -> requests::GetAttachmentBuilder<'_, '_> {
-        requests::GetAttachmentBuilder::new(self)
+    // pub fn get(&self) -> requests::GetAttachmentBuilder<'_, '_> {
+    //     requests::GetAttachmentBuilder::new(self)
+    // }
+
+    pub async fn get(
+        &self,
+        ctx: Context,
+        options: GetAttachmentOptions<'_>,
+    ) -> Result<GetAttachmentResponse, crate::Error> {
+        let mut request = self.cosmos_client().prepare_request_pipeline(
+            &format!(
+                "dbs/{}/colls/{}/docs/{}/attachments/{}",
+                self.database_client().database_name(),
+                self.collection_client().collection_name(),
+                self.document_client().document_name(),
+                self.attachment_name()
+            ),
+            http::Method::POST,
+        );
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        options.decorate_request(
+            &mut request,
+            self.document_client().partition_key_serialized(),
+        )?;
+        let response = self
+            .cosmos_client()
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
+            .await?;
+
+        GetAttachmentResponse::try_from(response).await
     }
 
     /// Initiate a request to delete an attachment.

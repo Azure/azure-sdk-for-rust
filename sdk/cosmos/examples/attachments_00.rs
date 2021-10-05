@@ -93,9 +93,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let session_token: ConsistencyLevel = resp.into();
 
     let resp = attachment_client
-        .get()
-        .consistency_level(session_token)
-        .execute()
+        .get(
+            Context::new(),
+            GetAttachmentOptions::new().consistency_level(session_token),
+        )
         .await?;
 
     println!("get attachment == {:#?}", resp);
