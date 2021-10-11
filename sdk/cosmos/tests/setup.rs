@@ -2,7 +2,7 @@ use azure_cosmos::prelude::*;
 
 #[cfg(not(feature = "mock_transport_framework"))]
 pub fn initialize() -> Result<CosmosClient, azure_cosmos::Error> {
-    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
+    let account = get_account();
     let key =
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
 
@@ -12,9 +12,19 @@ pub fn initialize() -> Result<CosmosClient, azure_cosmos::Error> {
     Ok(client)
 }
 
+fn get_account() -> String {
+    std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!")
+}
+
 #[cfg(feature = "mock_transport_framework")]
 pub fn initialize(
     transaction_name: impl Into<String>,
 ) -> Result<CosmosClient, azure_cosmos::Error> {
-    Ok(CosmosClient::new_with_transaction(transaction_name))
+    let account_name = (std::env::var("TESTING_MODE").as_deref() == Ok("RECORD"))
+        .then(get_account)
+        .unwrap_or_else(String::new);
+    Ok(CosmosClient::new_with_transaction(
+        account_name,
+        transaction_name,
+    ))
 }

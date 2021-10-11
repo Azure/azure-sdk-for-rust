@@ -61,7 +61,14 @@ impl Serialize for Request {
         }
 
         let mut state = serializer.serialize_struct("Request", 4)?;
-        state.serialize_field(FIELDS[0], &self.uri.to_string())?;
+        state.serialize_field(
+            FIELDS[0],
+            &self
+                .uri
+                .path_and_query()
+                .map(|p| p.to_string())
+                .unwrap_or_else(String::new),
+        )?;
         state.serialize_field(FIELDS[1], &self.method.to_string())?;
         state.serialize_field(FIELDS[2], &hm)?;
         state.serialize_field(
