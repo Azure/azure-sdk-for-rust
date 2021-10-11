@@ -89,14 +89,17 @@ where
             // 1. The mock_transport_framework is enabled
             // 2. The environmental variable TESTING_MODE is either RECORD or PLAY
             #[cfg(feature = "mock_transport_framework")]
-            match std::env::var("TESTING_MODE").as_deref().unwrap_or("REPLAY") {
-                "RECORD" => {
+            match std::env::var(crate::TESTING_MODE_KEY)
+                .as_deref()
+                .unwrap_or(crate::TESTING_MODE_REPLAY)
+            {
+                crate::TESTING_MODE_RECORD => {
                     log::warn!("mock testing framework record mode enabled");
                     policy = Arc::new(crate::policies::MockTransportRecorderPolicy::new(
                         options.transport,
                     ))
                 }
-                "REPLAY" => {
+                crate::TESTING_MODE_REPLAY => {
                     log::info!("mock testing framework replay mode enabled");
                     policy = Arc::new(crate::policies::MockTransportPlayerPolicy::new(
                         options.transport,
@@ -104,8 +107,10 @@ where
                 }
                 m => {
                     log::error!(
-                        "invalid TESTING_MODE '{}' selected. Supported options are REPLAY and RECORD",
-                        m
+                        "invalid TESTING_MODE '{}' selected. Supported options are '{}' and '{}'",
+                        m,
+                        crate::TESTING_MODE_RECORD,
+                        crate::TESTING_MODE_REPLAY
                     );
                 }
             };

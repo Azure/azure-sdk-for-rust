@@ -1,5 +1,5 @@
 {
-  "uri": "https://mindflavor2.documents.azure.com/dbs/sample/colls",
+  "uri": "/dbs/sample/colls",
   "method": "POST",
   "headers": {
     "user-agent": "azsdk-rust-cosmos/0.1.0 (1.55.0; linux; x86_64)",

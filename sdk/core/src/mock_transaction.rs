@@ -2,29 +2,35 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
+pub mod constants {
+    pub const TESTING_MODE_KEY: &str = "TESTING_MODE";
+    pub const TESTING_MODE_REPLAY: &str = "REPLAY";
+    pub const TESTING_MODE_RECORD: &str = "RECORD";
+}
+
 #[derive(Debug, Clone)]
-pub struct MockTransaction {
+pub(crate) struct MockTransaction {
     pub(crate) name: String,
     pub(crate) number: Arc<AtomicUsize>,
 }
 
 impl MockTransaction {
-    pub fn new(name: impl Into<String>) -> Self {
+    pub(crate) fn new(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
             number: Arc::new(AtomicUsize::new(0)),
         }
     }
 
-    pub fn name(&self) -> &str {
+    pub(crate) fn name(&self) -> &str {
         &self.name
     }
 
-    pub fn number(&self) -> usize {
+    pub(crate) fn number(&self) -> usize {
         self.number.load(Ordering::SeqCst)
     }
 
-    pub fn increment_number(&self) -> usize {
+    pub(crate) fn increment_number(&self) -> usize {
         self.number.fetch_add(1, Ordering::SeqCst)
     }
 

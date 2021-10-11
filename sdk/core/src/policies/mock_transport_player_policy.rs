@@ -54,6 +54,19 @@ where
         let expected_request: Request = serde_json::from_str(&expected_request)?;
         let expected_response = serde_json::from_str::<BytesResponse>(&expected_response)?;
 
+        let expected_uri = expected_request.uri().to_string();
+        let actual_uri = request
+            .uri()
+            .path_and_query()
+            .map(|p| p.to_string())
+            .unwrap_or_else(String::new);
+        if expected_uri != actual_uri {
+            return Err(Box::new(MockFrameworkError::MismatchedRequestUri(
+                actual_uri,
+                expected_uri,
+            )));
+        }
+
         // check if the passed request matches the one read from disk
         // We will ignore some headers that are bound to change every time
         // We'll probabily want to make the exclusion list dynamic at some point.
@@ -62,30 +75,19 @@ where
         let actual_headers = request
             .headers()
             .iter()
-            .filter(|(h, _)| {
-                SKIPPED_HEADERS
-                    .iter()
-                    .find(|to_skip| to_skip == &&h.as_str())
-                    .is_none()
-            })
+            .filter(|(h, _)| !SKIPPED_HEADERS.contains(&h.as_str()))
             .collect::<Vec<_>>();
 
         let expected_headers = expected_request
             .headers()
             .iter()
-            .filter(|(h, _)| {
-                SKIPPED_HEADERS
-                    .iter()
-                    .find(|to_skip| to_skip == &&h.as_str())
-                    .is_none()
-            })
+            .filter(|(h, _)| !SKIPPED_HEADERS.contains(&h.as_str()))
             .collect::<Vec<_>>();
 
         // In order to accept a request, we make sure that:
         // 1. There are no extra headers (in both the received and read request).
         // 2. Each header has the same value.
         if actual_headers.len() != expected_headers.len() {
-            println!("{:?}\n{:?}", actual_headers, expected_headers);
             return Err(Box::new(MockFrameworkError::MismatchedRequestHeadersCount(
                 actual_headers.len(),
                 expected_headers.len(),
