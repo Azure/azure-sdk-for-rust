@@ -4,10 +4,13 @@
 
 ### Writing examples or test cases
 
-If you want to write a test case or an example that supports the mock testing framework all you have to do is create a `Context` value with a transaction name that matches a collection of transactions found in the "tests/transactions" directory at the root of the SDK workspace.
+If you want to write a test case or an example that supports the mock testing framework you must create a client with a transaction name that matches a collection of transactions found in the "tests/transactions" directory at the root of the SDK workspace.
+
+For instance in `cosmos` you can use the `CosmosClient::new_with_transaction` function.
 
 ```rust
-let context = Context::new("create_database_and_collection");
+let account = "MyCosmosAccountName";
+let context = cosmos::CosmosClient::new(account, "create_database_and_collection");
 ```
 
 **NOTE**: This requires that the `mock_transport_framework` feature is enabled. Otherwise the above code will not compile.
@@ -24,7 +27,7 @@ Instead of writing the request and response json files by hand, you can simply r
 For example:
 
 ```bash
-TESTING_MODE=RECORD cargo run --example create_database_and_collection --features=mock_transport_framework
+TESTING_MODE=RECORD cargo test create_database_and_collection --features=mock_transport_framework
 ```
 
 ### Replaying an execution
@@ -37,7 +40,7 @@ Once there are request and response json files in the correct transaction folder
 For example:
 
 ```bash
-TESTING_MODE=REPLAY cargo run --example create_database_and_collection --features=mock_transport_framework
+TESTING_MODE=REPLAY cargo test create_database_and_collection --features=mock_transport_framework
 ```
 
 #### Limitations
