@@ -20,9 +20,10 @@ fn get_account() -> String {
 pub fn initialize(
     transaction_name: impl Into<String>,
 ) -> Result<CosmosClient, azure_cosmos::Error> {
-    let account_name = (std::env::var("TESTING_MODE").as_deref() == Ok("RECORD"))
-        .then(get_account)
-        .unwrap_or_else(String::new);
+    let account_name = (std::env::var(azure_core::TESTING_MODE_KEY).as_deref()
+        == Ok(azure_core::TESTING_MODE_RECORD))
+    .then(get_account)
+    .unwrap_or_else(String::new);
     Ok(CosmosClient::new_with_transaction(
         account_name,
         transaction_name,
