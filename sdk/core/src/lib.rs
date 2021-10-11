@@ -43,6 +43,8 @@ pub use context::Context;
 pub use errors::*;
 pub use headers::AddAsHeader;
 pub use http_client::{new_http_client, to_json, HttpClient};
+#[cfg(feature = "mock_transport_framework")]
+pub use mock_transaction::constants::*;
 pub use models::*;
 pub use options::*;
 pub use pipeline_context::PipelineContext;

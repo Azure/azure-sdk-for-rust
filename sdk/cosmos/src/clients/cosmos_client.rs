@@ -104,9 +104,12 @@ impl CosmosClient {
 
     #[cfg(feature = "mock_transport_framework")]
     /// Create new options with a given transaction name
-    pub fn new_with_transaction(transaction_name: impl Into<String>) -> Self {
+    pub fn new_with_transaction(
+        account: impl Into<String>,
+        transaction_name: impl Into<String>,
+    ) -> Self {
         Self::new(
-            String::new(),
+            account.into(),
             AuthorizationToken::Primary(Vec::new()),
             CosmosOptions::new_with_transaction_name(transaction_name.into()),
         )

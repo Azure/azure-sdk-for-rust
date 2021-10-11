@@ -53,8 +53,11 @@ where
                 .map_err(|e| MockFrameworkError::IOError("cannot write request file".into(), e))?;
         }
 
-        let response = { self.transport_options.http_client.execute_request2(request) };
-        let response: Response = response.await?.into();
+        let response = self
+            .transport_options
+            .http_client
+            .execute_request2(request)
+            .await?;
 
         // we need to duplicate the response because we are about to consume the response stream.
         // We replace the HTTP stream with a memory-backed stream.
@@ -63,7 +66,7 @@ where
         {
             let mut response_contents_stream = std::fs::File::create(&response_path).unwrap();
             response_contents_stream
-                .write_all(response_contents.as_str().as_bytes())
+                .write_all(response_contents.as_bytes())
                 .map_err(|e| MockFrameworkError::IOError("cannot write response file".into(), e))?;
         }
 

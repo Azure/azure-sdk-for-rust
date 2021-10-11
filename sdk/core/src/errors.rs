@@ -247,6 +247,8 @@ pub enum MockFrameworkError {
     TransactionStorageError(String),
     #[error("{0}")]
     MissingTransaction(String),
+    #[error("mismatched request uri. Actual '{0}', Expected: '{1}'")]
+    MismatchedRequestUri(String, String),
     #[error("received request have header {0} but it was not present in the read request")]
     MissingRequestHeader(String),
     #[error("different number of headers in request. Actual: {0}, Expected: {1}")]
