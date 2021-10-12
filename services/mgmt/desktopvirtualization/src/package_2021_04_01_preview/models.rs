@@ -115,6 +115,16 @@ pub struct WorkspacePatchProperties {
     pub friendly_name: Option<String>,
     #[serde(rename = "applicationGroupReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub application_group_references: Vec<String>,
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    pub public_network_access: Option<workspace_patch_properties::PublicNetworkAccess>,
+}
+pub mod workspace_patch_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PublicNetworkAccess {
+        Enabled,
+        Disabled,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationGroup {

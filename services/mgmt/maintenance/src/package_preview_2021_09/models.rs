@@ -129,9 +129,9 @@ pub mod input_patch_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RebootSetting {
-        NeverReboot,
-        RebootIfRequired,
-        AlwaysReboot,
+        IfRequired,
+        Never,
+        Always,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

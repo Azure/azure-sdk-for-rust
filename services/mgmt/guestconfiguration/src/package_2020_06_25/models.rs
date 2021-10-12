@@ -28,8 +28,12 @@ pub struct GuestConfigurationNavigation {
     pub content_hash: Option<String>,
     #[serde(rename = "assignmentType", default, skip_serializing_if = "Option::is_none")]
     pub assignment_type: Option<guest_configuration_navigation::AssignmentType>,
+    #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
+    pub content_type: Option<String>,
     #[serde(rename = "configurationParameter", default, skip_serializing_if = "Vec::is_empty")]
     pub configuration_parameter: Vec<ConfigurationParameter>,
+    #[serde(rename = "configurationProtectedParameter", default, skip_serializing_if = "Vec::is_empty")]
+    pub configuration_protected_parameter: Vec<ConfigurationParameter>,
     #[serde(rename = "configurationSetting", default, skip_serializing_if = "Option::is_none")]
     pub configuration_setting: Option<ConfigurationSetting>,
 }
@@ -131,6 +135,12 @@ pub struct GuestConfigurationAssignmentProperties {
     pub last_compliance_status_checked: Option<String>,
     #[serde(rename = "latestReportId", default, skip_serializing_if = "Option::is_none")]
     pub latest_report_id: Option<String>,
+    #[serde(rename = "parameterHash", default, skip_serializing_if = "Option::is_none")]
+    pub parameter_hash: Option<String>,
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+    #[serde(rename = "vmssVMList", default, skip_serializing_if = "Vec::is_empty")]
+    pub vmss_vm_list: Vec<VmssvmInfo>,
     #[serde(rename = "latestAssignmentReport", default, skip_serializing_if = "Option::is_none")]
     pub latest_assignment_report: Option<AssignmentReport>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -186,6 +196,8 @@ pub struct GuestConfigurationAssignmentReportProperties {
     pub end_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<AssignmentReportDetails>,
+    #[serde(rename = "vmssResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub vmss_resource_id: Option<String>,
 }
 pub mod guest_configuration_assignment_report_properties {
     use super::*;
@@ -272,6 +284,28 @@ pub struct AssignmentReportResourceComplianceReason {
     pub phrase: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmssvmInfo {
+    #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
+    pub vm_id: Option<String>,
+    #[serde(rename = "vmResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub vm_resource_id: Option<String>,
+    #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
+    pub compliance_status: Option<vmssvm_info::ComplianceStatus>,
+    #[serde(rename = "latestReportId", default, skip_serializing_if = "Option::is_none")]
+    pub latest_report_id: Option<String>,
+    #[serde(rename = "lastComplianceChecked", default, skip_serializing_if = "Option::is_none")]
+    pub last_compliance_checked: Option<String>,
+}
+pub mod vmssvm_info {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ComplianceStatus {
+        Compliant,
+        NonCompliant,
+        Pending,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {

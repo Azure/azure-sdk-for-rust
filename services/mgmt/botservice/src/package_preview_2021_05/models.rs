@@ -105,6 +105,10 @@ pub struct BotProperties {
     pub schema_transformation_version: Option<String>,
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[serde(rename = "openWithHint", default, skip_serializing_if = "Option::is_none")]
+    pub open_with_hint: Option<String>,
+    #[serde(rename = "appPasswordHint", default, skip_serializing_if = "Option::is_none")]
+    pub app_password_hint: Option<String>,
 }
 pub mod bot_properties {
     use super::*;

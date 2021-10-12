@@ -7579,7 +7579,7 @@ pub mod integration_service_environment_managed_apis {
         subscription_id: &str,
         resource_group: &str,
         integration_service_environment_name: &str,
-    ) -> std::result::Result<ManagedApiListResult, list::Error> {
+    ) -> std::result::Result<IntegrationServiceEnvironmentManagedApiListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationServiceEnvironments/{}/managedApis",
@@ -7606,7 +7606,7 @@ pub mod integration_service_environment_managed_apis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedApiListResult =
+                let rsp_value: IntegrationServiceEnvironmentManagedApiListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7650,7 +7650,7 @@ pub mod integration_service_environment_managed_apis {
         resource_group: &str,
         integration_service_environment_name: &str,
         api_name: &str,
-    ) -> std::result::Result<ManagedApi, get::Error> {
+    ) -> std::result::Result<IntegrationServiceEnvironmentManagedApi, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationServiceEnvironments/{}/managedApis/{}",
@@ -7678,7 +7678,7 @@ pub mod integration_service_environment_managed_apis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedApi =
+                let rsp_value: IntegrationServiceEnvironmentManagedApi =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7722,6 +7722,7 @@ pub mod integration_service_environment_managed_apis {
         resource_group: &str,
         integration_service_environment_name: &str,
         api_name: &str,
+        integration_service_environment_managed_api: &IntegrationServiceEnvironmentManagedApi,
     ) -> std::result::Result<put::Response, put::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -7743,20 +7744,20 @@ pub mod integration_service_environment_managed_apis {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        let req_body = azure_core::to_json(integration_service_environment_managed_api).map_err(put::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(put::Error::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.map_err(put::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedApi =
+                let rsp_value: IntegrationServiceEnvironmentManagedApi =
                     serde_json::from_slice(rsp_body).map_err(|source| put::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(put::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedApi =
+                let rsp_value: IntegrationServiceEnvironmentManagedApi =
                     serde_json::from_slice(rsp_body).map_err(|source| put::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(put::Response::Created201(rsp_value))
             }
@@ -7775,8 +7776,8 @@ pub mod integration_service_environment_managed_apis {
         use crate::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedApi),
-            Created201(ManagedApi),
+            Ok200(IntegrationServiceEnvironmentManagedApi),
+            Created201(IntegrationServiceEnvironmentManagedApi),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {

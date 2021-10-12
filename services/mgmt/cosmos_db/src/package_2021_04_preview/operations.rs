@@ -12377,7 +12377,7 @@ pub mod service {
         resource_group_name: &str,
         account_name: &str,
         service_name: &str,
-        create_update_parameters: &ServiceResource,
+        create_update_parameters: &ServiceResourceCreateUpdateParameters,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(

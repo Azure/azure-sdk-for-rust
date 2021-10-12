@@ -9,9 +9,17 @@ mod package_2019_10;
 pub use package_2019_10::{models, operations, API_VERSION};
 #[cfg(feature = "package-2020-01")]
 mod package_2020_01;
-use azure_core::setters;
 #[cfg(feature = "package-2020-01")]
 pub use package_2020_01::{models, operations, API_VERSION};
+#[cfg(feature = "package-2020-05")]
+mod package_2020_05;
+#[cfg(feature = "package-2020-05")]
+pub use package_2020_05::{models, operations, API_VERSION};
+#[cfg(feature = "package-2020-07")]
+mod package_2020_07;
+use azure_core::setters;
+#[cfg(feature = "package-2020-07")]
+pub use package_2020_07::{models, operations, API_VERSION};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

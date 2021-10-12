@@ -2098,6 +2098,20 @@ pub struct ServiceResource {
     pub properties: Option<ServiceResourceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceResourceCreateUpdateParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ServiceResourceCreateUpdateProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceResourceCreateUpdateProperties {
+    #[serde(rename = "instanceSize", default, skip_serializing_if = "Option::is_none")]
+    pub instance_size: Option<ServiceResourceInstanceSize>,
+    #[serde(rename = "instanceCount", default, skip_serializing_if = "Option::is_none")]
+    pub instance_count: Option<i32>,
+    #[serde(rename = "serviceType", default, skip_serializing_if = "Option::is_none")]
+    pub service_type: Option<ServiceType>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceResourceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServiceResource>,

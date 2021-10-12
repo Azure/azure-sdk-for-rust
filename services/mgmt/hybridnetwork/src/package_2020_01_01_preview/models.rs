@@ -189,6 +189,13 @@ pub struct Device {
     pub properties: Option<DevicePropertiesFormat>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureStackEdgeFormat {
+    #[serde(flatten)]
+    pub device_properties_format: DevicePropertiesFormat,
+    #[serde(rename = "azureStackEdge")]
+    pub azure_stack_edge: SubResource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DevicePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<device_properties_format::Status>,
@@ -196,8 +203,6 @@ pub struct DevicePropertiesFormat {
     pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "deviceType")]
     pub device_type: device_properties_format::DeviceType,
-    #[serde(rename = "azureStackEdge", default, skip_serializing_if = "Option::is_none")]
-    pub azure_stack_edge: Option<SubResource>,
     #[serde(rename = "networkFunctions", default, skip_serializing_if = "Vec::is_empty")]
     pub network_functions: Vec<SubResource>,
 }

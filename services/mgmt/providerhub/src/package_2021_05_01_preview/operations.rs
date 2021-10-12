@@ -2041,7 +2041,7 @@ pub mod skus {
         provider_namespace: &str,
         resource_type: &str,
         sku: &str,
-        properties: &ResourceTypeSku,
+        properties: &SkuResource,
     ) -> std::result::Result<SkuResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2262,7 +2262,7 @@ pub mod skus {
         resource_type: &str,
         nested_resource_type_first: &str,
         sku: &str,
-        properties: &ResourceTypeSku,
+        properties: &SkuResource,
     ) -> std::result::Result<SkuResource, create_or_update_nested_resource_type_first::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , operation_config . base_path () , subscription_id , provider_namespace , resource_type , nested_resource_type_first , sku) ;
@@ -2479,7 +2479,7 @@ pub mod skus {
         nested_resource_type_first: &str,
         nested_resource_type_second: &str,
         sku: &str,
-        properties: &ResourceTypeSku,
+        properties: &SkuResource,
     ) -> std::result::Result<SkuResource, create_or_update_nested_resource_type_second::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , operation_config . base_path () , subscription_id , provider_namespace , resource_type , nested_resource_type_first , nested_resource_type_second , sku) ;
@@ -2699,7 +2699,7 @@ pub mod skus {
         nested_resource_type_second: &str,
         nested_resource_type_third: &str,
         sku: &str,
-        properties: &ResourceTypeSku,
+        properties: &SkuResource,
     ) -> std::result::Result<SkuResource, create_or_update_nested_resource_type_third::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , operation_config . base_path () , subscription_id , provider_namespace , resource_type , nested_resource_type_first , nested_resource_type_second , nested_resource_type_third , sku) ;

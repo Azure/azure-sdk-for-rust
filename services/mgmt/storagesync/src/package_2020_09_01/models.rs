@@ -848,6 +848,23 @@ pub struct OperationStatus {
     pub error: Option<StorageSyncApiError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LocationOperationStatus {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<StorageSyncApiError>,
+    #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
+    pub percent_complete: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerEndpointCloudTieringStatus {
     #[serde(rename = "lastUpdatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_timestamp: Option<String>,

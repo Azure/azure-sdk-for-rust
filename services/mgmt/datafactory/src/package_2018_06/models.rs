@@ -453,6 +453,16 @@ pub struct FactoryUpdateParameters {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<FactoryIdentity>,
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    pub public_network_access: Option<factory_update_parameters::PublicNetworkAccess>,
+}
+pub mod factory_update_parameters {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PublicNetworkAccess {
+        Enabled,
+        Disabled,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FactoryIdentity {
@@ -1197,6 +1207,8 @@ pub struct ManagedIntegrationRuntimeTypeProperties {
     pub compute_properties: Option<IntegrationRuntimeComputeProperties>,
     #[serde(rename = "ssisProperties", default, skip_serializing_if = "Option::is_none")]
     pub ssis_properties: Option<IntegrationRuntimeSsisProperties>,
+    #[serde(rename = "customerVirtualNetwork", default, skip_serializing_if = "Option::is_none")]
+    pub customer_virtual_network: Option<IntegrationRuntimeCustomerVirtualNetwork>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeComputeProperties {
@@ -1275,6 +1287,11 @@ pub mod integration_runtime_ssis_properties {
         Standard,
         Enterprise,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IntegrationRuntimeCustomerVirtualNetwork {
+    #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
+    pub subnet_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeSsisCatalogInfo {
@@ -2952,6 +2969,23 @@ pub struct SqlServerSource {
     pub partition_settings: Option<SqlPartitionSettings>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonRdsForSqlServerSource {
+    #[serde(flatten)]
+    pub tabular_source: TabularSource,
+    #[serde(rename = "sqlReaderQuery", default, skip_serializing_if = "Option::is_none")]
+    pub sql_reader_query: Option<serde_json::Value>,
+    #[serde(rename = "sqlReaderStoredProcedureName", default, skip_serializing_if = "Option::is_none")]
+    pub sql_reader_stored_procedure_name: Option<serde_json::Value>,
+    #[serde(rename = "storedProcedureParameters", default, skip_serializing_if = "Option::is_none")]
+    pub stored_procedure_parameters: Option<serde_json::Value>,
+    #[serde(rename = "produceAdditionalTypes", default, skip_serializing_if = "Option::is_none")]
+    pub produce_additional_types: Option<serde_json::Value>,
+    #[serde(rename = "partitionOption", default, skip_serializing_if = "Option::is_none")]
+    pub partition_option: Option<serde_json::Value>,
+    #[serde(rename = "partitionSettings", default, skip_serializing_if = "Option::is_none")]
+    pub partition_settings: Option<SqlPartitionSettings>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSqlSource {
     #[serde(flatten)]
     pub tabular_source: TabularSource,
@@ -3072,6 +3106,38 @@ pub struct OracleSource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OraclePartitionSettings {
+    #[serde(rename = "partitionNames", default, skip_serializing_if = "Option::is_none")]
+    pub partition_names: Option<serde_json::Value>,
+    #[serde(rename = "partitionColumnName", default, skip_serializing_if = "Option::is_none")]
+    pub partition_column_name: Option<serde_json::Value>,
+    #[serde(rename = "partitionUpperBound", default, skip_serializing_if = "Option::is_none")]
+    pub partition_upper_bound: Option<serde_json::Value>,
+    #[serde(rename = "partitionLowerBound", default, skip_serializing_if = "Option::is_none")]
+    pub partition_lower_bound: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonRdsForOracleSource {
+    #[serde(flatten)]
+    pub copy_source: CopySource,
+    #[serde(rename = "oracleReaderQuery", default, skip_serializing_if = "Option::is_none")]
+    pub oracle_reader_query: Option<serde_json::Value>,
+    #[serde(rename = "queryTimeout", default, skip_serializing_if = "Option::is_none")]
+    pub query_timeout: Option<serde_json::Value>,
+    #[serde(rename = "partitionOption", default, skip_serializing_if = "Option::is_none")]
+    pub partition_option: Option<serde_json::Value>,
+    #[serde(rename = "partitionSettings", default, skip_serializing_if = "Option::is_none")]
+    pub partition_settings: Option<AmazonRdsForOraclePartitionSettings>,
+    #[serde(rename = "additionalColumns", default, skip_serializing_if = "Option::is_none")]
+    pub additional_columns: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum AmazonRdsForOraclePartitionOption {
+    None,
+    PhysicalPartitionsOfTable,
+    DynamicRange,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonRdsForOraclePartitionSettings {
     #[serde(rename = "partitionNames", default, skip_serializing_if = "Option::is_none")]
     pub partition_names: Option<serde_json::Value>,
     #[serde(rename = "partitionColumnName", default, skip_serializing_if = "Option::is_none")]
@@ -5032,6 +5098,15 @@ pub struct ExecutePowerQueryActivityTypeProperties {
     pub execute_data_flow_activity_type_properties: ExecuteDataFlowActivityTypeProperties,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sinks: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub queries: Vec<PowerQuerySinkMapping>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PowerQuerySinkMapping {
+    #[serde(rename = "queryName", default, skip_serializing_if = "Option::is_none")]
+    pub query_name: Option<String>,
+    #[serde(rename = "dataflowSinks", default, skip_serializing_if = "Vec::is_empty")]
+    pub dataflow_sinks: Vec<PowerQuerySink>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharePointOnlineListSource {
@@ -5138,6 +5213,8 @@ pub struct PowerQueryTypeProperties {
     pub sources: Vec<PowerQuerySource>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub script: Option<String>,
+    #[serde(rename = "documentLocale", default, skip_serializing_if = "Option::is_none")]
+    pub document_locale: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Transformation {
@@ -6235,6 +6312,20 @@ pub struct OracleTableDatasetTypeProperties {
     pub table: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonRdsForOracleTableDataset {
+    #[serde(flatten)]
+    pub dataset: Dataset,
+    #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub type_properties: Option<AmazonRdsForOracleTableDatasetTypeProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonRdsForOracleTableDatasetTypeProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schema: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub table: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TeradataTableDataset {
     #[serde(flatten)]
     pub dataset: Dataset,
@@ -6474,6 +6565,20 @@ pub struct SqlServerTableDataset {
 pub struct SqlServerTableDatasetTypeProperties {
     #[serde(rename = "tableName", default, skip_serializing_if = "Option::is_none")]
     pub table_name: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schema: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub table: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonRdsForSqlServerTableDataset {
+    #[serde(flatten)]
+    pub dataset: Dataset,
+    #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub type_properties: Option<AmazonRdsForSqlServerTableDatasetTypeProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonRdsForSqlServerTableDatasetTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7077,6 +7182,26 @@ pub struct SqlServerLinkedServiceTypeProperties {
     pub always_encrypted_settings: Option<SqlAlwaysEncryptedProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonRdsForSqlServerLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[serde(rename = "typeProperties")]
+    pub type_properties: AmazonRdsForSqlServerLinkedServiceTypeProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonRdsForSqlServerLinkedServiceTypeProperties {
+    #[serde(rename = "connectionString")]
+    pub connection_string: serde_json::Value,
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<SecretBase>,
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+    #[serde(rename = "alwaysEncryptedSettings", default, skip_serializing_if = "Option::is_none")]
+    pub always_encrypted_settings: Option<SqlAlwaysEncryptedProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSqlDatabaseLinkedService {
     #[serde(flatten)]
     pub linked_service: LinkedService,
@@ -7140,6 +7265,8 @@ pub struct SqlAlwaysEncryptedProperties {
     pub service_principal_id: Option<serde_json::Value>,
     #[serde(rename = "servicePrincipalKey", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_key: Option<SecretBase>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credential: Option<CredentialReference>,
 }
 pub mod sql_always_encrypted_properties {
     use super::*;
@@ -7147,6 +7274,7 @@ pub mod sql_always_encrypted_properties {
     pub enum AlwaysEncryptedAkvAuthType {
         ServicePrincipal,
         ManagedIdentity,
+        UserAssignedManagedIdentity,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -7493,6 +7621,22 @@ pub struct OracleLinkedServiceTypeProperties {
     pub connection_string: serde_json::Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<AzureKeyVaultSecretReference>,
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonRdsForOracleLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[serde(rename = "typeProperties")]
+    pub type_properties: AmazonRdsForLinkedServiceTypeProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmazonRdsForLinkedServiceTypeProperties {
+    #[serde(rename = "connectionString")]
+    pub connection_string: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<SecretBase>,
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
 }
