@@ -1,7 +1,9 @@
 use crate::prelude::*;
 
 use crate::headers::from_headers::*;
-use azure_core::headers::{etag_from_headers, session_token_from_headers};
+use azure_core::headers::{
+    content_type_from_headers, etag_from_headers, session_token_from_headers,
+};
 use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
@@ -50,6 +52,11 @@ pub struct GetCollectionResponse {
     pub activity_id: uuid::Uuid,
     pub session_token: String,
     pub gateway_version: String,
+    pub server: String,
+    pub xp_role: u32,
+    pub content_type: String,
+    pub content_location: String,
+    pub date: DateTime<Utc>,
 }
 
 impl GetCollectionResponse {
@@ -78,6 +85,11 @@ impl GetCollectionResponse {
             activity_id: activity_id_from_headers(&headers)?,
             session_token: session_token_from_headers(&headers)?,
             gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
+            server: server_from_headers(&headers)?.to_owned(),
+            xp_role: role_from_headers(&headers)?,
+            content_type: content_type_from_headers(&headers)?.to_owned(),
+            content_location: content_location_from_headers(&headers)?.to_owned(),
+            date: date_from_headers(&headers)?,
         })
     }
 }

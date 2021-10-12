@@ -1,7 +1,9 @@
 use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::collection::{IndexingPolicy, PartitionKey};
-use azure_core::headers::{etag_from_headers, session_token_from_headers};
+use azure_core::headers::{
+    content_type_from_headers, etag_from_headers, session_token_from_headers,
+};
 use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
@@ -56,23 +58,31 @@ struct ReplaceCollectionBody<'a> {
 #[derive(Debug, Clone)]
 pub struct ReplaceCollectionResponse {
     pub collection: Collection,
-    pub charge: f64,
-    pub activity_id: uuid::Uuid,
-    pub etag: String,
-    pub session_token: String,
-    pub last_state_change: DateTime<Utc>,
-    pub collection_partition_index: u64,
-    pub collection_service_index: u64,
-    pub schema_version: String,
-    pub service_version: String,
-    pub gateway_version: String,
-    pub alt_content_path: String,
-    pub global_committed_lsn: u64,
-    pub number_of_read_regions: u32,
-    pub cosmos_llsn: u64,
-    pub quorum_acked_lsn: u64,
-    pub current_write_quorum: u64,
+    pub lsn: u64,
+    pub cosmos_quorum_acked_llsn: u64,
     pub current_replica_set_size: u64,
+    pub number_of_read_regions: u32,
+    pub etag: String,
+    pub charge: f64,
+    pub current_write_quorum: u64,
+    pub server: String,
+    pub collection_partition_index: u64,
+    pub global_committed_lsn: u64,
+    pub session_token: String,
+    pub cosmos_llsn: u64,
+    pub xp_role: u32,
+    pub gateway_version: String,
+    pub collection_service_index: u64,
+    pub content_type: String,
+    pub transport_request_id: u64,
+    pub alt_content_path: String,
+    pub service_version: String,
+    pub quorum_acked_lsn: u64,
+    pub last_state_change: DateTime<Utc>,
+    pub date: DateTime<Utc>,
+    pub content_location: String,
+    pub activity_id: uuid::Uuid,
+    pub schema_version: String,
 }
 
 impl ReplaceCollectionResponse {
@@ -98,6 +108,14 @@ impl ReplaceCollectionResponse {
             quorum_acked_lsn: quorum_acked_lsn_from_headers(&headers)?,
             current_write_quorum: current_write_quorum_from_headers(&headers)?,
             current_replica_set_size: current_replica_set_size_from_headers(&headers)?,
+            lsn: lsn_from_headers(&headers)?,
+            cosmos_quorum_acked_llsn: cosmos_quorum_acked_llsn_from_headers(&headers)?,
+            server: server_from_headers(&headers)?.to_owned(),
+            xp_role: role_from_headers(&headers)?,
+            content_type: content_type_from_headers(&headers)?.to_owned(),
+            content_location: content_location_from_headers(&headers)?.to_owned(),
+            transport_request_id: transport_request_id_from_headers(&headers)?,
+            date: date_from_headers(&headers)?,
         })
     }
 }
