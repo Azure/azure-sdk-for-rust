@@ -81,6 +81,92 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("security", "package-2020-01-preview-only"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/pull/13828
 ];
 
+// because of a bug in compute specs, some properties need to be forced to be optional
+// https://github.com/Azure/azure-rest-api-specs/issues/14459
+// https://github.com/Azure/azure-sdk-for-rust/issues/54
+const OPTIONAL_PROPERTIES: &[(&str, &str, &str)] = &[
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/preview/2016-04-30-preview/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2015-06-15/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2016-03-30/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2017-03-30/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2017-12-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2018-04-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2018-06-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2018-10-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2019-03-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2019-07-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2019-12-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2020-06-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2020-12-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2021-03-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2021-04-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2021-07-01/compute.json",
+        "Resource",
+        "location",
+    ),
+];
+
 // because of recursive types, some properties have to be boxed
 // https://github.com/ctaggart/autorust/issues/73
 const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
@@ -176,6 +262,15 @@ fn gen_crate(spec: &SpecConfigs) -> Result<()> {
         });
     }
 
+    let mut optional_properties = HashSet::new();
+    for (file_path, schema_name, property_name) in OPTIONAL_PROPERTIES {
+        optional_properties.insert(PropertyName {
+            file_path: PathBuf::from(file_path),
+            schema_name: schema_name.to_string(),
+            property_name: property_name.to_string(),
+        });
+    }
+
     for config in spec.configs() {
         let tag = config.tag.as_str();
         if let Some(api_version) = to_api_version(&config) {
@@ -207,6 +302,7 @@ fn gen_crate(spec: &SpecConfigs) -> Result<()> {
                 output_folder: mod_output_folder.into(),
                 input_files,
                 box_properties: box_properties.clone(),
+                optional_properties: optional_properties.clone(),
                 print_writing_file: false,
                 ..Config::default()
             })

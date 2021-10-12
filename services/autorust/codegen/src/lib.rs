@@ -66,6 +66,7 @@ pub struct Config {
     pub output_folder: PathBuf,
     pub api_version: Option<String>,
     pub box_properties: HashSet<PropertyName>,
+    pub optional_properties: HashSet<PropertyName>,
     pub runs: Vec<Runs>,
     pub print_writing_file: bool,
 }
@@ -83,6 +84,7 @@ impl Default for Config {
             output_folder: ".".into(),
             api_version: None,
             box_properties: HashSet::new(),
+            optional_properties: HashSet::new(),
             runs: vec![Runs::Models, Runs::Operations],
             print_writing_file: true,
         }

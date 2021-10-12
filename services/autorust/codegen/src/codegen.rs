@@ -32,6 +32,10 @@ impl CodeGen {
         self.config.api_version.as_deref()
     }
 
+    pub fn should_force_optional(&self, prop_nm: &PropertyName) -> bool {
+        self.config.optional_properties.contains(prop_nm)
+    }
+
     pub fn should_box_property(&self, prop_nm: &PropertyName) -> bool {
         self.config.box_properties.contains(prop_nm)
     }
