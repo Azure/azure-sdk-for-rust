@@ -30,7 +30,11 @@ pub fn initialize(
         == Ok(azure_core::TESTING_MODE_RECORD))
     .then(get_account)
     .unwrap_or_else(String::new);
-    let authorization_token = get_authorization_token()?;
+    let authorization_token = (std::env::var(azure_core::TESTING_MODE_KEY).as_deref()
+        == Ok(azure_core::TESTING_MODE_RECORD))
+    .then(|| get_authorization_token().ok())
+    .flatten()
+    .unwrap_or_else(|| AuthorizationToken::new_resource(String::new()));
 
     Ok(CosmosClient::new_with_transaction(
         account_name,
