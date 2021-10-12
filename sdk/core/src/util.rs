@@ -95,7 +95,7 @@ const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
 /// Returns Bytes without the UTF-8 BOM.
 pub fn slice_bom(bytes: &Bytes) -> Bytes {
-    if bytes.len() > 3 && bytes.slice(0..3).as_ref() == &UTF8_BOM {
+    if bytes.len() > 3 && bytes.slice(0..3).as_ref() == UTF8_BOM {
         bytes.slice(3..)
     } else {
         bytes.clone()

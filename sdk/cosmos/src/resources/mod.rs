@@ -7,10 +7,10 @@ pub mod document;
 pub mod permission;
 pub mod stored_procedure;
 pub mod trigger;
+pub mod user;
 
 mod attachment;
 mod database;
-mod user;
 mod user_defined_function;
 
 #[doc(inline)]

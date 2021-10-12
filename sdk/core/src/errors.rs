@@ -55,7 +55,7 @@ pub enum Error {
 
 #[cfg(feature = "enable_hyper")]
 type HttpClientError = hyper::Error;
-#[cfg(feature = "enable_reqwest")]
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 type HttpClientError = reqwest::Error;
 
 #[non_exhaustive]
@@ -234,6 +234,31 @@ pub enum TraversingError {
     GenericParseError(String),
     #[error("parsing error: {0:?}")]
     ParsingError(#[from] ParsingError),
+}
+
+#[cfg(feature = "mock_transport_framework")]
+#[derive(Debug, thiserror::Error)]
+pub enum MockFrameworkError {
+    #[error("the mock testing framework has not been initialized")]
+    UninitializedTransaction,
+    #[error("{0}: {1}")]
+    IOError(String, std::io::Error),
+    #[error("{0}")]
+    TransactionStorageError(String),
+    #[error("{0}")]
+    MissingTransaction(String),
+    #[error("mismatched request uri. Actual '{0}', Expected: '{1}'")]
+    MismatchedRequestUri(String, String),
+    #[error("received request have header {0} but it was not present in the read request")]
+    MissingRequestHeader(String),
+    #[error("different number of headers in request. Actual: {0}, Expected: {1}")]
+    MismatchedRequestHeadersCount(usize, usize),
+    #[error("request header {0} value is different. Actual: {1}, Expected: {2}")]
+    MismatchedRequestHeader(String, String, String),
+    #[error("mismatched HTTP request method. Actual: {0}, Expected: {1}")]
+    MismatchedRequestHTTPMethod(http::Method, http::Method),
+    #[error("mismatched request body. Actual: {0:?}, Expected: {1:?}")]
+    MismatchedRequestBody(Vec<u8>, Vec<u8>),
 }
 
 #[cfg(feature = "enable_hyper")]

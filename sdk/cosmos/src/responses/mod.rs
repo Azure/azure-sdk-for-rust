@@ -14,7 +14,6 @@ mod delete_document_response;
 mod delete_stored_procedure_response;
 mod delete_trigger_response;
 mod delete_user_defined_function_response;
-mod delete_user_response;
 mod execute_stored_procedure_response;
 mod get_attachment_response;
 mod get_partition_key_ranges_response;
@@ -25,7 +24,6 @@ mod list_permissions_response;
 mod list_stored_procedures_response;
 mod list_triggers_response;
 mod list_user_defined_functions_response;
-mod list_users_response;
 mod query_documents_response;
 mod replace_document_response;
 mod replace_reference_attachment_response;
@@ -43,7 +41,6 @@ pub use delete_document_response::DeleteDocumentResponse;
 pub use delete_stored_procedure_response::DeleteStoredProcedureResponse;
 pub use delete_trigger_response::DeleteTriggerResponse;
 pub use delete_user_defined_function_response::DeleteUserDefinedFunctionResponse;
-pub use delete_user_response::DeleteUserResponse;
 pub use execute_stored_procedure_response::ExecuteStoredProcedureResponse;
 pub use get_attachment_response::GetAttachmentResponse;
 pub use get_partition_key_ranges_response::GetPartitionKeyRangesResponse;
@@ -56,7 +53,6 @@ pub use list_permissions_response::ListPermissionsResponse;
 pub use list_stored_procedures_response::ListStoredProceduresResponse;
 pub use list_triggers_response::ListTriggersResponse;
 pub use list_user_defined_functions_response::ListUserDefinedFunctionsResponse;
-pub use list_users_response::ListUsersResponse;
 pub use query_documents_response::{
     QueryDocumentsResponse, QueryDocumentsResponseDocuments, QueryDocumentsResponseRaw,
     QueryResponseMeta, QueryResult,

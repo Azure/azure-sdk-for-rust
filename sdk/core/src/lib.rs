@@ -7,6 +7,7 @@ extern crate serde_derive;
 #[macro_use]
 mod macros;
 
+mod bytes_response;
 mod bytes_stream;
 mod constants;
 mod context;
@@ -14,6 +15,8 @@ mod errors;
 pub mod headers;
 mod http_client;
 pub mod incompletevector;
+#[cfg(feature = "mock_transport_framework")]
+mod mock_transaction;
 mod models;
 mod options;
 pub mod parsing;
@@ -40,6 +43,8 @@ pub use context::Context;
 pub use errors::*;
 pub use headers::AddAsHeader;
 pub use http_client::{new_http_client, to_json, HttpClient};
+#[cfg(feature = "mock_transport_framework")]
+pub use mock_transaction::constants::*;
 pub use models::*;
 pub use options::*;
 pub use pipeline_context::PipelineContext;

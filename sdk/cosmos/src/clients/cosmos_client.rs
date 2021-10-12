@@ -35,18 +35,30 @@ pub struct CosmosClient {
 }
 
 /// Options for specifying how a Cosmos client will behave
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct CosmosOptions {
     options: ClientOptions<CosmosContext>,
 }
 
 impl CosmosOptions {
-    /// Create options based on the provided http client
-    pub fn with_client(client: Arc<dyn HttpClient>) -> Self {
+    /// Create new options
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    #[cfg(feature = "mock_transport_framework")]
+    /// Create new options with a given transaction name
+    pub fn new_with_transaction_name(name: String) -> Self {
         Self {
-            options: ClientOptions::default()
-                .retry(RetryOptions::default().mode(RetryMode::Fixed))
-                .transport(TransportOptions::new(client)),
+            options: ClientOptions::new_with_transaction_name(name.into()),
+        }
+    }
+}
+
+impl Default for CosmosOptions {
+    fn default() -> Self {
+        Self {
+            options: Default::default(),
         }
     }
 }
@@ -68,7 +80,7 @@ fn new_pipeline_from_options(
     Pipeline::new(
         option_env!("CARGO_PKG_NAME"),
         option_env!("CARGO_PKG_VERSION"),
-        &options.options,
+        options.options,
         Vec::new(),
         per_retry_policies,
     )
@@ -88,6 +100,20 @@ impl CosmosClient {
             auth_token,
             cloud_location,
         }
+    }
+
+    #[cfg(feature = "mock_transport_framework")]
+    /// Create new options with a given transaction name
+    pub fn new_with_transaction(
+        account: impl Into<String>,
+        auth_token: AuthorizationToken,
+        transaction_name: impl Into<String>,
+    ) -> Self {
+        Self::new(
+            account.into(),
+            auth_token,
+            CosmosOptions::new_with_transaction_name(transaction_name.into()),
+        )
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in the Chinese Azure cloud.
@@ -159,6 +185,7 @@ impl CosmosClient {
         options: CreateDatabaseOptions,
     ) -> Result<CreateDatabaseResponse, crate::Error> {
         let mut request = self.prepare_request_pipeline("dbs", http::Method::POST);
+
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
         options.decorate_request(&mut request, database_name.as_ref())?;

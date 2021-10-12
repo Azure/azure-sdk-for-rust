@@ -40,10 +40,6 @@ where
         &mut self.contents
     }
 
-    pub fn set_inner_context(&mut self, inner_context: Context) {
-        self.inner_context = inner_context;
-    }
-
     pub fn get_inner_context(&self) -> &Context {
         &self.inner_context
     }
