@@ -156,11 +156,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let delete_user_response = user_client
-        .delete_user()
-        .consistency_level(ConsistencyLevel::Session(
-            delete_permission_response.session_token,
-        ))
-        .execute()
+        .delete_user(
+            Context::new(),
+            DeleteUserOptions::new().consistency_level(ConsistencyLevel::Session(
+                delete_permission_response.session_token,
+            )),
+        )
         .await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 
