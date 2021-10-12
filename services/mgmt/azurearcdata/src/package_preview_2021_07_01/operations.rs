@@ -460,6 +460,7 @@ pub mod sql_managed_instances {
         let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -477,6 +478,7 @@ pub mod sql_managed_instances {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -896,6 +898,7 @@ pub mod sql_server_instances {
         let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -913,6 +916,7 @@ pub mod sql_server_instances {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1332,6 +1336,7 @@ pub mod postgres_instances {
         let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -1349,6 +1354,7 @@ pub mod postgres_instances {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1785,6 +1791,7 @@ pub mod data_controllers {
             .map_err(delete_data_controller::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete_data_controller::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete_data_controller::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete_data_controller::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -1802,6 +1809,7 @@ pub mod data_controllers {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]

@@ -1313,8 +1313,8 @@ pub struct RepoList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Repo {
-    #[serde(rename = "repoUrl", default, skip_serializing_if = "Option::is_none")]
-    pub repo_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
     #[serde(rename = "fullName", default, skip_serializing_if = "Option::is_none")]
     pub full_name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -2526,6 +2526,63 @@ pub mod activity_entity_queries_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EntityQueryTemplateKind {
+    Activity,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQueryTemplateList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<EntityQueryTemplate>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQueryTemplate {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub kind: EntityQueryTemplateKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActivityEntityQueryTemplate {
+    #[serde(flatten)]
+    pub entity_query_template: EntityQueryTemplate,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ActivityEntityQueryTemplateProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActivityEntityQueryTemplateProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "queryDefinitions", default, skip_serializing_if = "Option::is_none")]
+    pub query_definitions: Option<activity_entity_query_template_properties::QueryDefinitions>,
+    #[serde(rename = "dataTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_types: Vec<DataTypeDefinitions>,
+    #[serde(rename = "inputEntityType", default, skip_serializing_if = "Option::is_none")]
+    pub input_entity_type: Option<EntityInnerType>,
+    #[serde(rename = "requiredInputFieldsSets", default, skip_serializing_if = "Vec::is_empty")]
+    pub required_input_fields_sets: Vec<Vec<String>>,
+    #[serde(rename = "entitiesFilter", default, skip_serializing_if = "Option::is_none")]
+    pub entities_filter: Option<serde_json::Value>,
+}
+pub mod activity_entity_query_template_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct QueryDefinitions {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub query: Option<String>,
+        #[serde(rename = "summarizeBy", default, skip_serializing_if = "Option::is_none")]
+        pub summarize_by: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataTypeDefinitions {
+    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
+    pub data_type: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataList {
     pub value: Vec<MetadataModel>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2640,6 +2697,18 @@ pub mod metadata_dependencies {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataCategories {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub domains: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub verticals: Vec<String>,
+}
+pub type MetadataProviders = Vec<String>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FirstPublishDate {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LastPublishDate {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataProperties {
     #[serde(rename = "contentId", default, skip_serializing_if = "Option::is_none")]
     pub content_id: Option<MetadataContentId>,
@@ -2656,6 +2725,14 @@ pub struct MetadataProperties {
     pub support: Option<MetadataSupport>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dependencies: Option<MetadataDependencies>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub categories: Option<MetadataCategories>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub providers: Option<MetadataProviders>,
+    #[serde(rename = "firstPublishDate", default, skip_serializing_if = "Option::is_none")]
+    pub first_publish_date: Option<FirstPublishDate>,
+    #[serde(rename = "lastPublishDate", default, skip_serializing_if = "Option::is_none")]
+    pub last_publish_date: Option<LastPublishDate>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataPropertiesPatch {
@@ -2675,6 +2752,14 @@ pub struct MetadataPropertiesPatch {
     pub support: Option<MetadataSupport>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dependencies: Option<MetadataDependencies>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub categories: Option<MetadataCategories>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub providers: Option<MetadataProviders>,
+    #[serde(rename = "firstPublishDate", default, skip_serializing_if = "Option::is_none")]
+    pub first_publish_date: Option<FirstPublishDate>,
+    #[serde(rename = "lastPublishDate", default, skip_serializing_if = "Option::is_none")]
+    pub last_publish_date: Option<LastPublishDate>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {

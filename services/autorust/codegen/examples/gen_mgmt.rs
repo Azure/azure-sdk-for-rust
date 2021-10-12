@@ -41,10 +41,12 @@ const SKIP_SERVICES: &[&str] = &[
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("analysisservices", "package-2017-08"),
+    ("authorization", "package-2020-10-01-preview"),
     ("authorization", "package-2018-05-01-preview"),
     ("authorization", "package-2021-03-01-preview-only"),
     ("authorization", "package-2021-07-01-preview-only"),
     ("azureactivedirectory", "package-preview-2020-07"),
+    ("compute", "package-2021-06-01-preview"),      // TODO #81 DataType::File
     ("compute", "package-2020-10-01-preview"),      // TODO #81 DataType::File
     ("compute", "package-2020-10-01-preview-only"), // TODO #81 DataType::File
     ("compute", "package-2021-03-01"),              // TODO #81 DataType::File
@@ -83,6 +85,8 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
 // https://github.com/ctaggart/autorust/issues/73
 const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     // cost-management
+    ("../../../azure-rest-api-specs/specification/cost-management/resource-manager/Microsoft.CostManagement/stable/2021-10-01/costmanagement.json", "ReportConfigFilter", "not"),
+    ("../../../azure-rest-api-specs/specification/cost-management/resource-manager/Microsoft.CostManagement/stable/2021-10-01/costmanagement.json", "QueryFilter", "not"),
     ("../../../azure-rest-api-specs/specification/cost-management/resource-manager/Microsoft.CostManagement/stable/2020-06-01/costmanagement.json", "ReportConfigFilter", "not"),
     ("../../../azure-rest-api-specs/specification/cost-management/resource-manager/Microsoft.CostManagement/stable/2020-06-01/costmanagement.json", "QueryFilter", "not"),
     // databox

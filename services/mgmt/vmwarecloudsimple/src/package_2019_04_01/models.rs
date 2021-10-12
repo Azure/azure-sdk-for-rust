@@ -262,7 +262,7 @@ pub struct DedicatedCloudNodeProperties {
     #[serde(rename = "cloudRackName", default, skip_serializing_if = "Option::is_none")]
     pub cloud_rack_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created: Option<serde_json::Value>,
+    pub created: Option<String>,
     #[serde(rename = "nodesCount")]
     pub nodes_count: i64,
     #[serde(rename = "placementGroupId")]

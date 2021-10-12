@@ -436,7 +436,7 @@ pub struct IncidentProperties {
     pub owner: Option<IncidentOwnerInfo>,
     #[serde(rename = "relatedAnalyticRuleIds", default, skip_serializing_if = "Vec::is_empty")]
     pub related_analytic_rule_ids: Vec<String>,
-    pub severity: incident_properties::Severity,
+    pub severity: IncidentSeverityEnum,
     pub status: incident_properties::Status,
     pub title: String,
 }
@@ -457,18 +457,18 @@ pub mod incident_properties {
         InaccurateData,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Severity {
-        High,
-        Medium,
-        Low,
-        Informational,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         New,
         Active,
         Closed,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum IncidentSeverityEnum {
+    High,
+    Medium,
+    Low,
+    Informational,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeConsent {
@@ -540,17 +540,6 @@ pub struct ResourceWithEtag {
     pub etag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Settings {
-    #[serde(flatten)]
-    pub resource_with_etag: ResourceWithEtag,
-    pub kind: SettingsKind,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SettingsKind {
-    UebaSettings,
-    ToggleSettings,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub confidence: Option<f64>,
@@ -566,47 +555,6 @@ pub struct ThreatIntelligence {
     pub threat_type: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ToggleSettings {
-    #[serde(flatten)]
-    pub settings: Settings,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ToggleSettingsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ToggleSettingsProperties {
-    #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub is_enabled: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UebaSettings {
-    #[serde(flatten)]
-    pub settings: Settings,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<UebaSettingsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UebaSettingsProperties {
-    #[serde(rename = "atpLicenseStatus", default, skip_serializing_if = "Option::is_none")]
-    pub atp_license_status: Option<ueba_settings_properties::AtpLicenseStatus>,
-    #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub is_enabled: Option<bool>,
-    #[serde(rename = "statusInMcas", default, skip_serializing_if = "Option::is_none")]
-    pub status_in_mcas: Option<ueba_settings_properties::StatusInMcas>,
-}
-pub mod ueba_settings_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AtpLicenseStatus {
-        Enabled,
-        Disabled,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StatusInMcas {
-        Enabled,
-        Disabled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
@@ -614,28 +562,6 @@ pub struct UserInfo {
     pub name: Option<String>,
     #[serde(rename = "objectId")]
     pub object_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncidentInfo {
-    #[serde(rename = "incidentId", default, skip_serializing_if = "Option::is_none")]
-    pub incident_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<incident_info::Severity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub title: Option<String>,
-    #[serde(rename = "relationName", default, skip_serializing_if = "Option::is_none")]
-    pub relation_name: Option<String>,
-}
-pub mod incident_info {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Severity {
-        Critical,
-        High,
-        Medium,
-        Low,
-        Informational,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Bookmark {
@@ -677,6 +603,17 @@ pub struct BookmarkProperties {
     pub query_end_time: Option<String>,
     #[serde(rename = "incidentInfo", default, skip_serializing_if = "Option::is_none")]
     pub incident_info: Option<IncidentInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IncidentInfo {
+    #[serde(rename = "incidentId", default, skip_serializing_if = "Option::is_none")]
+    pub incident_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<IncidentSeverityEnum>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(rename = "relationName", default, skip_serializing_if = "Option::is_none")]
+    pub relation_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Label {}

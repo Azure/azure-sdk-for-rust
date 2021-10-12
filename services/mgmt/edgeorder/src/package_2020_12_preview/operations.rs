@@ -455,6 +455,7 @@ pub async fn list_order_items_at_subscription_level(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     filter: Option<&str>,
+    expand: Option<&str>,
     skip_token: Option<&str>,
 ) -> std::result::Result<OrderItemResourceList, list_order_items_at_subscription_level::Error> {
     let http_client = operation_config.http_client();
@@ -476,6 +477,9 @@ pub async fn list_order_items_at_subscription_level(
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     if let Some(filter) = filter {
         url.query_pairs_mut().append_pair("$filter", filter);
+    }
+    if let Some(expand) = expand {
+        url.query_pairs_mut().append_pair("$expand", expand);
     }
     if let Some(skip_token) = skip_token {
         url.query_pairs_mut().append_pair("$skipToken", skip_token);
