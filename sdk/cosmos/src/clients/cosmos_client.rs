@@ -106,11 +106,12 @@ impl CosmosClient {
     /// Create new options with a given transaction name
     pub fn new_with_transaction(
         account: impl Into<String>,
+        auth_token: AuthorizationToken,
         transaction_name: impl Into<String>,
     ) -> Self {
         Self::new(
             account.into(),
-            AuthorizationToken::Primary(Vec::new()),
+            auth_token,
             CosmosOptions::new_with_transaction_name(transaction_name.into()),
         )
     }
