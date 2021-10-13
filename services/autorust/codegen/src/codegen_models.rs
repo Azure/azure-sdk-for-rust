@@ -153,7 +153,15 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
     for (property_name, property) in &properties {
         let nm = ident(&property_name.to_snake_case()).map_err(Error::StructName)?;
         let (mut field_tp_name, field_tp) = create_struct_field_type(cg, doc_file, &ns, property_name, property)?;
-        let is_required = required.contains(property_name.as_str());
+
+        let prop_nm = &PropertyName {
+            file_path: PathBuf::from(doc_file),
+            schema_name: struct_name.to_owned(),
+            property_name: property_name.to_string(),
+        };
+
+        let is_required = required.contains(property_name.as_str()) && !cg.should_force_optional(prop_nm);
+
         let is_vec = is_vec(&field_tp_name);
         if !is_vec {
             field_tp_name = require(is_required, field_tp_name);
@@ -176,11 +184,6 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
             quote! {}
         };
         // see if a field shoud be wrapped in a Box
-        let prop_nm = &PropertyName {
-            file_path: PathBuf::from(doc_file),
-            schema_name: struct_name.to_owned(),
-            property_name: property_name.to_string(),
-        };
         // println!("property {:?}", prop_nm);
         if cg.should_box_property(prop_nm) {
             field_tp_name = quote! { Box<#field_tp_name> };
