@@ -67,8 +67,8 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("mediaservices", "package-2019-05-preview"), // invalid unicode character of a dash instead of a hyphen https://github.com/Azure/azure-rest-api-specs/pull/11576
     ("marketplace", "package-2020-01-01"),
     ("marketplace", "package-2020-12-01"),
-    ("marketplace", "package-composite-v1"), // mixing versions
-    ("marketplace", "package-composite-v2"), // mixing versions
+    ("marketplace", "package-composite-v1"),             // mixing versions
+    ("marketplace", "package-composite-v2"),             // mixing versions
     ("recoveryservicesbackup", "package-2020-07"),       // duplicate fn get_operation_status
     ("recoveryservicesbackup", "package-2020-10"),       // duplicate fn get_operation_status
     ("recoveryservicessiterecovery", "package-2016-08"), // duplicate package-2016-08 https://github.com/Azure/azure-rest-api-specs/pull/11287
