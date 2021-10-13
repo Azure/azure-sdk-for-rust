@@ -1,3 +1,7 @@
+/*
+Prints the name of pools using the data plane APIs
+*/
+
 use azure_identity::token_credentials::AzureCliCredential;
 use azure_svc_batch::operations::pool;
 
