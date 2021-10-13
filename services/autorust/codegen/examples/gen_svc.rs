@@ -10,14 +10,29 @@ use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../svc";
 
-const ONLY_SERVICES: &[&str] = &["batch"];
+const ONLY_SERVICES: &[&str] = &[];
 
-const SKIP_SERVICES: &[&str] = &[ ];
+const SKIP_SERVICES: &[&str] = &[
+    "deviceupdate",            // missing field `authorizationUrl`
+    "digitaltwins",            // missing field `scopes`
+    "machinelearningservices", // untagged enum
+    "servicefabric",           // currently generates `async` member names
+    "hdinsight",               // job_id appears multiple times?
+    "keyvault",                // `{field_name}` used in formatting url
+];
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
-    ("batch", "package-2018-03.6.1"), // TODO #81 DataType::File
-    ("batch", "package-2017-09.6.0"), // TODO #81 DataType::File
-    ("batch", "package-2017-06.5.1"), // TODO #81 DataType::File
+    ("agrifood", "package-2021-03-31-preview"),  // untagged enum?
+    ("attestation", "package-2018-09-01"),       // uses models::String?
+    ("containerregistry", "package-2019-08"),    // untagged enum
+    ("containerregistry", "package-2019-07"),    // untagged enum
+    ("purview", "package-2021-05-01-preview"),   // untagged enum
+    ("keyvault", "package-preview-7.3-preview"), // parse error
+    ("keyvault", "package-7.2"),                 // parse error
+    ("keyvault", "package-7.2-preview"),         // parse error
+    ("batch", "package-2018-03.6.1"),            // TODO #81 DataType::File
+    ("batch", "package-2017-09.6.0"),            // TODO #81 DataType::File
+    ("batch", "package-2017-06.5.1"),            // TODO #81 DataType::File
 ];
 
 const FIX_CASE_PROPERTIES: &[(&str, &str, &str)] = &[
@@ -36,6 +51,57 @@ const FIX_CASE_PROPERTIES: &[(&str, &str, &str)] = &[
         "PublicIPAddressConfiguration",
         "provision",
     ),
+];
+
+// because of recursive types, some properties have to be boxed
+// https://github.com/ctaggart/autorust/issues/73
+const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
+    // keyvault
+    (
+        "../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/7.1/common.json",
+        "Error",
+        "innererror",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/applicationinsights/data-plane/Microsoft.Insights/preview/v1/AppInsights.json",
+        "errorInfo",
+        "innererror",
+    ),
+    // webpubsub
+    (
+        "../../../azure-rest-api-specs/specification/webpubsub/data-plane/WebPubSub/stable/2021-10-01/webpubsub.json",
+        "InnerError",
+        "inner",
+    ),
+    // mixedreality
+    (
+        "../../../azure-rest-api-specs/specification/mixedreality/data-plane/Microsoft.MixedReality/stable/2021-01-01/mr-arr.json",
+        "error",
+        "innerError",
+    ),
+    (
+         "../../../azure-rest-api-specs/specification/mixedreality/data-plane/Microsoft.MixedReality/preview/2021-01-01-preview/mr-arr.json",
+        "error",
+        "innerError",
+    ),
+    // confidentialledger
+    (
+        "../../../azure-rest-api-specs/specification/confidentialledger/data-plane/Microsoft.ConfidentialLedger/preview/0.1-preview/common.json",
+        "ConfidentialLedgerErrorBody",
+        "innererror",
+    ),
+    // operationalinsights
+    (
+        "../../../azure-rest-api-specs/specification/operationalinsights/data-plane/Microsoft.OperationalInsights/stable/v1/OperationalInsights.json",
+        "errorInfo",
+        "innererror",
+    ),
+    // timeseriesinsights
+    (
+        "../../../azure-rest-api-specs/specification/timeseriesinsights/data-plane/Microsoft.TimeSeriesInsights/stable/2020-07-31/timeseriesinsights.json", 
+        "TsiErrorBody",
+        "innerError",
+    )
 ];
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -80,6 +146,16 @@ fn main() -> Result<()> {
 }
 
 fn gen_crate(spec: &SpecConfigs) -> Result<()> {
+    let skip_service_tags: HashSet<&(&str, &str)> = SKIP_SERVICE_TAGS.iter().collect();
+    let has_no_configs = spec
+        .configs()
+        .iter()
+        .all(|x| skip_service_tags.contains(&(spec.spec(), x.tag.as_str())));
+    if has_no_configs {
+        println!("not generating {}", spec.spec());
+        return Ok(());
+    }
+
     let service_name = &get_service_name(spec.spec());
     let crate_name = &format!("azure_svc_{}", service_name);
     let output_folder = &path::join(OUTPUT_FOLDER, service_name).map_err(|source| Error::PathError { source })?;
@@ -90,7 +166,6 @@ fn gen_crate(spec: &SpecConfigs) -> Result<()> {
     }
 
     let mut feature_mod_names = Vec::new();
-    let skip_service_tags: HashSet<&(&str, &str)> = SKIP_SERVICE_TAGS.iter().collect();
 
     let mut fix_case_properties = HashSet::new();
     for (file_path, schema_name, property_name) in FIX_CASE_PROPERTIES {
@@ -101,13 +176,22 @@ fn gen_crate(spec: &SpecConfigs) -> Result<()> {
         });
     }
 
+    let mut box_properties = HashSet::new();
+    for (file_path, schema_name, property_name) in BOX_PROPERTIES {
+        box_properties.insert(PropertyName {
+            file_path: PathBuf::from(file_path),
+            schema_name: schema_name.to_string(),
+            property_name: property_name.to_string(),
+        });
+    }
+
     for config in spec.configs() {
         let tag = config.tag.as_str();
+        if skip_service_tags.contains(&(spec.spec(), tag)) {
+            // println!("  skipping {}", tag);
+            continue;
+        }
         if let Some(api_version) = to_api_version(&config) {
-            if skip_service_tags.contains(&(spec.spec(), tag)) {
-                // println!("  skipping {}", tag);
-                continue;
-            }
             println!("  {}", tag);
             // println!("  {}", api_version);
             let mod_name = &to_mod_name(tag);
@@ -131,6 +215,7 @@ fn gen_crate(spec: &SpecConfigs) -> Result<()> {
                 api_version: Some(api_version),
                 output_folder: mod_output_folder.into(),
                 input_files,
+                box_properties: box_properties.clone(),
                 fix_case_properties: fix_case_properties.clone(),
                 print_writing_file: false,
                 ..Config::default()
