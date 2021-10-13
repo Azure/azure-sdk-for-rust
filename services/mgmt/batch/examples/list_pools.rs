@@ -1,3 +1,13 @@
+/*
+prints information about available pools.
+
+$ cargo run --example list_pools --release -- myresourcegroup mybatchaccountname 2>/dev/null
+name: "mypoolname"
+provisioning state: Succeeded
+vm_size: STANDARD_D2_V2
+image reference: ImageReference { publisher: Some("canonical"), offer: Some("ubuntuserver"), sku: Some("18.04-lts"), version: Some("latest"), id: None }
+*/
+
 use azure_identity::token_credentials::AzureCliCredential;
 use azure_mgmt_batch::operations::pool;
 

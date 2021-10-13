@@ -1,9 +1,9 @@
 /*
- * Lists Batch Accounts, similar to:
- * az batch account list --queyr [].id
- *
- * cargo run --example list_accounts
- */
+Lists Batch Accounts, similar to:
+az batch account list --queyr [].id
+
+cargo run --example list_accounts
+*/
 
 use azure_identity::token_credentials::AzureCliCredential;
 use azure_mgmt_batch::operations::batch_account;
