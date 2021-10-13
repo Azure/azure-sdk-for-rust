@@ -193,6 +193,9 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
         let lowercase_workaround = cg.should_workaround_case(prop_nm);
 
         let (mut field_tp_name, field_tp) = create_struct_field_type(cg, doc_file, &ns, property_name, property, lowercase_workaround)?;
+        // uncomment the next two lines to help identify entries that need boxed
+        // let prop_nm_str = format!("{:?}", prop_nm);
+        // props.extend(quote! { #[doc = #prop_nm_str ]});
 
         let is_required = required.contains(property_name.as_str()) && !cg.should_force_optional(prop_nm);
 
