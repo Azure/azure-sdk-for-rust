@@ -67,6 +67,7 @@ pub struct Config {
     pub api_version: Option<String>,
     pub box_properties: HashSet<PropertyName>,
     pub optional_properties: HashSet<PropertyName>,
+    pub fix_case_properties: HashSet<PropertyName>,
     pub runs: Vec<Runs>,
     pub print_writing_file: bool,
 }
@@ -85,6 +86,7 @@ impl Default for Config {
             api_version: None,
             box_properties: HashSet::new(),
             optional_properties: HashSet::new(),
+            fix_case_properties: HashSet::new(),
             runs: vec![Runs::Models, Runs::Operations],
             print_writing_file: true,
         }
