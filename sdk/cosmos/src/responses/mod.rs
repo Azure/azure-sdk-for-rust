@@ -28,7 +28,6 @@ mod list_user_defined_functions_response;
 mod list_users_response;
 mod query_documents_response;
 mod replace_document_response;
-mod replace_reference_attachment_response;
 mod replace_stored_procedure_response;
 
 pub use create_collection_response::CreateCollectionResponse;
@@ -62,5 +61,4 @@ pub use query_documents_response::{
     QueryResponseMeta, QueryResult,
 };
 pub use replace_document_response::ReplaceDocumentResponse;
-pub use replace_reference_attachment_response::ReplaceReferenceAttachmentResponse;
 pub use replace_stored_procedure_response::ReplaceStoredProcedureResponse;

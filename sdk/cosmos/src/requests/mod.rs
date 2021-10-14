@@ -32,7 +32,6 @@ mod list_users_builder;
 mod query_documents_builder;
 mod replace_collection_builder;
 mod replace_document_builder;
-mod replace_reference_attachment_builder;
 mod replace_slug_attachment_builder;
 mod replace_stored_procedure_builder;
 
@@ -62,6 +61,5 @@ pub use list_users_builder::ListUsersBuilder;
 pub use query_documents_builder::QueryDocumentsBuilder;
 pub use replace_collection_builder::ReplaceCollectionBuilder;
 pub use replace_document_builder::ReplaceDocumentBuilder;
-pub use replace_reference_attachment_builder::ReplaceReferenceAttachmentBuilder;
 pub use replace_slug_attachment_builder::ReplaceSlugAttachmentBuilder;
 pub use replace_stored_procedure_builder::ReplaceStoredProcedureBuilder;

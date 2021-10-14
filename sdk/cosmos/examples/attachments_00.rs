@@ -105,12 +105,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("replacing");
     let attachment_client = document_client.clone().into_attachment_client("myref06");
+    let options =
+        ReplaceReferenceAttachmentOptions::new(&attachment_client).consistency_level(session_token);
     let resp = attachment_client
-        .replace_reference()
-        .consistency_level(session_token)
-        .execute(
+        .replace_reference(
+            Context::new(),
             "https://Adn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
             "image/jpeg",
+            options,
         )
         .await?;
     println!("replace reference == {:#?}", resp);

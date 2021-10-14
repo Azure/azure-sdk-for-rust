@@ -134,8 +134,39 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to replace an attachment.
-    pub fn replace_reference(&self) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_> {
-        requests::ReplaceReferenceAttachmentBuilder::new(self)
+    pub async fn replace_reference<'c, M, C>(
+        &self,
+        ctx: Context,
+        media: M,
+        content_type: C,
+        options: ReplaceReferenceAttachmentOptions<'_, '_>,
+    ) -> Result<ReplaceReferenceAttachmentResponse, crate::Error>
+    where
+        M: AsRef<str>,
+        C: Into<ContentType<'c>>,
+    {
+        let mut request = self.cosmos_client().prepare_request_pipeline(
+            &format!(
+                "dbs/{}/colls/{}/docs/{}/attachments/{}",
+                self.database_client().database_name(),
+                self.collection_client().collection_name(),
+                self.document_client().document_name(),
+                self.attachment_name()
+            ),
+            http::Method::PUT,
+        );
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+
+        options.decorate_request(&mut request, media, content_type)?;
+        let response = self
+            .cosmos_client()
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
+            .await?;
+
+        ReplaceReferenceAttachmentResponse::try_from(response).await
     }
 
     /// Get a raw [`HttpClient`].
