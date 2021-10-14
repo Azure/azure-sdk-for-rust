@@ -3,7 +3,6 @@
 #![allow(missing_docs)]
 
 mod create_collection_response;
-mod create_reference_attachment_response;
 mod create_slug_attachment_response;
 mod create_stored_procedure_response;
 mod create_trigger_response;
@@ -33,7 +32,6 @@ mod replace_reference_attachment_response;
 mod replace_stored_procedure_response;
 
 pub use create_collection_response::CreateCollectionResponse;
-pub use create_reference_attachment_response::CreateReferenceAttachmentResponse;
 pub use create_slug_attachment_response::CreateSlugAttachmentResponse;
 pub use create_stored_procedure_response::CreateStoredProcedureResponse;
 pub use create_trigger_response::CreateTriggerResponse;

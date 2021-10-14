@@ -8,7 +8,6 @@
 
 mod create_or_replace_trigger_builder;
 mod create_or_replace_user_defined_function_builder;
-mod create_reference_attachment_builder;
 mod create_slug_attachment_builder;
 mod create_stored_procedure_builder;
 mod delete_attachment_builder;
@@ -39,7 +38,6 @@ mod replace_stored_procedure_builder;
 
 pub use create_or_replace_trigger_builder::CreateOrReplaceTriggerBuilder;
 pub use create_or_replace_user_defined_function_builder::CreateOrReplaceUserDefinedFunctionBuilder;
-pub use create_reference_attachment_builder::CreateReferenceAttachmentBuilder;
 pub use create_slug_attachment_builder::CreateSlugAttachmentBuilder;
 pub use create_stored_procedure_builder::CreateStoredProcedureBuilder;
 pub use delete_attachment_builder::DeleteAttachmentBuilder;

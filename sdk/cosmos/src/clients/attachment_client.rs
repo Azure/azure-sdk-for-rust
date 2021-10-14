@@ -1,7 +1,8 @@
-use crate::prelude::{GetAttachmentOptions, GetAttachmentResponse};
+use crate::prelude::*;
 use crate::requests;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
+use azure_core::prelude::ContentType;
 use azure_core::{Context, HttpClient, PipelineContext};
 
 use super::*;
@@ -98,8 +99,38 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to create an attachment.
-    pub fn create_reference(&self) -> requests::CreateReferenceAttachmentBuilder<'_, '_> {
-        requests::CreateReferenceAttachmentBuilder::new(self)
+    pub async fn create_reference<'c, M, C>(
+        &self,
+        ctx: Context,
+        media: M,
+        content_type: C,
+        options: CreateReferenceAttachmentOptions<'_, '_>,
+    ) -> Result<CreateReferenceAttachmentResponse, crate::Error>
+    where
+        M: AsRef<str>,
+        C: Into<ContentType<'c>>,
+    {
+        let mut request = self.cosmos_client().prepare_request_pipeline(
+            &format!(
+                "dbs/{}/colls/{}/docs/{}/attachments",
+                self.database_client().database_name(),
+                self.collection_client().collection_name(),
+                self.document_client().document_name()
+            ),
+            http::Method::POST,
+        );
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+
+        options.decorate_request(&mut request, media, content_type)?;
+        let response = self
+            .cosmos_client()
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::CREATED)
+            .await?;
+
+        CreateReferenceAttachmentResponse::try_from(response).await
     }
 
     /// Initiate a request to replace an attachment.
