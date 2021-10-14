@@ -125,14 +125,23 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // slug attachment
     println!("creating slug attachment");
     let attachment_client = document_client.into_attachment_client("slug00".to_owned());
-    let resp = attachment_client
-        .create_slug()
+    let options = CreateSlugAttachmentOptions::new(&attachment_client)
         .consistency_level(&resp_delete)
-        .content_type("text/plain")
-        .execute("FFFFF")
+        .content_type("text/plain");
+    let resp = attachment_client
+        .create_slug(Context::new(), "FFFFF", options)
         .await?;
 
     println!("create slug == {:#?}", resp);
+
+    // slug replacement
+    println!("replacing slug attachment");
+    let options = ReplaceSlugAttachmentOptions::new(&attachment_client)
+        .consistency_level(&resp_delete)
+        .content_type("text/plain");
+    let resp = attachment_client
+        .replace_slug(Context::new(), "12345", options)
+        .await?;
 
     println!("deleting");
     let options = DeleteAttachmentOptions::new(&attachment_client).consistency_level(&resp);

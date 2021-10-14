@@ -1,9 +1,9 @@
 use crate::prelude::*;
-use crate::requests;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
 use azure_core::prelude::ContentType;
-use azure_core::{Context, HttpClient, PipelineContext, Request as HttpRequest};
+use azure_core::{Context, PipelineContext, Request as HttpRequest};
+use bytes::Bytes;
 
 use super::*;
 
@@ -57,16 +57,7 @@ impl AttachmentClient {
         ctx: Context,
         options: GetAttachmentOptions<'_>,
     ) -> Result<GetAttachmentResponse, crate::Error> {
-        let mut request = self.cosmos_client().prepare_request_pipeline(
-            &format!(
-                "dbs/{}/colls/{}/docs/{}/attachments/{}",
-                self.database_client().database_name(),
-                self.collection_client().collection_name(),
-                self.document_client().document_name(),
-                self.attachment_name()
-            ),
-            http::Method::POST,
-        );
+        let mut request = self.prepare_request_with_attachment_name(http::Method::GET);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
         options.decorate_request(
             &mut request,
@@ -105,13 +96,47 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to create an attachment with a slug.
-    pub fn create_slug(&self) -> requests::CreateSlugAttachmentBuilder<'_, '_> {
-        requests::CreateSlugAttachmentBuilder::new(self)
+    pub async fn create_slug<B: Into<Bytes>>(
+        &self,
+        ctx: Context,
+        body: B,
+        options: CreateSlugAttachmentOptions<'_, '_>,
+    ) -> Result<CreateSlugAttachmentResponse, crate::Error> {
+        let mut request = self.prepare_request(http::Method::POST);
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+
+        options.decorate_request(&mut request, body)?;
+        let response = self
+            .cosmos_client()
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::CREATED)
+            .await?;
+
+        CreateSlugAttachmentResponse::try_from(response).await
     }
 
     /// Initiate a request to replace an attachment.
-    pub fn replace_slug(&self) -> requests::ReplaceSlugAttachmentBuilder<'_, '_> {
-        requests::ReplaceSlugAttachmentBuilder::new(self)
+    pub async fn replace_slug<B: Into<Bytes>>(
+        &self,
+        ctx: Context,
+        body: B,
+        options: ReplaceSlugAttachmentOptions<'_, '_>,
+    ) -> Result<ReplaceSlugAttachmentResponse, crate::Error> {
+        let mut request = self.prepare_request_with_attachment_name(http::Method::PUT);
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+
+        options.decorate_request(&mut request, body)?;
+        let response = self
+            .cosmos_client()
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
+            .await?;
+
+        ReplaceSlugAttachmentResponse::try_from(response).await
     }
 
     /// Initiate a request to create an attachment.
@@ -126,15 +151,7 @@ impl AttachmentClient {
         M: AsRef<str>,
         C: Into<ContentType<'c>>,
     {
-        let mut request = self.cosmos_client().prepare_request_pipeline(
-            &format!(
-                "dbs/{}/colls/{}/docs/{}/attachments",
-                self.database_client().database_name(),
-                self.collection_client().collection_name(),
-                self.document_client().document_name()
-            ),
-            http::Method::POST,
-        );
+        let mut request = self.prepare_request(http::Method::POST);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
         options.decorate_request(&mut request, media, content_type)?;
@@ -176,13 +193,8 @@ impl AttachmentClient {
         ReplaceReferenceAttachmentResponse::try_from(response).await
     }
 
-    /// Get a raw [`HttpClient`].
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
-    }
-
-    pub(crate) fn prepare_request(&self, method: http::Method) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
+    pub(crate) fn prepare_request(&self, method: http::Method) -> HttpRequest {
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments",
                 self.database_client().database_name(),
@@ -190,7 +202,6 @@ impl AttachmentClient {
                 self.document_client().document_name(),
             ),
             method,
-            ResourceType::Attachments,
         )
     }
 

@@ -8,7 +8,6 @@
 
 mod create_or_replace_trigger_builder;
 mod create_or_replace_user_defined_function_builder;
-mod create_slug_attachment_builder;
 mod create_stored_procedure_builder;
 mod delete_collection_builder;
 mod delete_database_builder;
@@ -31,12 +30,10 @@ mod list_users_builder;
 mod query_documents_builder;
 mod replace_collection_builder;
 mod replace_document_builder;
-mod replace_slug_attachment_builder;
 mod replace_stored_procedure_builder;
 
 pub use create_or_replace_trigger_builder::CreateOrReplaceTriggerBuilder;
 pub use create_or_replace_user_defined_function_builder::CreateOrReplaceUserDefinedFunctionBuilder;
-pub use create_slug_attachment_builder::CreateSlugAttachmentBuilder;
 pub use create_stored_procedure_builder::CreateStoredProcedureBuilder;
 pub use delete_collection_builder::DeleteCollectionBuilder;
 pub use delete_database_builder::DeleteDatabaseBuilder;
@@ -59,5 +56,4 @@ pub use list_users_builder::ListUsersBuilder;
 pub use query_documents_builder::QueryDocumentsBuilder;
 pub use replace_collection_builder::ReplaceCollectionBuilder;
 pub use replace_document_builder::ReplaceDocumentBuilder;
-pub use replace_slug_attachment_builder::ReplaceSlugAttachmentBuilder;
 pub use replace_stored_procedure_builder::ReplaceStoredProcedureBuilder;
