@@ -2,12 +2,13 @@
 use crate::{Body, Context, HttpError};
 use async_trait::async_trait;
 use bytes::Bytes;
+#[cfg(not(target_arch = "wasm32"))]
 use futures::future::TryFutureExt;
-#[allow(unused_imports)]
+#[cfg(not(target_arch = "wasm32"))]
 use futures::TryStreamExt;
 use http::{Request, Response, StatusCode};
 #[cfg(feature = "enable_hyper")]
-#[allow(unused_imports)]
+#[cfg(not(target_arch = "wasm32"))]
 use hyper_rustls::HttpsConnector;
 use serde::Serialize;
 use std::sync::Arc;
@@ -244,8 +245,9 @@ impl HttpClient for reqwest::Client {
     /// supporting wasm.
     async fn execute_request2(
         &self,
+        _context: &Context,
         _request: &crate::Request,
-    ) -> Result<crate::Response, HttpError> {
+    ) -> Result<crate::Response, HttpExecutionError> {
         let response = crate::ResponseBuilder::new(http::StatusCode::OK);
 
         let response = response.with_pinned_stream(Box::pin(crate::BytesStream::new_empty()));

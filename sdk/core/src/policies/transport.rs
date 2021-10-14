@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct TransportPolicy {
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) transport_options: TransportOptions,
 }
 
