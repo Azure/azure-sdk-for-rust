@@ -118,11 +118,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("replace reference == {:#?}", resp);
 
     println!("deleting");
-    let resp_delete = attachment_client
-        .delete()
-        .consistency_level(&resp)
-        .execute()
-        .await?;
+    let options = DeleteAttachmentOptions::new(&attachment_client).consistency_level(&resp);
+    let resp_delete = attachment_client.delete(Context::new(), options).await?;
     println!("delete attachment == {:#?}", resp_delete);
 
     // slug attachment
@@ -138,11 +135,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create slug == {:#?}", resp);
 
     println!("deleting");
-    let resp_delete = attachment_client
-        .delete()
-        .consistency_level(&resp)
-        .execute()
-        .await?;
+    let options = DeleteAttachmentOptions::new(&attachment_client).consistency_level(&resp);
+    let resp_delete = attachment_client.delete(Context::new(), options).await?;
     println!("delete attachment == {:#?}", resp_delete);
 
     Ok(())
