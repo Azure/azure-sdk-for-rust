@@ -63,9 +63,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
                 println!("\nReplacing collection");
                 let replace_collection_response = collection_client
-                    .replace_collection()
-                    .indexing_policy(&indexing_policy_new)
-                    .execute("/age")
+                    .replace_collection(
+                        Context::new(),
+                        ReplaceCollectionOptions::new("/age").indexing_policy(indexing_policy_new),
+                    )
                     .await?;
                 println!(
                     "replace_collection_response == {:#?}",
