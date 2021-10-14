@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use http::StatusCode;
 #[cfg(feature = "enable_hyper")]
 use hyper::{self, body, Body};
@@ -7,6 +8,8 @@ use std::cmp::PartialEq;
 pub enum PipelineError {
     #[error("invalid pipeline: last policy is not a TransportPolicy: {0:?}")]
     InvalidTailPolicy(String),
+    #[error("pipeline timeout: {0:?}")]
+    Timeout(DateTime<Utc>),
 }
 
 #[derive(Debug, thiserror::Error)]

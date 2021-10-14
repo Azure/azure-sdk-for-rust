@@ -1,7 +1,7 @@
 use crate::policies::{Policy, PolicyResult, Request, Response};
 use crate::sleep::sleep;
-use crate::PipelineContext;
-use chrono::{DateTime, Local};
+use crate::{PipelineContext, PipelineError};
+use chrono::{DateTime, Local, Utc};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -70,6 +70,17 @@ where
                         current_retries += 1;
 
                         let sleep_ms = self.delay.as_millis() as u64 + rand::random::<u8>() as u64;
+
+                        // return timeout if the wait would cross the treshold
+                        if let Some(timeout) = ctx.get_inner_context().timeout() {
+                            if Utc::now() + chrono::Duration::milliseconds(sleep_ms as i64)
+                                > timeout
+                            {
+                                log::warn!("timeout reached {:?}", timeout);
+                                return Err(PipelineError::Timeout(timeout).into());
+                            }
+                        }
+
                         sleep(Duration::from_millis(sleep_ms)).await;
                     }
                 }

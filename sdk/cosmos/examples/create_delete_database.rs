@@ -5,6 +5,8 @@ use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    env_logger::init();
+
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
     let master_key =
@@ -34,10 +36,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
-    let databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
-        .next()
-        .await
-        .unwrap()?;
+    let databases = Box::pin(client.list_databases(
+        Context::with_timeout(chrono::Duration::milliseconds(135)), // this value will most likely cause a timeout (useful for testing only)
+        ListDatabasesOptions::new(),
+    ))
+    .next()
+    .await
+    .unwrap()?;
 
     println!(
         "Account {} has {} database(s)",

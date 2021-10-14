@@ -1,8 +1,8 @@
 #[allow(unused_imports)]
-use crate::Body;
-use crate::HttpError;
+use crate::{Body, Context, HttpError};
 use async_trait::async_trait;
 use bytes::Bytes;
+use futures::future::TryFutureExt;
 #[allow(unused_imports)]
 use futures::TryStreamExt;
 use http::{Request, Response, StatusCode};
@@ -11,6 +11,16 @@ use http::{Request, Response, StatusCode};
 use hyper_rustls::HttpsConnector;
 use serde::Serialize;
 use std::sync::Arc;
+
+#[derive(Debug, thiserror::Error)]
+pub enum HttpExecutionError {
+    #[error("HTTP error: {0}")]
+    HttpError(#[from] HttpError),
+    #[error("time out of range: {0}")]
+    OutOfRangeError(String),
+    #[error("timeout expired")]
+    TimeoutExpired(async_std::future::TimeoutError),
+}
 
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 pub fn new_http_client() -> Arc<dyn HttpClient> {
@@ -35,8 +45,9 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// underlying transport.
     async fn execute_request2(
         &self,
+        context: &Context,
         request: &crate::Request,
-    ) -> Result<crate::Response, HttpError>;
+    ) -> Result<crate::Response, HttpExecutionError>;
 
     async fn execute_request_check_status(
         &self,
@@ -163,10 +174,11 @@ impl HttpClient for reqwest::Client {
     #[cfg(not(target_arch = "wasm32"))]
     async fn execute_request2(
         &self,
+        context: &Context,
         request: &crate::Request,
-    ) -> Result<crate::Response, HttpError> {
+    ) -> Result<crate::Response, HttpExecutionError> {
         let mut reqwest_request = self.request(
-            request.method().clone(),
+            request.method(),
             url::Url::parse(&request.uri().to_string()).unwrap(),
         );
         for header in request.headers() {
@@ -195,10 +207,23 @@ impl HttpClient for reqwest::Client {
             }
         };
 
-        let reqwest_response = self
-            .execute(reqwest_request)
-            .await
-            .map_err(HttpError::ExecuteRequestError)?;
+        let reqwest_response = if let Some(timeout) = context.timeout() {
+            let max_time = (timeout - chrono::Utc::now())
+                .to_std()
+                .map_err(|e| HttpExecutionError::OutOfRangeError(e.to_string()))?; // this is to avoid importing the outdated version of the time crate referenced by chrono
+            async_std::future::timeout(
+                max_time,
+                self.execute(reqwest_request)
+                    .map_err(HttpError::ExecuteRequestError),
+            )
+            .map_err(HttpExecutionError::TimeoutExpired)
+            .await??
+        } else {
+            self.execute(reqwest_request)
+                .await
+                .map_err(HttpError::ExecuteRequestError)?
+        };
+
         let mut response = crate::ResponseBuilder::new(reqwest_response.status());
 
         for (key, value) in reqwest_response.headers() {
