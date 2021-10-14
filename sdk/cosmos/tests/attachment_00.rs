@@ -107,26 +107,35 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
 
     // create reference attachment
     let attachment_client = document_client.clone().into_attachment_client("reference");
+    let options = CreateReferenceAttachmentOptions::new(&attachment_client).consistency_level(&ret);
     let resp = attachment_client
-        .create_reference()
-        .consistency_level(&ret)
-        .execute("https://www.bing.com", "image/jpeg")
+        .create_reference(
+            Context::new(),
+            "https://www.bing.com",
+            "image/jpeg",
+            options,
+        )
         .await?;
 
     // replace reference attachment
+    let options =
+        ReplaceReferenceAttachmentOptions::new(&attachment_client).consistency_level(&resp);
     let resp = attachment_client
-        .replace_reference()
-        .consistency_level(&resp)
-        .execute("https://www.microsoft.com", "image/jpeg")
+        .replace_reference(
+            Context::new(),
+            "https://www.microsoft.com",
+            "image/jpeg",
+            options,
+        )
         .await?;
 
     // create slug attachment
     let attachment_client = document_client.clone().into_attachment_client("slug");
-    let resp = attachment_client
-        .create_slug()
+    let options = CreateSlugAttachmentOptions::new(&attachment_client)
         .consistency_level(&resp)
-        .content_type("text/plain")
-        .execute("something cool here")
+        .content_type("text/plain");
+    let resp = attachment_client
+        .create_slug(Context::new(), "something cool here", options)
         .await?;
 
     // list attachments, there must be two.
@@ -138,13 +147,9 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
     assert_eq!(2, ret.attachments.len());
 
     // get reference attachment, it must have the updated media link
-    let reference_attachment = document_client
-        .clone()
-        .into_attachment_client("reference")
-        .get()
-        .consistency_level(&ret)
-        .execute()
-        .await?;
+    let attachment_client = document_client.clone().into_attachment_client("reference");
+    let options = GetAttachmentOptions::new().consistency_level(&ret);
+    let reference_attachment = attachment_client.get(Context::new(), options).await?;
     assert_eq!(
         "https://www.microsoft.com",
         reference_attachment.attachment.media
@@ -152,22 +157,18 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
 
     // get slug attachment, it must have the text/plain content type
     println!("getting slug attachment");
-    let slug_attachment = document_client
-        .clone()
-        .into_attachment_client("slug")
-        .get()
-        .consistency_level(&reference_attachment)
-        .execute()
+    let attachment_client = document_client.clone().into_attachment_client("slug");
+    let options = GetAttachmentOptions::new().consistency_level(&reference_attachment);
+    let slug_attachment = attachment_client
+        .get(Context::new(), options)
         .await
         .unwrap();
     assert_eq!("text/plain", slug_attachment.attachment.content_type);
 
     // delete slug attachment
-    let resp_delete = attachment_client
-        .delete()
-        .consistency_level(&slug_attachment)
-        .execute()
-        .await?;
+    let options =
+        DeleteAttachmentOptions::new(&attachment_client).consistency_level(&slug_attachment);
+    let resp_delete = attachment_client.delete(Context::new(), options).await?;
 
     // list attachments, there must be one.
     let ret = document_client
