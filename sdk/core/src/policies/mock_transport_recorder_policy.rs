@@ -30,7 +30,7 @@ where
 {
     async fn send(
         &self,
-        _ctx: &mut PipelineContext<C>,
+        ctx: &mut PipelineContext<C>,
         request: &mut Request,
         next: &[Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response> {
@@ -56,7 +56,7 @@ where
         let response = self
             .transport_options
             .http_client
-            .execute_request2(request)
+            .execute_request2(ctx.get_inner_context(), request)
             .await?;
 
         // we need to duplicate the response because we are about to consume the response stream.
