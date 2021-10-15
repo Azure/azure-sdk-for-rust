@@ -921,6 +921,8 @@ pub struct DataFlowDebugPackage {
     pub session_id: Option<String>,
     #[serde(rename = "dataFlow", default, skip_serializing_if = "Option::is_none")]
     pub data_flow: Option<DataFlowDebugResource>,
+    #[serde(rename = "dataFlows", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_flows: Vec<DataFlowDebugResource>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub datasets: Vec<DatasetDebugResource>,
     #[serde(rename = "linkedServices", default, skip_serializing_if = "Vec::is_empty")]
@@ -5190,6 +5192,13 @@ pub struct MappingDataFlow {
     pub type_properties: Option<MappingDataFlowTypeProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Flowlet {
+    #[serde(flatten)]
+    pub data_flow: DataFlow,
+    #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub type_properties: Option<FlowletTypeProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MappingDataFlowTypeProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sources: Vec<DataFlowSource>,
@@ -5199,6 +5208,8 @@ pub struct MappingDataFlowTypeProperties {
     pub transformations: Vec<Transformation>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub script: Option<String>,
+    #[serde(rename = "scriptLines", default, skip_serializing_if = "Vec::is_empty")]
+    pub script_lines: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WranglingDataFlow {
@@ -5217,10 +5228,27 @@ pub struct PowerQueryTypeProperties {
     pub document_locale: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FlowletTypeProperties {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sources: Vec<DataFlowSource>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sinks: Vec<DataFlowSink>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transformations: Vec<Transformation>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub script: Option<String>,
+    #[serde(rename = "scriptLines", default, skip_serializing_if = "Vec::is_empty")]
+    pub script_lines: Vec<String>,
+    #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
+    pub additional_properties: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Transformation {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub flowlet: Option<DataFlowReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataFlowSource {
@@ -5232,6 +5260,8 @@ pub struct DataFlowSource {
     pub linked_service: Option<LinkedServiceReference>,
     #[serde(rename = "schemaLinkedService", default, skip_serializing_if = "Option::is_none")]
     pub schema_linked_service: Option<LinkedServiceReference>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub flowlet: Option<DataFlowReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataFlowSink {
@@ -5243,6 +5273,8 @@ pub struct DataFlowSink {
     pub linked_service: Option<LinkedServiceReference>,
     #[serde(rename = "schemaLinkedService", default, skip_serializing_if = "Option::is_none")]
     pub schema_linked_service: Option<LinkedServiceReference>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub flowlet: Option<DataFlowReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PowerQuerySource {

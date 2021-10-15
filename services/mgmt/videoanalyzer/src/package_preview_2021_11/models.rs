@@ -152,8 +152,7 @@ pub mod rtsp_source {
 pub struct EndpointBase {
     #[serde(rename = "@type")]
     pub type_: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub credentials: Option<CredentialsBase>,
+    pub credentials: CredentialsBase,
     pub url: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tunnel: Option<TunnelBase>,

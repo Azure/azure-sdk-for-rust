@@ -1331,11 +1331,13 @@ pub struct SourceControl {
     pub resource_with_etag: ResourceWithEtag,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SourceControlProperties>,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceControlProperties {
-    #[serde(rename = "sourceControlId", default, skip_serializing_if = "Option::is_none")]
-    pub source_control_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[serde(rename = "displayName")]
     pub display_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1352,6 +1354,10 @@ pub struct Repository {
     pub url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branch: Option<String>,
+    #[serde(rename = "displayUrl", default, skip_serializing_if = "Option::is_none")]
+    pub display_url: Option<String>,
+    #[serde(rename = "deploymentLogsUrl", default, skip_serializing_if = "Option::is_none")]
+    pub deployment_logs_url: Option<String>,
     #[serde(rename = "pathMapping", default, skip_serializing_if = "Vec::is_empty")]
     pub path_mapping: Vec<ContentPathMap>,
 }
