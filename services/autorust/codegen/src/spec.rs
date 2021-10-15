@@ -79,6 +79,11 @@ impl Spec {
         &self.docs
     }
 
+    /// Get the version from the first document
+    pub fn api_version(&self) -> Option<&str> {
+        self.docs.first().and_then(|doc| doc.1.info.version.as_deref())
+    }
+
     pub fn input_docs<'a>(&'a self) -> impl Iterator<Item = (&'a PathBuf, &'a OpenAPI)> {
         self.docs.iter().filter(move |(p, _)| self.is_input_file(p))
     }

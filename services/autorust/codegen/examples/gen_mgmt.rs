@@ -1,10 +1,6 @@
 // cargo run --example gen_mgmt --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/compute/resource-manager
-use autorust_codegen::{
-    self, cargo_toml,
-    config_parser::{to_api_version, to_mod_name},
-    get_mgmt_configs, lib_rs, path, Config, PropertyName, SpecConfigs,
-};
+use autorust_codegen::{self, cargo_toml, config_parser::to_mod_name, get_mgmt_readmes, lib_rs, path, Config, PropertyName, SpecReadme};
 use heck::SnakeCase;
 use std::{collections::HashSet, fs, path::PathBuf};
 
@@ -286,7 +282,7 @@ pub enum Error {
 }
 
 fn main() -> Result<()> {
-    for (i, spec) in get_mgmt_configs()
+    for (i, spec) in get_mgmt_readmes()
         .map_err(|source| Error::GetSpecFoldersError { source })?
         .iter()
         .enumerate()
@@ -306,7 +302,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn gen_crate(spec: &SpecConfigs) -> Result<()> {
+fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let service_name = &get_service_name(spec.spec());
     let crate_name = &format!("azure_mgmt_{}", service_name);
     let output_folder = &path::join(OUTPUT_FOLDER, service_name).map_err(|source| Error::PathError { source })?;
@@ -339,41 +335,38 @@ fn gen_crate(spec: &SpecConfigs) -> Result<()> {
 
     for config in spec.configs() {
         let tag = config.tag.as_str();
-        if let Some(api_version) = to_api_version(&config) {
-            if skip_service_tags.contains(&(spec.spec(), tag)) {
-                // println!("  skipping {}", tag);
-                continue;
-            }
-            println!("  {}", tag);
-            // println!("  {}", api_version);
-            let mod_name = &to_mod_name(tag);
-            feature_mod_names.push((tag.to_string(), mod_name.clone()));
-            // println!("  {}", mod_name);
-            let mod_output_folder = path::join(&src_folder, mod_name).map_err(|source| Error::PathError { source })?;
-            // println!("  {:?}", mod_output_folder);
-            // for input_file in &config.input_files {
-            //     println!("  {}", input_file);
-            // }
-            let input_files: Result<Vec<_>> = config
-                .input_files
-                .iter()
-                .map(|input_file| Ok(path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source })?))
-                .collect();
-            let input_files = input_files?;
-            // for input_file in &input_files {
-            //     println!("  {:?}", input_file);
-            // }
-            autorust_codegen::run(Config {
-                api_version: Some(api_version),
-                output_folder: mod_output_folder.into(),
-                input_files,
-                box_properties: box_properties.clone(),
-                optional_properties: optional_properties.clone(),
-                print_writing_file: false,
-                ..Config::default()
-            })
-            .map_err(|source| Error::CodegenError { source })?;
+        if skip_service_tags.contains(&(spec.spec(), tag)) {
+            // println!("  skipping {}", tag);
+            continue;
         }
+        println!("  {}", tag);
+        // println!("  {}", api_version);
+        let mod_name = &to_mod_name(tag);
+        feature_mod_names.push((tag.to_string(), mod_name.clone()));
+        // println!("  {}", mod_name);
+        let mod_output_folder = path::join(&src_folder, mod_name).map_err(|source| Error::PathError { source })?;
+        // println!("  {:?}", mod_output_folder);
+        // for input_file in &config.input_files {
+        //     println!("  {}", input_file);
+        // }
+        let input_files: Result<Vec<_>> = config
+            .input_files
+            .iter()
+            .map(|input_file| Ok(path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source })?))
+            .collect();
+        let input_files = input_files?;
+        // for input_file in &input_files {
+        //     println!("  {:?}", input_file);
+        // }
+        autorust_codegen::run(Config {
+            output_folder: mod_output_folder.into(),
+            input_files,
+            box_properties: box_properties.clone(),
+            optional_properties: optional_properties.clone(),
+            print_writing_file: false,
+            ..Config::default()
+        })
+        .map_err(|source| Error::CodegenError { source })?;
     }
     if feature_mod_names.len() == 0 {
         return Ok(());

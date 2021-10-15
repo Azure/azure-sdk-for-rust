@@ -1,10 +1,6 @@
 // cargo run --example gen_svc --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/batch/data-plane
-use autorust_codegen::{
-    self, cargo_toml,
-    config_parser::{to_api_version, to_mod_name},
-    get_svc_configs, lib_rs, path, Config, PropertyName, SpecConfigs,
-};
+use autorust_codegen::{self, cargo_toml, config_parser::to_mod_name, get_svc_readmes, lib_rs, path, Config, PropertyName, SpecReadme};
 use heck::SnakeCase;
 use std::{collections::HashSet, fs, path::PathBuf};
 
@@ -33,6 +29,11 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("batch", "package-2018-03.6.1"),            // TODO #81 DataType::File
     ("batch", "package-2017-09.6.0"),            // TODO #81 DataType::File
     ("batch", "package-2017-06.5.1"),            // TODO #81 DataType::File
+    ("maps", "package-preview-2.0"),             // string \"200Async\", expected length 3"
+    ("maps", "package-1.0-preview"),             // "invalid value: string \"201Async\"
+    ("storagedatalake", "package-2018-11"),      // "invalid value: string \"ErrorResponse\", expected length 3"
+    ("storagedatalake", "package-2018-06-preview"),
+    ("storagedatalake", "package-2019-10"),
 ];
 
 const FIX_CASE_PROPERTIES: &[(&str, &str, &str)] = &[
@@ -98,7 +99,7 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ),
     // timeseriesinsights
     (
-        "../../../azure-rest-api-specs/specification/timeseriesinsights/data-plane/Microsoft.TimeSeriesInsights/stable/2020-07-31/timeseriesinsights.json", 
+        "../../../azure-rest-api-specs/specification/timeseriesinsights/data-plane/Microsoft.TimeSeriesInsights/stable/2020-07-31/timeseriesinsights.json",
         "TsiErrorBody",
         "innerError",
     )
@@ -125,7 +126,7 @@ pub enum Error {
 }
 
 fn main() -> Result<()> {
-    for (i, spec) in get_svc_configs()
+    for (i, spec) in get_svc_readmes()
         .map_err(|source| Error::GetSpecFoldersError { source })?
         .iter()
         .enumerate()
@@ -145,7 +146,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn gen_crate(spec: &SpecConfigs) -> Result<()> {
+fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let skip_service_tags: HashSet<&(&str, &str)> = SKIP_SERVICE_TAGS.iter().collect();
     let has_no_configs = spec
         .configs()
@@ -191,37 +192,33 @@ fn gen_crate(spec: &SpecConfigs) -> Result<()> {
             // println!("  skipping {}", tag);
             continue;
         }
-        if let Some(api_version) = to_api_version(&config) {
-            println!("  {}", tag);
-            // println!("  {}", api_version);
-            let mod_name = &to_mod_name(tag);
-            feature_mod_names.push((tag.to_string(), mod_name.clone()));
-            // println!("  {}", mod_name);
-            let mod_output_folder = path::join(&src_folder, mod_name).map_err(|source| Error::PathError { source })?;
-            // println!("  {:?}", mod_output_folder);
-            // for input_file in &config.input_files {
-            //     println!("  {}", input_file);
-            // }
-            let input_files: Result<Vec<_>> = config
-                .input_files
-                .iter()
-                .map(|input_file| Ok(path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source })?))
-                .collect();
-            let input_files = input_files?;
-            // for input_file in &input_files {
-            //     println!("  {:?}", input_file);
-            // }
-            autorust_codegen::run(Config {
-                api_version: Some(api_version),
-                output_folder: mod_output_folder.into(),
-                input_files,
-                box_properties: box_properties.clone(),
-                fix_case_properties: fix_case_properties.clone(),
-                print_writing_file: false,
-                ..Config::default()
-            })
-            .map_err(|source| Error::CodegenError { source })?;
-        }
+        println!("  {}", tag);
+        let mod_name = &to_mod_name(tag);
+        feature_mod_names.push((tag.to_string(), mod_name.clone()));
+        // println!("  {}", mod_name);
+        let mod_output_folder = path::join(&src_folder, mod_name).map_err(|source| Error::PathError { source })?;
+        // println!("  {:?}", mod_output_folder);
+        // for input_file in &config.input_files {
+        //     println!("  {}", input_file);
+        // }
+        let input_files: Result<Vec<_>> = config
+            .input_files
+            .iter()
+            .map(|input_file| Ok(path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source })?))
+            .collect();
+        let input_files = input_files?;
+        // for input_file in &input_files {
+        //     println!("  {:?}", input_file);
+        // }
+        autorust_codegen::run(Config {
+            output_folder: mod_output_folder.into(),
+            input_files,
+            box_properties: box_properties.clone(),
+            fix_case_properties: fix_case_properties.clone(),
+            print_writing_file: false,
+            ..Config::default()
+        })
+        .map_err(|source| Error::CodegenError { source })?;
     }
     if feature_mod_names.len() == 0 {
         return Ok(());
