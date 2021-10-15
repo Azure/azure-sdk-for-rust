@@ -117,6 +117,7 @@ pub mod table {
         if let Some(format) = format {
             url.query_pairs_mut().append_pair("$format", format);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(table_properties).map_err(create::Error::SerializeError)?;
         if let Some(prefer) = prefer {
             req_builder = req_builder.header("Prefer", prefer);
@@ -474,6 +475,7 @@ pub mod table {
             url.query_pairs_mut().append_pair("$format", format);
         }
         let req_body = if let Some(table_entity_properties) = table_entity_properties {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(table_entity_properties).map_err(update_entity::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -566,6 +568,7 @@ pub mod table {
             url.query_pairs_mut().append_pair("$format", format);
         }
         let req_body = if let Some(table_entity_properties) = table_entity_properties {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(table_entity_properties).map_err(merge_entity::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -811,6 +814,7 @@ pub mod table {
             url.query_pairs_mut().append_pair("$format", format);
         }
         let req_body = if let Some(table_entity_properties) = table_entity_properties {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(table_entity_properties).map_err(insert_entity::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -893,6 +897,7 @@ pub mod table {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         let req_body = if let Some(table_acl) = table_acl {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(table_acl).map_err(set_access_policy::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)

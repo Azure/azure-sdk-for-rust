@@ -267,6 +267,7 @@ pub mod my_workbooks {
         if let Some(source_id) = source_id {
             url.query_pairs_mut().append_pair("sourceId", source_id);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(workbook_properties).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
@@ -356,6 +357,7 @@ pub mod my_workbooks {
         if let Some(source_id) = source_id {
             url.query_pairs_mut().append_pair("sourceId", source_id);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(workbook_properties).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
@@ -737,6 +739,7 @@ pub mod workbooks {
         if let Some(source_id) = source_id {
             url.query_pairs_mut().append_pair("sourceId", source_id);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(workbook_properties).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
@@ -827,6 +830,7 @@ pub mod workbooks {
             url.query_pairs_mut().append_pair("sourceId", source_id);
         }
         let req_body = if let Some(workbook_update_parameters) = workbook_update_parameters {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(workbook_update_parameters).map_err(update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)

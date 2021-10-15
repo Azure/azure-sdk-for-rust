@@ -104,6 +104,7 @@ pub mod query {
         if let Some(store_type) = store_type {
             url.query_pairs_mut().append_pair("storeType", store_type);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(get_event_schema::Error::SerializeError)?;
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
@@ -185,6 +186,7 @@ pub mod query {
         if let Some(x_ms_continuation) = x_ms_continuation {
             req_builder = req_builder.header("x-ms-continuation", x_ms_continuation);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(execute::Error::SerializeError)?;
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
@@ -330,6 +332,7 @@ pub mod model_settings {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update::Error::SerializeError)?;
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
@@ -476,6 +479,7 @@ pub mod time_series_instances {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(execute_batch::Error::SerializeError)?;
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
@@ -549,6 +553,7 @@ pub mod time_series_instances {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(suggest::Error::SerializeError)?;
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
@@ -626,6 +631,7 @@ pub mod time_series_instances {
         if let Some(x_ms_continuation) = x_ms_continuation {
             req_builder = req_builder.header("x-ms-continuation", x_ms_continuation);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(search::Error::SerializeError)?;
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
@@ -772,6 +778,7 @@ pub mod time_series_types {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(execute_batch::Error::SerializeError)?;
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
@@ -921,6 +928,7 @@ pub mod time_series_hierarchies {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(execute_batch::Error::SerializeError)?;
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);

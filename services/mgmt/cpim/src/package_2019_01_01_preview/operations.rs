@@ -28,6 +28,7 @@ pub mod b2c_tenants {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(check_name_availability_request_body) = check_name_availability_request_body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(check_name_availability_request_body).map_err(check_name_availability::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -320,6 +321,7 @@ pub mod b2c_tenants {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(create_tenant_request_body) = create_tenant_request_body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(create_tenant_request_body).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -408,6 +410,7 @@ pub mod b2c_tenants {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(update_tenant_request_body) = update_tenant_request_body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(update_tenant_request_body).map_err(update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)

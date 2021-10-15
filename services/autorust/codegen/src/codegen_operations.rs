@@ -232,12 +232,14 @@ fn create_function(
                 has_body_parameter = true;
                 if required {
                     ts_request_builder.extend(quote! {
+                        req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?;
                     });
                 } else {
                     ts_request_builder.extend(quote! {
                         let req_body =
                             if let Some(#param_name_var) = #param_name_var {
+                                req_builder = req_builder.header("content-type", "application/json");
                                 azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?
                             } else {
                                 bytes::Bytes::from_static(azure_core::EMPTY_BODY)
