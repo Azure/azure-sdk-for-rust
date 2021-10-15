@@ -40,6 +40,7 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("storagedatalake", "package-2018-06-preview"),
     ("storagedatalake", "package-2019-10"),
     ("storagedatalake", "package-2020-06"), // uses "x-ms-paths" instead of "paths"
+    ("storagedatalake", "package-2020-10"),
 ];
 
 const FIX_CASE_PROPERTIES: &[(&str, &str, &str)] = &[
