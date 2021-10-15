@@ -1763,12 +1763,9 @@ pub struct PathRecommendation {
     #[serde(rename = "configurationStatus", default, skip_serializing_if = "Option::is_none")]
     pub configuration_status: Option<ConfigurationStatus>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GroupResourceId {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmResourceId {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PortNumber {}
+pub type GroupResourceId = String;
+pub type VmResourceId = String;
+pub type PortNumber = i64;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Rule {
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -501,8 +501,7 @@ pub struct BlobNfsTarget {
     #[serde(rename = "usageModel", default, skip_serializing_if = "Option::is_none")]
     pub usage_model: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceName {}
+pub type ResourceName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSku {
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
@@ -574,8 +573,7 @@ pub struct StorageTargetsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageTarget>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UrlString {}
+pub type UrlString = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]

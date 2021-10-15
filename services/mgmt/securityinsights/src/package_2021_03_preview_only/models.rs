@@ -617,8 +617,7 @@ pub struct IpEntityProperties {
     #[serde(rename = "threatIntelligence", default, skip_serializing_if = "Vec::is_empty")]
     pub threat_intelligence: Vec<ThreatIntelligence>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Label {}
+pub type Label = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MailboxEntity {
     #[serde(flatten)]
@@ -2602,12 +2601,9 @@ pub struct MetadataPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetadataPropertiesPatch>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetadataContentId {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetadataParentId {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetadataVersion {}
+pub type MetadataContentId = String;
+pub type MetadataParentId = String;
+pub type MetadataVersion = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MetadataKind {
     DataConnector,
@@ -2704,10 +2700,8 @@ pub struct MetadataCategories {
     pub verticals: Vec<String>,
 }
 pub type MetadataProviders = Vec<String>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FirstPublishDate {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LastPublishDate {}
+pub type FirstPublishDate = String;
+pub type LastPublishDate = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataProperties {
     #[serde(rename = "contentId", default, skip_serializing_if = "Option::is_none")]

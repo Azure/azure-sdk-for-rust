@@ -14,8 +14,7 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JsonWebToken {}
+pub type JsonWebToken = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AttestationCertificateManagementBody {
     #[serde(rename = "policyCertificate", default, skip_serializing_if = "Option::is_none")]

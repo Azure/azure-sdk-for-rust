@@ -531,12 +531,9 @@ pub enum AppliedScopeType {
     Shared,
 }
 pub type AppliedScopes = Vec<String>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BillingScopeId {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Renew {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationQuantity {}
+pub type BillingScopeId = String;
+pub type Renew = bool;
+pub type ReservationQuantity = i32;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Properties {
     #[serde(default, skip_serializing_if = "Option::is_none")]

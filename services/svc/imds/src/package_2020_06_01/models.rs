@@ -230,8 +230,7 @@ pub struct VirtualHardDisk {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationResponse {}
+pub type ApplicationResponse = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Instance {
     #[serde(default, skip_serializing_if = "Option::is_none")]
