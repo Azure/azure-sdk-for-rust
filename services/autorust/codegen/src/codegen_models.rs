@@ -87,7 +87,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
                 file.extend(tp);
             } else if is_basic_type(schema) {
                 let (id, value) = create_basic_type_alias(schema_name, schema)?;
-                file.extend( quote!{ pub type #id = #value;});
+                file.extend(quote! { pub type #id = #value;});
             } else {
                 for stream in create_struct(cg, doc_file, schema_name, schema)? {
                     file.extend(stream);
