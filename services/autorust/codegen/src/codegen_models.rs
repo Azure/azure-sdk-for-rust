@@ -206,6 +206,10 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
         // let prop_nm_str = format!("{:?}", prop_nm);
         // props.extend(quote! { #[doc = #prop_nm_str ]});
 
+        if cg.should_force_obj(prop_nm) {
+            field_tp_name = quote! { serde_json::Value };
+        }
+
         let is_required = required.contains(property_name.as_str()) && !cg.should_force_optional(prop_nm);
 
         let is_vec = is_vec(&field_tp_name);
