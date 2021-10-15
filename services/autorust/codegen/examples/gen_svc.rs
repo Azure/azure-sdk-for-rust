@@ -43,6 +43,12 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("storagedatalake", "package-2020-10"),
 ];
 
+const INVALID_TYPE_WORKAROUND: &[(&str, &str, &str)] = &[(
+    "../../../azure-rest-api-specs/specification/applicationinsights/data-plane/Microsoft.Insights/preview/v1/AppInsights.json",
+    "table",
+    "rows",
+)];
+
 const FIX_CASE_PROPERTIES: &[(&str, &str, &str)] = &[
     (
         "../../../azure-rest-api-specs/specification/batch/data-plane/Microsoft.Batch/stable/2021-06-01.14.0/BatchService.json",
@@ -193,6 +199,15 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         });
     }
 
+    let mut invalid_types = HashSet::new();
+    for (file_path, schema_name, property_name) in INVALID_TYPE_WORKAROUND {
+        invalid_types.insert(PropertyName {
+            file_path: PathBuf::from(file_path),
+            schema_name: schema_name.to_string(),
+            property_name: property_name.to_string(),
+        });
+    }
+
     for config in spec.configs() {
         let tag = config.tag.as_str();
         if skip_service_tags.contains(&(spec.spec(), tag)) {
@@ -222,6 +237,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
             input_files,
             box_properties: box_properties.clone(),
             fix_case_properties: fix_case_properties.clone(),
+            invalid_types: invalid_types.clone(),
             print_writing_file: false,
             ..Config::default()
         })

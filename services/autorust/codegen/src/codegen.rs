@@ -45,6 +45,10 @@ impl CodeGen {
         self.config.optional_properties.contains(prop_nm)
     }
 
+    pub fn should_force_obj(&self, prop_nm: &PropertyName) -> bool {
+        self.config.invalid_types.contains(prop_nm)
+    }
+
     pub fn should_box_property(&self, prop_nm: &PropertyName) -> bool {
         self.config.box_properties.contains(prop_nm)
     }
