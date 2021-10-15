@@ -141,6 +141,13 @@ pub fn is_local_struct(property: &ResolvedSchema) -> bool {
     property.schema.properties.len() > 0
 }
 
+pub fn is_basic_type(property: &ResolvedSchema) -> bool {
+    matches!(
+        property.schema.common.type_,
+        Some(DataType::Integer | DataType::String | DataType::Number | DataType::Boolean)
+    )
+}
+
 /// Wraps a type in an Option if is not required.
 pub fn require(is_required: bool, tp: TokenStream) -> TokenStream {
     if is_required {

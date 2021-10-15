@@ -1,7 +1,7 @@
 use crate::{
     codegen::{
         create_generated_by_header, enum_values_as_strings, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref,
-        is_array, is_local_enum, is_local_struct, is_vec, require, AsReference, Error,
+        is_array, is_basic_type, is_local_enum, is_local_struct, is_vec, require, AsReference, Error,
     },
     identifier::{ident, CamelCaseIdent},
     spec, CodeGen, PropertyName, ResolvedSchema,
@@ -76,7 +76,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
         if let Some(_first_doc_file) = schema_names.insert(schema_name, doc_file) {
             // eprintln!(
             //     "WARN schema {} already created from {:?}, duplicate from {:?}",
-            //     schema_name, first_doc_file, doc_file
+            //     schema_name, _first_doc_file, doc_file
             // );
         } else {
             if is_array(&schema.schema.common) {
@@ -85,6 +85,9 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
                 let no_namespace = TokenStream::new();
                 let (_tp_name, tp) = create_enum(&no_namespace, schema_name, schema, false)?;
                 file.extend(tp);
+            } else if is_basic_type(schema) {
+                let (id, value) = create_basic_type_alias(schema_name, schema)?;
+                file.extend( quote!{ pub type #id = #value;});
             } else {
                 for stream in create_struct(cg, doc_file, schema_name, schema)? {
                     file.extend(stream);
@@ -93,6 +96,12 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
         }
     }
     Ok(file)
+}
+
+fn create_basic_type_alias(property_name: &str, property: &ResolvedSchema) -> Result<(TokenStream, TokenStream), Error> {
+    let id = ident(&property_name.to_camel_case()).map_err(Error::StructName)?;
+    let value = get_type_name_for_schema(&property.schema.common, AsReference::False)?;
+    Ok((id, value))
 }
 
 // For create_models. Recursively adds schema refs.
