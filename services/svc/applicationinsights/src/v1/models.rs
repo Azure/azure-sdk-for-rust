@@ -69,18 +69,13 @@ pub enum MetricId {
     #[serde(rename = "customEvents/count")]
     CustomEventsCount,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricsTimespan {}
+pub type MetricsTimespan = String;
 pub type MetricsAggregation = Vec<String>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricsInterval {}
+pub type MetricsInterval = String;
 pub type MetricsSegment = Vec<String>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricsTop {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricsOrderBy {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricsFilter {}
+pub type MetricsTop = i32;
+pub type MetricsOrderBy = String;
+pub type MetricsFilter = String;
 pub type MetricsPostBody = Vec<MetricsPostBodySchema>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricsPostBodySchema {
@@ -160,28 +155,17 @@ pub enum EventType {
     #[serde(rename = "customMetrics")]
     CustomMetrics,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventId {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventsTimespan {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventsFilter {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventsSearch {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventsOrderBy {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventsSelect {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventsSkip {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventsTop {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventsFormat {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventsCount {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventsApply {}
+pub type EventId = String;
+pub type EventsTimespan = String;
+pub type EventsFilter = String;
+pub type EventsSearch = String;
+pub type EventsOrderBy = String;
+pub type EventsSelect = String;
+pub type EventsSkip = i32;
+pub type EventsTop = i32;
+pub type EventsFormat = String;
+pub type EventsCount = bool;
+pub type EventsApply = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsResults {
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
@@ -580,10 +564,8 @@ pub struct EventsClientInfo {
     #[serde(rename = "countryOrRegion", default, skip_serializing_if = "Option::is_none")]
     pub country_or_region: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryParam {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryTimespan {}
+pub type QueryParam = String;
+pub type QueryTimespan = String;
 pub type ApplicationsParam = Vec<String>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryBody {

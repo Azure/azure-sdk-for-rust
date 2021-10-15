@@ -95,6 +95,7 @@ pub mod spark_batch {
         if let Some(detailed) = detailed {
             url.query_pairs_mut().append_pair("detailed", detailed.to_string().as_str());
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(spark_batch_job_options).map_err(create_spark_batch_job::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -352,6 +353,7 @@ pub mod spark_session {
         if let Some(detailed) = detailed {
             url.query_pairs_mut().append_pair("detailed", detailed.to_string().as_str());
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(spark_session_options).map_err(create_spark_session::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_spark_session::Error::BuildRequestError)?;
@@ -644,6 +646,7 @@ pub mod spark_session {
                 .map_err(create_spark_statement::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(spark_statement_options).map_err(create_spark_statement::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder

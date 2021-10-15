@@ -1298,10 +1298,8 @@ pub struct Participants {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Action {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NotAction {}
+pub type Action = String;
+pub type NotAction = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservationsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1378,8 +1376,7 @@ pub mod reservation_property {
         pub aggregates: Vec<ReservationUtilizationAggregates>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationAppliedScope {}
+pub type ReservationAppliedScope = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservationUtilizationAggregates {
     #[serde(default, skip_serializing_if = "Option::is_none")]

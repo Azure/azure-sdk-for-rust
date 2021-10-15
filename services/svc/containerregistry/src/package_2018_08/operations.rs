@@ -427,6 +427,7 @@ pub async fn update_acr_repository_attributes(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     let req_body = if let Some(value) = value {
+        req_builder = req_builder.header("content-type", "application/json");
         azure_core::to_json(value).map_err(update_acr_repository_attributes::Error::SerializeError)?
     } else {
         bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -719,6 +720,7 @@ pub async fn update_acr_tag_attributes(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     let req_body = if let Some(value) = value {
+        req_builder = req_builder.header("content-type", "application/json");
         azure_core::to_json(value).map_err(update_acr_tag_attributes::Error::SerializeError)?
     } else {
         bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -1001,6 +1003,7 @@ pub async fn update_acr_manifest_attributes(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     let req_body = if let Some(value) = value {
+        req_builder = req_builder.header("content-type", "application/json");
         azure_core::to_json(value).map_err(update_acr_manifest_attributes::Error::SerializeError)?
     } else {
         bytes::Bytes::from_static(azure_core::EMPTY_BODY)

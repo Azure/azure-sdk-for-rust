@@ -97,6 +97,7 @@ pub mod blockchain_members {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(blockchain_member) = blockchain_member {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(blockchain_member).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -178,6 +179,7 @@ pub mod blockchain_members {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(blockchain_member) = blockchain_member {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(blockchain_member).map_err(update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -580,6 +582,7 @@ pub mod blockchain_members {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(api_key) = api_key {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(api_key).map_err(list_regenerate_api_keys::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -730,6 +733,7 @@ pub mod locations {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(name_availability_request) = name_availability_request {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(name_availability_request).map_err(check_name_availability::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -1065,6 +1069,7 @@ pub mod transaction_nodes {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(transaction_node) = transaction_node {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(transaction_node).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -1148,6 +1153,7 @@ pub mod transaction_nodes {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(transaction_node) = transaction_node {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(transaction_node).map_err(update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -1417,6 +1423,7 @@ pub mod transaction_nodes {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(api_key) = api_key {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(api_key).map_err(list_regenerate_api_keys::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)

@@ -228,6 +228,7 @@ pub mod web_pub_sub {
         for value in excluded {
             url.query_pairs_mut().append_pair("excluded", value.to_string().as_str());
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(message).map_err(send_to_all::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(send_to_all::Error::BuildRequestError)?;
@@ -424,6 +425,7 @@ pub mod web_pub_sub {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(message).map_err(send_to_connection::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(send_to_connection::Error::BuildRequestError)?;
@@ -631,6 +633,7 @@ pub mod web_pub_sub {
         for value in excluded {
             url.query_pairs_mut().append_pair("excluded", value.to_string().as_str());
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(message).map_err(send_to_group::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(send_to_group::Error::BuildRequestError)?;
@@ -977,6 +980,7 @@ pub mod web_pub_sub {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(message).map_err(send_to_user::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(send_to_user::Error::BuildRequestError)?;

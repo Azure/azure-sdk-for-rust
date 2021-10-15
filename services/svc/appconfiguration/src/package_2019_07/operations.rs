@@ -413,6 +413,7 @@ pub async fn put_key_value(
         url.query_pairs_mut().append_pair("label", label);
     }
     let req_body = if let Some(entity) = entity {
+        req_builder = req_builder.header("content-type", "application/json");
         azure_core::to_json(entity).map_err(put_key_value::Error::SerializeError)?
     } else {
         bytes::Bytes::from_static(azure_core::EMPTY_BODY)

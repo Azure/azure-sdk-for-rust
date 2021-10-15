@@ -459,6 +459,7 @@ pub mod pool {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(pool).map_err(add::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -639,6 +640,7 @@ pub mod pool {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(pool_patch_parameter).map_err(patch::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -987,6 +989,7 @@ pub mod pool {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(pool_enable_auto_scale_parameter).map_err(enable_auto_scale::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -1076,6 +1079,7 @@ pub mod pool {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(pool_evaluate_auto_scale_parameter).map_err(evaluate_auto_scale::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -1162,6 +1166,7 @@ pub mod pool {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(pool_resize_parameter).map_err(resize::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -1341,6 +1346,7 @@ pub mod pool {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(pool_update_properties_parameter).map_err(update_properties::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -1422,6 +1428,7 @@ pub mod pool {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(node_remove_parameter).map_err(remove_nodes::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -1883,6 +1890,7 @@ pub mod job {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(job_update_parameter).map_err(update::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -1973,6 +1981,7 @@ pub mod job {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(job_patch_parameter).map_err(patch::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -2152,6 +2161,7 @@ pub mod job {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(job_disable_parameter).map_err(disable::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -2336,6 +2346,7 @@ pub mod job {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(job_terminate_parameter) = job_terminate_parameter {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(job_terminate_parameter).map_err(terminate::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -2520,6 +2531,7 @@ pub mod job {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(job).map_err(add::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -2964,6 +2976,7 @@ pub mod certificate {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(certificate).map_err(add::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -4160,6 +4173,7 @@ pub mod job_schedule {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(job_schedule_update_parameter).map_err(update::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -4250,6 +4264,7 @@ pub mod job_schedule {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(job_schedule_patch_parameter).map_err(patch::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -4888,6 +4903,7 @@ pub mod job_schedule {
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(cloud_job_schedule).map_err(add::Error::SerializeError)?;
         if let Some(client_request_id) = client_request_id {
             req_builder = req_builder.header("client-request-id", client_request_id);
@@ -5056,6 +5072,7 @@ pub mod task {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(task).map_err(add::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -5130,6 +5147,7 @@ pub mod task {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(task_collection).map_err(add_collection::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -5320,6 +5338,7 @@ pub mod task {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(task_update_parameter).map_err(update::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -5774,6 +5793,7 @@ pub mod compute_node {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(user).map_err(add_user::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -5859,6 +5879,7 @@ pub mod compute_node {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(node_update_user_parameter).map_err(update_user::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -6105,6 +6126,7 @@ pub mod compute_node {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(node_reboot_parameter) = node_reboot_parameter {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(node_reboot_parameter).map_err(reboot::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -6184,6 +6206,7 @@ pub mod compute_node {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(node_reimage_parameter) = node_reimage_parameter {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(node_reimage_parameter).map_err(reimage::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -6271,6 +6294,7 @@ pub mod compute_node {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(node_disable_scheduling_parameter) = node_disable_scheduling_parameter {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(node_disable_scheduling_parameter).map_err(disable_scheduling::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -6623,6 +6647,7 @@ pub mod compute_node {
         if let Some(ocp_date) = ocp_date {
             req_builder = req_builder.header("ocp-date", ocp_date);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body =
             azure_core::to_json(upload_batch_service_logs_configuration).map_err(upload_batch_service_logs::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());

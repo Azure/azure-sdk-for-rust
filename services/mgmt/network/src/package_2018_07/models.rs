@@ -4862,8 +4862,7 @@ pub enum HubVirtualNetworkConnectionStatus {
     Connected,
     NotConnected,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DisableVpnEncryption {}
+pub type DisableVpnEncryption = bool;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Access {
     Allow,

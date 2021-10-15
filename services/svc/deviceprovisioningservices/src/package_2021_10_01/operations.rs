@@ -83,6 +83,7 @@ pub mod individual_enrollment {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(enrollment).map_err(create_or_update::Error::SerializeError)?;
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
@@ -220,6 +221,7 @@ pub mod individual_enrollment {
         if let Some(x_ms_continuation) = x_ms_continuation {
             req_builder = req_builder.header("x-ms-continuation", x_ms_continuation);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(query_specification).map_err(query::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(query::Error::BuildRequestError)?;
@@ -350,6 +352,7 @@ pub mod individual_enrollment {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(bulk_operation).map_err(run_bulk_operation::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(run_bulk_operation::Error::BuildRequestError)?;
@@ -479,6 +482,7 @@ pub mod enrollment_group {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(enrollment_group).map_err(create_or_update::Error::SerializeError)?;
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
@@ -616,6 +620,7 @@ pub mod enrollment_group {
         if let Some(x_ms_continuation) = x_ms_continuation {
             req_builder = req_builder.header("x-ms-continuation", x_ms_continuation);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(query_specification).map_err(query::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(query::Error::BuildRequestError)?;
@@ -746,6 +751,7 @@ pub mod enrollment_group {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(bulk_operation).map_err(run_bulk_operation::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(run_bulk_operation::Error::BuildRequestError)?;

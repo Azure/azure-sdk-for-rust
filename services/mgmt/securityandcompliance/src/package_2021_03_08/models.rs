@@ -81,12 +81,9 @@ pub struct ServiceExportConfigurationInfo {
     #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceCorsConfigurationOriginEntry {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceCorsConfigurationHeaderEntry {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceCorsConfigurationMethodEntry {}
+pub type ServiceCorsConfigurationOriginEntry = String;
+pub type ServiceCorsConfigurationHeaderEntry = String;
+pub type ServiceCorsConfigurationMethodEntry = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicesPatchDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]

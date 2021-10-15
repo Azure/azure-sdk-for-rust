@@ -424,8 +424,7 @@ pub mod reservation_response {
         MicrosoftCompute,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationQuantity {}
+pub type ReservationQuantity = i32;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailableScopeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -472,8 +471,7 @@ pub enum ReservationBillingPlan {
     Upfront,
     Monthly,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Renew {}
+pub type Renew = bool;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RenewPropertiesResponse {
     #[serde(rename = "purchaseProperties", default, skip_serializing_if = "Option::is_none")]
@@ -939,8 +937,7 @@ pub enum AppliedScopeType {
     Shared,
 }
 pub type AppliedScopes = Vec<String>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BillingScopeId {}
+pub type BillingScopeId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Price {
     #[serde(rename = "currencyCode", default, skip_serializing_if = "Option::is_none")]

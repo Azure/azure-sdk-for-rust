@@ -22,12 +22,9 @@ pub enum ConnectionType {
     Private,
     None,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EmailAddress {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PhoneNumber {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Url {}
+pub type EmailAddress = String;
+pub type PhoneNumber = String;
+pub type Url = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OsType {
     Windows,

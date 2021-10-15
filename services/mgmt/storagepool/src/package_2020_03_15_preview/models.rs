@@ -59,8 +59,7 @@ pub struct DiskPoolUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AvailabilityZone {}
+pub type AvailabilityZone = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolProperties {
     #[serde(rename = "provisioningState")]
@@ -97,8 +96,7 @@ pub struct DiskPoolUpdateProperties {
 pub struct Disk {
     pub id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdditionalCapability {}
+pub type AdditionalCapability = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetList {
     pub value: Vec<IscsiTarget>,

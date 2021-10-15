@@ -201,8 +201,7 @@ pub struct DiskPoolUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AvailabilityZone {}
+pub type AvailabilityZone = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolProperties {
     #[serde(rename = "provisioningState")]
@@ -237,8 +236,7 @@ pub struct DiskPoolUpdateProperties {
 pub struct Disk {
     pub id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdditionalCapability {}
+pub type AdditionalCapability = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetList {
     pub value: Vec<IscsiTarget>,
@@ -449,6 +447,5 @@ pub struct ErrorResponse {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedBy {}
+pub type ManagedBy = String;
 pub type ManagedByExtended = Vec<ManagedBy>;

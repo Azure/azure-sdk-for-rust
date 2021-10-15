@@ -1132,7 +1132,5 @@ pub mod line_of_credit_properties {
         Rejected,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Action {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NotAction {}
+pub type Action = String;
+pub type NotAction = String;

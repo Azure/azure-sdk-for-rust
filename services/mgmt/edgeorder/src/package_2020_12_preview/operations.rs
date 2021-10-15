@@ -176,6 +176,7 @@ pub async fn list_product_families(
     if let Some(skip_token) = skip_token {
         url.query_pairs_mut().append_pair("$skipToken", skip_token);
     }
+    req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(product_families_request).map_err(list_product_families::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
@@ -252,6 +253,7 @@ pub async fn list_configurations(
     if let Some(skip_token) = skip_token {
         url.query_pairs_mut().append_pair("$skipToken", skip_token);
     }
+    req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(configurations_request).map_err(list_configurations::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(list_configurations::Error::BuildRequestError)?;
@@ -714,6 +716,7 @@ pub async fn create_address(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(address_resource).map_err(create_address::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(create_address::Error::BuildRequestError)?;
@@ -798,6 +801,7 @@ pub async fn update_address(
     if let Some(if_match) = if_match {
         req_builder = req_builder.header("If-Match", if_match);
     }
+    req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(address_update_parameter).map_err(update_address::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(update_address::Error::BuildRequestError)?;
@@ -1272,6 +1276,7 @@ pub async fn create_order_item(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(order_item_resource).map_err(create_order_item::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(create_order_item::Error::BuildRequestError)?;
@@ -1356,6 +1361,7 @@ pub async fn update_order_item(
     if let Some(if_match) = if_match {
         req_builder = req_builder.header("If-Match", if_match);
     }
+    req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(order_item_update_parameter).map_err(update_order_item::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(update_order_item::Error::BuildRequestError)?;
@@ -1514,6 +1520,7 @@ pub async fn cancel_order_item(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(cancellation_reason).map_err(cancel_order_item::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(cancel_order_item::Error::BuildRequestError)?;
@@ -1589,6 +1596,7 @@ pub async fn return_order_item(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(return_order_item_details).map_err(return_order_item::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(return_order_item::Error::BuildRequestError)?;
