@@ -79,8 +79,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             let collection_response = database_client
                 .clone()
                 .into_collection_client(collection.id)
-                .get_collection()
-                .execute()
+                .get_collection(Context::new(), GetCollectionOptions::new())
                 .await?;
 
             println!("\tcollection_response {:?}", collection_response);

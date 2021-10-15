@@ -45,10 +45,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("get_database_response == {:#?}", get_database_response);
 
-    let get_collection_response = collection_client.get_collection().execute().await?;
+    let get_collection_response = collection_client
+        .get_collection(Context::new(), GetCollectionOptions::new())
+        .await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
-    let get_collection2_response = collection2_client.get_collection().execute().await?;
+    let get_collection2_response = collection2_client
+        .get_collection(Context::new(), GetCollectionOptions::new())
+        .await?;
     println!(
         "get_collection2_response == {:#?}",
         get_collection2_response

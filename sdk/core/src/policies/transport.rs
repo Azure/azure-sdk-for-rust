@@ -35,11 +35,10 @@ where
         // there must be no more policies
         assert_eq!(0, next.len());
 
-        let response = {
-            self.transport_options
-                .http_client
-                .execute_request2(ctx.get_inner_context(), request)
-        };
+        let response = self
+            .transport_options
+            .http_client
+            .execute_request2(ctx.get_inner_context(), request);
 
         Ok(response.await?)
     }

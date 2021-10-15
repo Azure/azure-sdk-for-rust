@@ -10,7 +10,7 @@ use crate::{
     status_codes::{get_response_type_ident, get_status_code_ident},
     CodeGen, OperationVerb,
 };
-use autorust_openapi::{CollectionFormat, Parameter, ParameterType, Response};
+use autorust_openapi::{CollectionFormat, DataType, Parameter, ParameterType, Response};
 use heck::SnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
@@ -149,6 +149,7 @@ fn create_function(
         let param_name = &param.name;
         let param_name_var = get_param_name(&param)?;
         let required = param.required.unwrap_or(false);
+        let is_bool = matches!(&param.common.type_, Some(DataType::Boolean));
         match param.in_ {
             ParameterType::Path => {} // handled above
             ParameterType::Query => {
@@ -200,16 +201,31 @@ fn create_function(
                 }
             }
             ParameterType::Header => {
+                // println!("header builder: {:?}", param);
                 if required {
-                    ts_request_builder.extend(quote! {
-                        req_builder = req_builder.header(#param_name, #param_name_var);
-                    });
-                } else {
-                    ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = #param_name_var {
+                    if is_bool {
+                        ts_request_builder.extend(quote! {
+                            req_builder = req_builder.header(#param_name, #param_name_var .to_string());
+                        });
+                    } else {
+                        ts_request_builder.extend(quote! {
                             req_builder = req_builder.header(#param_name, #param_name_var);
-                        }
-                    });
+                        });
+                    }
+                } else {
+                    if is_bool {
+                        ts_request_builder.extend(quote! {
+                            if let Some(#param_name_var) = #param_name_var {
+                                req_builder = req_builder.header(#param_name, #param_name_var .to_string());
+                            }
+                        });
+                    } else {
+                        ts_request_builder.extend(quote! {
+                            if let Some(#param_name_var) = #param_name_var {
+                                req_builder = req_builder.header(#param_name, #param_name_var);
+                            }
+                        });
+                    }
                 }
             }
             ParameterType::Body => {
