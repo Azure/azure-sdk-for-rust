@@ -306,6 +306,7 @@ pub async fn check_resource_name(
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
     let req_body = if let Some(resource_name_definition) = resource_name_definition {
+        req_builder = req_builder.header("content-type", "application/json");
         azure_core::to_json(resource_name_definition).map_err(check_resource_name::Error::SerializeError)?
     } else {
         bytes::Bytes::from_static(azure_core::EMPTY_BODY)

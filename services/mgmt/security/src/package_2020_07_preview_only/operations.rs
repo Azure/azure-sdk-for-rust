@@ -388,6 +388,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         url.query_pairs_mut().append_pair("workspaceId", workspace_id);
         let req_body = if let Some(body) = body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(body).map_err(create_or_update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -603,6 +604,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         url.query_pairs_mut().append_pair("workspaceId", workspace_id);
         let req_body = if let Some(body) = body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(body).map_err(add::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)

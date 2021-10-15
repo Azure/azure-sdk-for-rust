@@ -295,6 +295,7 @@ pub mod confidential_ledger {
             url.query_pairs_mut().append_pair("subLedgerId", sub_ledger_id);
         }
         let req_body = if let Some(entry) = entry {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(entry).map_err(post_ledger_entry::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -697,6 +698,7 @@ pub mod confidential_ledger {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(user_details).map_err(create_or_update_user::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder

@@ -27,6 +27,7 @@ pub mod file_system {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(stream_contents).map_err(concurrent_append::Error::SerializeError)?;
         if let Some(append_mode) = append_mode {
             url.query_pairs_mut().append_pair("appendMode", append_mode);

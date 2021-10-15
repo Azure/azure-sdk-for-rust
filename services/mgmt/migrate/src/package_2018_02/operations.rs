@@ -29,6 +29,7 @@ pub mod location {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(check_name_availability::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -412,6 +413,7 @@ pub mod projects {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
         let req_body = if let Some(project) = project {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(project).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -502,6 +504,7 @@ pub mod projects {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
         let req_body = if let Some(project) = project {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(project).map_err(update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -1042,6 +1045,7 @@ pub mod groups {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
         let req_body = if let Some(group) = group {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(group).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -1444,6 +1448,7 @@ pub mod assessments {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
         let req_body = if let Some(assessment) = assessment {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(assessment).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)

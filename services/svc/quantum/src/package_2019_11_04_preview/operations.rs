@@ -167,6 +167,7 @@ pub mod jobs {
                 .map_err(create::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(job).map_err(create::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
@@ -392,6 +393,7 @@ pub mod storage {
                 .map_err(sas_uri::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(blob_details).map_err(sas_uri::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(sas_uri::Error::BuildRequestError)?;

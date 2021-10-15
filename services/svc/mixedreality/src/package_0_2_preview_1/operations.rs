@@ -96,6 +96,7 @@ pub mod ingestion_job {
             req_builder = req_builder.header("x-mrc-cv", x_mrc_cv);
         }
         let req_body = if let Some(body) = body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(body).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)

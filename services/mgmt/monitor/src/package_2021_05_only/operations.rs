@@ -195,6 +195,7 @@ pub mod metrics {
                 .append_pair("ValidateDimensions", validate_dimensions.to_string().as_str());
         }
         let req_body = if let Some(body) = body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(body).map_err(list_at_subscription_scope_post::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
