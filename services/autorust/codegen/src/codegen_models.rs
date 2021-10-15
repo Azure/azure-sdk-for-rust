@@ -20,20 +20,11 @@ use std::{
 pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
     let mut file = TokenStream::new();
     file.extend(create_generated_by_header());
-
-    let has_case_workaround = cg.spec.input_docs().any(|(x, _)| cg.has_case_workaround(x));
-
     file.extend(quote! {
         #![allow(non_camel_case_types)]
         #![allow(unused_imports)]
         use serde::{Deserialize, Serialize};
     });
-    if has_case_workaround {
-        file.extend(quote! {
-        use serde::de::{self, Deserializer, DeserializeOwned};
-        })
-    }
-
     let mut all_schemas: IndexMap<RefKey, ResolvedSchema> = IndexMap::new();
 
     // all definitions from input_files
@@ -57,18 +48,6 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
         }
     }
 
-    if has_case_workaround {
-        file.extend(quote! {
-            fn case_insensitive<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-            where T: DeserializeOwned + std::fmt::Debug,
-                  D: Deserializer<'de>
-        {
-            let v = String::deserialize(deserializer)?;
-            T::deserialize(serde_json::Value::String(v.clone())).or_else(|_| T::deserialize(serde_json::Value::String(v.to_lowercase()))).map_err(de::Error::custom)
-        }
-            });
-    }
-
     let mut schema_names = IndexMap::new();
     for (ref_key, schema) in &all_schemas {
         let doc_file = &ref_key.file_path;
@@ -83,7 +62,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
                 file.extend(create_vec_alias(schema_name, schema)?);
             } else if is_local_enum(schema) {
                 let no_namespace = TokenStream::new();
-                let (_tp_name, tp) = create_enum(&no_namespace, schema_name, schema, false)?;
+                let (_tp_name, tp) = create_enum(&no_namespace, schema_name, schema)?;
                 file.extend(tp);
             } else {
                 for stream in create_struct(cg, doc_file, schema_name, schema)? {
@@ -117,27 +96,16 @@ fn add_schema_refs(
     Ok(())
 }
 
-fn create_enum(
-    namespace: &TokenStream,
-    property_name: &str,
-    property: &ResolvedSchema,
-    lowercase_workaround: bool,
-) -> Result<(TokenStream, TokenStream), Error> {
-    // println!("property_name: {:?} enum: {:?}", property_name, property.schema.common.enum_);
+fn create_enum(namespace: &TokenStream, property_name: &str, property: &ResolvedSchema) -> Result<(TokenStream, TokenStream), Error> {
     let enum_values = enum_values_as_strings(&property.schema.common.enum_);
     let id = ident(&property_name.to_camel_case()).map_err(Error::EnumName)?;
     let mut values = TokenStream::new();
     for name in enum_values {
         let nm = name.to_camel_case_ident().map_err(Error::EnumValueName)?;
-        let lower = name.to_lowercase();
         let rename = if &nm.to_string() == name {
             quote! {}
         } else {
-            if name != lower && lowercase_workaround {
-                quote! { #[serde(rename = #name, alias = #lower)] }
-            } else {
-                quote! { #[serde(rename = #name)] }
-            }
+            quote! { #[serde(rename = #name)] }
         };
         let value = quote! {
             #rename
@@ -184,15 +152,14 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
     let properties = cg.spec.resolve_schema_map(doc_file, &schema.schema.properties)?;
     for (property_name, property) in &properties {
         let nm = ident(&property_name.to_snake_case()).map_err(Error::StructName)?;
+        let (mut field_tp_name, field_tp) = create_struct_field_type(cg, doc_file, &ns, property_name, property)?;
+
         let prop_nm = &PropertyName {
             file_path: PathBuf::from(doc_file),
             schema_name: struct_name.to_owned(),
             property_name: property_name.to_string(),
         };
 
-        let lowercase_workaround = cg.should_workaround_case(prop_nm);
-
-        let (mut field_tp_name, field_tp) = create_struct_field_type(cg, doc_file, &ns, property_name, property, lowercase_workaround)?;
         // uncomment the next two lines to help identify entries that need boxed
         // let prop_nm_str = format!("{:?}", prop_nm);
         // props.extend(quote! { #[doc = #prop_nm_str ]});
@@ -214,9 +181,6 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
             } else {
                 serde_attrs.push(quote! { default, skip_serializing_if = "Option::is_none"});
             }
-        }
-        if is_local_enum(property) && lowercase_workaround {
-            serde_attrs.push(quote! { deserialize_with = "case_insensitive"});
         }
         let serde = if serde_attrs.len() > 0 {
             quote! { #[serde(#(#serde_attrs),*)] }
@@ -264,7 +228,6 @@ fn create_struct_field_type(
     namespace: &TokenStream,
     property_name: &str,
     property: &ResolvedSchema,
-    lowercase_workaround: bool,
 ) -> Result<(TokenStream, Vec<TokenStream>), Error> {
     match &property.ref_key {
         Some(ref_key) => {
@@ -273,7 +236,7 @@ fn create_struct_field_type(
         }
         None => {
             if is_local_enum(property) {
-                let (tp_name, tp) = create_enum(namespace, property_name, property, lowercase_workaround)?;
+                let (tp_name, tp) = create_enum(namespace, property_name, property)?;
                 Ok((tp_name, vec![tp]))
             } else if is_local_struct(property) {
                 let id = ident(&property_name.to_camel_case()).map_err(Error::PropertyName)?;

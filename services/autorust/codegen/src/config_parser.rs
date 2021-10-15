@@ -191,7 +191,7 @@ pub fn to_mod_name(feature_name: &str) -> String {
     if starts_with_number(&name) {
         name = format!("v{}", &name);
     }
-    name.replace("-", "_").replace(".", "_").to_lowercase()
+    name.replace("-", "_").to_lowercase()
 }
 
 #[cfg(test)]

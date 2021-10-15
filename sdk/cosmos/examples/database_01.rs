@@ -1,4 +1,3 @@
-use azure_core::Context;
 use azure_cosmos::prelude::*;
 use std::error::Error;
 
@@ -21,9 +20,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("collections == {:#?}", collections);
 
     let collection_client = database_client.into_collection_client("cnt");
-    let collection = collection_client
-        .get_collection(Context::new(), GetCollectionOptions::new())
-        .await?;
+    let collection = collection_client.get_collection().execute().await?;
     println!("collection == {:#?}", collection);
 
     Ok(())

@@ -1,9 +1,7 @@
-use crate::sleep::sleep;
 #[allow(unused_imports)]
 use crate::{Body, Context, HttpError};
 use async_trait::async_trait;
 use bytes::Bytes;
-use futures::future::Either;
 #[cfg(not(target_arch = "wasm32"))]
 use futures::future::TryFutureExt;
 #[cfg(not(target_arch = "wasm32"))]
@@ -22,7 +20,7 @@ pub enum HttpExecutionError {
     #[error("time out of range: {0}")]
     OutOfRangeError(String),
     #[error("timeout expired")]
-    TimeoutExpired,
+    TimeoutExpired(async_std::future::TimeoutError),
 }
 
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
@@ -213,21 +211,14 @@ impl HttpClient for reqwest::Client {
         let reqwest_response = if let Some(timeout) = context.timeout() {
             let max_time = (timeout - chrono::Utc::now())
                 .to_std()
-                .map_err(|e| HttpExecutionError::OutOfRangeError(e.to_string()))?;
-
-            match futures::future::select(
-                sleep(max_time),
+                .map_err(|e| HttpExecutionError::OutOfRangeError(e.to_string()))?; // this is to avoid importing the outdated version of the time crate referenced by chrono
+            async_std::future::timeout(
+                max_time,
                 self.execute(reqwest_request)
                     .map_err(HttpError::ExecuteRequestError),
             )
-            .await
-            {
-                Either::Left(_timeout) => {
-                    log::warn!("timeout expired while waiting for HTTP response");
-                    return Err(HttpExecutionError::TimeoutExpired);
-                }
-                Either::Right(r) => r.0?,
-            }
+            .map_err(HttpExecutionError::TimeoutExpired)
+            .await??
         } else {
             self.execute(reqwest_request)
                 .await

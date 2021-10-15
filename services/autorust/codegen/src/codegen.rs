@@ -32,14 +32,6 @@ impl CodeGen {
         self.config.api_version.as_deref()
     }
 
-    pub fn has_case_workaround(&self, path: &Path) -> bool {
-        self.config.fix_case_properties.iter().any(|x| x.file_path == path)
-    }
-
-    pub fn should_workaround_case(&self, prop_nm: &PropertyName) -> bool {
-        self.config.fix_case_properties.contains(prop_nm)
-    }
-
     pub fn should_force_optional(&self, prop_nm: &PropertyName) -> bool {
         self.config.optional_properties.contains(prop_nm)
     }
@@ -99,8 +91,6 @@ pub enum Error {
     ExamplesName(#[source] crate::identifier::Error),
     #[error("status code: {0}")]
     StatusCode(#[from] crate::status_codes::Error),
-    #[error("DataType::File not handled")]
-    UnsupportedDataTypeFile,
 }
 
 /// Whether or not to pass a type is a reference.
@@ -195,9 +185,7 @@ pub fn get_type_name_for_schema(schema: &SchemaCommon, as_ref: AsReference) -> R
                 AsReference::True => quote! { &serde_json::Value },
                 AsReference::False => quote! { serde_json::Value },
             },
-            DataType::File => {
-                return Err(Error::UnsupportedDataTypeFile);
-            }
+            DataType::File => todo!("Handle DataType::File"),
         };
         Ok(ts)
     } else {
