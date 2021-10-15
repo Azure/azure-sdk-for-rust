@@ -79,9 +79,16 @@ impl Spec {
         &self.docs
     }
 
-    /// Get the version from the first document
-    pub fn api_version(&self) -> Option<&str> {
-        self.docs.first().and_then(|doc| doc.1.info.version.as_deref())
+    /// Look for specs with operations and return the last one sorted alphabetically
+    pub fn api_version(&self) -> Option<String> {
+        let mut versions: Vec<&str> = self
+            .docs()
+            .values()
+            .filter(|doc| doc.paths.len() > 0)
+            .filter_map(|api| api.info.version.as_deref())
+            .collect();
+        versions.sort();
+        versions.last().map(|version| version.to_string())
     }
 
     pub fn input_docs<'a>(&'a self) -> impl Iterator<Item = (&'a PathBuf, &'a OpenAPI)> {

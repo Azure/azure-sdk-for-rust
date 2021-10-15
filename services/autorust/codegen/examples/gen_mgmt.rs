@@ -22,6 +22,7 @@ const SKIP_SERVICES: &[&str] = &[
     "deploymentmanager",          // TODO #80 path parameters
     "deviceprovisioningservices", // TODO #82 certificate_name used as parameter more than once
     "dnc",                        // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
+    "iotspaces",                  // no operations
     "m365securityandcompliance",  // can't find privateLinkServicesForO365ManagementActivityAPI.json
     "marketplace",
     "mixedreality",  // TODO #83 AccountKeyRegenerateRequest not generated

@@ -9,12 +9,17 @@ const OUTPUT_FOLDER: &str = "../svc";
 const ONLY_SERVICES: &[&str] = &[];
 
 const SKIP_SERVICES: &[&str] = &[
+    "blobstorage",             // uses "x-ms-paths" instead of "paths"
+    "filestorage",             // uses "x-ms-paths" instead of "paths"
+    "queuestorage",            // uses "x-ms-paths" instead of "paths"
     "deviceupdate",            // missing field `authorizationUrl`
     "digitaltwins",            // missing field `scopes`
     "machinelearningservices", // untagged enum
     "servicefabric",           // currently generates `async` member names
     "hdinsight",               // job_id appears multiple times?
     "keyvault",                // `{field_name}` used in formatting url
+    "videoanalyzer",           // no operations
+    "mediaservices",           // no operations
 ];
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
@@ -34,6 +39,7 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("storagedatalake", "package-2018-11"),      // "invalid value: string \"ErrorResponse\", expected length 3"
     ("storagedatalake", "package-2018-06-preview"),
     ("storagedatalake", "package-2019-10"),
+    ("storagedatalake", "package-2020-06"), // uses "x-ms-paths" instead of "paths"
 ];
 
 const FIX_CASE_PROPERTIES: &[(&str, &str, &str)] = &[
