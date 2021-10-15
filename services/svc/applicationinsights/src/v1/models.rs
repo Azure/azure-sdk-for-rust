@@ -583,7 +583,7 @@ pub struct QueryResults {
 pub struct Table {
     pub name: String,
     pub columns: Vec<Column>,
-    pub rows: Vec<Vec<String>>,
+    pub rows: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Column {
