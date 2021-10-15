@@ -2,10 +2,8 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryParam {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TimespanParam {}
+pub type QueryParam = String;
+pub type TimespanParam = String;
 pub type WorkspacesParam = Vec<String>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryBody {

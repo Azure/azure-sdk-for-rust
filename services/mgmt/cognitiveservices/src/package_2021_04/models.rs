@@ -2,8 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Kind {}
+pub type Kind = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: String,
@@ -27,8 +26,7 @@ pub mod sku {
         Enterprise,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SkuName {}
+pub type SkuName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Account {
     #[serde(flatten)]

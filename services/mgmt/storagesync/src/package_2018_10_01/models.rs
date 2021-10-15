@@ -566,10 +566,8 @@ pub struct SyncProgressStatus {
     #[serde(rename = "totalBytes", default, skip_serializing_if = "Option::is_none")]
     pub total_bytes: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PhysicalPath {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceId {}
+pub type PhysicalPath = String;
+pub type ResourceId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagsObject {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

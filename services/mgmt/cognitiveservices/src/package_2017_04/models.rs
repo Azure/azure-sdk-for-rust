@@ -2,8 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CognitiveServicesAccountKind {}
+pub type CognitiveServicesAccountKind = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: SkuName,
@@ -20,8 +19,7 @@ pub mod sku {
         Enterprise,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SkuName {}
+pub type SkuName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CognitiveServicesAccount {
     #[serde(default, skip_serializing_if = "Option::is_none")]

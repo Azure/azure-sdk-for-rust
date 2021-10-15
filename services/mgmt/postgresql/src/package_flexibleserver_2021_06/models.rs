@@ -491,8 +491,7 @@ pub struct DatabaseListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateDnsZoneSuffix {}
+pub type PrivateDnsZoneSuffix = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]

@@ -1740,8 +1740,7 @@ pub struct JitNetworkAccessPolicyInitiatePort {
     #[serde(rename = "endTimeUtc")]
     pub end_time_utc: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PortNumber {}
+pub type PortNumber = i64;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppWhitelistingGroups {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1928,12 +1927,9 @@ pub struct PathRecommendation {
     #[serde(rename = "configurationStatus", default, skip_serializing_if = "Option::is_none")]
     pub configuration_status: Option<ConfigurationStatus>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GroupResourceId {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmResourceId {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AppWhitelistingResourceType {}
+pub type GroupResourceId = String;
+pub type VmResourceId = String;
+pub type AppWhitelistingResourceType = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExternalSecuritySolutionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

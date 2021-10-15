@@ -302,8 +302,7 @@ pub enum QuotaRequestState {
     Failed,
     InProgress,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceTypesName {}
+pub type ResourceTypesName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExceptionResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]

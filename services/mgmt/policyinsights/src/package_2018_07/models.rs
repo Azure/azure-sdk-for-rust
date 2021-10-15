@@ -231,8 +231,7 @@ pub struct PolicyEvent {
     #[serde(rename = "principalOid", default, skip_serializing_if = "Option::is_none")]
     pub principal_oid: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetadataDocument {}
+pub type MetadataDocument = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyStatesQueryResults {
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]

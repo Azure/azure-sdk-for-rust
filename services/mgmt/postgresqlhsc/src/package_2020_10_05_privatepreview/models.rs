@@ -52,8 +52,7 @@ pub enum ServerRole {
     Coordinator,
     Worker,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FullyQualifiedDomainName {}
+pub type FullyQualifiedDomainName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerProperties {
     #[serde(rename = "serverEdition", default, skip_serializing_if = "Option::is_none")]
