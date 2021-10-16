@@ -171,7 +171,8 @@ mod tests {
                 description: None,
                 x_ms_client_flatten: None,
                 type_: None,
-                read_only: None
+                read_only: None,
+                xml: None,
             }
         );
     }
@@ -191,7 +192,8 @@ mod tests {
                 description: None,
                 x_ms_client_flatten: None,
                 type_: None,
-                read_only: None
+                read_only: None,
+                xml: None,
             })
             .unwrap()
         );
