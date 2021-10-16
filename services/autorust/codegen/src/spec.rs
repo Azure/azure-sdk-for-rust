@@ -276,7 +276,7 @@ pub mod openapi {
         let mut list = Vec::new();
 
         // paths and operations
-        for (_path, item) in &api.paths {
+        for (_path, item) in api.paths() {
             match item {
                 ReferenceOr::Reference { reference, .. } => list.push(TypedReference::PathItem(reference.clone())),
                 ReferenceOr::Item(item) => {
