@@ -146,36 +146,6 @@ fn starts_with_number(text: &str) -> bool {
     }
 }
 
-/// Get an API Version from tag.
-/// It is a date in yyyy-mm-dd format followed by an optional "-preview".
-pub fn to_api_version(package: &Configuration) -> Option<String> {
-    let re = regex::Regex::new(r"\d{4}-\d{2}-\d{2}(:?-\w*)?").unwrap();
-    let captures: Vec<String> = re.captures_iter(&package.tag).into_iter().map(|c| c[0].to_string()).collect();
-    let api_version = if captures.len() == 1 {
-        let parts: Vec<_> = captures[0].split("-").collect();
-        match parts.len() {
-            3 => Some(captures[0].clone()),
-            4 => match parts[3] {
-                "preview" => Some(captures[0].clone()),
-                _ => None,
-            },
-            _ => None,
-        }
-    } else {
-        None
-    };
-    match api_version {
-        Some(_) => api_version,
-        None => {
-            if package.input_files.len() > 0 {
-                get_input_file_api_version(&package.input_files[0])
-            } else {
-                None
-            }
-        }
-    }
-}
-
 pub fn get_input_file_api_version(input_file: &str) -> Option<String> {
     let parts: Vec<_> = input_file.split("/").collect();
     if parts.len() == 4 {
@@ -211,20 +181,6 @@ mod tests {
             tag: tag.to_owned(),
             input_files: Vec::new(),
         }
-    }
-
-    #[test]
-    fn test_api_version_name() {
-        assert_eq!(
-            Some("2019-06-01".to_owned()),
-            to_api_version(&new_package_from_tag("package-2019-06-01"))
-        );
-        assert_eq!(
-            Some("2019-06-01-preview".to_owned()),
-            to_api_version(&new_package_from_tag("package-2019-06-01-preview"))
-        );
-        assert_eq!(None, to_api_version(&new_package_from_tag("package-2019-06-01-Disk")));
-        assert_eq!(None, to_api_version(&new_package_from_tag("package-2019-06-01-only")));
     }
 
     #[test]

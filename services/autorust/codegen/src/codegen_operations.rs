@@ -97,7 +97,7 @@ fn create_function(
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
     let has_param_api_version = param_names.contains("api-version");
     let mut skip = HashSet::new();
-    if cg.api_version().is_some() {
+    if cg.spec.api_version().is_some() {
         skip.insert("api-version");
     }
     let parameters = parameters.into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
@@ -136,7 +136,7 @@ fn create_function(
 
     // api-version param
     if has_param_api_version {
-        if let Some(_api_version) = cg.api_version() {
+        if let Some(_api_version) = cg.spec.api_version() {
             ts_request_builder.extend(quote! {
                 url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
             });
