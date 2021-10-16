@@ -25,6 +25,9 @@ pub enum ReferenceOr<T> {
         /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-client-flatten
         #[serde(rename = "x-ms-client-flatten", skip_serializing_if = "Option::is_none")]
         x_ms_client_flatten: Option<bool>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        xml: Option<MsXml>,
     },
     Item(T),
 }
