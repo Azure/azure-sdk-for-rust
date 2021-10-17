@@ -52,3 +52,13 @@ pub struct OpenAPI {
     #[serde(rename = "x-ms-parameterized-host", skip_serializing_if = "Option::is_none")]
     pub x_ms_parameterized_host: Option<MsParameterizedHost>,
 }
+
+impl OpenAPI {
+    pub fn paths(&self) -> &IndexMap<String, ReferenceOr<PathItem>> {
+        if self.x_ms_paths.len() > 0 {
+            &self.x_ms_paths
+        } else {
+            &self.paths
+        }
+    }
+}
