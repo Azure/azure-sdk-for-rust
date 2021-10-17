@@ -246,9 +246,19 @@ pub fn create_mod(api_version: &str) -> TokenStream {
     }
 }
 
-pub static PARAM_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\{(\w+)\}").unwrap());
+// any word character or `-` between curly braces
+pub static PARAM_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\{([\w-]+)\}").unwrap());
 
 pub fn parse_params(path: &str) -> Vec<String> {
     // capture 0 is the whole match and 1 is the actual capture like other languages
     PARAM_RE.captures_iter(path).into_iter().map(|c| c[1].to_string()).collect()
+}
+
+#[test]
+fn test_parse_params_keyvault() -> Result<(), Error> {
+    assert_eq!(
+        parse_params("/storage/{storage-account-name}/sas/{sas-definition-name}"),
+        vec!["storage-account-name".to_owned(), "sas-definition-name".to_owned()]
+    );
+    Ok(())
 }
