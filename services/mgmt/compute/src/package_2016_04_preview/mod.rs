@@ -1,3 +1,3 @@
 pub mod models;
 pub mod operations;
-pub const API_VERSION: &str = "2016-04-30-preview";
+pub const API_VERSION: &str = "2017-01-31";

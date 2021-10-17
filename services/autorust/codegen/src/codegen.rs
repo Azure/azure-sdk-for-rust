@@ -28,9 +28,10 @@ impl CodeGen {
         &self.config.output_folder
     }
 
-    pub fn api_version(&self) -> Option<&str> {
-        self.config.api_version.as_deref()
-    }
+    // pub fn api_version(&self) -> Option<&str> {
+    //     // self.config.api_version.as_deref()
+    //     spec.
+    // }
 
     pub fn has_case_workaround(&self, path: &Path) -> bool {
         self.config.fix_case_properties.iter().any(|x| x.file_path == path)
