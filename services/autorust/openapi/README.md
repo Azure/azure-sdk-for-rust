@@ -1,6 +1,6 @@
 # autorust_openapi [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)
 
-Rust crate for deserializing [OpenAPI](http://swagger.io/specification/) documents as needed by [autorust](https://github.com/ctaggart/autorust/), an AutoRest extension. The goal is to be able to deserialize all of the documents found in [Azure/azure-rest-api-specs/specification](https://github.com/Azure/azure-rest-api-specs/tree/master/specification). They follow [OpenAPI Specfication Version 2.0](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#parameter-object) and use several [extensions](https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md).
+Rust crate for deserializing [OpenAPI](http://swagger.io/specification/) documents as needed by [autorust](https://github.com/ctaggart/autorust/), an AutoRest extension. The goal is to be able to deserialize all of the documents found in [Azure/azure-rest-api-specs/specification](https://github.com/Azure/azure-rest-api-specs/tree/master/specification). They follow [OpenAPI Specification Version 2.0](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#parameter-object) and use several [extensions](https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md).
 
 ## Install
 
