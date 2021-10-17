@@ -114,6 +114,19 @@ pub struct MsParameterGrouping {
     pub postfix: Option<String>,
 }
 
+// specify xml serialization
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub struct MsXml {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attribute: Option<bool>,
+    #[serde(rename = "x-ms-text", skip_serializing_if = "Option::is_none")]
+    pub x_ms_text: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wrapped: Option<bool>,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::MsPageable;
