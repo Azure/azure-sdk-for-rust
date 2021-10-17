@@ -104,8 +104,6 @@ pub enum Error {
     ExamplesName(#[source] crate::identifier::Error),
     #[error("status code: {0}")]
     StatusCode(#[from] crate::status_codes::Error),
-    #[error("DataType::File not handled")]
-    UnsupportedDataTypeFile,
 }
 
 /// Whether or not to pass a type is a reference.
@@ -208,7 +206,7 @@ pub fn get_type_name_for_schema(schema: &SchemaCommon, as_ref: AsReference) -> R
                 AsReference::False => quote! { serde_json::Value },
             },
             DataType::File => {
-                return Err(Error::UnsupportedDataTypeFile);
+                quote! { bytes::Bytes }
             }
         };
         Ok(ts)
