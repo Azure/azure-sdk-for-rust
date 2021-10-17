@@ -380,10 +380,10 @@ impl WebOperation {
                 if parts.len() == 2 {
                     parts[1].to_snake_case()
                 } else {
-                    create_function_name(&self.path, &self.verb)
+                    parts[0].to_snake_case()
                 }
             }
-            None => create_function_name(&self.path, &self.verb),
+            None => create_function_name(&self.verb, &self.path),
         }
     }
 }
@@ -414,9 +414,9 @@ impl<'a> WebVerb {
 
 /// Creating a function name from the path and verb when an operationId is not specified.
 /// All azure-rest-api-specs operations should have an operationId.
-fn create_function_name(path: &str, verb: &WebVerb) -> String {
+fn create_function_name(verb: &WebVerb, path: &str) -> String {
     let mut path = path.split('/').filter(|&x| !x.is_empty()).collect::<Vec<_>>();
-    path.push(verb.as_str());
+    path.insert(0, verb.as_str());
     path.join("_")
 }
 
@@ -545,7 +545,7 @@ mod tests {
 
     #[test]
     fn test_create_function_name() {
-        assert_eq!(create_function_name("/pets", &WebVerb::Get), "pets_get");
+        assert_eq!(create_function_name(&WebVerb::Get, "/pets"), "get_pets");
     }
 
     #[test]
@@ -573,6 +573,20 @@ mod tests {
             examples: IndexMap::new(),
         };
         assert_eq!(None, operation.rust_module_name());
-        assert_eq!("horse_get", operation.rust_function_name());
+        assert_eq!("get_horse", operation.rust_function_name());
+    }
+
+    #[test]
+    fn test_function_name_with_no_module_name() {
+        let operation = WebOperation {
+            id: Some("PerformConnectivityCheck".to_owned()),
+            path: "/horse".to_owned(),
+            verb: WebVerb::Put,
+            parameters: Vec::new(),
+            responses: IndexMap::new(),
+            examples: IndexMap::new(),
+        };
+        assert_eq!(None, operation.rust_module_name());
+        assert_eq!("perform_connectivity_check", operation.rust_function_name());
     }
 }
