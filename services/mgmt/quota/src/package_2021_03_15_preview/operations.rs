@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod usages {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_name: &str,
@@ -51,7 +51,7 @@ pub mod usages {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -110,7 +110,7 @@ pub mod usages {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -134,7 +134,7 @@ pub mod usages {
     }
 }
 pub mod quota {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_name: &str,
@@ -181,7 +181,7 @@ pub mod quota {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -255,7 +255,7 @@ pub mod quota {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(CurrentQuotaLimitBase),
@@ -331,7 +331,7 @@ pub mod quota {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(CurrentQuotaLimitBase),
@@ -395,7 +395,7 @@ pub mod quota {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -419,7 +419,7 @@ pub mod quota {
     }
 }
 pub mod quota_request_status {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         id: &str,
@@ -466,7 +466,7 @@ pub mod quota_request_status {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -540,7 +540,7 @@ pub mod quota_request_status {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -564,7 +564,7 @@ pub mod quota_request_status {
     }
 }
 pub mod operation {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Quota/operations", operation_config.base_path(),);
@@ -602,7 +602,7 @@ pub mod operation {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod accounts {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -71,7 +71,7 @@ pub mod accounts {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -163,7 +163,7 @@ pub mod accounts {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -228,7 +228,7 @@ pub mod accounts {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -301,7 +301,7 @@ pub mod accounts {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(DataLakeStoreAccount),
@@ -385,7 +385,7 @@ pub mod accounts {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(DataLakeStoreAccount),
@@ -453,7 +453,7 @@ pub mod accounts {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -523,7 +523,7 @@ pub mod accounts {
         }
     }
     pub mod enable_key_vault {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -593,7 +593,7 @@ pub mod accounts {
         }
     }
     pub mod check_name_availability {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -614,7 +614,7 @@ pub mod accounts {
     }
 }
 pub mod firewall_rules {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_account(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -664,7 +664,7 @@ pub mod firewall_rules {
         }
     }
     pub mod list_by_account {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -731,7 +731,7 @@ pub mod firewall_rules {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -803,7 +803,7 @@ pub mod firewall_rules {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -876,7 +876,7 @@ pub mod firewall_rules {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -939,7 +939,7 @@ pub mod firewall_rules {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -965,7 +965,7 @@ pub mod firewall_rules {
     }
 }
 pub mod virtual_network_rules {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_account(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1015,7 +1015,7 @@ pub mod virtual_network_rules {
         }
     }
     pub mod list_by_account {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1082,7 +1082,7 @@ pub mod virtual_network_rules {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1154,7 +1154,7 @@ pub mod virtual_network_rules {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1227,7 +1227,7 @@ pub mod virtual_network_rules {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1290,7 +1290,7 @@ pub mod virtual_network_rules {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1316,7 +1316,7 @@ pub mod virtual_network_rules {
     }
 }
 pub mod trusted_id_providers {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_account(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1366,7 +1366,7 @@ pub mod trusted_id_providers {
         }
     }
     pub mod list_by_account {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1433,7 +1433,7 @@ pub mod trusted_id_providers {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1505,7 +1505,7 @@ pub mod trusted_id_providers {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1578,7 +1578,7 @@ pub mod trusted_id_providers {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1641,7 +1641,7 @@ pub mod trusted_id_providers {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1667,7 +1667,7 @@ pub mod trusted_id_providers {
     }
 }
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DataLakeStore/operations", operation_config.base_path(),);
@@ -1703,7 +1703,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1724,7 +1724,7 @@ pub mod operations {
     }
 }
 pub mod locations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_capability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1773,7 +1773,7 @@ pub mod locations {
         }
     }
     pub mod get_capability {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -1841,7 +1841,7 @@ pub mod locations {
         }
     }
     pub mod get_usage {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

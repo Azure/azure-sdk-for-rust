@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod diagnostic_service_token {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_read_only(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
@@ -53,7 +53,7 @@ pub mod diagnostic_service_token {
         }
     }
     pub mod get_read_only {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -123,7 +123,7 @@ pub mod diagnostic_service_token {
         }
     }
     pub mod get_read_write {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

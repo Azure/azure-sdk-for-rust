@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod redis {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -51,7 +51,7 @@ pub mod redis {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -127,7 +127,7 @@ pub mod redis {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Created201(RedisResourceWithAccessKey),
@@ -194,7 +194,7 @@ pub mod redis {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -269,7 +269,7 @@ pub mod redis {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -330,7 +330,7 @@ pub mod redis {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -399,7 +399,7 @@ pub mod redis {
         }
     }
     pub mod list_keys {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -469,7 +469,7 @@ pub mod redis {
         }
     }
     pub mod regenerate_key {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -536,7 +536,7 @@ pub mod redis {
         }
     }
     pub mod force_reboot {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

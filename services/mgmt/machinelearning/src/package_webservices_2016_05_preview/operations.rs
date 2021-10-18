@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod web_services {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -51,7 +51,7 @@ pub mod web_services {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -127,7 +127,7 @@ pub mod web_services {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(WebService),
@@ -199,7 +199,7 @@ pub mod web_services {
         }
     }
     pub mod patch {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -260,7 +260,7 @@ pub mod web_services {
         }
     }
     pub mod remove {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -333,7 +333,7 @@ pub mod web_services {
         }
     }
     pub mod list_keys {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -405,7 +405,7 @@ pub mod web_services {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -470,7 +470,7 @@ pub mod web_services {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

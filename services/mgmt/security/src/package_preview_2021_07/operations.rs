@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod custom_assessment_automations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -53,7 +53,7 @@ pub mod custom_assessment_automations {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -131,7 +131,7 @@ pub mod custom_assessment_automations {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Created201(CustomAssessmentAutomation),
@@ -202,7 +202,7 @@ pub mod custom_assessment_automations {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -280,7 +280,7 @@ pub mod custom_assessment_automations {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -349,7 +349,7 @@ pub mod custom_assessment_automations {
         }
     }
     pub mod list_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -373,7 +373,7 @@ pub mod custom_assessment_automations {
     }
 }
 pub mod custom_entity_store_assignments {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -422,7 +422,7 @@ pub mod custom_entity_store_assignments {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -500,7 +500,7 @@ pub mod custom_entity_store_assignments {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Created201(CustomEntityStoreAssignment),
@@ -571,7 +571,7 @@ pub mod custom_entity_store_assignments {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -649,7 +649,7 @@ pub mod custom_entity_store_assignments {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -718,7 +718,7 @@ pub mod custom_entity_store_assignments {
         }
     }
     pub mod list_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

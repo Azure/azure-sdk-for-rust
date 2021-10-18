@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Devices/operations", operation_config.base_path(),);
@@ -42,7 +42,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,7 +66,7 @@ pub mod operations {
     }
 }
 pub mod iot_hub_resource {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -115,7 +115,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -200,7 +200,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Created201(IotHubDescription),
@@ -275,7 +275,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -355,7 +355,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Accepted202(IotHubDescription),
@@ -432,7 +432,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -505,7 +505,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -578,7 +578,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_stats {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -651,7 +651,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_valid_skus {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -728,7 +728,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_event_hub_consumer_groups {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -807,7 +807,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_event_hub_consumer_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -886,7 +886,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod create_event_hub_consumer_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -960,7 +960,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod delete_event_hub_consumer_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1033,7 +1033,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_jobs {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1108,7 +1108,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_job {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1181,7 +1181,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_quota_metrics {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1254,7 +1254,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_endpoint_health {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1327,7 +1327,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod check_name_availability {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1402,7 +1402,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod test_all_routes {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1477,7 +1477,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod test_route {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1551,7 +1551,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_keys {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1629,7 +1629,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_keys_for_key_name {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1704,7 +1704,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod export_devices {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1779,7 +1779,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod import_devices {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1803,7 +1803,7 @@ pub mod iot_hub_resource {
     }
 }
 pub mod resource_provider_common {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_subscription_quota(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1853,7 +1853,7 @@ pub mod resource_provider_common {
         }
     }
     pub mod get_subscription_quota {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1877,7 +1877,7 @@ pub mod resource_provider_common {
     }
 }
 pub mod certificates {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_iot_hub(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1929,7 +1929,7 @@ pub mod certificates {
         }
     }
     pub mod list_by_iot_hub {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2001,7 +2001,7 @@ pub mod certificates {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2088,7 +2088,7 @@ pub mod certificates {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Created201(CertificateDescription),
@@ -2163,7 +2163,7 @@ pub mod certificates {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2248,7 +2248,7 @@ pub mod certificates {
         }
     }
     pub mod generate_verification_code {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2324,7 +2324,7 @@ pub mod certificates {
         }
     }
     pub mod verify {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2348,7 +2348,7 @@ pub mod certificates {
     }
 }
 pub mod iot_hub {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn manual_failover(
         operation_config: &crate::OperationConfig,
         iot_hub_name: &str,
@@ -2398,7 +2398,7 @@ pub mod iot_hub {
         }
     }
     pub mod manual_failover {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2427,7 +2427,7 @@ pub mod iot_hub {
     }
 }
 pub mod private_link_resources {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2476,7 +2476,7 @@ pub mod private_link_resources {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2548,7 +2548,7 @@ pub mod private_link_resources {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2572,7 +2572,7 @@ pub mod private_link_resources {
     }
 }
 pub mod private_endpoint_connections {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2621,7 +2621,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2693,7 +2693,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2773,7 +2773,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Created201(PrivateEndpointConnection),
@@ -2857,7 +2857,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Accepted202(PrivateEndpointConnection),

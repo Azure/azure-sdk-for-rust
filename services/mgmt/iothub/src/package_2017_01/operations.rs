@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod iot_hub_resource {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -53,7 +53,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -134,7 +134,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Created201(IotHubDescription),
@@ -222,7 +222,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Accepted202(IotHubDescription),
@@ -299,7 +299,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -372,7 +372,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -445,7 +445,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_stats {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -518,7 +518,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_valid_skus {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -595,7 +595,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_event_hub_consumer_groups {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -674,7 +674,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_event_hub_consumer_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -753,7 +753,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod create_event_hub_consumer_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -827,7 +827,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod delete_event_hub_consumer_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -900,7 +900,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_jobs {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -975,7 +975,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_job {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1048,7 +1048,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_quota_metrics {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1121,7 +1121,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod check_name_availability {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1195,7 +1195,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_keys {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1273,7 +1273,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_keys_for_key_name {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1348,7 +1348,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod export_devices {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1423,7 +1423,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod import_devices {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

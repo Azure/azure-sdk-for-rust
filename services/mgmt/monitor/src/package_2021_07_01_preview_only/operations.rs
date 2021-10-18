@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod private_link_scopes {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -49,7 +49,7 @@ pub mod private_link_scopes {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -122,7 +122,7 @@ pub mod private_link_scopes {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -192,7 +192,7 @@ pub mod private_link_scopes {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -273,7 +273,7 @@ pub mod private_link_scopes {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(AzureMonitorPrivateLinkScope),
@@ -353,7 +353,7 @@ pub mod private_link_scopes {
         }
     }
     pub mod update_tags {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -420,7 +420,7 @@ pub mod private_link_scopes {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -450,7 +450,7 @@ pub mod private_link_scopes {
     }
 }
 pub mod private_link_scope_operation_status {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         async_operation_id: &str,
@@ -499,7 +499,7 @@ pub mod private_link_scope_operation_status {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -523,7 +523,7 @@ pub mod private_link_scope_operation_status {
     }
 }
 pub mod private_link_resources {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_private_link_scope(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -577,7 +577,7 @@ pub mod private_link_resources {
         }
     }
     pub mod list_by_private_link_scope {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -649,7 +649,7 @@ pub mod private_link_resources {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -673,7 +673,7 @@ pub mod private_link_resources {
     }
 }
 pub mod private_endpoint_connections {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -724,7 +724,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -802,7 +802,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(PrivateEndpointConnection),
@@ -876,7 +876,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -957,7 +957,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod list_by_private_link_scope {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -981,7 +981,7 @@ pub mod private_endpoint_connections {
     }
 }
 pub mod private_link_scoped_resources {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1032,7 +1032,7 @@ pub mod private_link_scoped_resources {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1116,7 +1116,7 @@ pub mod private_link_scoped_resources {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ScopedResource),
@@ -1191,7 +1191,7 @@ pub mod private_link_scoped_resources {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1272,7 +1272,7 @@ pub mod private_link_scoped_resources {
         }
     }
     pub mod list_by_private_link_scope {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

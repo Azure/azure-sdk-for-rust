@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod diagnostic_operations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn read(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -48,7 +48,7 @@ pub mod diagnostic_operations {
         }
     }
     pub mod read {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -77,7 +77,7 @@ pub mod diagnostic_operations {
     }
 }
 pub mod disk_inspection {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn create(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -126,7 +126,7 @@ pub mod disk_inspection {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -193,7 +193,7 @@ pub mod disk_inspection {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -217,7 +217,7 @@ pub mod disk_inspection {
     }
 }
 pub mod diagnostics {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -263,7 +263,7 @@ pub mod diagnostics {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

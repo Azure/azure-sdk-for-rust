@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub async fn get_user_settings_with_location(
     operation_config: &crate::OperationConfig,
     user_settings_name: &str,
@@ -54,7 +54,7 @@ pub async fn get_user_settings_with_location(
     }
 }
 pub mod get_user_settings_with_location {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -129,7 +129,7 @@ pub async fn put_user_settings_with_location(
     }
 }
 pub mod put_user_settings_with_location {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -204,7 +204,7 @@ pub async fn patch_user_settings_with_location(
     }
 }
 pub mod patch_user_settings_with_location {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -273,7 +273,7 @@ pub async fn delete_user_settings_with_location(
     }
 }
 pub mod delete_user_settings_with_location {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -351,7 +351,7 @@ pub async fn get_console_with_location(
     }
 }
 pub mod get_console_with_location {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -430,7 +430,7 @@ pub async fn put_console_with_location(
     }
 }
 pub mod put_console_with_location {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200(CloudShellConsole),
@@ -504,7 +504,7 @@ pub async fn delete_console_with_location(
     }
 }
 pub mod delete_console_with_location {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -577,7 +577,7 @@ pub async fn keep_alive_with_location(
     }
 }
 pub mod keep_alive_with_location {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -646,7 +646,7 @@ pub async fn get_user_settings(
     }
 }
 pub mod get_user_settings {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -717,7 +717,7 @@ pub async fn put_user_settings(
     }
 }
 pub mod put_user_settings {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -788,7 +788,7 @@ pub async fn patch_user_settings(
     }
 }
 pub mod patch_user_settings {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -853,7 +853,7 @@ pub async fn delete_user_settings(
     }
 }
 pub mod delete_user_settings {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -927,7 +927,7 @@ pub async fn get_console(
     }
 }
 pub mod get_console {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1004,7 +1004,7 @@ pub async fn put_console(
     }
 }
 pub mod put_console {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200(CloudShellConsole),
@@ -1074,7 +1074,7 @@ pub async fn delete_console(
     }
 }
 pub mod delete_console {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -1140,7 +1140,7 @@ pub async fn keep_alive(operation_config: &crate::OperationConfig, console_name:
     }
 }
 pub mod keep_alive {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]

@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod application_definitions {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_by_id(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -57,7 +57,7 @@ pub mod application_definitions {
         }
     }
     pub mod get_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -142,7 +142,7 @@ pub mod application_definitions {
         }
     }
     pub mod create_or_update_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ApplicationDefinition),
@@ -217,7 +217,7 @@ pub mod application_definitions {
         }
     }
     pub mod delete_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,

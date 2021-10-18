@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod role_assignments {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_for_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -62,7 +62,7 @@ pub mod role_assignments {
         }
     }
     pub mod list_for_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -143,7 +143,7 @@ pub mod role_assignments {
         }
     }
     pub mod list_for_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -228,7 +228,7 @@ pub mod role_assignments {
         }
     }
     pub mod list_for_resource {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -300,7 +300,7 @@ pub mod role_assignments {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -376,7 +376,7 @@ pub mod role_assignments {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Created201(RoleAssignment),
@@ -454,7 +454,7 @@ pub mod role_assignments {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(RoleAssignment),
@@ -532,7 +532,7 @@ pub mod role_assignments {
         }
     }
     pub mod validate {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -609,7 +609,7 @@ pub mod role_assignments {
         }
     }
     pub mod list_for_scope {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -678,7 +678,7 @@ pub mod role_assignments {
         }
     }
     pub mod get_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -751,7 +751,7 @@ pub mod role_assignments {
         }
     }
     pub mod create_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Created201(RoleAssignment),
@@ -826,7 +826,7 @@ pub mod role_assignments {
         }
     }
     pub mod delete_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(RoleAssignment),
@@ -898,7 +898,7 @@ pub mod role_assignments {
         }
     }
     pub mod validate_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -922,7 +922,7 @@ pub mod role_assignments {
     }
 }
 pub mod eligible_child_resources {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scope: &str,
@@ -971,7 +971,7 @@ pub mod eligible_child_resources {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -995,7 +995,7 @@ pub mod eligible_child_resources {
     }
 }
 pub mod role_assignment_schedules {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scope: &str,
@@ -1042,7 +1042,7 @@ pub mod role_assignment_schedules {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1115,7 +1115,7 @@ pub mod role_assignment_schedules {
         }
     }
     pub mod list_for_scope {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1139,7 +1139,7 @@ pub mod role_assignment_schedules {
     }
 }
 pub mod role_assignment_schedule_instances {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_for_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
@@ -1191,7 +1191,7 @@ pub mod role_assignment_schedule_instances {
         }
     }
     pub mod list_for_scope {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1259,7 +1259,7 @@ pub mod role_assignment_schedule_instances {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1283,7 +1283,7 @@ pub mod role_assignment_schedule_instances {
     }
 }
 pub mod role_assignment_schedule_requests {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scope: &str,
@@ -1330,7 +1330,7 @@ pub mod role_assignment_schedule_requests {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1400,7 +1400,7 @@ pub mod role_assignment_schedule_requests {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1473,7 +1473,7 @@ pub mod role_assignment_schedule_requests {
         }
     }
     pub mod list_for_scope {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1537,7 +1537,7 @@ pub mod role_assignment_schedule_requests {
         }
     }
     pub mod cancel {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1561,7 +1561,7 @@ pub mod role_assignment_schedule_requests {
     }
 }
 pub mod role_eligibility_schedules {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scope: &str,
@@ -1608,7 +1608,7 @@ pub mod role_eligibility_schedules {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1681,7 +1681,7 @@ pub mod role_eligibility_schedules {
         }
     }
     pub mod list_for_scope {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1705,7 +1705,7 @@ pub mod role_eligibility_schedules {
     }
 }
 pub mod role_eligibility_schedule_instances {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_for_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
@@ -1757,7 +1757,7 @@ pub mod role_eligibility_schedule_instances {
         }
     }
     pub mod list_for_scope {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1825,7 +1825,7 @@ pub mod role_eligibility_schedule_instances {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1849,7 +1849,7 @@ pub mod role_eligibility_schedule_instances {
     }
 }
 pub mod role_eligibility_schedule_requests {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scope: &str,
@@ -1896,7 +1896,7 @@ pub mod role_eligibility_schedule_requests {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1966,7 +1966,7 @@ pub mod role_eligibility_schedule_requests {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2039,7 +2039,7 @@ pub mod role_eligibility_schedule_requests {
         }
     }
     pub mod list_for_scope {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2103,7 +2103,7 @@ pub mod role_eligibility_schedule_requests {
         }
     }
     pub mod cancel {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2127,7 +2127,7 @@ pub mod role_eligibility_schedule_requests {
     }
 }
 pub mod role_management_policies {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scope: &str,
@@ -2174,7 +2174,7 @@ pub mod role_management_policies {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2244,7 +2244,7 @@ pub mod role_management_policies {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2308,7 +2308,7 @@ pub mod role_management_policies {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2382,7 +2382,7 @@ pub mod role_management_policies {
         }
     }
     pub mod list_for_scope {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2406,7 +2406,7 @@ pub mod role_management_policies {
     }
 }
 pub mod role_management_policy_assignments {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scope: &str,
@@ -2453,7 +2453,7 @@ pub mod role_management_policy_assignments {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2523,7 +2523,7 @@ pub mod role_management_policy_assignments {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2587,7 +2587,7 @@ pub mod role_management_policy_assignments {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2661,7 +2661,7 @@ pub mod role_management_policy_assignments {
         }
     }
     pub mod list_for_scope {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

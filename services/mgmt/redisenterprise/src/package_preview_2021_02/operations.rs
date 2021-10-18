@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Cache/operations", operation_config.base_path(),);
@@ -42,7 +42,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,7 +66,7 @@ pub mod operations {
     }
 }
 pub mod operations_status {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         location: &str,
@@ -115,7 +115,7 @@ pub mod operations_status {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -139,7 +139,7 @@ pub mod operations_status {
     }
 }
 pub mod redis_enterprise {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -188,7 +188,7 @@ pub mod redis_enterprise {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -266,7 +266,7 @@ pub mod redis_enterprise {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Created201(Cluster),
@@ -344,7 +344,7 @@ pub mod redis_enterprise {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Cluster),
@@ -416,7 +416,7 @@ pub mod redis_enterprise {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -495,7 +495,7 @@ pub mod redis_enterprise {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -558,7 +558,7 @@ pub mod redis_enterprise {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -582,7 +582,7 @@ pub mod redis_enterprise {
     }
 }
 pub mod databases {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_cluster(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -634,7 +634,7 @@ pub mod databases {
         }
     }
     pub mod list_by_cluster {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -706,7 +706,7 @@ pub mod databases {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -786,7 +786,7 @@ pub mod databases {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Database),
@@ -866,7 +866,7 @@ pub mod databases {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Database),
@@ -940,7 +940,7 @@ pub mod databases {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1022,7 +1022,7 @@ pub mod databases {
         }
     }
     pub mod list_keys {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1100,7 +1100,7 @@ pub mod databases {
         }
     }
     pub mod regenerate_key {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(AccessKeys),
@@ -1175,7 +1175,7 @@ pub mod databases {
         }
     }
     pub mod import {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1250,7 +1250,7 @@ pub mod databases {
         }
     }
     pub mod export {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1328,7 +1328,7 @@ pub mod databases {
         }
     }
     pub mod force_unlink {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1357,7 +1357,7 @@ pub mod databases {
     }
 }
 pub mod private_endpoint_connections {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -1406,7 +1406,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1478,7 +1478,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1552,7 +1552,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod put {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1620,7 +1620,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1649,7 +1649,7 @@ pub mod private_endpoint_connections {
     }
 }
 pub mod private_link_resources {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_cluster(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -1701,7 +1701,7 @@ pub mod private_link_resources {
         }
     }
     pub mod list_by_cluster {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

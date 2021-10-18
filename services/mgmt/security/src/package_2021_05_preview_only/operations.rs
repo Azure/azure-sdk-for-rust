@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod software_inventories {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_extended_resource(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -62,7 +62,7 @@ pub mod software_inventories {
         }
     }
     pub mod list_by_extended_resource {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -131,7 +131,7 @@ pub mod software_inventories {
         }
     }
     pub mod list_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -207,7 +207,7 @@ pub mod software_inventories {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

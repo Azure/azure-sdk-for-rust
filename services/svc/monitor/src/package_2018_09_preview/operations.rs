@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod metrics {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn create(
         operation_config: &crate::OperationConfig,
         content_type: &str,
@@ -64,7 +64,7 @@ pub mod metrics {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

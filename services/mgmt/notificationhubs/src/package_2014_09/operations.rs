@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod namespaces {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn check_availability(
         operation_config: &crate::OperationConfig,
         parameters: &CheckAvailabilityParameters,
@@ -52,7 +52,7 @@ pub mod namespaces {
         }
     }
     pub mod check_availability {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -117,7 +117,7 @@ pub mod namespaces {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -193,7 +193,7 @@ pub mod namespaces {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Created201(NamespaceResource),
@@ -260,7 +260,7 @@ pub mod namespaces {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -339,7 +339,7 @@ pub mod namespaces {
         }
     }
     pub mod get_authorization_rule {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -413,7 +413,7 @@ pub mod namespaces {
         }
     }
     pub mod create_or_update_authorization_rule {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -481,7 +481,7 @@ pub mod namespaces {
         }
     }
     pub mod delete_authorization_rule {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -544,7 +544,7 @@ pub mod namespaces {
         }
     }
     pub mod get_long_running_operation_status {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -614,7 +614,7 @@ pub mod namespaces {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -678,7 +678,7 @@ pub mod namespaces {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -749,7 +749,7 @@ pub mod namespaces {
         }
     }
     pub mod list_authorization_rules {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -820,7 +820,7 @@ pub mod namespaces {
         }
     }
     pub mod list_keys {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -841,7 +841,7 @@ pub mod namespaces {
     }
 }
 pub mod notification_hubs {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn check_availability(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -893,7 +893,7 @@ pub mod notification_hubs {
         }
     }
     pub mod check_availability {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -960,7 +960,7 @@ pub mod notification_hubs {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1038,7 +1038,7 @@ pub mod notification_hubs {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(NotificationHubResource),
@@ -1105,7 +1105,7 @@ pub mod notification_hubs {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1172,7 +1172,7 @@ pub mod notification_hubs {
         }
     }
     pub mod get_authorization_rule {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1240,7 +1240,7 @@ pub mod notification_hubs {
         }
     }
     pub mod create_or_update_authorization_rule {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1302,7 +1302,7 @@ pub mod notification_hubs {
         }
     }
     pub mod delete_authorization_rule {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -1372,7 +1372,7 @@ pub mod notification_hubs {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1438,7 +1438,7 @@ pub mod notification_hubs {
         }
     }
     pub mod list_authorization_rules {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1503,7 +1503,7 @@ pub mod notification_hubs {
         }
     }
     pub mod list_keys {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1574,7 +1574,7 @@ pub mod notification_hubs {
         }
     }
     pub mod get_pns_credentials {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

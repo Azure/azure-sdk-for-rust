@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod instances {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_metadata(
         operation_config: &crate::OperationConfig,
         metadata: &str,
@@ -91,7 +91,7 @@ pub mod instances {
         }
     }
     pub mod get_metadata {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -129,7 +129,7 @@ pub mod instances {
     }
 }
 pub mod attested {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_document(
         operation_config: &crate::OperationConfig,
         nonce: Option<&str>,
@@ -220,7 +220,7 @@ pub mod attested {
         }
     }
     pub mod get_document {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -258,7 +258,7 @@ pub mod attested {
     }
 }
 pub mod identity {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_token(
         operation_config: &crate::OperationConfig,
         metadata: &str,
@@ -355,7 +355,7 @@ pub mod identity {
         }
     }
     pub mod get_token {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -461,7 +461,7 @@ pub mod identity {
         }
     }
     pub mod get_info {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]

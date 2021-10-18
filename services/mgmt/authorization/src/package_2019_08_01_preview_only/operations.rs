@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod role_assignment_metrics {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_metrics_for_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -54,7 +54,7 @@ pub mod role_assignment_metrics {
         }
     }
     pub mod get_metrics_for_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

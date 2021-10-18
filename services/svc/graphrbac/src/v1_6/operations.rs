@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod o_auth2_permission_grant {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
@@ -54,7 +54,7 @@ pub mod o_auth2_permission_grant {
         }
     }
     pub mod list_next {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -78,7 +78,7 @@ pub mod o_auth2_permission_grant {
     }
 }
 pub mod signed_in_user {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_owned_objects_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
@@ -130,7 +130,7 @@ pub mod signed_in_user {
         }
     }
     pub mod list_owned_objects_next {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -154,7 +154,7 @@ pub mod signed_in_user {
     }
 }
 pub mod groups {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
@@ -199,7 +199,7 @@ pub mod groups {
         }
     }
     pub mod list_next {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -272,7 +272,7 @@ pub mod groups {
         }
     }
     pub mod get_group_members_next {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -296,7 +296,7 @@ pub mod groups {
     }
 }
 pub mod applications {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
@@ -341,7 +341,7 @@ pub mod applications {
         }
     }
     pub mod list_next {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -365,7 +365,7 @@ pub mod applications {
     }
 }
 pub mod deleted_applications {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
@@ -415,7 +415,7 @@ pub mod deleted_applications {
         }
     }
     pub mod list_next {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -439,7 +439,7 @@ pub mod deleted_applications {
     }
 }
 pub mod service_principals {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
@@ -489,7 +489,7 @@ pub mod service_principals {
         }
     }
     pub mod list_next {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -513,7 +513,7 @@ pub mod service_principals {
     }
 }
 pub mod users {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
@@ -558,7 +558,7 @@ pub mod users {
         }
     }
     pub mod list_next {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -582,7 +582,7 @@ pub mod users {
     }
 }
 pub mod objects {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_objects_by_object_ids_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
@@ -633,7 +633,7 @@ pub mod objects {
         }
     }
     pub mod get_objects_by_object_ids_next {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

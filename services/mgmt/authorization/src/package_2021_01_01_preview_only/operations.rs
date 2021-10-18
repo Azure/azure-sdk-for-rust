@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Authorization/operations", operation_config.base_path(),);
@@ -42,7 +42,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,7 +66,7 @@ pub mod operations {
     }
 }
 pub mod role_assignment_approval {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
@@ -113,7 +113,7 @@ pub mod role_assignment_approval {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -182,7 +182,7 @@ pub mod role_assignment_approval {
         }
     }
     pub mod get_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -206,7 +206,7 @@ pub mod role_assignment_approval {
     }
 }
 pub mod role_assignment_approval_steps {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         approval_id: &str,
@@ -251,7 +251,7 @@ pub mod role_assignment_approval_steps {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -275,7 +275,7 @@ pub mod role_assignment_approval_steps {
     }
 }
 pub mod role_assignment_approval_step {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_by_id(
         operation_config: &crate::OperationConfig,
         approval_id: &str,
@@ -325,7 +325,7 @@ pub mod role_assignment_approval_step {
         }
     }
     pub mod get_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -395,7 +395,7 @@ pub mod role_assignment_approval_step {
         }
     }
     pub mod put {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -465,7 +465,7 @@ pub mod role_assignment_approval_step {
         }
     }
     pub mod patch {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -489,7 +489,7 @@ pub mod role_assignment_approval_step {
     }
 }
 pub mod scope_role_assignment_approval {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
@@ -538,7 +538,7 @@ pub mod scope_role_assignment_approval {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -609,7 +609,7 @@ pub mod scope_role_assignment_approval {
         }
     }
     pub mod get_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -633,7 +633,7 @@ pub mod scope_role_assignment_approval {
     }
 }
 pub mod scope_role_assignment_approval_steps {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         approval_id: &str,
@@ -680,7 +680,7 @@ pub mod scope_role_assignment_approval_steps {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -704,7 +704,7 @@ pub mod scope_role_assignment_approval_steps {
     }
 }
 pub mod scope_role_assignment_approval_step {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_by_id(
         operation_config: &crate::OperationConfig,
         approval_id: &str,
@@ -756,7 +756,7 @@ pub mod scope_role_assignment_approval_step {
         }
     }
     pub mod get_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -828,7 +828,7 @@ pub mod scope_role_assignment_approval_step {
         }
     }
     pub mod put {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -900,7 +900,7 @@ pub mod scope_role_assignment_approval_step {
         }
     }
     pub mod patch {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

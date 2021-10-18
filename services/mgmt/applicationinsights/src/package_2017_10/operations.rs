@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod ea_subscription_migrate_to_new_pricing_model {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn post(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<(), post::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -42,7 +42,7 @@ pub mod ea_subscription_migrate_to_new_pricing_model {
         }
     }
     pub mod post {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,7 +66,7 @@ pub mod ea_subscription_migrate_to_new_pricing_model {
     }
 }
 pub mod ea_subscription_rollback_to_legacy_pricing_model {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn post(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<(), post::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -104,7 +104,7 @@ pub mod ea_subscription_rollback_to_legacy_pricing_model {
         }
     }
     pub mod post {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -128,7 +128,7 @@ pub mod ea_subscription_rollback_to_legacy_pricing_model {
     }
 }
 pub mod ea_subscription_list_migration_date {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn post(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -172,7 +172,7 @@ pub mod ea_subscription_list_migration_date {
         }
     }
     pub mod post {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -193,7 +193,7 @@ pub mod ea_subscription_list_migration_date {
     }
 }
 pub mod component_current_pricing_plan {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -240,7 +240,7 @@ pub mod component_current_pricing_plan {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -310,7 +310,7 @@ pub mod component_current_pricing_plan {
         }
     }
     pub mod create_and_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -377,7 +377,7 @@ pub mod component_current_pricing_plan {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

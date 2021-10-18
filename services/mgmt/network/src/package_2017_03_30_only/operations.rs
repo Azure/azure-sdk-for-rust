@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod network_interfaces {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_virtual_machine_scale_set_vm_network_interfaces(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -52,7 +52,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_virtual_machine_scale_set_vm_network_interfaces {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -123,7 +123,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_virtual_machine_scale_set_network_interfaces {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -193,7 +193,7 @@ pub mod network_interfaces {
         }
     }
     pub mod get_virtual_machine_scale_set_network_interface {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -264,7 +264,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_virtual_machine_scale_set_ip_configurations {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -335,7 +335,7 @@ pub mod network_interfaces {
         }
     }
     pub mod get_virtual_machine_scale_set_ip_configuration {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -356,7 +356,7 @@ pub mod network_interfaces {
     }
 }
 pub mod public_ip_addresses {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_virtual_machine_scale_set_public_ip_addresses(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -409,7 +409,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod list_virtual_machine_scale_set_public_ip_addresses {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -477,7 +477,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod list_virtual_machine_scale_set_vm_public_ip_addresses {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -549,7 +549,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod get_virtual_machine_scale_set_public_ip_address {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

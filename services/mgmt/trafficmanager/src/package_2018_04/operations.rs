@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod endpoints {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -57,7 +57,7 @@ pub mod endpoints {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -142,7 +142,7 @@ pub mod endpoints {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Endpoint),
@@ -223,7 +223,7 @@ pub mod endpoints {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -298,7 +298,7 @@ pub mod endpoints {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(DeleteOperationResult),
@@ -327,7 +327,7 @@ pub mod endpoints {
     }
 }
 pub mod profiles {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn check_traffic_manager_relative_dns_name_availability(
         operation_config: &crate::OperationConfig,
         parameters: &CheckTrafficManagerRelativeDnsNameAvailabilityParameters,
@@ -380,7 +380,7 @@ pub mod profiles {
         }
     }
     pub mod check_traffic_manager_relative_dns_name_availability {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -453,7 +453,7 @@ pub mod profiles {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -522,7 +522,7 @@ pub mod profiles {
         }
     }
     pub mod list_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -592,7 +592,7 @@ pub mod profiles {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -673,7 +673,7 @@ pub mod profiles {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Profile),
@@ -750,7 +750,7 @@ pub mod profiles {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -821,7 +821,7 @@ pub mod profiles {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(DeleteOperationResult),
@@ -850,7 +850,7 @@ pub mod profiles {
     }
 }
 pub mod geographic_hierarchies {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_default(
         operation_config: &crate::OperationConfig,
     ) -> std::result::Result<TrafficManagerGeographicHierarchy, get_default::Error> {
@@ -896,7 +896,7 @@ pub mod geographic_hierarchies {
         }
     }
     pub mod get_default {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -920,7 +920,7 @@ pub mod geographic_hierarchies {
     }
 }
 pub mod heat_map {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -973,7 +973,7 @@ pub mod heat_map {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -997,7 +997,7 @@ pub mod heat_map {
     }
 }
 pub mod traffic_manager_user_metrics_keys {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1042,7 +1042,7 @@ pub mod traffic_manager_user_metrics_keys {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1111,7 +1111,7 @@ pub mod traffic_manager_user_metrics_keys {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1177,7 +1177,7 @@ pub mod traffic_manager_user_metrics_keys {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

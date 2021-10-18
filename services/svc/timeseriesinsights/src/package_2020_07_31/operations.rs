@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod query {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_availability(
         operation_config: &crate::OperationConfig,
         store_type: Option<&str>,
@@ -59,7 +59,7 @@ pub mod query {
         }
     }
     pub mod get_availability {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -137,7 +137,7 @@ pub mod query {
         }
     }
     pub mod get_event_schema {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -219,7 +219,7 @@ pub mod query {
         }
     }
     pub mod execute {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -243,7 +243,7 @@ pub mod query {
     }
 }
 pub mod model_settings {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         x_ms_client_request_id: Option<&str>,
@@ -291,7 +291,7 @@ pub mod model_settings {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -362,7 +362,7 @@ pub mod model_settings {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -386,7 +386,7 @@ pub mod model_settings {
     }
 }
 pub mod time_series_instances {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         x_ms_continuation: Option<&str>,
@@ -438,7 +438,7 @@ pub mod time_series_instances {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -512,7 +512,7 @@ pub mod time_series_instances {
         }
     }
     pub mod execute_batch {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -586,7 +586,7 @@ pub mod time_series_instances {
         }
     }
     pub mod suggest {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -661,7 +661,7 @@ pub mod time_series_instances {
         }
     }
     pub mod search {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -685,7 +685,7 @@ pub mod time_series_instances {
     }
 }
 pub mod time_series_types {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         x_ms_continuation: Option<&str>,
@@ -737,7 +737,7 @@ pub mod time_series_types {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -811,7 +811,7 @@ pub mod time_series_types {
         }
     }
     pub mod execute_batch {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -835,7 +835,7 @@ pub mod time_series_types {
     }
 }
 pub mod time_series_hierarchies {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         x_ms_continuation: Option<&str>,
@@ -887,7 +887,7 @@ pub mod time_series_hierarchies {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -961,7 +961,7 @@ pub mod time_series_hierarchies {
         }
     }
     pub mod execute_batch {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

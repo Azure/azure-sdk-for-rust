@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub async fn list_operations(
     operation_config: &crate::OperationConfig,
 ) -> std::result::Result<OperationListResult, list_operations::Error> {
@@ -45,7 +45,7 @@ pub async fn list_operations(
     }
 }
 pub mod list_operations {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -68,7 +68,7 @@ pub mod list_operations {
     }
 }
 pub mod features {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_all(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -116,7 +116,7 @@ pub mod features {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -184,7 +184,7 @@ pub mod features {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -254,7 +254,7 @@ pub mod features {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -328,7 +328,7 @@ pub mod features {
         }
     }
     pub mod register {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -402,7 +402,7 @@ pub mod features {
         }
     }
     pub mod unregister {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -426,7 +426,7 @@ pub mod features {
     }
 }
 pub mod subscription_feature_registrations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -475,7 +475,7 @@ pub mod subscription_feature_registrations {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -554,7 +554,7 @@ pub mod subscription_feature_registrations {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -620,7 +620,7 @@ pub mod subscription_feature_registrations {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -696,7 +696,7 @@ pub mod subscription_feature_registrations {
         }
     }
     pub mod list_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -767,7 +767,7 @@ pub mod subscription_feature_registrations {
         }
     }
     pub mod list_all_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod server_groups {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -49,7 +49,7 @@ pub mod server_groups {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -122,7 +122,7 @@ pub mod server_groups {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -192,7 +192,7 @@ pub mod server_groups {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -274,7 +274,7 @@ pub mod server_groups {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ServerGroup),
@@ -353,7 +353,7 @@ pub mod server_groups {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ServerGroup),
@@ -425,7 +425,7 @@ pub mod server_groups {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -501,7 +501,7 @@ pub mod server_groups {
         }
     }
     pub mod restart {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -573,7 +573,7 @@ pub mod server_groups {
         }
     }
     pub mod start {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -645,7 +645,7 @@ pub mod server_groups {
         }
     }
     pub mod stop {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -723,7 +723,7 @@ pub mod server_groups {
         }
     }
     pub mod check_name_availability {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -747,7 +747,7 @@ pub mod server_groups {
     }
 }
 pub mod servers {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_server_group(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -799,7 +799,7 @@ pub mod servers {
         }
     }
     pub mod list_by_server_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -871,7 +871,7 @@ pub mod servers {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -895,7 +895,7 @@ pub mod servers {
     }
 }
 pub mod configurations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_server(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -949,7 +949,7 @@ pub mod configurations {
         }
     }
     pub mod list_by_server {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1022,7 +1022,7 @@ pub mod configurations {
         }
     }
     pub mod list_by_server_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1094,7 +1094,7 @@ pub mod configurations {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1169,7 +1169,7 @@ pub mod configurations {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ServerGroupConfiguration),
@@ -1198,7 +1198,7 @@ pub mod configurations {
     }
 }
 pub mod firewall_rules {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1249,7 +1249,7 @@ pub mod firewall_rules {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1333,7 +1333,7 @@ pub mod firewall_rules {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(FirewallRule),
@@ -1408,7 +1408,7 @@ pub mod firewall_rules {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1487,7 +1487,7 @@ pub mod firewall_rules {
         }
     }
     pub mod list_by_server_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1511,7 +1511,7 @@ pub mod firewall_rules {
     }
 }
 pub mod roles {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn create(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1571,7 +1571,7 @@ pub mod roles {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Role),
@@ -1646,7 +1646,7 @@ pub mod roles {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1725,7 +1725,7 @@ pub mod roles {
         }
     }
     pub mod list_by_server_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1749,7 +1749,7 @@ pub mod roles {
     }
 }
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DBForPostgreSql/operations", operation_config.base_path(),);
@@ -1787,7 +1787,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

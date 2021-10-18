@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod monitoring {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_spark_job_list(
         operation_config: &crate::OperationConfig,
         x_ms_client_request_id: Option<&str>,
@@ -49,7 +49,7 @@ pub mod monitoring {
         }
     }
     pub mod get_spark_job_list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -126,7 +126,7 @@ pub mod monitoring {
         }
     }
     pub mod get_sql_job_query_string {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub async fn get_token(
     operation_config: &crate::OperationConfig,
     account_id: &str,
@@ -45,7 +45,7 @@ pub async fn get_token(
     }
 }
 pub mod get_token {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]

@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod management_locks {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_at_resource_group_level(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -56,7 +56,7 @@ pub mod management_locks {
         }
     }
     pub mod get_at_resource_group_level {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -134,7 +134,7 @@ pub mod management_locks {
         }
     }
     pub mod create_or_update_at_resource_group_level {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ManagementLockObject),
@@ -205,7 +205,7 @@ pub mod management_locks {
         }
     }
     pub mod delete_at_resource_group_level {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -296,7 +296,7 @@ pub mod management_locks {
         }
     }
     pub mod create_or_update_at_resource_level {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ManagementLockObject),
@@ -375,7 +375,7 @@ pub mod management_locks {
         }
     }
     pub mod delete_at_resource_level {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -443,7 +443,7 @@ pub mod management_locks {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -519,7 +519,7 @@ pub mod management_locks {
         }
     }
     pub mod create_or_update_at_subscription_level {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Created201(ManagementLockObject),
@@ -588,7 +588,7 @@ pub mod management_locks {
         }
     }
     pub mod delete_at_subscription_level {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -665,7 +665,7 @@ pub mod management_locks {
         }
     }
     pub mod list_at_resource_group_level {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -745,7 +745,7 @@ pub mod management_locks {
         }
     }
     pub mod list_at_resource_level {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -815,7 +815,7 @@ pub mod management_locks {
         }
     }
     pub mod list_at_subscription_level {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

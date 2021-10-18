@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod confidential_ledger_identity_service {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_ledger_identity(
         operation_config: &crate::OperationConfig,
         ledger_id: &str,
@@ -48,7 +48,7 @@ pub mod confidential_ledger_identity_service {
         }
     }
     pub mod get_ledger_identity {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

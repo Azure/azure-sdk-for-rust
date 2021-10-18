@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod confidential_ledger {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_constitution(operation_config: &crate::OperationConfig) -> std::result::Result<Constitution, get_constitution::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/app/governance/constitution", operation_config.base_path(),);
@@ -45,7 +45,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_constitution {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -111,7 +111,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_consortium_members {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -175,7 +175,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_enclave_quotes {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -251,7 +251,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_ledger_entries {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -325,7 +325,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod post_ledger_entry {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -394,7 +394,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_ledger_entry {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -459,7 +459,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_receipt {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -526,7 +526,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_transaction_status {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -596,7 +596,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_current_ledger_entry {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -658,7 +658,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_user {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -727,7 +727,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod create_or_update_user {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -784,7 +784,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod delete_user {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

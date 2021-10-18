@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod server_keys {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_instance(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -56,7 +56,7 @@ pub mod server_keys {
         }
     }
     pub mod list_by_instance {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -128,7 +128,7 @@ pub mod server_keys {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -206,7 +206,7 @@ pub mod server_keys {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ServerKey),
@@ -280,7 +280,7 @@ pub mod server_keys {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

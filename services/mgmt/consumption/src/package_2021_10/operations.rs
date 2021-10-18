@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod usage_details {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         scope: &str,
@@ -69,7 +69,7 @@ pub mod usage_details {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -93,7 +93,7 @@ pub mod usage_details {
     }
 }
 pub mod marketplaces {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
@@ -150,7 +150,7 @@ pub mod marketplaces {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -174,7 +174,7 @@ pub mod marketplaces {
     }
 }
 pub mod budgets {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<BudgetsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}/providers/Microsoft.Consumption/budgets", operation_config.base_path(), scope);
@@ -212,7 +212,7 @@ pub mod budgets {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -276,7 +276,7 @@ pub mod budgets {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -355,7 +355,7 @@ pub mod budgets {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Budget),
@@ -423,7 +423,7 @@ pub mod budgets {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -447,7 +447,7 @@ pub mod budgets {
     }
 }
 pub mod tags {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<get::Response, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}/providers/Microsoft.Consumption/tags", operation_config.base_path(), scope);
@@ -486,7 +486,7 @@ pub mod tags {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(TagsResult),
@@ -515,7 +515,7 @@ pub mod tags {
     }
 }
 pub mod charges {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         scope: &str,
@@ -572,7 +572,7 @@ pub mod charges {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -596,7 +596,7 @@ pub mod charges {
     }
 }
 pub mod balances {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_by_billing_account(
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
@@ -646,7 +646,7 @@ pub mod balances {
         }
     }
     pub mod get_by_billing_account {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -714,7 +714,7 @@ pub mod balances {
         }
     }
     pub mod get_for_billing_period_by_billing_account {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -738,7 +738,7 @@ pub mod balances {
     }
 }
 pub mod reservations_summaries {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_reservation_order(
         operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
@@ -794,7 +794,7 @@ pub mod reservations_summaries {
         }
     }
     pub mod list_by_reservation_order {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -873,7 +873,7 @@ pub mod reservations_summaries {
         }
     }
     pub mod list_by_reservation_order_and_reservation {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -961,7 +961,7 @@ pub mod reservations_summaries {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -985,7 +985,7 @@ pub mod reservations_summaries {
     }
 }
 pub mod reservations_details {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_reservation_order(
         operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
@@ -1037,7 +1037,7 @@ pub mod reservations_details {
         }
     }
     pub mod list_by_reservation_order {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1112,7 +1112,7 @@ pub mod reservations_details {
         }
     }
     pub mod list_by_reservation_order_and_reservation {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1198,7 +1198,7 @@ pub mod reservations_details {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1222,7 +1222,7 @@ pub mod reservations_details {
     }
 }
 pub mod reservation_recommendations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
@@ -1272,7 +1272,7 @@ pub mod reservation_recommendations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ReservationRecommendationsListResult),
@@ -1301,7 +1301,7 @@ pub mod reservation_recommendations {
     }
 }
 pub mod reservation_recommendation_details {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scope: &str,
@@ -1355,7 +1355,7 @@ pub mod reservation_recommendation_details {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ReservationRecommendationDetailsModel),
@@ -1384,7 +1384,7 @@ pub mod reservation_recommendation_details {
     }
 }
 pub mod reservation_transactions {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
@@ -1433,7 +1433,7 @@ pub mod reservation_transactions {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1510,7 +1510,7 @@ pub mod reservation_transactions {
         }
     }
     pub mod list_by_billing_profile {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1534,7 +1534,7 @@ pub mod reservation_transactions {
     }
 }
 pub mod price_sheet {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         expand: Option<&str>,
@@ -1591,7 +1591,7 @@ pub mod price_sheet {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1676,7 +1676,7 @@ pub mod price_sheet {
         }
     }
     pub mod get_by_billing_period {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1700,7 +1700,7 @@ pub mod price_sheet {
     }
 }
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Consumption/operations", operation_config.base_path(),);
@@ -1738,7 +1738,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1762,7 +1762,7 @@ pub mod operations {
     }
 }
 pub mod aggregated_cost {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_by_management_group(
         operation_config: &crate::OperationConfig,
         management_group_id: &str,
@@ -1816,7 +1816,7 @@ pub mod aggregated_cost {
         }
     }
     pub mod get_by_management_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1884,7 +1884,7 @@ pub mod aggregated_cost {
         }
     }
     pub mod get_for_billing_period_by_management_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1908,7 +1908,7 @@ pub mod aggregated_cost {
     }
 }
 pub mod events {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_billing_profile(
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
@@ -1964,7 +1964,7 @@ pub mod events {
         }
     }
     pub mod list_by_billing_profile {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2039,7 +2039,7 @@ pub mod events {
         }
     }
     pub mod list_by_billing_account {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2063,7 +2063,7 @@ pub mod events {
     }
 }
 pub mod lots {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_billing_profile(
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
@@ -2115,7 +2115,7 @@ pub mod lots {
         }
     }
     pub mod list_by_billing_profile {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2190,7 +2190,7 @@ pub mod lots {
         }
     }
     pub mod list_by_billing_account {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2214,7 +2214,7 @@ pub mod lots {
     }
 }
 pub mod credits {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
@@ -2262,7 +2262,7 @@ pub mod credits {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(CreditSummary),

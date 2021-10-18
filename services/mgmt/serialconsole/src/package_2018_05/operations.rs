@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub async fn list_operations(
     operation_config: &crate::OperationConfig,
 ) -> std::result::Result<SerialConsoleOperations, list_operations::Error> {
@@ -43,7 +43,7 @@ pub async fn list_operations(
     }
 }
 pub mod list_operations {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Unexpected HTTP status code {}", status_code)]
@@ -115,7 +115,7 @@ pub async fn get_console_status(
     }
 }
 pub mod get_console_status {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -192,7 +192,7 @@ pub async fn disable_console(
     }
 }
 pub mod disable_console {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -269,7 +269,7 @@ pub async fn enable_console(
     }
 }
 pub mod enable_console {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -293,7 +293,7 @@ pub mod enable_console {
     }
 }
 pub mod serial_ports {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -346,7 +346,7 @@ pub mod serial_ports {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -422,7 +422,7 @@ pub mod serial_ports {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -500,7 +500,7 @@ pub mod serial_ports {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -572,7 +572,7 @@ pub mod serial_ports {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -647,7 +647,7 @@ pub mod serial_ports {
         }
     }
     pub mod list_by_subscriptions {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -727,7 +727,7 @@ pub mod serial_ports {
         }
     }
     pub mod connect {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

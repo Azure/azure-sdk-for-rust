@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod catalog {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn grant_acl(
         operation_config: &crate::OperationConfig,
         parameters: &AclCreateOrUpdateParameters,
@@ -44,7 +44,7 @@ pub mod catalog {
         }
     }
     pub mod grant_acl {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -109,7 +109,7 @@ pub mod catalog {
         }
     }
     pub mod grant_acl_to_database {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -167,7 +167,7 @@ pub mod catalog {
         }
     }
     pub mod revoke_acl {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -232,7 +232,7 @@ pub mod catalog {
         }
     }
     pub mod revoke_acl_from_database {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

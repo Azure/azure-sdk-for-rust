@@ -20,6 +20,7 @@ tokio = { version = "1.0", features = ["macros"] }
 
 [features]
 default = ["package-pure-2020-03"]
+no-default-version = []
 "package-2020-03-preview" = []
 "package-pure-2020-03" = []
 "package-pure-2020-03-preview" = []

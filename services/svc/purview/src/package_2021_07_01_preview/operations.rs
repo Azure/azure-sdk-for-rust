@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod metadata_roles {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<MetadataRoleList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/metadataRoles", operation_config.base_path(),);
@@ -42,7 +42,7 @@ pub mod metadata_roles {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,7 +66,7 @@ pub mod metadata_roles {
     }
 }
 pub mod metadata_policy {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_all(
         operation_config: &crate::OperationConfig,
         collection_name: Option<&str>,
@@ -113,7 +113,7 @@ pub mod metadata_policy {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -172,7 +172,7 @@ pub mod metadata_policy {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -240,7 +240,7 @@ pub mod metadata_policy {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

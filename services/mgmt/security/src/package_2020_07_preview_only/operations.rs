@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod sql_vulnerability_assessment_scans {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scan_id: &str,
@@ -53,7 +53,7 @@ pub mod sql_vulnerability_assessment_scans {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -121,7 +121,7 @@ pub mod sql_vulnerability_assessment_scans {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -145,7 +145,7 @@ pub mod sql_vulnerability_assessment_scans {
     }
 }
 pub mod sql_vulnerability_assessment_scan_results {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scan_id: &str,
@@ -196,7 +196,7 @@ pub mod sql_vulnerability_assessment_scan_results {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -266,7 +266,7 @@ pub mod sql_vulnerability_assessment_scan_results {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -290,7 +290,7 @@ pub mod sql_vulnerability_assessment_scan_results {
     }
 }
 pub mod sql_vulnerability_assessment_baseline_rules {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         rule_id: &str,
@@ -339,7 +339,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -418,7 +418,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -484,7 +484,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -557,7 +557,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -631,7 +631,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod add {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

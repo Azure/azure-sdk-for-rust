@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod policy_events {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_query_results_for_management_group(
         operation_config: &crate::OperationConfig,
         policy_events_resource: &str,
@@ -87,7 +87,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_management_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -189,7 +189,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -293,7 +293,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -395,7 +395,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_resource {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -501,7 +501,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_policy_set_definition {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -607,7 +607,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_policy_definition {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -718,7 +718,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_subscription_level_policy_assignment {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -823,7 +823,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_resource_group_level_policy_assignment {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -892,7 +892,7 @@ pub mod policy_events {
         }
     }
     pub mod get_metadata {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -916,7 +916,7 @@ pub mod policy_events {
     }
 }
 pub mod policy_states {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_query_results_for_management_group(
         operation_config: &crate::OperationConfig,
         policy_states_resource: &str,
@@ -999,7 +999,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_management_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1091,7 +1091,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_management_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1193,7 +1193,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1283,7 +1283,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1387,7 +1387,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1479,7 +1479,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1581,7 +1581,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_resource {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1671,7 +1671,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_resource {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1777,7 +1777,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_policy_set_definition {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1871,7 +1871,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_policy_set_definition {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1977,7 +1977,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_policy_definition {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2071,7 +2071,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_policy_definition {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2182,7 +2182,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_subscription_level_policy_assignment {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2278,7 +2278,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_subscription_level_policy_assignment {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2383,7 +2383,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_resource_group_level_policy_assignment {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2473,7 +2473,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_resource_group_level_policy_assignment {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2542,7 +2542,7 @@ pub mod policy_states {
         }
     }
     pub mod get_metadata {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2566,7 +2566,7 @@ pub mod policy_states {
     }
 }
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationsListResults, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.PolicyInsights/operations", operation_config.base_path(),);
@@ -2604,7 +2604,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

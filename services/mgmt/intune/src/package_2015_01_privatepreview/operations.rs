@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub async fn get_locations(operation_config: &crate::OperationConfig) -> std::result::Result<LocationCollection, get_locations::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/providers/Microsoft.Intune/locations", operation_config.base_path(),);
@@ -43,7 +43,7 @@ pub async fn get_locations(operation_config: &crate::OperationConfig) -> std::re
     }
 }
 pub mod get_locations {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -109,7 +109,7 @@ pub async fn get_location_by_host_name(
     }
 }
 pub mod get_location_by_host_name {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -190,7 +190,7 @@ pub async fn get_apps(
     }
 }
 pub mod get_apps {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -273,7 +273,7 @@ pub async fn get_mam_user_devices(
     }
 }
 pub mod get_mam_user_devices {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -352,7 +352,7 @@ pub async fn get_mam_user_device_by_device_name(
     }
 }
 pub mod get_mam_user_device_by_device_name {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -426,7 +426,7 @@ pub async fn wipe_mam_user_device(
     }
 }
 pub mod wipe_mam_user_device {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -509,7 +509,7 @@ pub async fn get_operation_results(
     }
 }
 pub mod get_operation_results {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -578,7 +578,7 @@ pub async fn get_mam_statuses(
     }
 }
 pub mod get_mam_statuses {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -661,7 +661,7 @@ pub async fn get_mam_flagged_users(
     }
 }
 pub mod get_mam_flagged_users {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -738,7 +738,7 @@ pub async fn get_mam_flagged_user_by_name(
     }
 }
 pub mod get_mam_flagged_user_by_name {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -823,7 +823,7 @@ pub async fn get_mam_user_flagged_enrolled_apps(
     }
 }
 pub mod get_mam_user_flagged_enrolled_apps {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -846,7 +846,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
     }
 }
 pub mod ios {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_mam_policies(
         operation_config: &crate::OperationConfig,
         host_name: &str,
@@ -906,7 +906,7 @@ pub mod ios {
         }
     }
     pub mod get_mam_policies {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -983,7 +983,7 @@ pub mod ios {
         }
     }
     pub mod get_mam_policy_by_name {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1058,7 +1058,7 @@ pub mod ios {
         }
     }
     pub mod create_or_update_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1131,7 +1131,7 @@ pub mod ios {
         }
     }
     pub mod patch_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1198,7 +1198,7 @@ pub mod ios {
         }
     }
     pub mod delete_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1288,7 +1288,7 @@ pub mod ios {
         }
     }
     pub mod get_app_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1361,7 +1361,7 @@ pub mod ios {
         }
     }
     pub mod add_app_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1437,7 +1437,7 @@ pub mod ios {
         }
     }
     pub mod delete_app_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1515,7 +1515,7 @@ pub mod ios {
         }
     }
     pub mod get_groups_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1588,7 +1588,7 @@ pub mod ios {
         }
     }
     pub mod add_group_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1664,7 +1664,7 @@ pub mod ios {
         }
     }
     pub mod delete_group_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1693,7 +1693,7 @@ pub mod ios {
     }
 }
 pub mod android {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_mam_policies(
         operation_config: &crate::OperationConfig,
         host_name: &str,
@@ -1753,7 +1753,7 @@ pub mod android {
         }
     }
     pub mod get_mam_policies {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1830,7 +1830,7 @@ pub mod android {
         }
     }
     pub mod get_mam_policy_by_name {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1905,7 +1905,7 @@ pub mod android {
         }
     }
     pub mod create_or_update_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1978,7 +1978,7 @@ pub mod android {
         }
     }
     pub mod patch_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2045,7 +2045,7 @@ pub mod android {
         }
     }
     pub mod delete_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2135,7 +2135,7 @@ pub mod android {
         }
     }
     pub mod get_app_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2208,7 +2208,7 @@ pub mod android {
         }
     }
     pub mod add_app_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2284,7 +2284,7 @@ pub mod android {
         }
     }
     pub mod delete_app_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2362,7 +2362,7 @@ pub mod android {
         }
     }
     pub mod get_groups_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2435,7 +2435,7 @@ pub mod android {
         }
     }
     pub mod add_group_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2511,7 +2511,7 @@ pub mod android {
         }
     }
     pub mod delete_group_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

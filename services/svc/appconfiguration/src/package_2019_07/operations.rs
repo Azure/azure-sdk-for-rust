@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub async fn get_keys(
     operation_config: &crate::OperationConfig,
     name: Option<&str>,
@@ -61,7 +61,7 @@ pub async fn get_keys(
     }
 }
 pub mod get_keys {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -128,7 +128,7 @@ pub async fn check_keys(
     }
 }
 pub mod check_keys {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -210,7 +210,7 @@ pub async fn get_key_values(
     }
 }
 pub mod get_key_values {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -282,7 +282,7 @@ pub async fn check_key_values(
     }
 }
 pub mod check_key_values {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -365,7 +365,7 @@ pub async fn get_key_value(
     }
 }
 pub mod get_key_value {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -452,7 +452,7 @@ pub async fn put_key_value(
     }
 }
 pub mod put_key_value {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -530,7 +530,7 @@ pub async fn delete_key_value(
     }
 }
 pub mod delete_key_value {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200(KeyValue),
@@ -608,7 +608,7 @@ pub async fn check_key_value(
     }
 }
 pub mod check_key_value {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -686,7 +686,7 @@ pub async fn get_labels(
     }
 }
 pub mod get_labels {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -754,7 +754,7 @@ pub async fn check_labels(
     }
 }
 pub mod check_labels {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -832,7 +832,7 @@ pub async fn put_lock(
     }
 }
 pub mod put_lock {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -913,7 +913,7 @@ pub async fn delete_lock(
     }
 }
 pub mod delete_lock {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -998,7 +998,7 @@ pub async fn get_revisions(
     }
 }
 pub mod get_revisions {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1070,7 +1070,7 @@ pub async fn check_revisions(
     }
 }
 pub mod check_revisions {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
