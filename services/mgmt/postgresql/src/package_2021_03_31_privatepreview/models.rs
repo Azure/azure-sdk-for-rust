@@ -79,9 +79,9 @@ pub struct CapabilitiesListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServerVersion {
     #[serde(rename = "12")]
-    _12,
+    N12,
     #[serde(rename = "11")]
-    _11,
+    N11,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerProperties {

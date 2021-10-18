@@ -123,7 +123,7 @@ pub enum OutputErrorPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CompatibilityLevel {
     #[serde(rename = "1.0")]
-    _1_0,
+    N1_0,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {

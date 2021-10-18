@@ -1163,7 +1163,7 @@ pub mod security_rule_properties_format {
         Tcp,
         Udp,
         #[serde(rename = "*")]
-        Asterisk,
+        U2a,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Access {
@@ -1259,7 +1259,7 @@ pub mod effective_network_security_rule {
         Tcp,
         Udp,
         #[serde(rename = "*")]
-        Asterisk,
+        U2a,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Access {

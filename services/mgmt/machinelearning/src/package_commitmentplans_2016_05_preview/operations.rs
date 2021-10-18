@@ -331,7 +331,12 @@ pub mod commitment_associations {
 }
 pub mod commitment_plans {
     use crate::models::*;
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<CommitmentPlan, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        commitment_plan_name: &str,
+    ) -> std::result::Result<CommitmentPlan, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}",
@@ -350,6 +355,7 @@ pub mod commitment_plans {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -392,6 +398,9 @@ pub mod commitment_plans {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        commitment_plan_name: &str,
         create_or_update_payload: &CommitmentPlan,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -412,6 +421,7 @@ pub mod commitment_plans {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(create_or_update_payload).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -469,6 +479,9 @@ pub mod commitment_plans {
     }
     pub async fn patch(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        commitment_plan_name: &str,
         patch_payload: &CommitmentPlanPatchPayload,
     ) -> std::result::Result<CommitmentPlan, patch::Error> {
         let http_client = operation_config.http_client();
@@ -489,6 +502,7 @@ pub mod commitment_plans {
                 .map_err(patch::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(patch_payload).map_err(patch::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -530,7 +544,12 @@ pub mod commitment_plans {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn remove(operation_config: &crate::OperationConfig) -> std::result::Result<(), remove::Error> {
+    pub async fn remove(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        commitment_plan_name: &str,
+    ) -> std::result::Result<(), remove::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}",
@@ -549,6 +568,7 @@ pub mod commitment_plans {
                 .map_err(remove::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(remove::Error::BuildRequestError)?;
