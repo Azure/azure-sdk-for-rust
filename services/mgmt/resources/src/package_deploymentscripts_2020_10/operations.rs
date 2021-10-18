@@ -101,6 +101,7 @@ pub mod deployment_scripts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(deployment_script).map_err(create::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
@@ -184,6 +185,7 @@ pub mod deployment_scripts {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(deployment_script) = deployment_script {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(deployment_script).map_err(update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)

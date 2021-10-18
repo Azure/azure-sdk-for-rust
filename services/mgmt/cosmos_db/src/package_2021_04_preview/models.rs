@@ -970,8 +970,7 @@ pub mod container_partition_key {
         MultiHash,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Path {}
+pub type Path = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UniqueKeyPolicy {
     #[serde(rename = "uniqueKeys", default, skip_serializing_if = "Vec::is_empty")]
@@ -1065,8 +1064,7 @@ pub struct MongoIndexKeys {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub keys: Vec<Key>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Key {}
+pub type Key = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MongoIndexOptions {
     #[serde(rename = "expireAfterSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -1179,8 +1177,7 @@ pub mod managed_service_identity {
         None,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProvisioningState {}
+pub type ProvisioningState = String;
 pub type IpRules = Vec<IpAddressOrRange>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IpAddressOrRange {
@@ -1457,8 +1454,7 @@ pub struct DatabaseRestoreResource {
     #[serde(rename = "collectionNames", default, skip_serializing_if = "Vec::is_empty")]
     pub collection_names: Vec<CollectionName>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CollectionName {}
+pub type CollectionName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupPolicy {
     #[serde(rename = "type")]
@@ -2096,6 +2092,20 @@ pub struct ServiceResource {
     pub arm_proxy_resource: ArmProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceResourceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceResourceCreateUpdateParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ServiceResourceCreateUpdateProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceResourceCreateUpdateProperties {
+    #[serde(rename = "instanceSize", default, skip_serializing_if = "Option::is_none")]
+    pub instance_size: Option<ServiceResourceInstanceSize>,
+    #[serde(rename = "instanceCount", default, skip_serializing_if = "Option::is_none")]
+    pub instance_count: Option<i32>,
+    #[serde(rename = "serviceType", default, skip_serializing_if = "Option::is_none")]
+    pub service_type: Option<ServiceType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceResourceListResult {

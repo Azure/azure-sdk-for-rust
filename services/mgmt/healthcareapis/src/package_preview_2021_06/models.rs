@@ -88,12 +88,9 @@ pub struct ServiceAcrConfigurationInfo {
     #[serde(rename = "loginServers", default, skip_serializing_if = "Vec::is_empty")]
     pub login_servers: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceCorsConfigurationOriginEntry {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceCorsConfigurationHeaderEntry {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceCorsConfigurationMethodEntry {}
+pub type ServiceCorsConfigurationOriginEntry = String;
+pub type ServiceCorsConfigurationHeaderEntry = String;
+pub type ServiceCorsConfigurationMethodEntry = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicesDescription {
     #[serde(flatten)]
@@ -437,8 +434,7 @@ pub struct DicomServiceAuthenticationConfiguration {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub audiences: Vec<DicomAudience>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DicomAudience {}
+pub type DicomAudience = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotConnector {
     #[serde(flatten)]
@@ -608,12 +604,9 @@ pub struct FhirServiceCorsConfiguration {
     #[serde(rename = "allowCredentials", default, skip_serializing_if = "Option::is_none")]
     pub allow_credentials: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CorsConfigurationOriginEntry {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CorsConfigurationHeaderEntry {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CorsConfigurationMethodEntry {}
+pub type CorsConfigurationOriginEntry = String;
+pub type CorsConfigurationHeaderEntry = String;
+pub type CorsConfigurationMethodEntry = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FhirServiceExportConfiguration {
     #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]

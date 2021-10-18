@@ -302,6 +302,7 @@ pub mod sql_managed_instances {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(sql_managed_instance).map_err(create::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
@@ -384,6 +385,7 @@ pub mod sql_managed_instances {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
@@ -460,6 +462,7 @@ pub mod sql_managed_instances {
         let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -477,6 +480,7 @@ pub mod sql_managed_instances {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -738,6 +742,7 @@ pub mod sql_server_instances {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(sql_server_instance).map_err(create::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
@@ -820,6 +825,7 @@ pub mod sql_server_instances {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
@@ -896,6 +902,7 @@ pub mod sql_server_instances {
         let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -913,6 +920,7 @@ pub mod sql_server_instances {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1174,6 +1182,7 @@ pub mod postgres_instances {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(resource).map_err(create::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
@@ -1256,6 +1265,7 @@ pub mod postgres_instances {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
@@ -1332,6 +1342,7 @@ pub mod postgres_instances {
         let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -1349,6 +1360,7 @@ pub mod postgres_instances {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1614,6 +1626,7 @@ pub mod data_controllers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(data_controller_resource).map_err(put_data_controller::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(put_data_controller::Error::BuildRequestError)?;
@@ -1699,6 +1712,7 @@ pub mod data_controllers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(data_controller_resource).map_err(patch_data_controller::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -1785,6 +1799,7 @@ pub mod data_controllers {
             .map_err(delete_data_controller::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(delete_data_controller::Response::Ok200),
+            http::StatusCode::ACCEPTED => Ok(delete_data_controller::Response::Accepted202),
             http::StatusCode::NO_CONTENT => Ok(delete_data_controller::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
@@ -1802,6 +1817,7 @@ pub mod data_controllers {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]

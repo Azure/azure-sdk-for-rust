@@ -5,7 +5,7 @@ Rust crates for accessing [Azure services](https://azure.microsoft.com/services/
 There are 168 specifications. So far, we have generated 100 control plane crates. We expect that number to go up as AutoRust matures and bugs are fixed.
 
 ## Control Plane Crates
-The control plane crates are named `azure_mgmt_${specification_directory}`, such as `azure_mgmt_storage`. Each service may have multiple API versions. Each API version has a set of OpenAPI 2.0 documents, listed under a `Tag` in a [readme.md](https://github.com/Azure/azure-rest-api-specs/blob/master/specification/storage/resource-manager/readme.md) file in a `Conifguration` section. Sometimes there are multiple `Tag`s for the same API version. For example, [Tag: package-2018-07](https://github.com/Azure/azure-rest-api-specs/blob/master/specification/storage/resource-manager/readme.md#tag-package-2018-07) and [Tag: package-2018-07-only](https://github.com/Azure/azure-rest-api-specs/blob/master/specification/storage/resource-manager/readme.md#tag-package-2018-07-only). Rust code is generated for each tag and organized as a crate feature. The first tag without `-preview` is selected as the default feature:
+The control plane crates are named `azure_mgmt_${specification_directory}`, such as `azure_mgmt_storage`. Each service may have multiple API versions. Each API version has a set of OpenAPI 2.0 documents, listed under a `Tag` in a [readme.md](https://github.com/Azure/azure-rest-api-specs/blob/master/specification/storage/resource-manager/readme.md) file in a `Configuration` section. Sometimes there are multiple `Tag`s for the same API version. For example, [Tag: package-2018-07](https://github.com/Azure/azure-rest-api-specs/blob/master/specification/storage/resource-manager/readme.md#tag-package-2018-07) and [Tag: package-2018-07-only](https://github.com/Azure/azure-rest-api-specs/blob/master/specification/storage/resource-manager/readme.md#tag-package-2018-07-only). Rust code is generated for each tag and organized as a crate feature. The first tag without `-preview` is selected as the default feature:
 
 ``` toml
 [features]
@@ -47,7 +47,7 @@ azure_mgmt_storage_2018_02 = { package = "azure_mgmt_storage", git = "https://gi
 ```
 
 ## Data Plane Crates
-The data plane crates will be named `azure_svc_${specification_directory}`, such as `azure_svc_storage`. 
+The data plane crates will be named `azure_svc_${specification_directory}`, such as `azure_svc_storage`.
 
 ## Examples
 There are a few examples:

@@ -79,6 +79,18 @@ impl Spec {
         &self.docs
     }
 
+    /// Look for specs with operations and return the last one sorted alphabetically
+    pub fn api_version(&self) -> Option<String> {
+        let mut versions: Vec<&str> = self
+            .docs()
+            .values()
+            .filter(|doc| doc.paths.len() > 0)
+            .filter_map(|api| api.info.version.as_deref())
+            .collect();
+        versions.sort();
+        versions.last().map(|version| version.to_string())
+    }
+
     pub fn input_docs<'a>(&'a self) -> impl Iterator<Item = (&'a PathBuf, &'a OpenAPI)> {
         self.docs.iter().filter(move |(p, _)| self.is_input_file(p))
     }
@@ -276,7 +288,7 @@ pub mod openapi {
         let mut list = Vec::new();
 
         // paths and operations
-        for (_path, item) in &api.paths {
+        for (_path, item) in api.paths() {
             match item {
                 ReferenceOr::Reference { reference, .. } => list.push(TypedReference::PathItem(reference.clone())),
                 ReferenceOr::Item(item) => {

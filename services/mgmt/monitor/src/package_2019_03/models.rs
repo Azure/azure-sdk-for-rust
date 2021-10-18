@@ -1235,7 +1235,6 @@ pub mod metric_criteria {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Equals,
-        NotEquals,
         GreaterThan,
         GreaterThanOrEqual,
         LessThan,

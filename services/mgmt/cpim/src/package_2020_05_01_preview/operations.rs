@@ -167,6 +167,7 @@ pub mod guest_usages {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(resource) = resource {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(resource).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -242,6 +243,7 @@ pub mod guest_usages {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(resource_patch) = resource_patch {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(resource_patch).map_err(update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)

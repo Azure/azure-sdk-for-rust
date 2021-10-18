@@ -417,6 +417,7 @@ pub mod jobs {
         if let Some(x_ms_client_tenant_id) = x_ms_client_tenant_id {
             req_builder = req_builder.header("x-ms-client-tenant-id", x_ms_client_tenant_id);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(create::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
@@ -503,6 +504,7 @@ pub mod jobs {
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;

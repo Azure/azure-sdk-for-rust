@@ -650,6 +650,28 @@ pub struct DimensionProperties {
     pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EmailRegistration {
+    #[serde(rename = "activationCode", default, skip_serializing_if = "Option::is_none")]
+    pub activation_code: Option<String>,
+    #[serde(rename = "activationExpirationDate", default, skip_serializing_if = "Option::is_none")]
+    pub activation_expiration_date: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
+    pub registration_status: Option<email_registration::RegistrationStatus>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+pub mod email_registration {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RegistrationStatus {
+        ActivationPending,
+        Activated,
+        ActivationAttemptsExhausted,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Identity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,

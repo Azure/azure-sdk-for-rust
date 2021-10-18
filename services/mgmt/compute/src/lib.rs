@@ -3,6 +3,10 @@
 mod package_2021_07_01_only;
 #[cfg(feature = "package-2021-07-01-only")]
 pub use package_2021_07_01_only::{models, operations, API_VERSION};
+#[cfg(feature = "package-2021-06-01-preview-only")]
+mod package_2021_06_01_preview_only;
+#[cfg(feature = "package-2021-06-01-preview-only")]
+pub use package_2021_06_01_preview_only::{models, operations, API_VERSION};
 #[cfg(feature = "package-2021-04-01-only")]
 mod package_2021_04_01_only;
 #[cfg(feature = "package-2021-04-01-only")]

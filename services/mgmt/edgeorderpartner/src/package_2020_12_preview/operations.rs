@@ -97,6 +97,7 @@ pub async fn manage_inventory_metadata(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(manage_inventory_metadata_request).map_err(manage_inventory_metadata::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
@@ -178,6 +179,7 @@ pub async fn manage_link(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(manage_link_request).map_err(manage_link::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(manage_link::Error::BuildRequestError)?;
@@ -249,6 +251,7 @@ pub async fn search_inventories(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(search_inventories_request).map_err(search_inventories::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(search_inventories::Error::BuildRequestError)?;

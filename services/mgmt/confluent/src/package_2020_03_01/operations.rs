@@ -94,6 +94,7 @@ pub mod marketplace_agreements {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(body) = body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(body).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -446,6 +447,7 @@ pub mod organization {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(body) = body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(body).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -532,6 +534,7 @@ pub mod organization {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(body) = body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(body).map_err(update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)

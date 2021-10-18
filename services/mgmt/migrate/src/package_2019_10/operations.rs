@@ -239,6 +239,7 @@ pub mod projects {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(project) = project {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(project).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -325,6 +326,7 @@ pub mod projects {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(project) = project {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(project).map_err(update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -919,6 +921,7 @@ pub mod groups {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(group) = group {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(group).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -1080,6 +1083,7 @@ pub mod groups {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(group_update_properties) = group_update_properties {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(group_update_properties).map_err(update_machines::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -1387,6 +1391,7 @@ pub mod assessments {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(assessment) = assessment {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(assessment).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -1917,6 +1922,7 @@ pub mod hyper_v_collectors {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(collector_body) = collector_body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(collector_body).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -2226,6 +2232,7 @@ pub mod server_collectors {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(collector_body) = collector_body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(collector_body).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -2535,6 +2542,7 @@ pub mod v_mware_collectors {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(collector_body) = collector_body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(collector_body).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -2844,6 +2852,7 @@ pub mod import_collectors {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(collector_body) = collector_body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(collector_body).map_err(create::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -3153,6 +3162,7 @@ pub mod private_endpoint_connection {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(private_endpoint_connection_body) = private_endpoint_connection_body {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(private_endpoint_connection_body).map_err(update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)

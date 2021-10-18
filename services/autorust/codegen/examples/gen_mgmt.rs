@@ -1,10 +1,6 @@
 // cargo run --example gen_mgmt --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/compute/resource-manager
-use autorust_codegen::{
-    self, cargo_toml,
-    config_parser::{to_api_version, to_mod_name},
-    get_mgmt_configs, lib_rs, path, Config, PropertyName, SpecConfigs,
-};
+use autorust_codegen::{self, cargo_toml, config_parser::to_mod_name, get_mgmt_readmes, lib_rs, path, Config, PropertyName, SpecReadme};
 use heck::SnakeCase;
 use std::{collections::HashSet, fs, path::PathBuf};
 
@@ -26,11 +22,11 @@ const SKIP_SERVICES: &[&str] = &[
     "deploymentmanager",          // TODO #80 path parameters
     "deviceprovisioningservices", // TODO #82 certificate_name used as parameter more than once
     "dnc",                        // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
+    "iotspaces",                  // no operations
     "m365securityandcompliance",  // can't find privateLinkServicesForO365ManagementActivityAPI.json
     "marketplace",
     "mixedreality",  // TODO #83 AccountKeyRegenerateRequest not generated
     "netapp",        // Ident "10minutely"
-    "network",       // recursive types need to be boxed
     "powerplatform", // https://github.com/Azure/azure-rest-api-specs/pull/11580 incorrect ref & duplicate Operations_List
     "service-map",   // Ident "Ref:machine"
     "servicefabric", // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
@@ -41,10 +37,12 @@ const SKIP_SERVICES: &[&str] = &[
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("analysisservices", "package-2017-08"),
+    ("authorization", "package-2020-10-01-preview"),
     ("authorization", "package-2018-05-01-preview"),
     ("authorization", "package-2021-03-01-preview-only"),
     ("authorization", "package-2021-07-01-preview-only"),
     ("azureactivedirectory", "package-preview-2020-07"),
+    ("compute", "package-2021-06-01-preview"),      // TODO #81 DataType::File
     ("compute", "package-2020-10-01-preview"),      // TODO #81 DataType::File
     ("compute", "package-2020-10-01-preview-only"), // TODO #81 DataType::File
     ("compute", "package-2021-03-01"),              // TODO #81 DataType::File
@@ -66,11 +64,8 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("mediaservices", "package-2019-05-preview"), // invalid unicode character of a dash instead of a hyphen https://github.com/Azure/azure-rest-api-specs/pull/11576
     ("marketplace", "package-2020-01-01"),
     ("marketplace", "package-2020-12-01"),
-    ("marketplace", "package-composite-v1"), // mixing versions
-    ("marketplace", "package-composite-v2"), // mixing versions
-    // ("network", "package-2017-03-30-only"), // SchemaNotFound 2017-09-01/network.json SubResource
-    // ("network", "package-2020-11"), // recursive types need to be boxed
-    // ("network", "package-2021-02"), // recursive types need to be boxed
+    ("marketplace", "package-composite-v1"),             // mixing versions
+    ("marketplace", "package-composite-v2"),             // mixing versions
     ("recoveryservicesbackup", "package-2020-07"),       // duplicate fn get_operation_status
     ("recoveryservicesbackup", "package-2020-10"),       // duplicate fn get_operation_status
     ("recoveryservicessiterecovery", "package-2016-08"), // duplicate package-2016-08 https://github.com/Azure/azure-rest-api-specs/pull/11287
@@ -79,10 +74,98 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("security", "package-2020-01-preview-only"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/pull/13828
 ];
 
+// because of a bug in compute specs, some properties need to be forced to be optional
+// https://github.com/Azure/azure-rest-api-specs/issues/14459
+// https://github.com/Azure/azure-sdk-for-rust/issues/54
+const OPTIONAL_PROPERTIES: &[(&str, &str, &str)] = &[
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/preview/2016-04-30-preview/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2015-06-15/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2016-03-30/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2017-03-30/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2017-12-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2018-04-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2018-06-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2018-10-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2019-03-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2019-07-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2019-12-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2020-06-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2020-12-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2021-03-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2021-04-01/compute.json",
+        "Resource",
+        "location",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/compute/resource-manager/Microsoft.Compute/stable/2021-07-01/compute.json",
+        "Resource",
+        "location",
+    ),
+];
+
 // because of recursive types, some properties have to be boxed
 // https://github.com/ctaggart/autorust/issues/73
 const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     // cost-management
+    ("../../../azure-rest-api-specs/specification/cost-management/resource-manager/Microsoft.CostManagement/stable/2021-10-01/costmanagement.json", "ReportConfigFilter", "not"),
+    ("../../../azure-rest-api-specs/specification/cost-management/resource-manager/Microsoft.CostManagement/stable/2021-10-01/costmanagement.json", "QueryFilter", "not"),
     ("../../../azure-rest-api-specs/specification/cost-management/resource-manager/Microsoft.CostManagement/stable/2020-06-01/costmanagement.json", "ReportConfigFilter", "not"),
     ("../../../azure-rest-api-specs/specification/cost-management/resource-manager/Microsoft.CostManagement/stable/2020-06-01/costmanagement.json", "QueryFilter", "not"),
     // databox
@@ -103,10 +186,80 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ("../../../azure-rest-api-specs/specification/migrateprojects/resource-manager/Microsoft.Migrate/preview/2018-09-01-preview/migrate.json", "IEdmNavigationProperty", "partner"),
     ("../../../azure-rest-api-specs/specification/migrateprojects/resource-manager/Microsoft.Migrate/preview/2018-09-01-preview/migrate.json", "IEdmStructuredType", "baseType"),
     // network
-    // ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-07-01/publicIpAddress.json", "PublicIPAddressPropertiesFormat", "ipConfiguration"),
-    // ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-08-01/publicIpAddress.json", "PublicIPAddressPropertiesFormat", "ipConfiguration"),
-    // ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-11-01/publicIpAddress.json", "PublicIPAddressPropertiesFormat", "ipConfiguration"),
-    // ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2021-02-01/publicIpAddress.json", "PublicIPAddressPropertiesFormat", "ipConfiguration"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2015-06-15/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2015-06-15/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2016-03-30/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2016-03-30/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2016-06-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2016-06-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2016-09-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2016-09-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2016-12-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2016-12-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2017-03-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2017-03-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2017-06-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2017-06-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2017-08-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2017-08-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2017-09-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2017-09-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2017-10-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2017-10-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2017-11-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2017-11-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-01-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-01-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-02-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-02-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-04-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-04-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-06-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-06-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-07-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-07-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-08-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-08-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-10-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-10-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-11-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-11-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-12-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2018-12-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-02-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-02-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-04-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-04-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-06-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-06-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-07-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-07-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-08-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-08-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-09-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-09-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-11-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-11-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-12-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2019-12-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-03-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-03-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-04-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-04-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-05-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-05-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-06-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-06-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-07-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-07-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-08-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-08-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-11-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2020-11-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2021-02-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2021-02-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2021-03-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2021-03-01/publicIpAddress.json", "PublicIPAddress", "properties"),
 ];
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -130,7 +283,7 @@ pub enum Error {
 }
 
 fn main() -> Result<()> {
-    for (i, spec) in get_mgmt_configs()
+    for (i, spec) in get_mgmt_readmes()
         .map_err(|source| Error::GetSpecFoldersError { source })?
         .iter()
         .enumerate()
@@ -150,7 +303,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn gen_crate(spec: &SpecConfigs) -> Result<()> {
+fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let service_name = &get_service_name(spec.spec());
     let crate_name = &format!("azure_mgmt_{}", service_name);
     let output_folder = &path::join(OUTPUT_FOLDER, service_name).map_err(|source| Error::PathError { source })?;
@@ -172,42 +325,49 @@ fn gen_crate(spec: &SpecConfigs) -> Result<()> {
         });
     }
 
+    let mut optional_properties = HashSet::new();
+    for (file_path, schema_name, property_name) in OPTIONAL_PROPERTIES {
+        optional_properties.insert(PropertyName {
+            file_path: PathBuf::from(file_path),
+            schema_name: schema_name.to_string(),
+            property_name: property_name.to_string(),
+        });
+    }
+
     for config in spec.configs() {
         let tag = config.tag.as_str();
-        if let Some(api_version) = to_api_version(&config) {
-            if skip_service_tags.contains(&(spec.spec(), tag)) {
-                // println!("  skipping {}", tag);
-                continue;
-            }
-            println!("  {}", tag);
-            // println!("  {}", api_version);
-            let mod_name = &to_mod_name(tag);
-            feature_mod_names.push((tag.to_string(), mod_name.clone()));
-            // println!("  {}", mod_name);
-            let mod_output_folder = path::join(&src_folder, mod_name).map_err(|source| Error::PathError { source })?;
-            // println!("  {:?}", mod_output_folder);
-            // for input_file in &config.input_files {
-            //     println!("  {}", input_file);
-            // }
-            let input_files: Result<Vec<_>> = config
-                .input_files
-                .iter()
-                .map(|input_file| Ok(path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source })?))
-                .collect();
-            let input_files = input_files?;
-            // for input_file in &input_files {
-            //     println!("  {:?}", input_file);
-            // }
-            autorust_codegen::run(Config {
-                api_version: Some(api_version),
-                output_folder: mod_output_folder.into(),
-                input_files,
-                box_properties: box_properties.clone(),
-                print_writing_file: false,
-                ..Config::default()
-            })
-            .map_err(|source| Error::CodegenError { source })?;
+        if skip_service_tags.contains(&(spec.spec(), tag)) {
+            // println!("  skipping {}", tag);
+            continue;
         }
+        println!("  {}", tag);
+        // println!("  {}", api_version);
+        let mod_name = &to_mod_name(tag);
+        feature_mod_names.push((tag.to_string(), mod_name.clone()));
+        // println!("  {}", mod_name);
+        let mod_output_folder = path::join(&src_folder, mod_name).map_err(|source| Error::PathError { source })?;
+        // println!("  {:?}", mod_output_folder);
+        // for input_file in &config.input_files {
+        //     println!("  {}", input_file);
+        // }
+        let input_files: Result<Vec<_>> = config
+            .input_files
+            .iter()
+            .map(|input_file| Ok(path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source })?))
+            .collect();
+        let input_files = input_files?;
+        // for input_file in &input_files {
+        //     println!("  {:?}", input_file);
+        // }
+        autorust_codegen::run(Config {
+            output_folder: mod_output_folder.into(),
+            input_files,
+            box_properties: box_properties.clone(),
+            optional_properties: optional_properties.clone(),
+            print_writing_file: false,
+            ..Config::default()
+        })
+        .map_err(|source| Error::CodegenError { source })?;
     }
     if feature_mod_names.len() == 0 {
         return Ok(());

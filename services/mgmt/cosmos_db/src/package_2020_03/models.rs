@@ -854,8 +854,7 @@ pub mod container_partition_key {
         Range,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Path {}
+pub type Path = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UniqueKeyPolicy {
     #[serde(rename = "uniqueKeys", default, skip_serializing_if = "Vec::is_empty")]
@@ -947,8 +946,7 @@ pub struct MongoIndexKeys {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub keys: Vec<Key>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Key {}
+pub type Key = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MongoIndexOptions {
     #[serde(rename = "expireAfterSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -1030,10 +1028,8 @@ pub struct Capability {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Tags {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProvisioningState {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpRangeFilter {}
+pub type ProvisioningState = String;
+pub type IpRangeFilter = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]

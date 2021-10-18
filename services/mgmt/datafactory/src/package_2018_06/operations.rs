@@ -157,6 +157,7 @@ pub mod factories {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(factory_repo_update).map_err(configure_factory_repo::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -384,6 +385,7 @@ pub mod factories {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(factory).map_err(create_or_update::Error::SerializeError)?;
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
@@ -461,6 +463,7 @@ pub mod factories {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(factory_update_parameters).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
@@ -603,6 +606,7 @@ pub mod factories {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(git_hub_access_token_request).map_err(get_git_hub_access_token::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -679,6 +683,7 @@ pub mod factories {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(policy).map_err(get_data_plane_access::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -756,6 +761,7 @@ pub mod exposure_control {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(exposure_control_request).map_err(get_feature_value::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get_feature_value::Error::BuildRequestError)?;
@@ -830,6 +836,7 @@ pub mod exposure_control {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(exposure_control_request).map_err(get_feature_value_by_factory::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -906,6 +913,7 @@ pub mod exposure_control {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body =
             azure_core::to_json(exposure_control_batch_request).map_err(query_feature_values_by_factory::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -1144,6 +1152,7 @@ pub mod integration_runtimes {
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(integration_runtime).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
@@ -1220,6 +1229,7 @@ pub mod integration_runtimes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(update_integration_runtime_request).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
@@ -1591,6 +1601,7 @@ pub mod integration_runtimes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(regenerate_key_parameters).map_err(regenerate_auth_key::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(regenerate_auth_key::Error::BuildRequestError)?;
@@ -2114,6 +2125,7 @@ pub mod integration_runtimes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(linked_integration_runtime_request).map_err(remove_links::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(remove_links::Error::BuildRequestError)?;
@@ -2178,6 +2190,7 @@ pub mod integration_runtimes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(create_linked_integration_runtime_request)
             .map_err(create_linked_integration_runtime::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -2336,6 +2349,7 @@ pub mod integration_runtime_object_metadata {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(get_metadata_request) = get_metadata_request {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(get_metadata_request).map_err(get::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -2491,6 +2505,7 @@ pub mod integration_runtime_nodes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(update_integration_runtime_node_request).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
@@ -2876,6 +2891,7 @@ pub mod linked_services {
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(linked_service).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
@@ -3184,6 +3200,7 @@ pub mod datasets {
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(dataset).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
@@ -3492,6 +3509,7 @@ pub mod pipelines {
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(pipeline).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
@@ -3660,6 +3678,7 @@ pub mod pipelines {
                 .append_pair("startFromFailure", start_from_failure.to_string().as_str());
         }
         let req_body = if let Some(parameters) = parameters {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(parameters).map_err(create_run::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -3740,6 +3759,7 @@ pub mod pipeline_runs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(filter_parameters).map_err(query_by_factory::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(query_by_factory::Error::BuildRequestError)?;
@@ -3963,6 +3983,7 @@ pub mod activity_runs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(filter_parameters).map_err(query_by_pipeline_run::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -4115,6 +4136,7 @@ pub mod triggers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(filter_parameters).map_err(query_by_factory::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(query_by_factory::Error::BuildRequestError)?;
@@ -4274,6 +4296,7 @@ pub mod triggers {
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(trigger).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
@@ -4944,6 +4967,7 @@ pub mod trigger_runs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(filter_parameters).map_err(query_by_factory::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(query_by_factory::Error::BuildRequestError)?;
@@ -5103,6 +5127,7 @@ pub mod data_flows {
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(data_flow).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
@@ -5326,6 +5351,7 @@ pub mod data_flow_debug_session {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(request).map_err(create::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
@@ -5477,6 +5503,7 @@ pub mod data_flow_debug_session {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(request).map_err(add_data_flow::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(add_data_flow::Error::BuildRequestError)?;
@@ -5551,6 +5578,7 @@ pub mod data_flow_debug_session {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(request).map_err(delete::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -5617,6 +5645,7 @@ pub mod data_flow_debug_session {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(request).map_err(execute_command::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(execute_command::Error::BuildRequestError)?;
@@ -5855,6 +5884,7 @@ pub mod managed_virtual_networks {
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(managed_virtual_network).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
@@ -6070,6 +6100,7 @@ pub mod managed_private_endpoints {
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(managed_private_endpoint).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
@@ -6372,6 +6403,7 @@ pub mod private_endpoint_connection {
         if let Some(if_match) = if_match {
             req_builder = req_builder.header("If-Match", if_match);
         }
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(private_endpoint_wrapper).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;

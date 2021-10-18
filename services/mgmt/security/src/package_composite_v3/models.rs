@@ -3,6 +3,94 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomAssessmentAutomationsListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<CustomAssessmentAutomation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomAssessmentAutomation {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CustomAssessmentAutomationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomAssessmentAutomationProperties {
+    #[serde(rename = "compressedQuery", default, skip_serializing_if = "Option::is_none")]
+    pub compressed_query: Option<String>,
+    #[serde(rename = "supportedCloud", default, skip_serializing_if = "Option::is_none")]
+    pub supported_cloud: Option<custom_assessment_automation_properties::SupportedCloud>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<custom_assessment_automation_properties::Severity>,
+    #[serde(rename = "userImpact", default, skip_serializing_if = "Option::is_none")]
+    pub user_impact: Option<custom_assessment_automation_properties::UserImpact>,
+    #[serde(rename = "implementationEffort", default, skip_serializing_if = "Option::is_none")]
+    pub implementation_effort: Option<custom_assessment_automation_properties::ImplementationEffort>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "remediationDescription", default, skip_serializing_if = "Option::is_none")]
+    pub remediation_description: Option<String>,
+}
+pub mod custom_assessment_automation_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SupportedCloud {
+        #[serde(rename = "AWS")]
+        Aws,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Severity {
+        High,
+        Medium,
+        Low,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum UserImpact {
+        High,
+        Moderate,
+        Low,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ImplementationEffort {
+        High,
+        Moderate,
+        Low,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomEntityStoreAssignmentsListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<CustomEntityStoreAssignment>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomEntityStoreAssignment {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CustomEntityStoreAssignmentProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomEntityStoreAssignmentProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub principal: Option<String>,
+    #[serde(rename = "entityStoreDatabaseLink", default, skip_serializing_if = "Option::is_none")]
+    pub entity_store_database_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomEntityStoreAssignmentRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CustomEntityStoreAssignmentRequestProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomEntityStoreAssignmentRequestProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub principal: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComplianceResultList {
     pub value: Vec<ComplianceResult>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1675,12 +1763,9 @@ pub struct PathRecommendation {
     #[serde(rename = "configurationStatus", default, skip_serializing_if = "Option::is_none")]
     pub configuration_status: Option<ConfigurationStatus>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GroupResourceId {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmResourceId {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PortNumber {}
+pub type GroupResourceId = String;
+pub type VmResourceId = String;
+pub type PortNumber = i64;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Rule {
     #[serde(default, skip_serializing_if = "Option::is_none")]

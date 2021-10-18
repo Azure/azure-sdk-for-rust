@@ -64,7 +64,7 @@ impl AttachmentClient {
                 self.document_client().document_name(),
                 self.attachment_name()
             ),
-            http::Method::POST,
+            http::Method::GET,
         );
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
         options.decorate_request(

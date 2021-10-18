@@ -20,7 +20,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let api: OpenAPI = serde_json::from_slice(&bytes)?;
 
             let mut operation_ids = Vec::new();
-            for (_path, item) in &api.paths {
+            for (_path, item) in api.paths() {
                 match item {
                     ReferenceOr::Reference { .. } => (),
                     ReferenceOr::Item(item) => {

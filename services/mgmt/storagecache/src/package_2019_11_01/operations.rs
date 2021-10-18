@@ -441,6 +441,7 @@ pub mod caches {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(cache) = cache {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(cache).map_err(create_or_update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -530,6 +531,7 @@ pub mod caches {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(cache) = cache {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(cache).map_err(update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -1202,6 +1204,7 @@ pub mod storage_targets {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = if let Some(storagetarget) = storagetarget {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(storagetarget).map_err(create_or_update::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
