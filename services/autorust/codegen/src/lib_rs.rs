@@ -27,8 +27,8 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
         })?;
         cfgs.extend(quote! {
             #[cfg(feature = #feature_name)]
-            mod #mod_name;
-            #[cfg(feature = #feature_name)]
+            pub mod #mod_name;
+            #[cfg(all(feature = #feature_name, not(feature = "no-default-version")))]
             pub use #mod_name::{models, operations, API_VERSION};
         });
     }
@@ -37,6 +37,16 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
         #generated_by
         #cfgs
         use azure_core::setters;
+
+        #[cfg(not(feature = "no-default-version"))]
+        fn get_default_feature() -> String {
+            API_VERSION.to_owned()
+        }
+
+        #[cfg(feature = "no-default-version")]
+        fn get_default_feature() -> String {
+            "".to_owned()
+        }
 
         pub fn config(
             http_client: std::sync::Arc<dyn azure_core::HttpClient>,
@@ -68,7 +78,7 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
 
             pub fn build(self) -> OperationConfig {
                 OperationConfig {
-                    api_version: self.api_version.unwrap_or(API_VERSION.to_owned()),
+                    api_version: self.api_version.unwrap_or_else(|| get_default_feature()),
                     http_client: self.http_client,
                     base_path: self.base_path.unwrap_or("https://management.azure.com".to_owned()),
                     token_credential: Some(self.token_credential),
