@@ -71,10 +71,10 @@ fn prefix_number(text: &str) -> String {
     }
 }
 
-/// add a prefix of `k` if it is a keyword
+/// add an underscore suffix it is a keyword
 fn prefix_keyword(text: &str) -> String {
     if is_keyword(&text) {
-        format!("k{}", text)
+        format!("{}_", text)
     } else {
         text.to_owned()
     }
