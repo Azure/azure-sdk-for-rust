@@ -15,7 +15,7 @@ pub trait CamelCaseIdent: ToOwned {
 impl CamelCaseIdent for str {
     fn to_camel_case_ident(&self) -> Result<TokenStream, Error> {
         let mut txt = replace_special_chars(self);
-        txt = prefix_number(&txt);
+        txt = replace_first(&txt);
         txt = txt.to_camel_case();
         let idt = syn::parse_str::<syn::Ident>(&txt).map_err(|source| Error::ParseIdentError {
             source,
@@ -28,8 +28,8 @@ impl CamelCaseIdent for str {
 pub fn ident(text: &str) -> Result<TokenStream, Error> {
     let mut txt = replace_special_chars(text);
     txt = remove_spaces(&txt);
-    txt = prefix_number(&txt);
-    txt = prefix_keyword(&txt);
+    txt = replace_first(&txt);
+    txt = suffix_keyword(&txt);
     let idt = syn::parse_str::<syn::Ident>(&txt).map_err(|source| Error::ParseIdentError {
         source,
         text: text.to_owned(),
@@ -51,28 +51,32 @@ fn replace_special_chars(text: &str) -> String {
     txt
 }
 
-/// identifiers can not start with a number of underscore
-fn starts_with_number(text: &str) -> bool {
-    match text.chars().next() {
-        Some(ch) => match ch {
-            '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | '_' => true,
-            _ => false,
-        },
-        None => false,
-    }
+fn unicode(c: char) -> String {
+    let s = c.escape_unicode().to_string();
+    format!("u{}", &s[3..s.len() - 1])
 }
 
-/// add a prefix of `n` if it starts with a number
-fn prefix_number(text: &str) -> String {
-    if starts_with_number(text) {
-        format!("n{}", text)
+fn replace_first(text: &str) -> String {
+    let first = text.chars().next().unwrap_or_default();
+    if first.is_numeric() {
+        if text.len() > 1 {
+            format!("n{}{}", first, &text[1..])
+        } else {
+            format!("n{}", first)
+        }
+    } else if !first.is_ascii_alphanumeric() {
+        if text.len() > 1 {
+            format!("{}{}", unicode(first), &text[1..])
+        } else {
+            format!("{}", unicode(first),)
+        }
     } else {
         text.to_owned()
     }
 }
 
 /// add an underscore suffix it is a keyword
-fn prefix_keyword(text: &str) -> String {
+fn suffix_keyword(text: &str) -> String {
     if is_keyword(&text) {
         format!("{}_", text)
     } else {
@@ -144,11 +148,6 @@ mod tests {
     use super::*;
     use heck::SnakeCase;
 
-    fn unicode(c: char) -> String {
-        let s = c.escape_unicode().to_string();
-        format!("u{}", &s[3..s.len() - 1])
-    }
-
     #[test]
     fn test_unicode() -> Result<(), Error> {
         assert_eq!(unicode(','), "u2c");
@@ -156,7 +155,15 @@ mod tests {
     }
 
     #[test]
-    fn test_chars() -> Result<(), Error> {
+    fn test_replace_first() -> Result<(), Error> {
+        assert_eq!(replace_first("."), "u2e");
+        assert_eq!(replace_first("/"), "u2f");
+        assert_eq!(replace_first(""), "u0");
+        Ok(())
+    }
+
+    #[test]
+    fn test_replace_special_chars() -> Result<(), Error> {
         assert_eq!(replace_special_chars("."), "_");
         assert_eq!(replace_special_chars(","), "_");
         assert_eq!(replace_special_chars("-"), "_");
@@ -230,7 +237,7 @@ mod tests {
 
     #[test]
     fn test_1_0() -> Result<(), Error> {
-        assert_eq!("1.0".to_camel_case_ident()?.to_string(), "N10");
+        assert_eq!("1.0".to_camel_case_ident()?.to_string(), "N1_0");
         Ok(())
     }
 }
