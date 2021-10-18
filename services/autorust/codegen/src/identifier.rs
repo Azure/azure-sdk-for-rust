@@ -14,10 +14,13 @@ pub trait CamelCaseIdent: ToOwned {
 
 impl CamelCaseIdent for str {
     fn to_camel_case_ident(&self) -> Result<TokenStream, Error> {
-        let mut txt = replace_first(self);
+        let is_number = starts_with_number(&self);
+        let mut txt = replace_first(self, true);
         txt = replace_special_chars(&txt);
-        // heck::CamelCase::to_camel_case will remove underscores
-        txt = txt.to_camel_case();
+        if !is_number {
+            // heck::CamelCase::to_camel_case will remove underscores
+            txt = txt.to_camel_case();
+        }
         let idt = syn::parse_str::<syn::Ident>(&txt).map_err(|source| Error::ParseIdentError {
             source,
             text: self.to_owned(),
@@ -27,7 +30,7 @@ impl CamelCaseIdent for str {
 }
 
 pub fn ident(text: &str) -> Result<TokenStream, Error> {
-    let mut txt = replace_first(&text);
+    let mut txt = replace_first(&text, false);
     txt = replace_special_chars(&txt);
     txt = remove_spaces(&txt);
     txt = suffix_keyword(&txt);
@@ -52,20 +55,29 @@ fn replace_special_chars(text: &str) -> String {
     txt
 }
 
-fn unicode(c: char) -> String {
-    let s = c.escape_unicode().to_string();
-    format!("u{}", &s[3..s.len() - 1])
+fn starts_with_number(text: &str) -> bool {
+    match text.chars().next() {
+        Some(ch) => ch.is_numeric(),
+        None => false,
+    }
 }
 
-fn replace_first(text: &str) -> String {
+fn unicode(c: char, uppercase: bool) -> String {
+    let s = c.escape_unicode().to_string();
+    let u = if uppercase { 'U' } else { 'u' };
+    format!("{}{}", u, &s[3..s.len() - 1])
+}
+
+fn replace_first(text: &str, uppercase: bool) -> String {
     let first = text.chars().next().unwrap_or_default();
     if first.is_numeric() {
-        format!("n{}", text)
+        let n = if uppercase { 'N' } else { 'n' };
+        format!("{}{}", n, text)
     } else if !first.is_ascii_alphanumeric() {
         if text.len() > 1 {
-            format!("{}{}", unicode(first), &text[1..])
+            format!("{}{}", unicode(first, uppercase), &text[1..])
         } else {
-            format!("{}", unicode(first),)
+            format!("{}", unicode(first, uppercase),)
         }
     } else {
         text.to_owned()
@@ -147,15 +159,15 @@ mod tests {
 
     #[test]
     fn test_unicode() -> Result<(), Error> {
-        assert_eq!(unicode(','), "u2c");
+        assert_eq!(unicode(',', false), "u2c");
         Ok(())
     }
 
     #[test]
     fn test_replace_first() -> Result<(), Error> {
-        assert_eq!(replace_first("."), "u2e");
-        assert_eq!(replace_first("/"), "u2f");
-        assert_eq!(replace_first(""), "u0");
+        assert_eq!(replace_first(".", false), "u2e");
+        assert_eq!(replace_first("/", false), "u2f");
+        assert_eq!(replace_first("", false), "u0");
         Ok(())
     }
 
@@ -234,7 +246,7 @@ mod tests {
 
     #[test]
     fn test_1_0() -> Result<(), Error> {
-        assert_eq!("1.0".to_camel_case_ident()?.to_string(), "N10");
+        assert_eq!("1.0".to_camel_case_ident()?.to_string(), "N1_0");
         Ok(())
     }
 }
