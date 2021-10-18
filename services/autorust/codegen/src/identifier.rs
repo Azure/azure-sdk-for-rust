@@ -14,9 +14,9 @@ pub trait CamelCaseIdent: ToOwned {
 
 impl CamelCaseIdent for str {
     fn to_camel_case_ident(&self) -> Result<TokenStream, Error> {
-        let mut txt = replace_special_chars(self);
-        txt = replace_first(&txt);
+        let mut txt = replace_first(self);
         txt = txt.to_camel_case();
+        txt = replace_special_chars(&txt);
         let idt = syn::parse_str::<syn::Ident>(&txt).map_err(|source| Error::ParseIdentError {
             source,
             text: self.to_owned(),
@@ -26,9 +26,9 @@ impl CamelCaseIdent for str {
 }
 
 pub fn ident(text: &str) -> Result<TokenStream, Error> {
-    let mut txt = replace_special_chars(text);
+    let mut txt = replace_first(&text);
+    txt = replace_special_chars(&txt);
     txt = remove_spaces(&txt);
-    txt = replace_first(&txt);
     txt = suffix_keyword(&txt);
     let idt = syn::parse_str::<syn::Ident>(&txt).map_err(|source| Error::ParseIdentError {
         source,
@@ -212,7 +212,7 @@ mod tests {
     fn test_app_configuration() -> Result<(), Error> {
         assert_eq!(
             "Microsoft.AppConfiguration/configurationStores".to_camel_case_ident()?.to_string(),
-            "MicrosoftAppConfigurationConfigurationStores"
+            "Microsoft_AppConfigurationConfigurationStores"
         );
         Ok(())
     }
@@ -221,7 +221,7 @@ mod tests {
     fn test_microsoft_key_vault_vaults() -> Result<(), Error> {
         assert_eq!(
             "Microsoft.KeyVault/vaults".to_camel_case_ident()?.to_string(),
-            "MicrosoftKeyVaultVaults"
+            "Microsoft_KeyVaultVaults"
         );
         Ok(())
     }
