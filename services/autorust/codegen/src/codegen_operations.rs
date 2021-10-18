@@ -5,10 +5,10 @@ use crate::{
     },
     codegen::{parse_params, PARAM_RE},
     identifier::ident,
-    spec,
+    spec::{self, WebOperation, WebVerb},
     status_codes::{get_error_responses, get_response_type_name, get_success_responses, has_default_response},
     status_codes::{get_response_type_ident, get_status_code_ident},
-    CodeGen, OperationVerb,
+    CodeGen,
 };
 use autorust_openapi::{CollectionFormat, DataType, Parameter, ParameterType, Response};
 use heck::SnakeCase;
@@ -35,9 +35,9 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         if cg.spec.is_input_file(&doc_file) {
             let paths = cg.spec.resolve_path_map(doc_file, doc.paths())?;
             for (path, item) in &paths {
-                for op in spec::path_item_operations(item) {
-                    let (module_name, function_name) = op.function_name(path);
-                    let function = create_function(cg, doc_file, path, &op, &function_name)?;
+                for operation in spec::path_operations(path, item) {
+                    let module_name = operation.rust_module_name();
+                    let function = create_function(cg, doc_file, &operation)?;
                     if modules.contains_key(&module_name) {}
                     match modules.get_mut(&module_name) {
                         Some(module) => {
@@ -73,16 +73,11 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
     Ok(file)
 }
 
-fn create_function(
-    cg: &CodeGen,
-    doc_file: &Path,
-    path: &str,
-    operation_verb: &OperationVerb,
-    function_name: &str,
-) -> Result<TokenStream, Error> {
-    let fname = ident(function_name).map_err(Error::FunctionName)?;
+// Create a Rust function for the web operation
+fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> Result<TokenStream, Error> {
+    let fname = ident(&operation.rust_function_name()).map_err(Error::FunctionName)?;
 
-    let params = parse_params(path);
+    let params = parse_params(&operation.path);
     // println!("path params {:#?}", params);
     let params: Result<Vec<_>, Error> = params
         .iter()
@@ -91,9 +86,9 @@ fn create_function(
     let params = params?;
     let url_str_args = quote! { #(#params),* };
 
-    let fpath = format!("{{}}{}", &format_path(path));
+    let fpath = format!("{{}}{}", &format_path(&operation.path));
 
-    let parameters: Vec<Parameter> = cg.spec.resolve_parameters(doc_file, &operation_verb.operation().parameters)?;
+    let parameters: Vec<Parameter> = cg.spec.resolve_parameters(doc_file, &operation.parameters)?;
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
     let has_param_api_version = param_names.contains("api-version");
     let mut skip = HashSet::new();
@@ -110,17 +105,17 @@ fn create_function(
     let mut ts_request_builder = TokenStream::new();
 
     let mut is_post = false;
-    let req_verb = match operation_verb {
-        OperationVerb::Get(_) => quote! { req_builder = req_builder.method(http::Method::GET); },
-        OperationVerb::Post(_) => {
+    let req_verb = match operation.verb {
+        WebVerb::Get => quote! { req_builder = req_builder.method(http::Method::GET); },
+        WebVerb::Post => {
             is_post = true;
             quote! { req_builder = req_builder.method(http::Method::POST); }
         }
-        OperationVerb::Put(_) => quote! { req_builder = req_builder.method(http::Method::PUT); },
-        OperationVerb::Patch(_) => quote! { req_builder = req_builder.method(http::Method::PATCH); },
-        OperationVerb::Delete(_) => quote! { req_builder = req_builder.method(http::Method::DELETE); },
-        OperationVerb::Options(_) => quote! { req_builder = req_builder.method(http::Method::OPTIONS); },
-        OperationVerb::Head(_) => quote! { req_builder = req_builder.method(http::Method::HEAD); },
+        WebVerb::Put => quote! { req_builder = req_builder.method(http::Method::PUT); },
+        WebVerb::Patch => quote! { req_builder = req_builder.method(http::Method::PATCH); },
+        WebVerb::Delete => quote! { req_builder = req_builder.method(http::Method::DELETE); },
+        WebVerb::Options => quote! { req_builder = req_builder.method(http::Method::OPTIONS); },
+        WebVerb::Head => quote! { req_builder = req_builder.method(http::Method::HEAD); },
     };
     ts_request_builder.extend(req_verb);
 
@@ -276,7 +271,7 @@ fn create_function(
         });
     }
 
-    let responses = &operation_verb.operation().responses;
+    let responses = &operation.responses;
     let success_responses = get_success_responses(responses);
     let error_responses = get_error_responses(responses);
     let is_single_response = success_responses.len() == 1;

@@ -19,7 +19,7 @@ use std::{
 
 pub use self::{
     codegen::{create_mod, CodeGen},
-    spec::{OperationVerb, ResolvedSchema, Spec},
+    spec::{ResolvedSchema, Spec, WebOperation},
 };
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

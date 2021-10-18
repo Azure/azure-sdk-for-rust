@@ -5,7 +5,12 @@
 use crate::models::*;
 pub mod network_managers {
     use crate::models::*;
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<NetworkManager, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+    ) -> std::result::Result<NetworkManager, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}",
@@ -24,6 +29,7 @@ pub mod network_managers {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -71,6 +77,9 @@ pub mod network_managers {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
         parameters: &NetworkManager,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -91,6 +100,7 @@ pub mod network_managers {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -153,6 +163,9 @@ pub mod network_managers {
     }
     pub async fn patch_tags(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
         parameters: &TagsObject,
     ) -> std::result::Result<NetworkManager, patch_tags::Error> {
         let http_client = operation_config.http_client();
@@ -173,6 +186,7 @@ pub mod network_managers {
                 .map_err(patch_tags::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(patch_tags::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -222,7 +236,12 @@ pub mod network_managers {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}",
@@ -241,6 +260,7 @@ pub mod network_managers {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -445,6 +465,9 @@ pub mod network_manager_commits {
     use crate::models::*;
     pub async fn post(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
         parameters: &NetworkManagerCommit,
     ) -> std::result::Result<NetworkManagerCommit, post::Error> {
         let http_client = operation_config.http_client();
@@ -465,6 +488,7 @@ pub mod network_manager_commits {
                 .map_err(post::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(post::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -516,6 +540,9 @@ pub mod network_manager_deployment_status {
     use crate::models::*;
     pub async fn list(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
         parameters: &NetworkManagerDeploymentStatusParameter,
     ) -> std::result::Result<NetworkManagerDeploymentStatusListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -536,6 +563,7 @@ pub mod network_manager_deployment_status {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(list::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -745,7 +773,13 @@ pub mod effective_virtual_networks {
 }
 pub mod network_groups {
     use crate::models::*;
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<NetworkGroup, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        network_group_name: &str,
+    ) -> std::result::Result<NetworkGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/networkGroups/{}",
@@ -765,6 +799,7 @@ pub mod network_groups {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -812,6 +847,10 @@ pub mod network_groups {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        network_group_name: &str,
         parameters: &NetworkGroup,
         if_match: Option<&str>,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -834,6 +873,7 @@ pub mod network_groups {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         if let Some(if_match) = if_match {
@@ -897,7 +937,13 @@ pub mod network_groups {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        network_group_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/networkGroups/{}",
@@ -917,6 +963,7 @@ pub mod network_groups {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -1046,6 +1093,10 @@ pub mod active_connectivity_configurations {
     use crate::models::*;
     pub async fn list(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        parameters: &ActiveConfigurationParameter,
     ) -> std::result::Result<ActiveConnectivityConfigurationsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1065,8 +1116,9 @@ pub mod active_connectivity_configurations {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
+        let req_body = azure_core::to_json(parameters).map_err(list::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
@@ -1114,7 +1166,13 @@ pub mod active_connectivity_configurations {
 }
 pub mod active_security_admin_rules {
     use crate::models::*;
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ActiveSecurityAdminRulesListResult, list::Error> {
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        parameters: &ActiveConfigurationParameter,
+    ) -> std::result::Result<ActiveSecurityAdminRulesListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/listActiveSecurityAdminRules",
@@ -1133,8 +1191,9 @@ pub mod active_security_admin_rules {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
+        let req_body = azure_core::to_json(parameters).map_err(list::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
@@ -1182,7 +1241,13 @@ pub mod active_security_admin_rules {
 }
 pub mod active_security_user_rules {
     use crate::models::*;
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ActiveSecurityUserRulesListResult, list::Error> {
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        parameters: &ActiveConfigurationParameter,
+    ) -> std::result::Result<ActiveSecurityUserRulesListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/listActiveSecurityUserRules",
@@ -1201,8 +1266,9 @@ pub mod active_security_user_rules {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
+        let req_body = azure_core::to_json(parameters).map_err(list::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
@@ -1252,6 +1318,10 @@ pub mod effective_connectivity_configurations {
     use crate::models::*;
     pub async fn list(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        virtual_network_name: &str,
+        parameters: &QueryRequestOptions,
     ) -> std::result::Result<NetworkManagerEffectiveConnectivityConfigurationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/virtualNetworks/{}/listNetworkManagerEffectiveConnectivityConfigurations" , operation_config . base_path () , subscription_id , resource_group_name , virtual_network_name) ;
@@ -1265,8 +1335,9 @@ pub mod effective_connectivity_configurations {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
+        let req_body = azure_core::to_json(parameters).map_err(list::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
@@ -1316,6 +1387,10 @@ pub mod network_manager_effective_security_admin_rules {
     use crate::models::*;
     pub async fn list(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        virtual_network_name: &str,
+        parameters: &QueryRequestOptions,
     ) -> std::result::Result<NetworkManagerEffectiveSecurityAdminRulesListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/virtualNetworks/{}/listNetworkManagerEffectiveSecurityAdminRules" , operation_config . base_path () , subscription_id , resource_group_name , virtual_network_name) ;
@@ -1329,8 +1404,9 @@ pub mod network_manager_effective_security_admin_rules {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
+        let req_body = azure_core::to_json(parameters).map_err(list::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
@@ -1378,7 +1454,13 @@ pub mod network_manager_effective_security_admin_rules {
 }
 pub mod connectivity_configurations {
     use crate::models::*;
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<ConnectivityConfiguration, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+    ) -> std::result::Result<ConnectivityConfiguration, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/connectivityConfigurations/{}",
@@ -1398,6 +1480,7 @@ pub mod connectivity_configurations {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -1445,6 +1528,10 @@ pub mod connectivity_configurations {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
         connectivity_configuration: &ConnectivityConfiguration,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1466,6 +1553,7 @@ pub mod connectivity_configurations {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(connectivity_configuration).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -1526,7 +1614,13 @@ pub mod connectivity_configurations {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/connectivityConfigurations/{}",
@@ -1546,6 +1640,7 @@ pub mod connectivity_configurations {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -1751,7 +1846,13 @@ pub mod security_admin_configurations {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<SecurityConfiguration, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+    ) -> std::result::Result<SecurityConfiguration, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}",
@@ -1771,6 +1872,7 @@ pub mod security_admin_configurations {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -1818,6 +1920,10 @@ pub mod security_admin_configurations {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
         security_admin_configuration: &SecurityConfiguration,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1839,6 +1945,7 @@ pub mod security_admin_configurations {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(security_admin_configuration).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -1899,7 +2006,13 @@ pub mod security_admin_configurations {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}",
@@ -1919,6 +2032,7 @@ pub mod security_admin_configurations {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -2041,7 +2155,14 @@ pub mod admin_rule_collections {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<RuleCollection, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
+    ) -> std::result::Result<RuleCollection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name , rule_collection_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -2054,6 +2175,7 @@ pub mod admin_rule_collections {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -2101,6 +2223,11 @@ pub mod admin_rule_collections {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
         rule_collection: &RuleCollection,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -2115,6 +2242,7 @@ pub mod admin_rule_collections {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(rule_collection).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -2175,7 +2303,14 @@ pub mod admin_rule_collections {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name , rule_collection_name) ;
         let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
@@ -2188,6 +2323,7 @@ pub mod admin_rule_collections {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -2237,7 +2373,16 @@ pub mod admin_rule_collections {
 }
 pub mod admin_rules {
     use crate::models::*;
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<AdminRuleListResult, list::Error> {
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
+        top: Option<i32>,
+        skip_token: Option<&str>,
+    ) -> std::result::Result<AdminRuleListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}/rules" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name , rule_collection_name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2249,6 +2394,13 @@ pub mod admin_rules {
                 .await
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2295,7 +2447,15 @@ pub mod admin_rules {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<BaseAdminRule, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
+        rule_name: &str,
+    ) -> std::result::Result<BaseAdminRule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}/rules/{}" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name , rule_collection_name , rule_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -2308,6 +2468,7 @@ pub mod admin_rules {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -2355,6 +2516,12 @@ pub mod admin_rules {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
+        rule_name: &str,
         admin_rule: &BaseAdminRule,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -2369,6 +2536,7 @@ pub mod admin_rules {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(admin_rule).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -2429,7 +2597,15 @@ pub mod admin_rules {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
+        rule_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}/rules/{}" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name , rule_collection_name , rule_name) ;
         let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
@@ -2442,6 +2618,7 @@ pub mod admin_rules {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -2569,7 +2746,13 @@ pub mod security_user_configurations {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<SecurityConfiguration, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+    ) -> std::result::Result<SecurityConfiguration, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}",
@@ -2589,6 +2772,7 @@ pub mod security_user_configurations {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -2636,6 +2820,10 @@ pub mod security_user_configurations {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
         security_user_configuration: &SecurityConfiguration,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -2657,6 +2845,7 @@ pub mod security_user_configurations {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(security_user_configuration).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -2717,7 +2906,13 @@ pub mod security_user_configurations {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}",
@@ -2737,6 +2932,7 @@ pub mod security_user_configurations {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -2859,7 +3055,14 @@ pub mod user_rule_collections {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<RuleCollection, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
+    ) -> std::result::Result<RuleCollection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name , rule_collection_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -2872,6 +3075,7 @@ pub mod user_rule_collections {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -2919,6 +3123,11 @@ pub mod user_rule_collections {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
         user_rule_collection: &RuleCollection,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -2933,6 +3142,7 @@ pub mod user_rule_collections {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(user_rule_collection).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -2993,7 +3203,14 @@ pub mod user_rule_collections {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name , rule_collection_name) ;
         let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
@@ -3006,6 +3223,7 @@ pub mod user_rule_collections {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -3055,7 +3273,16 @@ pub mod user_rule_collections {
 }
 pub mod user_rules {
     use crate::models::*;
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<UserRuleListResult, list::Error> {
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
+        top: Option<i32>,
+        skip_token: Option<&str>,
+    ) -> std::result::Result<UserRuleListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}/rules" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name , rule_collection_name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -3067,6 +3294,13 @@ pub mod user_rules {
                 .await
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3113,7 +3347,15 @@ pub mod user_rules {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<BaseUserRule, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
+        rule_name: &str,
+    ) -> std::result::Result<BaseUserRule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}/rules/{}" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name , rule_collection_name , rule_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -3126,6 +3368,7 @@ pub mod user_rules {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -3173,6 +3416,12 @@ pub mod user_rules {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
+        rule_name: &str,
         user_rule: &BaseUserRule,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -3187,6 +3436,7 @@ pub mod user_rules {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(user_rule).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -3247,7 +3497,15 @@ pub mod user_rules {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_manager_name: &str,
+        configuration_name: &str,
+        rule_collection_name: &str,
+        rule_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}/rules/{}" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name , rule_collection_name , rule_name) ;
         let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
@@ -3260,6 +3518,7 @@ pub mod user_rules {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -3309,7 +3568,12 @@ pub mod user_rules {
 }
 pub mod network_security_perimeters {
     use crate::models::*;
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<NetworkSecurityPerimeter, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_security_perimeter_name: &str,
+    ) -> std::result::Result<NetworkSecurityPerimeter, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkSecurityPerimeters/{}",
@@ -3328,6 +3592,7 @@ pub mod network_security_perimeters {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -3375,6 +3640,9 @@ pub mod network_security_perimeters {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_security_perimeter_name: &str,
         parameters: &NetworkSecurityPerimeter,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -3395,6 +3663,7 @@ pub mod network_security_perimeters {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -3455,7 +3724,12 @@ pub mod network_security_perimeters {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        network_security_perimeter_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkSecurityPerimeters/{}",
@@ -3474,6 +3748,7 @@ pub mod network_security_perimeters {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;

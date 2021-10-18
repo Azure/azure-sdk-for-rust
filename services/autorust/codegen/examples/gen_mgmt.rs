@@ -6,20 +6,11 @@ use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
 
-const ONLY_SERVICES: &[&str] = &[
-    // "vmware",
-    // "network",
-    // "cosmos-db",
-    // "databricks",
-    // "marketplace",
-    // "dataprotection",
-    // "databox",
-];
+const ONLY_SERVICES: &[&str] = &[];
 
 const SKIP_SERVICES: &[&str] = &[
     "automation", // TODO #81 DataType::File
     "datamigration",
-    "deploymentmanager",          // TODO #80 path parameters
     "deviceprovisioningservices", // TODO #82 certificate_name used as parameter more than once
     "dnc",                        // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
     "iotspaces",                  // no operations
@@ -31,8 +22,7 @@ const SKIP_SERVICES: &[&str] = &[
     "service-map",   // Ident "Ref:machine"
     "servicefabric", // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
     "servicefabricmanagedclusters",
-    "synapse", // TODO #80 path parameters
-    "web",     // TODO #81 DataType::File
+    "web", // TODO #81 DataType::File
 ];
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[

@@ -3,77 +3,71 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use crate::models::*;
-pub mod table {
+pub mod service {
     use crate::models::*;
-    pub async fn query(
+    pub async fn get_properties(
         operation_config: &crate::OperationConfig,
+        restype: &str,
+        comp: &str,
+        timeout: Option<i64>,
         x_ms_version: &str,
         x_ms_client_request_id: Option<&str>,
-        data_service_version: &str,
-        format: Option<&str>,
-        top: Option<i32>,
-        select: Option<&str>,
-        filter: Option<&str>,
-        next_table_name: Option<&str>,
-    ) -> std::result::Result<TableQueryResponse, query::Error> {
+    ) -> std::result::Result<TableServiceProperties, get_properties::Error> {
         let http_client = operation_config.http_client();
-        let url_str = &format!("{}/Tables", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(query::Error::ParseUrlError)?;
+        let url_str = &format!("{}/?ServiceProperties", operation_config.base_path(),);
+        let mut url = url::Url::parse(url_str).map_err(get_properties::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(query::Error::GetTokenError)?;
+                .map_err(get_properties::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("restype", restype);
+        url.query_pairs_mut().append_pair("comp", comp);
+        if let Some(timeout) = timeout {
+            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
         req_builder = req_builder.header("x-ms-version", x_ms_version);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
-        req_builder = req_builder.header("DataServiceVersion", data_service_version);
-        if let Some(format) = format {
-            url.query_pairs_mut().append_pair("$format", format);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(next_table_name) = next_table_name {
-            url.query_pairs_mut().append_pair("NextTableName", next_table_name);
-        }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(query::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(query::Error::ExecuteRequestError)?;
+        let req = req_builder.body(req_body).map_err(get_properties::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(get_properties::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TableQueryResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| query::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: TableServiceProperties =
+                    serde_json::from_slice(rsp_body).map_err(|source| get_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(query::Error::UnexpectedResponse {
+                let rsp_value: TableServiceError =
+                    serde_json::from_slice(rsp_body).map_err(|source| get_properties::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get_properties::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
     }
-    pub mod query {
+    pub mod get_properties {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::TableServiceError,
+            },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
             #[error("Failed to build request: {0}")]
@@ -88,178 +82,31 @@ pub mod table {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn create(
+    pub async fn set_properties(
         operation_config: &crate::OperationConfig,
+        restype: &str,
+        comp: &str,
+        table_service_properties: &TableServiceProperties,
+        timeout: Option<i64>,
         x_ms_version: &str,
         x_ms_client_request_id: Option<&str>,
-        data_service_version: &str,
-        format: Option<&str>,
-        table_properties: &TableProperties,
-        prefer: Option<&str>,
-    ) -> std::result::Result<create::Response, create::Error> {
+    ) -> std::result::Result<(), set_properties::Error> {
         let http_client = operation_config.http_client();
-        let url_str = &format!("{}/Tables", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
+        let url_str = &format!("{}/?ServiceProperties", operation_config.base_path(),);
+        let mut url = url::Url::parse(url_str).map_err(set_properties::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
+        req_builder = req_builder.method(http::Method::PUT);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(create::Error::GetTokenError)?;
+                .map_err(set_properties::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.header("DataServiceVersion", data_service_version);
-        if let Some(format) = format {
-            url.query_pairs_mut().append_pair("$format", format);
-        }
+        url.query_pairs_mut().append_pair("restype", restype);
+        url.query_pairs_mut().append_pair("comp", comp);
         req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(table_properties).map_err(create::Error::SerializeError)?;
-        if let Some(prefer) = prefer {
-            req_builder = req_builder.header("Prefer", prefer);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(create::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: TableResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create::Response::Created201(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => Ok(create::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: TableServiceError =
-                    serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod create {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Created201(TableResponse),
-            NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TableServiceError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        table: &str,
-    ) -> std::result::Result<(), delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/Tables('{}')", operation_config.base_path(), table);
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: TableServiceError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod delete {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TableServiceError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn query_entities(
-        operation_config: &crate::OperationConfig,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        data_service_version: &str,
-        format: Option<&str>,
-        top: Option<i32>,
-        select: Option<&str>,
-        filter: Option<&str>,
-        table: &str,
-        next_partition_key: Option<&str>,
-        next_row_key: Option<&str>,
-    ) -> std::result::Result<TableEntityQueryResponse, query_entities::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}()", operation_config.base_path(), table);
-        let mut url = url::Url::parse(url_str).map_err(query_entities::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(query_entities::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
+        let req_body = azure_core::to_json(table_service_properties).map_err(set_properties::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -267,51 +114,26 @@ pub mod table {
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
-        req_builder = req_builder.header("DataServiceVersion", data_service_version);
-        if let Some(format) = format {
-            url.query_pairs_mut().append_pair("$format", format);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(next_partition_key) = next_partition_key {
-            url.query_pairs_mut().append_pair("NextPartitionKey", next_partition_key);
-        }
-        if let Some(next_row_key) = next_row_key {
-            url.query_pairs_mut().append_pair("NextRowKey", next_row_key);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(query_entities::Error::BuildRequestError)?;
+        let req = req_builder.body(req_body).map_err(set_properties::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(query_entities::Error::ExecuteRequestError)?;
+            .map_err(set_properties::Error::ExecuteRequestError)?;
         match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: TableEntityQueryResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| query_entities::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
+            http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: TableServiceError =
-                    serde_json::from_slice(rsp_body).map_err(|source| query_entities::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(query_entities::Error::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| set_properties::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(set_properties::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod query_entities {
+    pub mod set_properties {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -334,395 +156,28 @@ pub mod table {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn query_entity_with_partition_and_row_key(
+    pub async fn get_statistics(
         operation_config: &crate::OperationConfig,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        data_service_version: &str,
-        format: Option<&str>,
-        select: Option<&str>,
-        filter: Option<&str>,
-        table: &str,
-        partition_key: &str,
-        row_key: &str,
-    ) -> std::result::Result<TableEntityProperties, query_entity_with_partition_and_row_key::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}(PartitionKey='{}',RowKey='{}')",
-            operation_config.base_path(),
-            table,
-            partition_key,
-            row_key
-        );
-        let mut url = url::Url::parse(url_str).map_err(query_entity_with_partition_and_row_key::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(query_entity_with_partition_and_row_key::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.header("DataServiceVersion", data_service_version);
-        if let Some(format) = format {
-            url.query_pairs_mut().append_pair("$format", format);
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(query_entity_with_partition_and_row_key::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(query_entity_with_partition_and_row_key::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: TableEntityProperties = serde_json::from_slice(rsp_body)
-                    .map_err(|source| query_entity_with_partition_and_row_key::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: TableServiceError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| query_entity_with_partition_and_row_key::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(query_entity_with_partition_and_row_key::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod query_entity_with_partition_and_row_key {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TableServiceError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn update_entity(
-        operation_config: &crate::OperationConfig,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        data_service_version: &str,
-        format: Option<&str>,
-        table_entity_properties: Option<&TableEntityProperties>,
-        table: &str,
-        partition_key: &str,
-        row_key: &str,
-        if_match: Option<&str>,
-    ) -> std::result::Result<(), update_entity::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}(PartitionKey='{}',RowKey='{}')",
-            operation_config.base_path(),
-            table,
-            partition_key,
-            row_key
-        );
-        let mut url = url::Url::parse(url_str).map_err(update_entity::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update_entity::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.header("DataServiceVersion", data_service_version);
-        if let Some(format) = format {
-            url.query_pairs_mut().append_pair("$format", format);
-        }
-        let req_body = if let Some(table_entity_properties) = table_entity_properties {
-            req_builder = req_builder.header("content-type", "application/json");
-            azure_core::to_json(table_entity_properties).map_err(update_entity::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update_entity::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(update_entity::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: TableServiceError =
-                    serde_json::from_slice(rsp_body).map_err(|source| update_entity::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update_entity::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod update_entity {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TableServiceError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn merge_entity(
-        operation_config: &crate::OperationConfig,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        data_service_version: &str,
-        format: Option<&str>,
-        table_entity_properties: Option<&TableEntityProperties>,
-        table: &str,
-        partition_key: &str,
-        row_key: &str,
-        if_match: Option<&str>,
-    ) -> std::result::Result<(), merge_entity::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}(PartitionKey='{}',RowKey='{}')",
-            operation_config.base_path(),
-            table,
-            partition_key,
-            row_key
-        );
-        let mut url = url::Url::parse(url_str).map_err(merge_entity::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(merge_entity::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.header("DataServiceVersion", data_service_version);
-        if let Some(format) = format {
-            url.query_pairs_mut().append_pair("$format", format);
-        }
-        let req_body = if let Some(table_entity_properties) = table_entity_properties {
-            req_builder = req_builder.header("content-type", "application/json");
-            azure_core::to_json(table_entity_properties).map_err(merge_entity::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(merge_entity::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(merge_entity::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: TableServiceError =
-                    serde_json::from_slice(rsp_body).map_err(|source| merge_entity::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(merge_entity::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod merge_entity {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TableServiceError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn delete_entity(
-        operation_config: &crate::OperationConfig,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        data_service_version: &str,
-        format: Option<&str>,
-        table: &str,
-        partition_key: &str,
-        row_key: &str,
-        if_match: &str,
-    ) -> std::result::Result<(), delete_entity::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}(PartitionKey='{}',RowKey='{}')",
-            operation_config.base_path(),
-            table,
-            partition_key,
-            row_key
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete_entity::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_entity::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.header("DataServiceVersion", data_service_version);
-        if let Some(format) = format {
-            url.query_pairs_mut().append_pair("$format", format);
-        }
-        req_builder = req_builder.header("If-Match", if_match);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete_entity::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_entity::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: TableServiceError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete_entity::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_entity::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod delete_entity {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TableServiceError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn get_access_policy(
-        operation_config: &crate::OperationConfig,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        table: &str,
+        restype: &str,
         comp: &str,
-    ) -> std::result::Result<SignedIdentifiers, get_access_policy::Error> {
+        timeout: Option<i64>,
+        x_ms_version: &str,
+        x_ms_client_request_id: Option<&str>,
+    ) -> std::result::Result<TableServiceStats, get_statistics::Error> {
         let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}", operation_config.base_path(), table);
-        let mut url = url::Url::parse(url_str).map_err(get_access_policy::Error::ParseUrlError)?;
+        let url_str = &format!("{}/?ServiceStats", operation_config.base_path(),);
+        let mut url = url::Url::parse(url_str).map_err(get_statistics::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(get_access_policy::Error::GetTokenError)?;
+                .map_err(get_statistics::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("restype", restype);
+        url.query_pairs_mut().append_pair("comp", comp);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -730,206 +185,32 @@ pub mod table {
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
-        url.query_pairs_mut().append_pair("comp", comp);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_access_policy::Error::BuildRequestError)?;
+        let req = req_builder.body(req_body).map_err(get_statistics::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(get_access_policy::Error::ExecuteRequestError)?;
+            .map_err(get_statistics::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SignedIdentifiers = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_access_policy::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: TableServiceStats =
+                    serde_json::from_slice(rsp_body).map_err(|source| get_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TableServiceError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_access_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_access_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod get_access_policy {
-        use crate::{models, models::*};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TableServiceError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn insert_entity(
-        operation_config: &crate::OperationConfig,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        data_service_version: &str,
-        format: Option<&str>,
-        table_entity_properties: Option<&TableEntityProperties>,
-        table: &str,
-        prefer: Option<&str>,
-    ) -> std::result::Result<insert_entity::Response, insert_entity::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}", operation_config.base_path(), table);
-        let mut url = url::Url::parse(url_str).map_err(insert_entity::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(insert_entity::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.header("DataServiceVersion", data_service_version);
-        if let Some(format) = format {
-            url.query_pairs_mut().append_pair("$format", format);
-        }
-        let req_body = if let Some(table_entity_properties) = table_entity_properties {
-            req_builder = req_builder.header("content-type", "application/json");
-            azure_core::to_json(table_entity_properties).map_err(insert_entity::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        if let Some(prefer) = prefer {
-            req_builder = req_builder.header("Prefer", prefer);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(insert_entity::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(insert_entity::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: TableEntityProperties =
-                    serde_json::from_slice(rsp_body).map_err(|source| insert_entity::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(insert_entity::Response::Created201(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => Ok(insert_entity::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
                 let rsp_value: TableServiceError =
-                    serde_json::from_slice(rsp_body).map_err(|source| insert_entity::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(insert_entity::Error::DefaultResponse {
+                    serde_json::from_slice(rsp_body).map_err(|source| get_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get_statistics::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod insert_entity {
-        use crate::{models, models::*};
-        #[derive(Debug)]
-        pub enum Response {
-            Created201(TableEntityProperties),
-            NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::TableServiceError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn set_access_policy(
-        operation_config: &crate::OperationConfig,
-        table_acl: Option<&SignedIdentifiers>,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        table: &str,
-        comp: &str,
-    ) -> std::result::Result<(), set_access_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}", operation_config.base_path(), table);
-        let mut url = url::Url::parse(url_str).map_err(set_access_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_access_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        let req_body = if let Some(table_acl) = table_acl {
-            req_builder = req_builder.header("content-type", "application/json");
-            azure_core::to_json(table_acl).map_err(set_access_policy::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(set_access_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_access_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: TableServiceError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| set_access_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_access_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod set_access_policy {
+    pub mod get_statistics {
         use crate::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
