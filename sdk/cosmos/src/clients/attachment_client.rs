@@ -59,7 +59,7 @@ impl AttachmentClient {
     ) -> Result<GetAttachmentResponse, crate::Error> {
         let mut request = self.prepare_request_with_attachment_name(http::Method::GET);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
-      
+
         options.decorate_request(
             &mut request,
             self.document_client().partition_key_serialized(),
