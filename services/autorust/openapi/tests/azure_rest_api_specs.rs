@@ -19,6 +19,8 @@ const PATHS: &[&str] = &[
     "../../../../azure-rest-api-specs/specification/storage/data-plane/Microsoft.FileStorage/preview/2021-02-12/file.json",
     "../../../../azure-rest-api-specs/specification/storage/data-plane/Microsoft.QueueStorage/preview/2018-03-28/queue.json",
     "../../../../azure-rest-api-specs/specification/storage/data-plane/Microsoft.StorageDataLake/preview/2020-10-02/DataLakeStorage.json",
+    "../../../../azure-rest-api-specs/specification/deviceupdate/data-plane/Microsoft.DeviceUpdate/preview/2020-09-01/deviceupdate.json",
+    "../../../../azure-rest-api-specs/specification/digitaltwins/data-plane/Microsoft.DigitalTwins/stable/2020-10-31/digitaltwins.json",
 ];
 
 #[test]
