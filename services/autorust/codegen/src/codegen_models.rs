@@ -132,12 +132,17 @@ fn create_enum(
     property: &ResolvedSchema,
     lowercase_workaround: bool,
 ) -> Result<(TokenStream, TokenStream), Error> {
-    // println!("property_name: {:?} enum: {:?}", property_name, property.schema.common.enum_);
     let enum_values = enum_values_as_strings(&property.schema.common.enum_);
-    let id = ident(&property_name.to_camel_case()).map_err(Error::EnumName)?;
+    let id = ident(&property_name.to_camel_case()).map_err(|source| Error::EnumName {
+        source,
+        property: property_name.to_owned(),
+    })?;
     let mut values = TokenStream::new();
     for name in enum_values {
-        let nm = name.to_camel_case_ident().map_err(Error::EnumValueName)?;
+        let nm = name.to_camel_case_ident().map_err(|source| Error::EnumName {
+            source,
+            property: property_name.to_owned(),
+        })?;
         let lower = name.to_lowercase();
         let rename = if &nm.to_string() == name {
             quote! {}
@@ -154,7 +159,10 @@ fn create_enum(
         };
         values.extend(value);
     }
-    let nm = ident(&property_name.to_camel_case()).map_err(Error::EnumName)?;
+    let nm = ident(&property_name.to_camel_case()).map_err(|source| Error::EnumName {
+        source,
+        property: property_name.to_owned(),
+    })?;
     let tp = quote! {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum #nm {

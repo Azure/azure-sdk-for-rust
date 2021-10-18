@@ -34,8 +34,8 @@ pub enum Error {
     WriteFile { file: PathBuf, source: std::io::Error },
     #[error("CodeGenNewError")]
     CodeGenNew(#[source] codegen::Error),
-    #[error("CreateModelsError {} {}", config.output_folder.display(), source)]
-    CreateModels { source: codegen::Error, config: Config },
+    #[error("CreateModelsError {0}")]
+    CreateModels(#[source] codegen::Error),
     #[error("CreateOperationsError")]
     CreateOperations(#[source] codegen::Error),
     #[error("path: {0}")]
@@ -103,10 +103,7 @@ pub fn run(config: Config) -> Result<()> {
 
     // create models from schemas
     if config.should_run(&Runs::Models) {
-        let models = codegen_models::create_models(cg).map_err(|source| Error::CreateModels {
-            source,
-            config: config.clone(),
-        })?;
+        let models = codegen_models::create_models(cg).map_err(Error::CreateModels)?;
         let models_path = path::join(&config.output_folder, "models.rs").map_err(Error::Path)?;
         write_file(&models_path, &models, config.print_writing_file)?;
     }
