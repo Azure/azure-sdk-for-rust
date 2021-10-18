@@ -8,10 +8,7 @@
 
 mod create_or_replace_trigger_builder;
 mod create_or_replace_user_defined_function_builder;
-mod create_reference_attachment_builder;
-mod create_slug_attachment_builder;
 mod create_stored_procedure_builder;
-mod delete_attachment_builder;
 mod delete_database_builder;
 mod delete_document_builder;
 mod delete_stored_procedure_builder;
@@ -28,16 +25,11 @@ mod list_triggers_builder;
 mod list_user_defined_functions_builder;
 mod query_documents_builder;
 mod replace_document_builder;
-mod replace_reference_attachment_builder;
-mod replace_slug_attachment_builder;
 mod replace_stored_procedure_builder;
 
 pub use create_or_replace_trigger_builder::CreateOrReplaceTriggerBuilder;
 pub use create_or_replace_user_defined_function_builder::CreateOrReplaceUserDefinedFunctionBuilder;
-pub use create_reference_attachment_builder::CreateReferenceAttachmentBuilder;
-pub use create_slug_attachment_builder::CreateSlugAttachmentBuilder;
 pub use create_stored_procedure_builder::CreateStoredProcedureBuilder;
-pub use delete_attachment_builder::DeleteAttachmentBuilder;
 pub use delete_database_builder::DeleteDatabaseBuilder;
 pub use delete_document_builder::DeleteDocumentBuilder;
 pub use delete_stored_procedure_builder::DeleteStoredProcedureBuilder;
@@ -54,6 +46,4 @@ pub use list_triggers_builder::ListTriggersBuilder;
 pub use list_user_defined_functions_builder::ListUserDefinedFunctionsBuilder;
 pub use query_documents_builder::QueryDocumentsBuilder;
 pub use replace_document_builder::ReplaceDocumentBuilder;
-pub use replace_reference_attachment_builder::ReplaceReferenceAttachmentBuilder;
-pub use replace_slug_attachment_builder::ReplaceSlugAttachmentBuilder;
 pub use replace_stored_procedure_builder::ReplaceStoredProcedureBuilder;

@@ -65,6 +65,7 @@ macro_rules! implement_from {
 }
 
 implement_from!(CreateSlugAttachmentResponse);
+implement_from!(ReplaceSlugAttachmentResponse);
 implement_from!(GetCollectionResponse);
 implement_from!(UserResponse);
 implement_from!(DeleteAttachmentResponse);

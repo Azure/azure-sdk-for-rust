@@ -78,12 +78,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // reference attachment
     println!("creating");
     let attachment_client = document_client.clone().into_attachment_client("myref06");
+    let options = CreateReferenceAttachmentOptions::new(&attachment_client).consistency_level(ret);
     let resp = attachment_client
-        .create_reference()
-        .consistency_level(ret)
-        .execute(
+        .create_reference(
+            Context::new(),
             "https://cdn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
             "image/jpeg",
+            options,
         )
         .await?;
     println!("create reference == {:#?}", resp);
@@ -104,42 +105,47 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("replacing");
     let attachment_client = document_client.clone().into_attachment_client("myref06");
+    let options =
+        ReplaceReferenceAttachmentOptions::new(&attachment_client).consistency_level(session_token);
     let resp = attachment_client
-        .replace_reference()
-        .consistency_level(session_token)
-        .execute(
+        .replace_reference(
+            Context::new(),
             "https://Adn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
             "image/jpeg",
+            options,
         )
         .await?;
     println!("replace reference == {:#?}", resp);
 
     println!("deleting");
-    let resp_delete = attachment_client
-        .delete()
-        .consistency_level(&resp)
-        .execute()
-        .await?;
+    let options = DeleteAttachmentOptions::new(&attachment_client).consistency_level(&resp);
+    let resp_delete = attachment_client.delete(Context::new(), options).await?;
     println!("delete attachment == {:#?}", resp_delete);
 
     // slug attachment
     println!("creating slug attachment");
     let attachment_client = document_client.into_attachment_client("slug00".to_owned());
-    let resp = attachment_client
-        .create_slug()
+    let options = CreateSlugAttachmentOptions::new(&attachment_client)
         .consistency_level(&resp_delete)
-        .content_type("text/plain")
-        .execute("FFFFF")
+        .content_type("text/plain");
+    let resp = attachment_client
+        .create_slug(Context::new(), "FFFFF", options)
         .await?;
 
     println!("create slug == {:#?}", resp);
 
-    println!("deleting");
-    let resp_delete = attachment_client
-        .delete()
-        .consistency_level(&resp)
-        .execute()
+    // slug replacement
+    println!("replacing slug attachment");
+    let options = ReplaceSlugAttachmentOptions::new(&attachment_client)
+        .consistency_level(&resp_delete)
+        .content_type("text/plain");
+    let resp = attachment_client
+        .replace_slug(Context::new(), "12345", options)
         .await?;
+
+    println!("deleting");
+    let options = DeleteAttachmentOptions::new(&attachment_client).consistency_level(&resp);
+    let resp_delete = attachment_client.delete(Context::new(), options).await?;
     println!("delete attachment == {:#?}", resp_delete);
 
     Ok(())

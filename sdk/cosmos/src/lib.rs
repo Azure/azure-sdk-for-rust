@@ -114,6 +114,7 @@ mod cosmos_entity;
 mod errors;
 mod headers;
 mod resource_quota;
+mod slug;
 mod time_nonce;
 mod to_json_vector;
 
@@ -121,6 +122,7 @@ pub(crate) use authorization_policy::AuthorizationPolicy;
 pub use consistency_level::ConsistencyLevel;
 pub use cosmos_entity::CosmosEntity;
 pub use resource_quota::ResourceQuota;
+pub(crate) use slug::Slug;
 pub(crate) use time_nonce::TimeNonce;
 
 pub use errors::Error;
