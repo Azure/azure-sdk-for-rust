@@ -1159,9 +1159,9 @@ pub mod operating_system_configuration {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Bitness {
         #[serde(rename = "32bit")]
-        _32bit,
+        N32bit,
         #[serde(rename = "64bit")]
-        _64bit,
+        N64bit,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

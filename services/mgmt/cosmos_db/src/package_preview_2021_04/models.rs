@@ -1417,11 +1417,11 @@ pub mod api_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServerVersion {
         #[serde(rename = "3.2")]
-        _3_2,
+        N3_2,
         #[serde(rename = "3.6")]
-        _3_6,
+        N3_6,
         #[serde(rename = "4.0")]
-        _4_0,
+        N4_0,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

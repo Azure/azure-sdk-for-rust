@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServerVersion {
     #[serde(rename = "5.7")]
-    _5_7,
+    N5_7,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SslEnforcement {
