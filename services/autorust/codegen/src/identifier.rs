@@ -59,11 +59,7 @@ fn unicode(c: char) -> String {
 fn replace_first(text: &str) -> String {
     let first = text.chars().next().unwrap_or_default();
     if first.is_numeric() {
-        if text.len() > 1 {
-            format!("n{}{}", first, &text[1..])
-        } else {
-            format!("n{}", first)
-        }
+        format!("n{}", text)
     } else if !first.is_ascii_alphanumeric() {
         if text.len() > 1 {
             format!("{}{}", unicode(first), &text[1..])
