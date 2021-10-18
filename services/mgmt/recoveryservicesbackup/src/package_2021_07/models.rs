@@ -1154,6 +1154,13 @@ pub struct GenericProtectionPolicy {
     pub fabric_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IdentityBasedRestoreDetails {
+    #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
+    pub object_type: Option<String>,
+    #[serde(rename = "targetStorageAccountId", default, skip_serializing_if = "Option::is_none")]
+    pub target_storage_account_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IdentityInfo {
     #[serde(rename = "isSystemAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
     pub is_system_assigned_identity: Option<bool>,
@@ -1292,6 +1299,8 @@ pub struct IaasVmRestoreRequest {
     pub zones: Vec<String>,
     #[serde(rename = "identityInfo", default, skip_serializing_if = "Option::is_none")]
     pub identity_info: Option<IdentityInfo>,
+    #[serde(rename = "identityBasedRestoreDetails", default, skip_serializing_if = "Option::is_none")]
+    pub identity_based_restore_details: Option<IdentityBasedRestoreDetails>,
 }
 pub mod iaas_vm_restore_request {
     use super::*;

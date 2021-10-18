@@ -44,6 +44,10 @@ pub struct Parameter {
 
     #[serde(rename = "x-ms-client-request-id", skip_serializing_if = "Option::is_none")]
     pub x_ms_client_request_id: Option<bool>,
+
+    /// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-header-collection-prefix
+    #[serde(rename = "x-ms-header-collection-prefix", skip_serializing_if = "Option::is_none")]
+    pub x_ms_header_collection_prefix: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]

@@ -131,6 +131,8 @@ pub struct ServerProperties {
     pub delegated_subnet_arguments: Option<server_properties::DelegatedSubnetArguments>,
     #[serde(rename = "privateDnsZoneArguments", default, skip_serializing_if = "Option::is_none")]
     pub private_dns_zone_arguments: Option<server_properties::PrivateDnsZoneArguments>,
+    #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
+    pub earliest_restore_date: Option<String>,
     #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<server_properties::CreateMode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -252,8 +254,6 @@ pub struct StorageProfile {
     pub storage_mb: Option<i32>,
     #[serde(rename = "geoRedundantBackup", default, skip_serializing_if = "Option::is_none")]
     pub geo_redundant_backup: Option<storage_profile::GeoRedundantBackup>,
-    #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
-    pub earliest_restore_date: Option<String>,
 }
 pub mod storage_profile {
     use super::*;
@@ -421,8 +421,7 @@ pub struct DatabaseListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateDnsZoneSuffix {}
+pub type PrivateDnsZoneSuffix = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Identity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]

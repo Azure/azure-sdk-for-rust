@@ -284,8 +284,7 @@ pub struct LocalNetworkResourceProperties {
     #[serde(rename = "networkAddressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub network_address_prefix: Option<NetworkAddressPrefix>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkAddressPrefix {}
+pub type NetworkAddressPrefix = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkRef {
     #[serde(default, skip_serializing_if = "Option::is_none")]

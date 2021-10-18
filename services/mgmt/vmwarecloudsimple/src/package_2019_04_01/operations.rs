@@ -411,6 +411,7 @@ pub mod dedicated_cloud_nodes {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("Referer", referer);
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(dedicated_cloud_node_request).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
@@ -485,6 +486,7 @@ pub mod dedicated_cloud_nodes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(dedicated_cloud_node_request).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
@@ -860,6 +862,7 @@ pub mod dedicated_cloud_services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(dedicated_cloud_service_request).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
@@ -934,6 +937,7 @@ pub mod dedicated_cloud_services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(dedicated_cloud_service_request).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
@@ -2190,6 +2194,7 @@ pub mod virtual_machines {
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("Referer", referer);
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(virtual_machine_request).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
@@ -2275,6 +2280,7 @@ pub mod virtual_machines {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(virtual_machine_request).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
@@ -2497,6 +2503,7 @@ pub mod virtual_machines {
         url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
         req_builder = req_builder.header("Referer", referer);
         let req_body = if let Some(m) = m {
+            req_builder = req_builder.header("content-type", "application/json");
             azure_core::to_json(m).map_err(stop::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)

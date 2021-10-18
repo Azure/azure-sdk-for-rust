@@ -95,6 +95,10 @@ pub struct BotProperties {
     pub is_isolated: Option<bool>,
     #[serde(rename = "schemaTransformationVersion", default, skip_serializing_if = "Option::is_none")]
     pub schema_transformation_version: Option<String>,
+    #[serde(rename = "openWithHint", default, skip_serializing_if = "Option::is_none")]
+    pub open_with_hint: Option<String>,
+    #[serde(rename = "appPasswordHint", default, skip_serializing_if = "Option::is_none")]
+    pub app_password_hint: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BotResponseList {

@@ -34,7 +34,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_collection_client(collection_name.clone());
     let user_client = database_client.into_user_client(user_name);
 
-    let get_collection_response = collection_client.get_collection().execute().await?;
+    let get_collection_response = collection_client
+        .get_collection(Context::new(), GetCollectionOptions::new())
+        .await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
     let create_user_response = user_client
@@ -182,7 +184,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     println!("Cleaning up user.");
-    let delete_user_response = user_client.delete_user().execute().await?;
+    let delete_user_response = user_client
+        .delete_user(Context::new(), DeleteUserOptions::new())
+        .await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 
     Ok(())

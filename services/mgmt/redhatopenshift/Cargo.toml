@@ -21,3 +21,4 @@ tokio = { version = "1.0", features = ["macros"] }
 [features]
 default = ["package-2020-04-30"]
 "package-2020-04-30" = []
+"package-2021-09-01-preview" = []

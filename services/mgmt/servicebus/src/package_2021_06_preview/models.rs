@@ -535,6 +535,8 @@ pub struct SbQueueProperties {
     pub lock_duration: Option<String>,
     #[serde(rename = "maxSizeInMegabytes", default, skip_serializing_if = "Option::is_none")]
     pub max_size_in_megabytes: Option<i32>,
+    #[serde(rename = "maxMessageSizeInKilobytes", default, skip_serializing_if = "Option::is_none")]
+    pub max_message_size_in_kilobytes: Option<i64>,
     #[serde(rename = "requiresDuplicateDetection", default, skip_serializing_if = "Option::is_none")]
     pub requires_duplicate_detection: Option<bool>,
     #[serde(rename = "requiresSession", default, skip_serializing_if = "Option::is_none")]
@@ -596,6 +598,8 @@ pub struct SbTopicProperties {
     pub default_message_time_to_live: Option<String>,
     #[serde(rename = "maxSizeInMegabytes", default, skip_serializing_if = "Option::is_none")]
     pub max_size_in_megabytes: Option<i32>,
+    #[serde(rename = "maxMessageSizeInKilobytes", default, skip_serializing_if = "Option::is_none")]
+    pub max_message_size_in_kilobytes: Option<i64>,
     #[serde(rename = "requiresDuplicateDetection", default, skip_serializing_if = "Option::is_none")]
     pub requires_duplicate_detection: Option<bool>,
     #[serde(rename = "duplicateDetectionHistoryTimeWindow", default, skip_serializing_if = "Option::is_none")]

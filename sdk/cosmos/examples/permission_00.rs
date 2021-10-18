@@ -45,10 +45,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("get_database_response == {:#?}", get_database_response);
 
-    let get_collection_response = collection_client.get_collection().execute().await?;
+    let get_collection_response = collection_client
+        .get_collection(Context::new(), GetCollectionOptions::new())
+        .await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
-    let get_collection2_response = collection2_client.get_collection().execute().await?;
+    let get_collection2_response = collection2_client
+        .get_collection(Context::new(), GetCollectionOptions::new())
+        .await?;
     println!(
         "get_collection2_response == {:#?}",
         get_collection2_response
@@ -156,11 +160,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let delete_user_response = user_client
-        .delete_user()
-        .consistency_level(ConsistencyLevel::Session(
-            delete_permission_response.session_token,
-        ))
-        .execute()
+        .delete_user(
+            Context::new(),
+            DeleteUserOptions::new().consistency_level(ConsistencyLevel::Session(
+                delete_permission_response.session_token,
+            )),
+        )
         .await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 

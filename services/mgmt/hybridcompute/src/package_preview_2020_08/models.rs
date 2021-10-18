@@ -141,6 +141,202 @@ pub struct Identity {
     pub tenant_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MachineAssessPatchesResult {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<machine_assess_patches_result::Status>,
+    #[serde(rename = "assessmentActivityId", default, skip_serializing_if = "Option::is_none")]
+    pub assessment_activity_id: Option<String>,
+    #[serde(rename = "rebootPending", default, skip_serializing_if = "Option::is_none")]
+    pub reboot_pending: Option<bool>,
+    #[serde(rename = "availablePatchCountByClassification", default, skip_serializing_if = "Option::is_none")]
+    pub available_patch_count_by_classification: Option<AvailablePatchCountByClassification>,
+    #[serde(rename = "startDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_date_time: Option<String>,
+    #[serde(rename = "lastModifiedDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_date_time: Option<String>,
+    #[serde(rename = "startedBy", default, skip_serializing_if = "Option::is_none")]
+    pub started_by: Option<machine_assess_patches_result::StartedBy>,
+    #[serde(rename = "patchServiceUsed", default, skip_serializing_if = "Option::is_none")]
+    pub patch_service_used: Option<machine_assess_patches_result::PatchServiceUsed>,
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<machine_assess_patches_result::OsType>,
+    #[serde(rename = "errorDetails", default, skip_serializing_if = "Option::is_none")]
+    pub error_details: Option<ErrorDetail>,
+}
+pub mod machine_assess_patches_result {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Unknown,
+        InProgress,
+        Failed,
+        Succeeded,
+        CompletedWithWarnings,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StartedBy {
+        User,
+        Platform,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PatchServiceUsed {
+        Unknown,
+        #[serde(rename = "WU")]
+        Wu,
+        #[serde(rename = "WU_WSUS")]
+        WuWsus,
+        #[serde(rename = "YUM")]
+        Yum,
+        #[serde(rename = "APT")]
+        Apt,
+        Zypper,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsType {
+        Windows,
+        Linux,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AvailablePatchCountByClassification {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub security: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub critical: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub definition: Option<i32>,
+    #[serde(rename = "updateRollup", default, skip_serializing_if = "Option::is_none")]
+    pub update_rollup: Option<i32>,
+    #[serde(rename = "featurePack", default, skip_serializing_if = "Option::is_none")]
+    pub feature_pack: Option<i32>,
+    #[serde(rename = "servicePack", default, skip_serializing_if = "Option::is_none")]
+    pub service_pack: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tools: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updates: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub other: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MachineInstallPatchesParameters {
+    #[serde(rename = "maximumDuration")]
+    pub maximum_duration: String,
+    #[serde(rename = "rebootSetting")]
+    pub reboot_setting: machine_install_patches_parameters::RebootSetting,
+    #[serde(rename = "windowsParameters", default, skip_serializing_if = "Option::is_none")]
+    pub windows_parameters: Option<WindowsParameters>,
+    #[serde(rename = "linuxParameters", default, skip_serializing_if = "Option::is_none")]
+    pub linux_parameters: Option<LinuxParameters>,
+}
+pub mod machine_install_patches_parameters {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RebootSetting {
+        IfRequired,
+        Never,
+        Always,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WindowsParameters {
+    #[serde(rename = "classificationsToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    pub classifications_to_include: Vec<String>,
+    #[serde(rename = "kbNumbersToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    pub kb_numbers_to_include: Vec<String>,
+    #[serde(rename = "kbNumbersToExclude", default, skip_serializing_if = "Vec::is_empty")]
+    pub kb_numbers_to_exclude: Vec<String>,
+    #[serde(rename = "excludeKbsRequiringReboot", default, skip_serializing_if = "Option::is_none")]
+    pub exclude_kbs_requiring_reboot: Option<bool>,
+    #[serde(rename = "maxPatchPublishDate", default, skip_serializing_if = "Option::is_none")]
+    pub max_patch_publish_date: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LinuxParameters {
+    #[serde(rename = "classificationsToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    pub classifications_to_include: Vec<String>,
+    #[serde(rename = "packageNameMasksToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    pub package_name_masks_to_include: Vec<String>,
+    #[serde(rename = "packageNameMasksToExclude", default, skip_serializing_if = "Vec::is_empty")]
+    pub package_name_masks_to_exclude: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MachineInstallPatchesResult {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<machine_install_patches_result::Status>,
+    #[serde(rename = "installationActivityId", default, skip_serializing_if = "Option::is_none")]
+    pub installation_activity_id: Option<String>,
+    #[serde(rename = "rebootStatus", default, skip_serializing_if = "Option::is_none")]
+    pub reboot_status: Option<machine_install_patches_result::RebootStatus>,
+    #[serde(rename = "maintenanceWindowExceeded", default, skip_serializing_if = "Option::is_none")]
+    pub maintenance_window_exceeded: Option<bool>,
+    #[serde(rename = "excludedPatchCount", default, skip_serializing_if = "Option::is_none")]
+    pub excluded_patch_count: Option<i32>,
+    #[serde(rename = "notSelectedPatchCount", default, skip_serializing_if = "Option::is_none")]
+    pub not_selected_patch_count: Option<i32>,
+    #[serde(rename = "pendingPatchCount", default, skip_serializing_if = "Option::is_none")]
+    pub pending_patch_count: Option<i32>,
+    #[serde(rename = "installedPatchCount", default, skip_serializing_if = "Option::is_none")]
+    pub installed_patch_count: Option<i32>,
+    #[serde(rename = "failedPatchCount", default, skip_serializing_if = "Option::is_none")]
+    pub failed_patch_count: Option<i32>,
+    #[serde(rename = "startDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_date_time: Option<String>,
+    #[serde(rename = "lastModifiedDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_date_time: Option<String>,
+    #[serde(rename = "startedBy", default, skip_serializing_if = "Option::is_none")]
+    pub started_by: Option<machine_install_patches_result::StartedBy>,
+    #[serde(rename = "patchServiceUsed", default, skip_serializing_if = "Option::is_none")]
+    pub patch_service_used: Option<machine_install_patches_result::PatchServiceUsed>,
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<machine_install_patches_result::OsType>,
+    #[serde(rename = "errorDetails", default, skip_serializing_if = "Option::is_none")]
+    pub error_details: Option<ErrorDetail>,
+}
+pub mod machine_install_patches_result {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Unknown,
+        InProgress,
+        Failed,
+        Succeeded,
+        CompletedWithWarnings,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RebootStatus {
+        Unknown,
+        NotNeeded,
+        Required,
+        Started,
+        Failed,
+        Completed,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StartedBy {
+        User,
+        Platform,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PatchServiceUsed {
+        Unknown,
+        #[serde(rename = "WU")]
+        Wu,
+        #[serde(rename = "WU_WSUS")]
+        WuWsus,
+        #[serde(rename = "YUM")]
+        Yum,
+        #[serde(rename = "APT")]
+        Apt,
+        Zypper,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsType {
+        Windows,
+        Linux,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineExtension {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,

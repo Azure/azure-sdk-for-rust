@@ -10,7 +10,7 @@ use crate::{
     status_codes::{get_response_type_ident, get_status_code_ident},
     CodeGen, OperationVerb,
 };
-use autorust_openapi::{CollectionFormat, Parameter, ParameterType, Response};
+use autorust_openapi::{CollectionFormat, DataType, Parameter, ParameterType, Response};
 use heck::SnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
@@ -33,7 +33,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         // only operations from listed input files
         // println!("doc_file {:?}", doc_file);
         if cg.spec.is_input_file(&doc_file) {
-            let paths = cg.spec.resolve_path_map(doc_file, &doc.paths)?;
+            let paths = cg.spec.resolve_path_map(doc_file, doc.paths())?;
             for (path, item) in &paths {
                 for op in spec::path_item_operations(item) {
                     let (module_name, function_name) = op.function_name(path);
@@ -97,7 +97,7 @@ fn create_function(
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
     let has_param_api_version = param_names.contains("api-version");
     let mut skip = HashSet::new();
-    if cg.api_version().is_some() {
+    if cg.spec.api_version().is_some() {
         skip.insert("api-version");
     }
     let parameters = parameters.into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
@@ -136,7 +136,7 @@ fn create_function(
 
     // api-version param
     if has_param_api_version {
-        if let Some(_api_version) = cg.api_version() {
+        if let Some(_api_version) = cg.spec.api_version() {
             ts_request_builder.extend(quote! {
                 url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
             });
@@ -149,6 +149,7 @@ fn create_function(
         let param_name = &param.name;
         let param_name_var = get_param_name(&param)?;
         let required = param.required.unwrap_or(false);
+        let is_bool = matches!(&param.common.type_, Some(DataType::Boolean));
         match param.in_ {
             ParameterType::Path => {} // handled above
             ParameterType::Query => {
@@ -200,28 +201,45 @@ fn create_function(
                 }
             }
             ParameterType::Header => {
+                // println!("header builder: {:?}", param);
                 if required {
-                    ts_request_builder.extend(quote! {
-                        req_builder = req_builder.header(#param_name, #param_name_var);
-                    });
-                } else {
-                    ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = #param_name_var {
+                    if is_bool {
+                        ts_request_builder.extend(quote! {
+                            req_builder = req_builder.header(#param_name, #param_name_var .to_string());
+                        });
+                    } else {
+                        ts_request_builder.extend(quote! {
                             req_builder = req_builder.header(#param_name, #param_name_var);
-                        }
-                    });
+                        });
+                    }
+                } else {
+                    if is_bool {
+                        ts_request_builder.extend(quote! {
+                            if let Some(#param_name_var) = #param_name_var {
+                                req_builder = req_builder.header(#param_name, #param_name_var .to_string());
+                            }
+                        });
+                    } else {
+                        ts_request_builder.extend(quote! {
+                            if let Some(#param_name_var) = #param_name_var {
+                                req_builder = req_builder.header(#param_name, #param_name_var);
+                            }
+                        });
+                    }
                 }
             }
             ParameterType::Body => {
                 has_body_parameter = true;
                 if required {
                     ts_request_builder.extend(quote! {
+                        req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?;
                     });
                 } else {
                     ts_request_builder.extend(quote! {
                         let req_body =
                             if let Some(#param_name_var) = #param_name_var {
+                                req_builder = req_builder.header("content-type", "application/json");
                                 azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?
                             } else {
                                 bytes::Bytes::from_static(azure_core::EMPTY_BODY)
