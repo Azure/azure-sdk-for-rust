@@ -41,13 +41,13 @@ fn remove_spaces(text: &str) -> String {
     text.replace(" ", "")
 }
 
-/// replace special characters with their hex
+/// replace special characters with underscores
 fn replace_special_chars(text: &str) -> String {
-    let mut txt = text.replace(".", "u2e");
-    txt = txt.replace(",", "u2c");
-    txt = txt.replace("-", "u2d");
-    txt = txt.replace("/", "u2f");
-    txt = txt.replace("*", "u2a");
+    let mut txt = text.replace(".", "_");
+    txt = txt.replace(",", "_");
+    txt = txt.replace("-", "_");
+    txt = txt.replace("/", "_");
+    txt = txt.replace("*", "_");
     txt
 }
 
@@ -157,11 +157,11 @@ mod tests {
 
     #[test]
     fn test_chars() -> Result<(), Error> {
-        assert_eq!(replace_special_chars("."), unicode('.'));
-        assert_eq!(replace_special_chars(","), unicode(','));
-        assert_eq!(replace_special_chars("-"), unicode('-'));
-        assert_eq!(replace_special_chars("/"), unicode('/'));
-        assert_eq!(replace_special_chars("*"), unicode('*'));
+        assert_eq!(replace_special_chars("."), "_");
+        assert_eq!(replace_special_chars(","), "_");
+        assert_eq!(replace_special_chars("-"), "_");
+        assert_eq!(replace_special_chars("/"), "_");
+        assert_eq!(replace_special_chars("*"), "_");
         Ok(())
     }
 
@@ -169,14 +169,14 @@ mod tests {
     fn test_odata_next_link() -> Result<(), Error> {
         let idt = "odata.nextLink".to_snake_case();
         let idt = ident(&idt)?;
-        assert_eq!(idt.to_string(), "odatau2enext_link");
+        assert_eq!(idt.to_string(), "odata_next_link");
         Ok(())
     }
 
     #[test]
     fn test_three_dot_two() -> Result<(), Error> {
         let idt = ident("3.2")?;
-        assert_eq!(idt.to_string(), "n3u2e2");
+        assert_eq!(idt.to_string(), "n3_2");
         Ok(())
     }
 
@@ -184,14 +184,14 @@ mod tests {
     fn test_system_assigned_user_assigned() -> Result<(), Error> {
         assert_eq!(
             "SystemAssigned, UserAssigned".to_camel_case_ident()?.to_string(),
-            "SystemAssignedu2cUserAssigned"
+            "SystemAssignedUserAssigned"
         );
         Ok(())
     }
 
     #[test]
     fn test_gcm_aes_128() -> Result<(), Error> {
-        assert_eq!("gcm-aes-128".to_camel_case_ident()?.to_string(), "Gcmu2daesu2d128");
+        assert_eq!("gcm-aes-128".to_camel_case_ident()?.to_string(), "GcmAes128");
         Ok(())
     }
 
@@ -205,7 +205,7 @@ mod tests {
     fn test_app_configuration() -> Result<(), Error> {
         assert_eq!(
             "Microsoft.AppConfiguration/configurationStores".to_camel_case_ident()?.to_string(),
-            "Microsoftu2eAppConfigurationu2fconfigurationStores"
+            "MicrosoftAppConfigurationConfigurationStores"
         );
         Ok(())
     }
@@ -214,7 +214,7 @@ mod tests {
     fn test_microsoft_key_vault_vaults() -> Result<(), Error> {
         assert_eq!(
             "Microsoft.KeyVault/vaults".to_camel_case_ident()?.to_string(),
-            "Microsoftu2eKeyVaultu2fvaults"
+            "MicrosoftKeyVaultVaults"
         );
         Ok(())
     }
@@ -223,14 +223,14 @@ mod tests {
     fn test_azure_virtual_machine_best_practices() -> Result<(), Error> {
         assert_eq!(
             "Azure virtual machine best practices - Dev/Test".to_camel_case_ident()?.to_string(),
-            "AzureVirtualMachineBestPracticesU2dDevu2fTest"
+            "AzureVirtualMachineBestPracticesDevTest"
         );
         Ok(())
     }
 
     #[test]
     fn test_1_0() -> Result<(), Error> {
-        assert_eq!("1.0".to_camel_case_ident()?.to_string(), "N1u2e0");
+        assert_eq!("1.0".to_camel_case_ident()?.to_string(), "N10");
         Ok(())
     }
 }
