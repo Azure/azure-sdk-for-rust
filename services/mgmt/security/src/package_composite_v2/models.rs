@@ -1990,7 +1990,7 @@ pub mod jit_network_access_port_rule {
         #[serde(rename = "UDP")]
         Udp,
         #[serde(rename = "*")]
-        Asterisk,
+        U2a,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

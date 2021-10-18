@@ -66,13 +66,13 @@ pub mod config_data_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LowCpuThreshold {
         #[serde(rename = "5")]
-        _5,
+        N5,
         #[serde(rename = "10")]
-        _10,
+        N10,
         #[serde(rename = "15")]
-        _15,
+        N15,
         #[serde(rename = "20")]
-        _20,
+        N20,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
