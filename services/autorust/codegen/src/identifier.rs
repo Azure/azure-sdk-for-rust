@@ -15,8 +15,9 @@ pub trait CamelCaseIdent: ToOwned {
 impl CamelCaseIdent for str {
     fn to_camel_case_ident(&self) -> Result<TokenStream, Error> {
         let mut txt = replace_first(self);
-        txt = txt.to_camel_case();
         txt = replace_special_chars(&txt);
+        // heck::CamelCase::to_camel_case will remove underscores
+        txt = txt.to_camel_case();
         let idt = syn::parse_str::<syn::Ident>(&txt).map_err(|source| Error::ParseIdentError {
             source,
             text: self.to_owned(),
@@ -208,7 +209,7 @@ mod tests {
     fn test_app_configuration() -> Result<(), Error> {
         assert_eq!(
             "Microsoft.AppConfiguration/configurationStores".to_camel_case_ident()?.to_string(),
-            "Microsoft_AppConfigurationConfigurationStores"
+            "MicrosoftAppConfigurationConfigurationStores"
         );
         Ok(())
     }
@@ -217,7 +218,7 @@ mod tests {
     fn test_microsoft_key_vault_vaults() -> Result<(), Error> {
         assert_eq!(
             "Microsoft.KeyVault/vaults".to_camel_case_ident()?.to_string(),
-            "Microsoft_KeyVaultVaults"
+            "MicrosoftKeyVaultVaults"
         );
         Ok(())
     }
@@ -233,7 +234,7 @@ mod tests {
 
     #[test]
     fn test_1_0() -> Result<(), Error> {
-        assert_eq!("1.0".to_camel_case_ident()?.to_string(), "N1_0");
+        assert_eq!("1.0".to_camel_case_ident()?.to_string(), "N10");
         Ok(())
     }
 }
