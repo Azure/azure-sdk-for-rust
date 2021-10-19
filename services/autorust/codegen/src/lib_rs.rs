@@ -27,8 +27,8 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
         })?;
         cfgs.extend(quote! {
             #[cfg(feature = #feature_name)]
-            mod #mod_name;
-            #[cfg(feature = #feature_name)]
+            pub mod #mod_name;
+            #[cfg(all(feature = #feature_name, not(feature = "no-default-version")))]
             pub use #mod_name::{models, operations};
         });
     }

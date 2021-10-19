@@ -20,6 +20,7 @@ tokio = { version = "1.0", features = ["macros"] }
 
 [features]
 default = ["package-webservices-2017-01"]
+no-default-version = []
 "package-webservices-2017-01" = []
 "package-commitmentPlans-2016-05-preview" = []
 "package-workspaces-2016-04" = []
