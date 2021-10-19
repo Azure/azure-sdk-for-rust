@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub async fn publish_cloud_event_events(
     operation_config: &crate::OperationConfig,
     events: &Vec<&CloudEventEvent>,
@@ -36,7 +36,7 @@ pub async fn publish_cloud_event_events(
     }
 }
 pub mod publish_cloud_event_events {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -88,7 +88,7 @@ pub async fn publish_custom_event_events(
     }
 }
 pub mod publish_custom_event_events {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]

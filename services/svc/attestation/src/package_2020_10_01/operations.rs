@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod policy {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(operation_config: &crate::OperationConfig, attestation_type: &str) -> std::result::Result<PolicyResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/policies/{}", operation_config.base_path(), attestation_type);
@@ -42,7 +42,7 @@ pub mod policy {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -106,7 +106,7 @@ pub mod policy {
         }
     }
     pub mod set {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -170,7 +170,7 @@ pub mod policy {
         }
     }
     pub mod reset {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -194,7 +194,7 @@ pub mod policy {
     }
 }
 pub mod policy_certificates {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<PolicyCertificatesResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/certificates", operation_config.base_path(),);
@@ -232,7 +232,7 @@ pub mod policy_certificates {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -295,7 +295,7 @@ pub mod policy_certificates {
         }
     }
     pub mod add {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -358,7 +358,7 @@ pub mod policy_certificates {
         }
     }
     pub mod remove {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -382,7 +382,7 @@ pub mod policy_certificates {
     }
 }
 pub mod attestation {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn attest_open_enclave(
         operation_config: &crate::OperationConfig,
         request: &AttestOpenEnclaveRequest,
@@ -427,7 +427,7 @@ pub mod attestation {
         }
     }
     pub mod attest_open_enclave {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -493,7 +493,7 @@ pub mod attestation {
         }
     }
     pub mod attest_sgx_enclave {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -559,7 +559,7 @@ pub mod attestation {
         }
     }
     pub mod attest_tpm {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -583,7 +583,7 @@ pub mod attestation {
     }
 }
 pub mod signing_certificates {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<JsonWebKeySet, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/certs", operation_config.base_path(),);
@@ -620,7 +620,7 @@ pub mod signing_certificates {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -644,7 +644,7 @@ pub mod signing_certificates {
     }
 }
 pub mod metadata_configuration {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<serde_json::Value, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/.well-known/openid-configuration", operation_config.base_path(),);
@@ -681,7 +681,7 @@ pub mod metadata_configuration {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

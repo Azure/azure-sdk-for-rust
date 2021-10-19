@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod container_services {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_orchestrators(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -56,7 +56,7 @@ pub mod container_services {
         }
     }
     pub mod list_orchestrators {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

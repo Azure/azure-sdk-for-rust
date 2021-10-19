@@ -17,6 +17,7 @@ const SKIP_SERVICES: &[&str] = &[
     "keyvault",                // `{field_name}` used in formatting url
     "videoanalyzer",           // no operations
     "mediaservices",           // no operations
+    "marketplacecatalog",      // BadRequest400 uses models::String?
 ];
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
@@ -112,6 +113,17 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
         "../../../azure-rest-api-specs/specification/timeseriesinsights/data-plane/Microsoft.TimeSeriesInsights/stable/2020-07-31/timeseriesinsights.json",
         "TsiErrorBody",
         "innerError",
+    ),
+    // datalake-analytics
+    (
+        "../../../azure-rest-api-specs/specification/datalake-analytics/data-plane/Microsoft.DataLakeAnalytics/stable/2016-11-01/job.json",
+        "JobInnerError",
+        "innerError"
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/datalake-analytics/data-plane/Microsoft.DataLakeAnalytics/preview/2017-09-01-preview/job.json",
+        "JobInnerError",
+        "innerError"
     )
 ];
 

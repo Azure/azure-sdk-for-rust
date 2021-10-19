@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod availability_sets {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -51,7 +51,7 @@ pub mod availability_sets {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -121,7 +121,7 @@ pub mod availability_sets {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -187,7 +187,7 @@ pub mod availability_sets {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -255,7 +255,7 @@ pub mod availability_sets {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -323,7 +323,7 @@ pub mod availability_sets {
         }
     }
     pub mod list_available_sizes {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -344,7 +344,7 @@ pub mod availability_sets {
     }
 }
 pub mod virtual_machine_extension_images {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         location: &str,
@@ -395,7 +395,7 @@ pub mod virtual_machine_extension_images {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -463,7 +463,7 @@ pub mod virtual_machine_extension_images {
         }
     }
     pub mod list_types {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -545,7 +545,7 @@ pub mod virtual_machine_extension_images {
         }
     }
     pub mod list_versions {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -566,7 +566,7 @@ pub mod virtual_machine_extension_images {
     }
 }
 pub mod virtual_machine_extensions {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -619,7 +619,7 @@ pub mod virtual_machine_extensions {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -697,7 +697,7 @@ pub mod virtual_machine_extensions {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(VirtualMachineExtension),
@@ -771,7 +771,7 @@ pub mod virtual_machine_extensions {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -840,7 +840,7 @@ pub mod virtual_machine_extensions {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -867,7 +867,7 @@ pub mod virtual_machine_extensions {
     }
 }
 pub mod virtual_machine_images {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         location: &str,
@@ -911,7 +911,7 @@ pub mod virtual_machine_images {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -992,7 +992,7 @@ pub mod virtual_machine_images {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1060,7 +1060,7 @@ pub mod virtual_machine_images {
         }
     }
     pub mod list_offers {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1126,7 +1126,7 @@ pub mod virtual_machine_images {
         }
     }
     pub mod list_publishers {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1196,7 +1196,7 @@ pub mod virtual_machine_images {
         }
     }
     pub mod list_skus {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1217,7 +1217,7 @@ pub mod virtual_machine_images {
     }
 }
 pub mod usage {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         location: &str,
@@ -1262,7 +1262,7 @@ pub mod usage {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1283,7 +1283,7 @@ pub mod usage {
     }
 }
 pub mod virtual_machine_sizes {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         location: &str,
@@ -1328,7 +1328,7 @@ pub mod virtual_machine_sizes {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1349,7 +1349,7 @@ pub mod virtual_machine_sizes {
     }
 }
 pub mod virtual_machines {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn capture(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -1402,7 +1402,7 @@ pub mod virtual_machines {
         }
     }
     pub mod capture {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(VirtualMachineCaptureResult),
@@ -1476,7 +1476,7 @@ pub mod virtual_machines {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1552,7 +1552,7 @@ pub mod virtual_machines {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(VirtualMachine),
@@ -1624,7 +1624,7 @@ pub mod virtual_machines {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -1700,7 +1700,7 @@ pub mod virtual_machines {
         }
     }
     pub mod deallocate {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -1774,7 +1774,7 @@ pub mod virtual_machines {
         }
     }
     pub mod generalize {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1837,7 +1837,7 @@ pub mod virtual_machines {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1901,7 +1901,7 @@ pub mod virtual_machines {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1969,7 +1969,7 @@ pub mod virtual_machines {
         }
     }
     pub mod list_available_sizes {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2039,7 +2039,7 @@ pub mod virtual_machines {
         }
     }
     pub mod power_off {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -2114,7 +2114,7 @@ pub mod virtual_machines {
         }
     }
     pub mod restart {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -2186,7 +2186,7 @@ pub mod virtual_machines {
         }
     }
     pub mod start {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -2261,7 +2261,7 @@ pub mod virtual_machines {
         }
     }
     pub mod redeploy {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -2287,7 +2287,7 @@ pub mod virtual_machines {
     }
 }
 pub mod virtual_machine_scale_sets {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -2334,7 +2334,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2410,7 +2410,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(VirtualMachineScaleSet),
@@ -2482,7 +2482,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -2563,7 +2563,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod deallocate {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -2639,7 +2639,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod delete_instances {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -2712,7 +2712,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod get_instance_view {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2775,7 +2775,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2839,7 +2839,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2907,7 +2907,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod list_skus {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2982,7 +2982,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod power_off {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -3062,7 +3062,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod restart {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -3139,7 +3139,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod start {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -3215,7 +3215,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod update_instances {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -3290,7 +3290,7 @@ pub mod virtual_machine_scale_sets {
         }
     }
     pub mod reimage {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -3316,7 +3316,7 @@ pub mod virtual_machine_scale_sets {
     }
 }
 pub mod virtual_machine_scale_set_v_ms {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn reimage(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -3370,7 +3370,7 @@ pub mod virtual_machine_scale_set_v_ms {
         }
     }
     pub mod reimage {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -3447,7 +3447,7 @@ pub mod virtual_machine_scale_set_v_ms {
         }
     }
     pub mod deallocate {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -3519,7 +3519,7 @@ pub mod virtual_machine_scale_set_v_ms {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3588,7 +3588,7 @@ pub mod virtual_machine_scale_set_v_ms {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -3664,7 +3664,7 @@ pub mod virtual_machine_scale_set_v_ms {
         }
     }
     pub mod get_instance_view {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3741,7 +3741,7 @@ pub mod virtual_machine_scale_set_v_ms {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3813,7 +3813,7 @@ pub mod virtual_machine_scale_set_v_ms {
         }
     }
     pub mod power_off {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -3890,7 +3890,7 @@ pub mod virtual_machine_scale_set_v_ms {
         }
     }
     pub mod restart {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),
@@ -3964,7 +3964,7 @@ pub mod virtual_machine_scale_set_v_ms {
         }
     }
     pub mod start {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationStatusResponse),

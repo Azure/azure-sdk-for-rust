@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod health_api {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_service_status(operation_config: &crate::OperationConfig) -> std::result::Result<(), get_service_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/api/health", operation_config.base_path(),);
@@ -32,7 +32,7 @@ pub mod health_api {
         }
     }
     pub mod get_service_status {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -53,7 +53,7 @@ pub mod health_api {
     }
 }
 pub mod web_pub_sub {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn generate_client_token(
         operation_config: &crate::OperationConfig,
         hub: &str,
@@ -113,7 +113,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod generate_client_token {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -184,7 +184,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod close_all_connections {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -250,7 +250,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod send_to_all {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -315,7 +315,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod close_connection {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -377,7 +377,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod connection_exists {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -447,7 +447,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod send_to_connection {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -509,7 +509,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod group_exists {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -588,7 +588,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod close_group_connections {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -655,7 +655,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod send_to_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -726,7 +726,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod add_connection_to_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -798,7 +798,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod remove_connection_from_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -860,7 +860,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod user_exists {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -939,7 +939,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod close_user_connections {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1002,7 +1002,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod send_to_user {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1071,7 +1071,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod add_user_to_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -1143,7 +1143,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod remove_user_from_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1206,7 +1206,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod remove_user_from_all_groups {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1278,7 +1278,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod grant_permission {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1350,7 +1350,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod revoke_permission {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1423,7 +1423,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod check_permission {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]

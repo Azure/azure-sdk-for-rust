@@ -16,7 +16,7 @@ pub struct RequiredAction {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckPrincipalAccessResponse {
-    #[serde(rename = "accessDecisions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(rename = "AccessDecisions", default, skip_serializing_if = "Vec::is_empty")]
     pub access_decisions: Vec<CheckAccessDecision>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

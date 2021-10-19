@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod metadata {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(operation_config: &crate::OperationConfig, name: &str) -> std::result::Result<MetadataEntity, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -50,7 +50,7 @@ pub mod metadata {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -106,7 +106,7 @@ pub mod metadata {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -127,7 +127,7 @@ pub mod metadata {
     }
 }
 pub mod emerging_issues {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         issue_name: &str,
@@ -172,7 +172,7 @@ pub mod emerging_issues {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -231,7 +231,7 @@ pub mod emerging_issues {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -255,7 +255,7 @@ pub mod emerging_issues {
     }
 }
 pub mod events {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_subscription_id(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
@@ -309,7 +309,7 @@ pub mod events {
         }
     }
     pub mod list_by_subscription_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -384,7 +384,7 @@ pub mod events {
         }
     }
     pub mod list_by_single_resource {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -408,7 +408,7 @@ pub mod events {
     }
 }
 pub mod impacted_resources {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_subscription_id(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
@@ -462,7 +462,7 @@ pub mod impacted_resources {
         }
     }
     pub mod list_by_subscription_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -486,7 +486,7 @@ pub mod impacted_resources {
     }
 }
 pub mod availability_statuses {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_subscription_id(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
@@ -544,7 +544,7 @@ pub mod availability_statuses {
         }
     }
     pub mod list_by_subscription_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -625,7 +625,7 @@ pub mod availability_statuses {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -702,7 +702,7 @@ pub mod availability_statuses {
         }
     }
     pub mod get_by_resource {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -776,7 +776,7 @@ pub mod availability_statuses {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -800,7 +800,7 @@ pub mod availability_statuses {
     }
 }
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.ResourceHealth/operations", operation_config.base_path(),);
@@ -838,7 +838,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

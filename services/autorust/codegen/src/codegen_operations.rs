@@ -24,7 +24,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         #![allow(unused_mut)]
         #![allow(unused_variables)]
         #![allow(unused_imports)]
-        use crate::models::*;
+        use super::{models, models::*};
 
     });
     let mut modules: IndexMap<Option<String>, TokenStream> = IndexMap::new();
@@ -59,7 +59,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
                 let name = ident(&module_name).map_err(Error::ModuleName)?;
                 file.extend(quote! {
                     pub mod #name {
-                        use crate::models::*;
+                        use super::{models, models::*};
 
                         #module
                     }
@@ -462,7 +462,7 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
             }
         }
         pub mod #fname {
-            use crate::{models, models::*};
+            use super::{models, models::*};
 
             #response_enum
 

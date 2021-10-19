@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod kql_scripts {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_all(
         operation_config: &crate::OperationConfig,
     ) -> std::result::Result<KqlScriptsResourceCollectionResponse, get_all::Error> {
@@ -47,7 +47,7 @@ pub mod kql_scripts {
         }
     }
     pub mod get_all {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -71,7 +71,7 @@ pub mod kql_scripts {
     }
 }
 pub mod kql_script {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_by_name(
         operation_config: &crate::OperationConfig,
         kql_script_name: &str,
@@ -115,7 +115,7 @@ pub mod kql_script {
         }
     }
     pub mod get_by_name {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -183,7 +183,7 @@ pub mod kql_script {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(KqlScriptResource),
@@ -250,7 +250,7 @@ pub mod kql_script {
         }
     }
     pub mod delete_by_name {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -316,7 +316,7 @@ pub mod kql_script {
         }
     }
     pub mod rename {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

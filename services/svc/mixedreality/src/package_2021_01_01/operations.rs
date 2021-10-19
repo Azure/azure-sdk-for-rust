@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod remote_rendering {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_conversion(
         operation_config: &crate::OperationConfig,
         account_id: &str,
@@ -62,7 +62,7 @@ pub mod remote_rendering {
         }
     }
     pub mod get_conversion {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -167,7 +167,7 @@ pub mod remote_rendering {
         }
     }
     pub mod create_conversion {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Conversion),
@@ -253,7 +253,7 @@ pub mod remote_rendering {
         }
     }
     pub mod list_conversions {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -332,7 +332,7 @@ pub mod remote_rendering {
         }
     }
     pub mod get_session {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -432,7 +432,7 @@ pub mod remote_rendering {
         }
     }
     pub mod create_session {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(SessionProperties),
@@ -528,7 +528,7 @@ pub mod remote_rendering {
         }
     }
     pub mod update_session {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -612,7 +612,7 @@ pub mod remote_rendering {
         }
     }
     pub mod stop_session {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -691,7 +691,7 @@ pub mod remote_rendering {
         }
     }
     pub mod list_sessions {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]

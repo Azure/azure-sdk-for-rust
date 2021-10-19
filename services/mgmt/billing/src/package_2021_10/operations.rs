@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod payment_method_owned_by_user {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<PaymentMethodsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Billing/paymentMethods", operation_config.base_path(),);
@@ -42,7 +42,7 @@ pub mod payment_method_owned_by_user {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -108,7 +108,7 @@ pub mod payment_method_owned_by_user {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -170,7 +170,7 @@ pub mod payment_method_owned_by_user {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -199,7 +199,7 @@ pub mod payment_method_owned_by_user {
     }
 }
 pub mod payment_methods {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_billing_account(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
@@ -249,7 +249,7 @@ pub mod payment_methods {
         }
     }
     pub mod list_by_billing_account {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -322,7 +322,7 @@ pub mod payment_methods {
         }
     }
     pub mod list_by_billing_profile {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -397,7 +397,7 @@ pub mod payment_methods {
         }
     }
     pub mod get_by_billing_profile {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -421,7 +421,7 @@ pub mod payment_methods {
     }
 }
 pub mod payment_method_at_billing_account {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
@@ -468,7 +468,7 @@ pub mod payment_method_at_billing_account {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -492,7 +492,7 @@ pub mod payment_method_at_billing_account {
     }
 }
 pub mod payment_method_at_billing_profile {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn remove(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
@@ -544,7 +544,7 @@ pub mod payment_method_at_billing_profile {
         }
     }
     pub mod remove {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -578,7 +578,7 @@ pub mod payment_method_at_billing_profile {
     }
 }
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Billing/operations", operation_config.base_path(),);
@@ -616,7 +616,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

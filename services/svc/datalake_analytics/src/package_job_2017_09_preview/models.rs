@@ -408,7 +408,7 @@ pub struct JobInnerError {
     #[serde(rename = "internalDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub internal_diagnostics: Option<String>,
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Option<JobInnerError>,
+    pub inner_error: Box<Option<JobInnerError>>,
 }
 pub mod job_inner_error {
     use super::*;

@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DataBoxEdge/operations", operation_config.base_path(),);
@@ -42,7 +42,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,7 +66,7 @@ pub mod operations {
     }
 }
 pub mod devices {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -118,7 +118,7 @@ pub mod devices {
         }
     }
     pub mod list_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -195,7 +195,7 @@ pub mod devices {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -265,7 +265,7 @@ pub mod devices {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -340,7 +340,7 @@ pub mod devices {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -412,7 +412,7 @@ pub mod devices {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -479,7 +479,7 @@ pub mod devices {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -555,7 +555,7 @@ pub mod devices {
         }
     }
     pub mod download_updates {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -636,7 +636,7 @@ pub mod devices {
         }
     }
     pub mod get_extended_information {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -706,7 +706,7 @@ pub mod devices {
         }
     }
     pub mod install_updates {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -784,7 +784,7 @@ pub mod devices {
         }
     }
     pub mod get_network_settings {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -854,7 +854,7 @@ pub mod devices {
         }
     }
     pub mod scan_for_updates {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -932,7 +932,7 @@ pub mod devices {
         }
     }
     pub mod create_or_update_security_settings {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -1010,7 +1010,7 @@ pub mod devices {
         }
     }
     pub mod get_update_summary {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1085,7 +1085,7 @@ pub mod devices {
         }
     }
     pub mod upload_certificate {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1109,7 +1109,7 @@ pub mod devices {
     }
 }
 pub mod alerts {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
@@ -1163,7 +1163,7 @@ pub mod alerts {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1235,7 +1235,7 @@ pub mod alerts {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1259,7 +1259,7 @@ pub mod alerts {
     }
 }
 pub mod bandwidth_schedules {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
@@ -1313,7 +1313,7 @@ pub mod bandwidth_schedules {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1385,7 +1385,7 @@ pub mod bandwidth_schedules {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1463,7 +1463,7 @@ pub mod bandwidth_schedules {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(BandwidthSchedule),
@@ -1537,7 +1537,7 @@ pub mod bandwidth_schedules {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1567,7 +1567,7 @@ pub mod bandwidth_schedules {
     }
 }
 pub mod jobs {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         device_name: &str,
@@ -1618,7 +1618,7 @@ pub mod jobs {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1642,7 +1642,7 @@ pub mod jobs {
     }
 }
 pub mod nodes {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
@@ -1696,7 +1696,7 @@ pub mod nodes {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1720,7 +1720,7 @@ pub mod nodes {
     }
 }
 pub mod operations_status {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         device_name: &str,
@@ -1771,7 +1771,7 @@ pub mod operations_status {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1795,7 +1795,7 @@ pub mod operations_status {
     }
 }
 pub mod orders {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
@@ -1849,7 +1849,7 @@ pub mod orders {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1919,7 +1919,7 @@ pub mod orders {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1995,7 +1995,7 @@ pub mod orders {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Order),
@@ -2067,7 +2067,7 @@ pub mod orders {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2097,7 +2097,7 @@ pub mod orders {
     }
 }
 pub mod roles {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
@@ -2151,7 +2151,7 @@ pub mod roles {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2223,7 +2223,7 @@ pub mod roles {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2301,7 +2301,7 @@ pub mod roles {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Role),
@@ -2375,7 +2375,7 @@ pub mod roles {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2405,7 +2405,7 @@ pub mod roles {
     }
 }
 pub mod shares {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
@@ -2459,7 +2459,7 @@ pub mod shares {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2531,7 +2531,7 @@ pub mod shares {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2609,7 +2609,7 @@ pub mod shares {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Share),
@@ -2683,7 +2683,7 @@ pub mod shares {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2761,7 +2761,7 @@ pub mod shares {
         }
     }
     pub mod refresh {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2790,7 +2790,7 @@ pub mod shares {
     }
 }
 pub mod storage_account_credentials {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
@@ -2844,7 +2844,7 @@ pub mod storage_account_credentials {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2916,7 +2916,7 @@ pub mod storage_account_credentials {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2994,7 +2994,7 @@ pub mod storage_account_credentials {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(StorageAccountCredential),
@@ -3068,7 +3068,7 @@ pub mod storage_account_credentials {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3098,7 +3098,7 @@ pub mod storage_account_credentials {
     }
 }
 pub mod triggers {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
@@ -3156,7 +3156,7 @@ pub mod triggers {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3228,7 +3228,7 @@ pub mod triggers {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3306,7 +3306,7 @@ pub mod triggers {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Trigger),
@@ -3380,7 +3380,7 @@ pub mod triggers {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3410,7 +3410,7 @@ pub mod triggers {
     }
 }
 pub mod users {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
@@ -3464,7 +3464,7 @@ pub mod users {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3536,7 +3536,7 @@ pub mod users {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3614,7 +3614,7 @@ pub mod users {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(User),
@@ -3688,7 +3688,7 @@ pub mod users {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

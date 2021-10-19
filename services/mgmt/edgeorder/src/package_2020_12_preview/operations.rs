@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub async fn list_operations(
     operation_config: &crate::OperationConfig,
 ) -> std::result::Result<OperationListResult, list_operations::Error> {
@@ -45,7 +45,7 @@ pub async fn list_operations(
     }
 }
 pub mod list_operations {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -124,7 +124,7 @@ pub async fn list_addresses_at_subscription_level(
     }
 }
 pub mod list_addresses_at_subscription_level {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -205,7 +205,7 @@ pub async fn list_product_families(
     }
 }
 pub mod list_product_families {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -280,7 +280,7 @@ pub async fn list_configurations(
     }
 }
 pub mod list_configurations {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -356,7 +356,7 @@ pub async fn list_product_families_metadata(
     }
 }
 pub mod list_product_families_metadata {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -431,7 +431,7 @@ pub async fn list_order_at_subscription_level(
     }
 }
 pub mod list_order_at_subscription_level {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -514,7 +514,7 @@ pub async fn list_order_items_at_subscription_level(
     }
 }
 pub mod list_order_items_at_subscription_level {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -595,7 +595,7 @@ pub async fn list_addresses_at_resource_group_level(
     }
 }
 pub mod list_addresses_at_resource_group_level {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -668,7 +668,7 @@ pub async fn get_address_by_name(
     }
 }
 pub mod get_address_by_name {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -744,7 +744,7 @@ pub async fn create_address(
     }
 }
 pub mod create_address {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200(AddressResource),
@@ -829,7 +829,7 @@ pub async fn update_address(
     }
 }
 pub mod update_address {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Accepted202,
@@ -906,7 +906,7 @@ pub async fn delete_address_by_name(
     }
 }
 pub mod delete_address_by_name {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -989,7 +989,7 @@ pub async fn list_order_at_resource_group_level(
     }
 }
 pub mod list_order_at_resource_group_level {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1064,7 +1064,7 @@ pub async fn get_order_by_name(
     }
 }
 pub mod get_order_by_name {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1149,7 +1149,7 @@ pub async fn list_order_items_at_resource_group_level(
     }
 }
 pub mod list_order_items_at_resource_group_level {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1228,7 +1228,7 @@ pub async fn get_order_item_by_name(
     }
 }
 pub mod get_order_item_by_name {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1304,7 +1304,7 @@ pub async fn create_order_item(
     }
 }
 pub mod create_order_item {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200(OrderItemResource),
@@ -1389,7 +1389,7 @@ pub async fn update_order_item(
     }
 }
 pub mod update_order_item {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Accepted202,
@@ -1466,7 +1466,7 @@ pub async fn delete_order_item_by_name(
     }
 }
 pub mod delete_order_item_by_name {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -1543,7 +1543,7 @@ pub async fn cancel_order_item(
     }
 }
 pub mod cancel_order_item {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -1619,7 +1619,7 @@ pub async fn return_order_item(
     }
 }
 pub mod return_order_item {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200,

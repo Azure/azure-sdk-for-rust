@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod role_assignments {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn check_principal_access(
         operation_config: &crate::OperationConfig,
         request: &CheckPrincipalAccessRequest,
@@ -51,7 +51,7 @@ pub mod role_assignments {
         }
     }
     pub mod check_principal_access {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -133,7 +133,7 @@ pub mod role_assignments {
         }
     }
     pub mod list_role_assignments {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -200,7 +200,7 @@ pub mod role_assignments {
         }
     }
     pub mod get_role_assignment_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -269,7 +269,7 @@ pub mod role_assignments {
         }
     }
     pub mod create_role_assignment {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -336,7 +336,7 @@ pub mod role_assignments {
         }
     }
     pub mod delete_role_assignment_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -365,7 +365,7 @@ pub mod role_assignments {
     }
 }
 pub mod role_definitions {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_role_definitions(
         operation_config: &crate::OperationConfig,
         is_built_in: Option<bool>,
@@ -418,7 +418,7 @@ pub mod role_definitions {
         }
     }
     pub mod list_role_definitions {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -485,7 +485,7 @@ pub mod role_definitions {
         }
     }
     pub mod get_role_definition_by_id {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -547,7 +547,7 @@ pub mod role_definitions {
         }
     }
     pub mod list_scopes {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

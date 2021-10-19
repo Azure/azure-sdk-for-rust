@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod notifications {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_with_authorization(
         operation_config: &crate::OperationConfig,
         subscription: &str,
@@ -56,7 +56,7 @@ pub mod notifications {
         }
     }
     pub mod get_with_authorization {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -80,7 +80,7 @@ pub mod notifications {
     }
 }
 pub mod notification {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_with_authorization(
         operation_config: &crate::OperationConfig,
         subscription: &str,
@@ -134,7 +134,7 @@ pub mod notification {
         }
     }
     pub mod get_with_authorization {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -201,7 +201,7 @@ pub mod notification {
         }
     }
     pub mod get_operations {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

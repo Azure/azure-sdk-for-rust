@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod migrate_projects_controller {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_migrate_project(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -56,7 +56,7 @@ pub mod migrate_projects_controller {
         }
     }
     pub mod get_migrate_project {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -131,7 +131,7 @@ pub mod migrate_projects_controller {
         }
     }
     pub mod put_migrate_project {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -208,7 +208,7 @@ pub mod migrate_projects_controller {
         }
     }
     pub mod patch_migrate_project {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -279,7 +279,7 @@ pub mod migrate_projects_controller {
         }
     }
     pub mod delete_migrate_project {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -308,7 +308,7 @@ pub mod migrate_projects_controller {
     }
 }
 pub mod private_endpoint_connections_controller {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_private_endpoint_connections(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -362,7 +362,7 @@ pub mod private_endpoint_connections_controller {
         }
     }
     pub mod get_private_endpoint_connections {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -386,7 +386,7 @@ pub mod private_endpoint_connections_controller {
     }
 }
 pub mod private_endpoint_connection_controller {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_private_endpoint_connection(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -442,7 +442,7 @@ pub mod private_endpoint_connection_controller {
         }
     }
     pub mod get_private_endpoint_connection {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -521,7 +521,7 @@ pub mod private_endpoint_connection_controller {
         }
     }
     pub mod put_private_endpoint_connection {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -594,7 +594,7 @@ pub mod private_endpoint_connection_controller {
         }
     }
     pub mod delete_private_endpoint_connection {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -623,7 +623,7 @@ pub mod private_endpoint_connection_controller {
     }
 }
 pub mod private_link_resource_controller {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_private_link_resource(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -679,7 +679,7 @@ pub mod private_link_resource_controller {
         }
     }
     pub mod get_private_link_resource {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -754,7 +754,7 @@ pub mod private_link_resource_controller {
         }
     }
     pub mod get_private_link_resources {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -778,7 +778,7 @@ pub mod private_link_resource_controller {
     }
 }
 pub mod projects {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -826,7 +826,7 @@ pub mod projects {
         }
     }
     pub mod list_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -894,7 +894,7 @@ pub mod projects {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -918,7 +918,7 @@ pub mod projects {
     }
 }
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<AvailableOperations, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Migrate/operations", operation_config.base_path(),);
@@ -955,7 +955,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

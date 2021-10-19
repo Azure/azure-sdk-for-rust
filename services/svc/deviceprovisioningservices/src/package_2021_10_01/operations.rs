@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod individual_enrollment {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(operation_config: &crate::OperationConfig, id: &str) -> std::result::Result<IndividualEnrollment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/enrollments/{}", operation_config.base_path(), id);
@@ -42,7 +42,7 @@ pub mod individual_enrollment {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -113,7 +113,7 @@ pub mod individual_enrollment {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -174,7 +174,7 @@ pub mod individual_enrollment {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -245,7 +245,7 @@ pub mod individual_enrollment {
         }
     }
     pub mod query {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -313,7 +313,7 @@ pub mod individual_enrollment {
         }
     }
     pub mod get_attestation_mechanism {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -379,7 +379,7 @@ pub mod individual_enrollment {
         }
     }
     pub mod run_bulk_operation {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -403,7 +403,7 @@ pub mod individual_enrollment {
     }
 }
 pub mod enrollment_group {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(operation_config: &crate::OperationConfig, id: &str) -> std::result::Result<EnrollmentGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/enrollmentGroups/{}", operation_config.base_path(), id);
@@ -441,7 +441,7 @@ pub mod enrollment_group {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -512,7 +512,7 @@ pub mod enrollment_group {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -573,7 +573,7 @@ pub mod enrollment_group {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -644,7 +644,7 @@ pub mod enrollment_group {
         }
     }
     pub mod query {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -712,7 +712,7 @@ pub mod enrollment_group {
         }
     }
     pub mod get_attestation_mechanism {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -778,7 +778,7 @@ pub mod enrollment_group {
         }
     }
     pub mod run_bulk_operation {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -802,7 +802,7 @@ pub mod enrollment_group {
     }
 }
 pub mod device_registration_state {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(operation_config: &crate::OperationConfig, id: &str) -> std::result::Result<DeviceRegistrationState, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/registrations/{}", operation_config.base_path(), id);
@@ -840,7 +840,7 @@ pub mod device_registration_state {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -901,7 +901,7 @@ pub mod device_registration_state {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -972,7 +972,7 @@ pub mod device_registration_state {
         }
     }
     pub mod query {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

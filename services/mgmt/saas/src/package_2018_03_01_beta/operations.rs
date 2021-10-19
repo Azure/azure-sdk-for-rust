@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
     ) -> std::result::Result<SaasAppOperationsResponseWithContinuation, list::Error> {
@@ -44,7 +44,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -68,7 +68,7 @@ pub mod operations {
     }
 }
 pub mod applications {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -115,7 +115,7 @@ pub mod applications {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -139,7 +139,7 @@ pub mod applications {
     }
 }
 pub mod saa_s {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get_resource(
         operation_config: &crate::OperationConfig,
         resource_id: &str,
@@ -187,7 +187,7 @@ pub mod saa_s {
         }
     }
     pub mod get_resource {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -260,7 +260,7 @@ pub mod saa_s {
         }
     }
     pub mod update_resource {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(SaasResource),
@@ -330,7 +330,7 @@ pub mod saa_s {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -402,7 +402,7 @@ pub mod saa_s {
         }
     }
     pub mod create_resource {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(SaasResource),
@@ -431,7 +431,7 @@ pub mod saa_s {
     }
 }
 pub mod saas_resources {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<SaasResourceResponseWithContinuation, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.SaaS/saasresources", operation_config.base_path(),);
@@ -469,7 +469,7 @@ pub mod saas_resources {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -542,7 +542,7 @@ pub async fn saas_resource_list_access_token(
     }
 }
 pub mod saas_resource_list_access_token {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -565,7 +565,7 @@ pub mod saas_resource_list_access_token {
     }
 }
 pub mod saas_subscription_level {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn list_by_azure_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -615,7 +615,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod list_by_azure_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -688,7 +688,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -758,7 +758,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -835,7 +835,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(SaasResource),
@@ -915,7 +915,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(SaasResource),
@@ -988,7 +988,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1068,7 +1068,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod update_to_unsubscribed {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1148,7 +1148,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod list_access_token {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1218,7 +1218,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod validate_move_resources {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1287,7 +1287,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod move_resources {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1316,7 +1316,7 @@ pub mod saas_subscription_level {
     }
 }
 pub mod saa_s_operation {
-    use crate::models::*;
+    use super::{models, models::*};
     pub async fn get(operation_config: &crate::OperationConfig, operation_id: &str) -> std::result::Result<get::Response, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1359,7 +1359,7 @@ pub mod saa_s_operation {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*};
         #[derive(Debug)]
         pub enum Response {
             Ok200(SaasResource),

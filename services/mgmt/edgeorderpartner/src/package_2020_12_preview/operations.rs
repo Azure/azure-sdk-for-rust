@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*};
 pub async fn list_operations_partner(
     operation_config: &crate::OperationConfig,
 ) -> std::result::Result<OperationListResult, list_operations_partner::Error> {
@@ -47,7 +47,7 @@ pub async fn list_operations_partner(
     }
 }
 pub mod list_operations_partner {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -123,7 +123,7 @@ pub async fn manage_inventory_metadata(
     }
 }
 pub mod manage_inventory_metadata {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -202,7 +202,7 @@ pub async fn manage_link(
     }
 }
 pub mod manage_link {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -278,7 +278,7 @@ pub async fn search_inventories(
     }
 }
 pub mod search_inventories {
-    use crate::{models, models::*};
+    use super::{models, models::*};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
