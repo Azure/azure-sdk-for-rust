@@ -48,7 +48,6 @@ no-default-version = []
     )
     .map_err(|source| Error::IoError { source })?;
 
-
     for (feature_name, _mod_name) in feature_mod_names {
         file.write_all(format!("\"{}\" = []\n", feature_name).as_bytes())
             .map_err(|source| Error::IoError { source })?;

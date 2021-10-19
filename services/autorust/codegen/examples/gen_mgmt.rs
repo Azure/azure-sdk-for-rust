@@ -367,7 +367,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     for config in spec.configs() {
         let tag = config.tag.as_str();
         if skip_service_tags.contains(&(spec.spec(), tag)) {
-            // println!("  skipping {}", tag);
+            println!("  skipping {}", tag);
             continue;
         }
         println!("  {}", tag);
