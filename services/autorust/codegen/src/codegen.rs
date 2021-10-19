@@ -241,7 +241,6 @@ pub fn get_type_name_for_schema_ref(schema: &ReferenceOr<Schema>, as_ref: AsRefe
 
 pub fn create_mod(api_version: &str) -> TokenStream {
     quote! {
-        #![allow(unused_imports)]
         pub mod models;
         pub mod operations;
         #[allow(dead_code)]

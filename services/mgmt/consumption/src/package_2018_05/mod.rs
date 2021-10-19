@@ -1,4 +1,3 @@
-#![allow(unused_imports)]
 pub mod models;
 pub mod operations;
 #[allow(dead_code)]
