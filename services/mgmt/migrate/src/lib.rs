@@ -2,30 +2,29 @@
 #[cfg(feature = "package-2018-02")]
 mod package_2018_02;
 #[cfg(feature = "package-2018-02")]
-pub use package_2018_02::{models, operations, API_VERSION};
+pub use package_2018_02::{models, operations};
 #[cfg(feature = "package-2019-10")]
 mod package_2019_10;
 #[cfg(feature = "package-2019-10")]
-pub use package_2019_10::{models, operations, API_VERSION};
+pub use package_2019_10::{models, operations};
 #[cfg(feature = "package-2020-01")]
 mod package_2020_01;
 #[cfg(feature = "package-2020-01")]
-pub use package_2020_01::{models, operations, API_VERSION};
+pub use package_2020_01::{models, operations};
 #[cfg(feature = "package-2020-05")]
 mod package_2020_05;
 #[cfg(feature = "package-2020-05")]
-pub use package_2020_05::{models, operations, API_VERSION};
+pub use package_2020_05::{models, operations};
 #[cfg(feature = "package-2020-07")]
 mod package_2020_07;
 use azure_core::setters;
 #[cfg(feature = "package-2020-07")]
-pub use package_2020_07::{models, operations, API_VERSION};
+pub use package_2020_07::{models, operations};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,
 ) -> OperationConfigBuilder {
     OperationConfigBuilder {
-        api_version: None,
         http_client,
         base_path: None,
         token_credential,
@@ -33,17 +32,15 @@ pub fn config(
     }
 }
 pub struct OperationConfigBuilder {
-    api_version: Option<String>,
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     base_path: Option<String>,
     token_credential: Box<dyn azure_core::TokenCredential>,
     token_credential_resource: Option<String>,
 }
 impl OperationConfigBuilder {
-    setters! { api_version : String => Some (api_version) , base_path : String => Some (base_path) , token_credential_resource : String => Some (token_credential_resource) , }
+    setters! { base_path : String => Some (base_path) , token_credential_resource : String => Some (token_credential_resource) , }
     pub fn build(self) -> OperationConfig {
         OperationConfig {
-            api_version: self.api_version.unwrap_or(API_VERSION.to_owned()),
             http_client: self.http_client,
             base_path: self.base_path.unwrap_or("https://management.azure.com".to_owned()),
             token_credential: Some(self.token_credential),
@@ -52,16 +49,12 @@ impl OperationConfigBuilder {
     }
 }
 pub struct OperationConfig {
-    api_version: String,
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     base_path: String,
     token_credential: Option<Box<dyn azure_core::TokenCredential>>,
     token_credential_resource: String,
 }
 impl OperationConfig {
-    pub fn api_version(&self) -> &str {
-        self.api_version.as_str()
-    }
     pub fn http_client(&self) -> &dyn azure_core::HttpClient {
         self.http_client.as_ref()
     }

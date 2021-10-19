@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub mod service {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get_properties(
         operation_config: &crate::OperationConfig,
         restype: &str,
@@ -56,7 +56,7 @@ pub mod service {
         }
     }
     pub mod get_properties {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -126,7 +126,7 @@ pub mod service {
         }
     }
     pub mod set_properties {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -210,7 +210,7 @@ pub mod service {
         }
     }
     pub mod list_shares_segment {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -234,7 +234,7 @@ pub mod service {
     }
 }
 pub mod share {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get_properties(
         operation_config: &crate::OperationConfig,
         share_name: &str,
@@ -288,7 +288,7 @@ pub mod share {
         }
     }
     pub mod get_properties {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -372,7 +372,7 @@ pub mod share {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -448,7 +448,7 @@ pub mod share {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -535,7 +535,7 @@ pub mod share {
         }
     }
     pub mod acquire_lease {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -616,7 +616,7 @@ pub mod share {
         }
     }
     pub mod release_lease {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -701,7 +701,7 @@ pub mod share {
         }
     }
     pub mod change_lease {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -782,7 +782,7 @@ pub mod share {
         }
     }
     pub mod renew_lease {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -869,7 +869,7 @@ pub mod share {
         }
     }
     pub mod break_lease {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -942,7 +942,7 @@ pub mod share {
         }
     }
     pub mod create_snapshot {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1018,7 +1018,7 @@ pub mod share {
         }
     }
     pub mod get_permission {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1089,7 +1089,7 @@ pub mod share {
         }
     }
     pub mod create_permission {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1174,7 +1174,7 @@ pub mod share {
         }
     }
     pub mod set_properties {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1251,7 +1251,7 @@ pub mod share {
         }
     }
     pub mod set_metadata {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1329,7 +1329,7 @@ pub mod share {
         }
     }
     pub mod get_access_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1408,7 +1408,7 @@ pub mod share {
         }
     }
     pub mod set_access_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1486,7 +1486,7 @@ pub mod share {
         }
     }
     pub mod get_statistics {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1567,7 +1567,7 @@ pub mod share {
         }
     }
     pub mod restore {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1591,7 +1591,7 @@ pub mod share {
     }
 }
 pub mod directory {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get_properties(
         operation_config: &crate::OperationConfig,
         share_name: &str,
@@ -1642,7 +1642,7 @@ pub mod directory {
         }
     }
     pub mod get_properties {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1725,7 +1725,7 @@ pub mod directory {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1790,7 +1790,7 @@ pub mod directory {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1879,7 +1879,7 @@ pub mod directory {
         }
     }
     pub mod set_properties {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1958,7 +1958,7 @@ pub mod directory {
         }
     }
     pub mod set_metadata {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2061,7 +2061,7 @@ pub mod directory {
         }
     }
     pub mod list_files_and_directories_segment {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2150,7 +2150,7 @@ pub mod directory {
         }
     }
     pub mod list_handles {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2237,7 +2237,7 @@ pub mod directory {
         }
     }
     pub mod force_close_handles {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2261,7 +2261,7 @@ pub mod directory {
     }
 }
 pub mod file {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn download(
         operation_config: &crate::OperationConfig,
         share_name: &str,
@@ -2330,7 +2330,7 @@ pub mod file {
         }
     }
     pub mod download {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(serde_json::Value),
@@ -2449,7 +2449,7 @@ pub mod file {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2517,7 +2517,7 @@ pub mod file {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2592,7 +2592,7 @@ pub mod file {
         }
     }
     pub mod get_properties {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2713,7 +2713,7 @@ pub mod file {
         }
     }
     pub mod set_http_headers {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2796,7 +2796,7 @@ pub mod file {
         }
     }
     pub mod set_metadata {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2885,7 +2885,7 @@ pub mod file {
         }
     }
     pub mod acquire_lease {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2968,7 +2968,7 @@ pub mod file {
         }
     }
     pub mod release_lease {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3055,7 +3055,7 @@ pub mod file {
         }
     }
     pub mod change_lease {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3140,7 +3140,7 @@ pub mod file {
         }
     }
     pub mod break_lease {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3235,7 +3235,7 @@ pub mod file {
         }
     }
     pub mod upload_range {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3344,7 +3344,7 @@ pub mod file {
         }
     }
     pub mod upload_range_from_url {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3440,7 +3440,7 @@ pub mod file {
         }
     }
     pub mod get_range_list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3555,7 +3555,7 @@ pub mod file {
         }
     }
     pub mod start_copy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3638,7 +3638,7 @@ pub mod file {
         }
     }
     pub mod abort_copy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3730,7 +3730,7 @@ pub mod file {
         }
     }
     pub mod list_handles {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3815,7 +3815,7 @@ pub mod file {
         }
     }
     pub mod force_close_handles {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

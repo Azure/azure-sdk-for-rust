@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub mod service {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get_properties(
         operation_config: &crate::OperationConfig,
         restype: &str,
@@ -60,7 +60,7 @@ pub mod service {
         }
     }
     pub mod get_properties {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -134,7 +134,7 @@ pub mod service {
         }
     }
     pub mod set_properties {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -211,7 +211,7 @@ pub mod service {
         }
     }
     pub mod get_statistics {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub mod container_services {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list_orchestrators(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -28,7 +28,7 @@ pub mod container_services {
                 .map_err(list_orchestrators::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(resource_type) = resource_type {
             url.query_pairs_mut().append_pair("resource-type", resource_type);
         }
@@ -56,7 +56,7 @@ pub mod container_services {
         }
     }
     pub mod list_orchestrators {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

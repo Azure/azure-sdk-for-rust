@@ -2,46 +2,45 @@
 #[cfg(feature = "package-2015-11-preview")]
 mod package_2015_11_preview;
 #[cfg(feature = "package-2015-11-preview")]
-pub use package_2015_11_preview::{models, operations, API_VERSION};
+pub use package_2015_11_preview::{models, operations};
 #[cfg(feature = "package-2015-03")]
 mod package_2015_03;
 #[cfg(feature = "package-2015-03")]
-pub use package_2015_03::{models, operations, API_VERSION};
+pub use package_2015_03::{models, operations};
 #[cfg(feature = "package-2019-08-preview")]
 mod package_2019_08_preview;
 #[cfg(feature = "package-2019-08-preview")]
-pub use package_2019_08_preview::{models, operations, API_VERSION};
+pub use package_2019_08_preview::{models, operations};
 #[cfg(feature = "package-2019-09-preview")]
 mod package_2019_09_preview;
 #[cfg(feature = "package-2019-09-preview")]
-pub use package_2019_09_preview::{models, operations, API_VERSION};
+pub use package_2019_09_preview::{models, operations};
 #[cfg(feature = "package-2020-03-preview")]
 mod package_2020_03_preview;
 #[cfg(feature = "package-2020-03-preview")]
-pub use package_2020_03_preview::{models, operations, API_VERSION};
+pub use package_2020_03_preview::{models, operations};
 #[cfg(feature = "package-2020-08")]
 mod package_2020_08;
 #[cfg(feature = "package-2020-08")]
-pub use package_2020_08::{models, operations, API_VERSION};
+pub use package_2020_08::{models, operations};
 #[cfg(feature = "package-2020-10-only")]
 mod package_2020_10_only;
 #[cfg(feature = "package-2020-10-only")]
-pub use package_2020_10_only::{models, operations, API_VERSION};
+pub use package_2020_10_only::{models, operations};
 #[cfg(feature = "package-2020-10")]
 mod package_2020_10;
 #[cfg(feature = "package-2020-10")]
-pub use package_2020_10::{models, operations, API_VERSION};
+pub use package_2020_10::{models, operations};
 #[cfg(feature = "package-2021-06")]
 mod package_2021_06;
 use azure_core::setters;
 #[cfg(feature = "package-2021-06")]
-pub use package_2021_06::{models, operations, API_VERSION};
+pub use package_2021_06::{models, operations};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,
 ) -> OperationConfigBuilder {
     OperationConfigBuilder {
-        api_version: None,
         http_client,
         base_path: None,
         token_credential,
@@ -49,17 +48,15 @@ pub fn config(
     }
 }
 pub struct OperationConfigBuilder {
-    api_version: Option<String>,
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     base_path: Option<String>,
     token_credential: Box<dyn azure_core::TokenCredential>,
     token_credential_resource: Option<String>,
 }
 impl OperationConfigBuilder {
-    setters! { api_version : String => Some (api_version) , base_path : String => Some (base_path) , token_credential_resource : String => Some (token_credential_resource) , }
+    setters! { base_path : String => Some (base_path) , token_credential_resource : String => Some (token_credential_resource) , }
     pub fn build(self) -> OperationConfig {
         OperationConfig {
-            api_version: self.api_version.unwrap_or(API_VERSION.to_owned()),
             http_client: self.http_client,
             base_path: self.base_path.unwrap_or("https://management.azure.com".to_owned()),
             token_credential: Some(self.token_credential),
@@ -68,16 +65,12 @@ impl OperationConfigBuilder {
     }
 }
 pub struct OperationConfig {
-    api_version: String,
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     base_path: String,
     token_credential: Option<Box<dyn azure_core::TokenCredential>>,
     token_credential_resource: String,
 }
 impl OperationConfig {
-    pub fn api_version(&self) -> &str {
-        self.api_version.as_str()
-    }
     pub fn http_client(&self) -> &dyn azure_core::HttpClient {
         self.http_client.as_ref()
     }

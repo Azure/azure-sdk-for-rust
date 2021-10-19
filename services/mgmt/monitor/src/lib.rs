@@ -2,190 +2,189 @@
 #[cfg(feature = "package-2021-09")]
 mod package_2021_09;
 #[cfg(feature = "package-2021-09")]
-pub use package_2021_09::{models, operations, API_VERSION};
+pub use package_2021_09::{models, operations};
 #[cfg(feature = "package-2021-07")]
 mod package_2021_07;
 #[cfg(feature = "package-2021-07")]
-pub use package_2021_07::{models, operations, API_VERSION};
+pub use package_2021_07::{models, operations};
 #[cfg(feature = "package-2021-07-01-preview-only")]
 mod package_2021_07_01_preview_only;
 #[cfg(feature = "package-2021-07-01-preview-only")]
-pub use package_2021_07_01_preview_only::{models, operations, API_VERSION};
+pub use package_2021_07_01_preview_only::{models, operations};
 #[cfg(feature = "package-2021-04")]
 mod package_2021_04;
 #[cfg(feature = "package-2021-04")]
-pub use package_2021_04::{models, operations, API_VERSION};
+pub use package_2021_04::{models, operations};
 #[cfg(feature = "package-2021-05-only")]
 mod package_2021_05_only;
 #[cfg(feature = "package-2021-05-only")]
-pub use package_2021_05_only::{models, operations, API_VERSION};
+pub use package_2021_05_only::{models, operations};
 #[cfg(feature = "package-2021-05-01-preview-only")]
 mod package_2021_05_01_preview_only;
 #[cfg(feature = "package-2021-05-01-preview-only")]
-pub use package_2021_05_01_preview_only::{models, operations, API_VERSION};
+pub use package_2021_05_01_preview_only::{models, operations};
 #[cfg(feature = "package-2021-04-only")]
 mod package_2021_04_only;
 #[cfg(feature = "package-2021-04-only")]
-pub use package_2021_04_only::{models, operations, API_VERSION};
+pub use package_2021_04_only::{models, operations};
 #[cfg(feature = "package-2021-02-preview-only")]
 mod package_2021_02_preview_only;
 #[cfg(feature = "package-2021-02-preview-only")]
-pub use package_2021_02_preview_only::{models, operations, API_VERSION};
+pub use package_2021_02_preview_only::{models, operations};
 #[cfg(feature = "package-2020-10-only")]
 mod package_2020_10_only;
 #[cfg(feature = "package-2020-10-only")]
-pub use package_2020_10_only::{models, operations, API_VERSION};
+pub use package_2020_10_only::{models, operations};
 #[cfg(feature = "package-2020-05-preview-only")]
 mod package_2020_05_preview_only;
 #[cfg(feature = "package-2020-05-preview-only")]
-pub use package_2020_05_preview_only::{models, operations, API_VERSION};
+pub use package_2020_05_preview_only::{models, operations};
 #[cfg(feature = "package-2020-01-01-preview-only")]
 mod package_2020_01_01_preview_only;
 #[cfg(feature = "package-2020-01-01-preview-only")]
-pub use package_2020_01_01_preview_only::{models, operations, API_VERSION};
+pub use package_2020_01_01_preview_only::{models, operations};
 #[cfg(feature = "package-2020-03")]
 mod package_2020_03;
 #[cfg(feature = "package-2020-03")]
-pub use package_2020_03::{models, operations, API_VERSION};
+pub use package_2020_03::{models, operations};
 #[cfg(feature = "package-2019-11")]
 mod package_2019_11;
 #[cfg(feature = "package-2019-11")]
-pub use package_2019_11::{models, operations, API_VERSION};
+pub use package_2019_11::{models, operations};
 #[cfg(feature = "package-2019-10-17-preview-only")]
 mod package_2019_10_17_preview_only;
 #[cfg(feature = "package-2019-10-17-preview-only")]
-pub use package_2019_10_17_preview_only::{models, operations, API_VERSION};
+pub use package_2019_10_17_preview_only::{models, operations};
 #[cfg(feature = "package-2019-07-only")]
 mod package_2019_07_only;
 #[cfg(feature = "package-2019-07-only")]
-pub use package_2019_07_only::{models, operations, API_VERSION};
+pub use package_2019_07_only::{models, operations};
 #[cfg(feature = "package-2019-06")]
 mod package_2019_06;
 #[cfg(feature = "package-2019-06")]
-pub use package_2019_06::{models, operations, API_VERSION};
+pub use package_2019_06::{models, operations};
 #[cfg(feature = "package-2019-03")]
 mod package_2019_03;
 #[cfg(feature = "package-2019-03")]
-pub use package_2019_03::{models, operations, API_VERSION};
+pub use package_2019_03::{models, operations};
 #[cfg(feature = "package-2018-11-preview")]
 mod package_2018_11_preview;
 #[cfg(feature = "package-2018-11-preview")]
-pub use package_2018_11_preview::{models, operations, API_VERSION};
+pub use package_2018_11_preview::{models, operations};
 #[cfg(feature = "package-2018-09")]
 mod package_2018_09;
 #[cfg(feature = "package-2018-09")]
-pub use package_2018_09::{models, operations, API_VERSION};
+pub use package_2018_09::{models, operations};
 #[cfg(feature = "package-2018-03")]
 mod package_2018_03;
 #[cfg(feature = "package-2018-03")]
-pub use package_2018_03::{models, operations, API_VERSION};
+pub use package_2018_03::{models, operations};
 #[cfg(feature = "package-2018-02-preview")]
 mod package_2018_02_preview;
 #[cfg(feature = "package-2018-02-preview")]
-pub use package_2018_02_preview::{models, operations, API_VERSION};
+pub use package_2018_02_preview::{models, operations};
 #[cfg(feature = "package-2017-12")]
 mod package_2017_12;
 #[cfg(feature = "package-2017-12")]
-pub use package_2017_12::{models, operations, API_VERSION};
+pub use package_2017_12::{models, operations};
 #[cfg(feature = "package-2017-09")]
 mod package_2017_09;
 #[cfg(feature = "package-2017-09")]
-pub use package_2017_09::{models, operations, API_VERSION};
+pub use package_2017_09::{models, operations};
 #[cfg(feature = "package-2017-09-preview-only")]
 mod package_2017_09_preview_only;
 #[cfg(feature = "package-2017-09-preview-only")]
-pub use package_2017_09_preview_only::{models, operations, API_VERSION};
+pub use package_2017_09_preview_only::{models, operations};
 #[cfg(feature = "package-2017-08")]
 mod package_2017_08;
 #[cfg(feature = "package-2017-08")]
-pub use package_2017_08::{models, operations, API_VERSION};
+pub use package_2017_08::{models, operations};
 #[cfg(feature = "package-2019-11-01-preview-only")]
 mod package_2019_11_01_preview_only;
 #[cfg(feature = "package-2019-11-01-preview-only")]
-pub use package_2019_11_01_preview_only::{models, operations, API_VERSION};
+pub use package_2019_11_01_preview_only::{models, operations};
 #[cfg(feature = "package-2019-06-01-only")]
 mod package_2019_06_01_only;
 #[cfg(feature = "package-2019-06-01-only")]
-pub use package_2019_06_01_only::{models, operations, API_VERSION};
+pub use package_2019_06_01_only::{models, operations};
 #[cfg(feature = "package-2019-03-01-only")]
 mod package_2019_03_01_only;
 #[cfg(feature = "package-2019-03-01-only")]
-pub use package_2019_03_01_only::{models, operations, API_VERSION};
+pub use package_2019_03_01_only::{models, operations};
 #[cfg(feature = "package-2018-11-27-preview-only")]
 mod package_2018_11_27_preview_only;
 #[cfg(feature = "package-2018-11-27-preview-only")]
-pub use package_2018_11_27_preview_only::{models, operations, API_VERSION};
+pub use package_2018_11_27_preview_only::{models, operations};
 #[cfg(feature = "package-2018-09-01-only")]
 mod package_2018_09_01_only;
 #[cfg(feature = "package-2018-09-01-only")]
-pub use package_2018_09_01_only::{models, operations, API_VERSION};
+pub use package_2018_09_01_only::{models, operations};
 #[cfg(feature = "package-2018-06-01-preview-only")]
 mod package_2018_06_01_preview_only;
 #[cfg(feature = "package-2018-06-01-preview-only")]
-pub use package_2018_06_01_preview_only::{models, operations, API_VERSION};
+pub use package_2018_06_01_preview_only::{models, operations};
 #[cfg(feature = "package-2018-04-16-only")]
 mod package_2018_04_16_only;
 #[cfg(feature = "package-2018-04-16-only")]
-pub use package_2018_04_16_only::{models, operations, API_VERSION};
+pub use package_2018_04_16_only::{models, operations};
 #[cfg(feature = "package-2018-03-01-only")]
 mod package_2018_03_01_only;
 #[cfg(feature = "package-2018-03-01-only")]
-pub use package_2018_03_01_only::{models, operations, API_VERSION};
+pub use package_2018_03_01_only::{models, operations};
 #[cfg(feature = "package-2018-01-01-only")]
 mod package_2018_01_01_only;
 #[cfg(feature = "package-2018-01-01-only")]
-pub use package_2018_01_01_only::{models, operations, API_VERSION};
+pub use package_2018_01_01_only::{models, operations};
 #[cfg(feature = "package-2017-12-01-preview-only")]
 mod package_2017_12_01_preview_only;
 #[cfg(feature = "package-2017-12-01-preview-only")]
-pub use package_2017_12_01_preview_only::{models, operations, API_VERSION};
+pub use package_2017_12_01_preview_only::{models, operations};
 #[cfg(feature = "package-2017-11-01-preview-only")]
 mod package_2017_11_01_preview_only;
 #[cfg(feature = "package-2017-11-01-preview-only")]
-pub use package_2017_11_01_preview_only::{models, operations, API_VERSION};
+pub use package_2017_11_01_preview_only::{models, operations};
 #[cfg(feature = "package-2017-05-01-preview-only")]
 mod package_2017_05_01_preview_only;
 #[cfg(feature = "package-2017-05-01-preview-only")]
-pub use package_2017_05_01_preview_only::{models, operations, API_VERSION};
+pub use package_2017_05_01_preview_only::{models, operations};
 #[cfg(feature = "package-2017-04-01-only")]
 mod package_2017_04_01_only;
 #[cfg(feature = "package-2017-04-01-only")]
-pub use package_2017_04_01_only::{models, operations, API_VERSION};
+pub use package_2017_04_01_only::{models, operations};
 #[cfg(feature = "package-2017-03-01-preview-only")]
 mod package_2017_03_01_preview_only;
 #[cfg(feature = "package-2017-03-01-preview-only")]
-pub use package_2017_03_01_preview_only::{models, operations, API_VERSION};
+pub use package_2017_03_01_preview_only::{models, operations};
 #[cfg(feature = "package-2016-09-01-only")]
 mod package_2016_09_01_only;
 #[cfg(feature = "package-2016-09-01-only")]
-pub use package_2016_09_01_only::{models, operations, API_VERSION};
+pub use package_2016_09_01_only::{models, operations};
 #[cfg(feature = "package-2016-06-only")]
 mod package_2016_06_only;
 #[cfg(feature = "package-2016-06-only")]
-pub use package_2016_06_only::{models, operations, API_VERSION};
+pub use package_2016_06_only::{models, operations};
 #[cfg(feature = "package-2016-03-01-only")]
 mod package_2016_03_01_only;
 #[cfg(feature = "package-2016-03-01-only")]
-pub use package_2016_03_01_only::{models, operations, API_VERSION};
+pub use package_2016_03_01_only::{models, operations};
 #[cfg(feature = "package-2015-07-01-only")]
 mod package_2015_07_01_only;
 #[cfg(feature = "package-2015-07-01-only")]
-pub use package_2015_07_01_only::{models, operations, API_VERSION};
+pub use package_2015_07_01_only::{models, operations};
 #[cfg(feature = "package-2015-04-01-only")]
 mod package_2015_04_01_only;
 #[cfg(feature = "package-2015-04-01-only")]
-pub use package_2015_04_01_only::{models, operations, API_VERSION};
+pub use package_2015_04_01_only::{models, operations};
 #[cfg(feature = "package-2014-04-01-only")]
 mod package_2014_04_01_only;
 use azure_core::setters;
 #[cfg(feature = "package-2014-04-01-only")]
-pub use package_2014_04_01_only::{models, operations, API_VERSION};
+pub use package_2014_04_01_only::{models, operations};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,
 ) -> OperationConfigBuilder {
     OperationConfigBuilder {
-        api_version: None,
         http_client,
         base_path: None,
         token_credential,
@@ -193,17 +192,15 @@ pub fn config(
     }
 }
 pub struct OperationConfigBuilder {
-    api_version: Option<String>,
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     base_path: Option<String>,
     token_credential: Box<dyn azure_core::TokenCredential>,
     token_credential_resource: Option<String>,
 }
 impl OperationConfigBuilder {
-    setters! { api_version : String => Some (api_version) , base_path : String => Some (base_path) , token_credential_resource : String => Some (token_credential_resource) , }
+    setters! { base_path : String => Some (base_path) , token_credential_resource : String => Some (token_credential_resource) , }
     pub fn build(self) -> OperationConfig {
         OperationConfig {
-            api_version: self.api_version.unwrap_or(API_VERSION.to_owned()),
             http_client: self.http_client,
             base_path: self.base_path.unwrap_or("https://management.azure.com".to_owned()),
             token_credential: Some(self.token_credential),
@@ -212,16 +209,12 @@ impl OperationConfigBuilder {
     }
 }
 pub struct OperationConfig {
-    api_version: String,
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     base_path: String,
     token_credential: Option<Box<dyn azure_core::TokenCredential>>,
     token_credential_resource: String,
 }
 impl OperationConfig {
-    pub fn api_version(&self) -> &str {
-        self.api_version.as_str()
-    }
     pub fn http_client(&self) -> &dyn azure_core::HttpClient {
         self.http_client.as_ref()
     }
