@@ -212,7 +212,7 @@ pub struct QueryFilter {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub or: Vec<QueryFilter>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub not: Option<QueryFilter>,
+    pub not: Box<Option<QueryFilter>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimension: Option<QueryComparisonExpression>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

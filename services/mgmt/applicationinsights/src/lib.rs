@@ -23,10 +23,6 @@ pub use package_preview_2020_10_only::{models, operations};
 mod package_preview_2020_06_only;
 #[cfg(feature = "package-preview-2020-06-only")]
 pub use package_preview_2020_06_only::{models, operations};
-#[cfg(feature = "package-preview-2020-06")]
-mod package_preview_2020_06;
-#[cfg(feature = "package-preview-2020-06")]
-pub use package_preview_2020_06::{models, operations};
 #[cfg(feature = "package-2020-04")]
 mod package_2020_04;
 #[cfg(feature = "package-2020-04")]

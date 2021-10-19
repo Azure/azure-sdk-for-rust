@@ -39,10 +39,6 @@ pub use package_2017_11::{models, operations};
 mod package_2018_01;
 #[cfg(feature = "package-2018-01")]
 pub use package_2018_01::{models, operations};
-#[cfg(feature = "package-2018-03")]
-mod package_2018_03;
-#[cfg(feature = "package-2018-03")]
-pub use package_2018_03::{models, operations};
 #[cfg(feature = "package-2018-05")]
 mod package_2018_05;
 #[cfg(feature = "package-2018-05")]

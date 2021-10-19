@@ -1589,12 +1589,12 @@ pub mod transfer_configuration {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct TransferFilterDetails {
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub include: Option<TransferFilterDetails>,
+        pub include: Box<Option<TransferFilterDetails>>,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct TransferAllDetails {
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub include: Option<TransferAllDetails>,
+        pub include: Box<Option<TransferAllDetails>>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

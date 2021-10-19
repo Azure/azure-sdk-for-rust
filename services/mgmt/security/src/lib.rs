@@ -39,10 +39,6 @@ pub use package_2018_06_only::{models, operations};
 mod package_2019_01_only;
 #[cfg(feature = "package-2019-01-only")]
 pub use package_2019_01_only::{models, operations};
-#[cfg(feature = "package-2019-08-only")]
-mod package_2019_08_only;
-#[cfg(feature = "package-2019-08-only")]
-pub use package_2019_08_only::{models, operations};
 #[cfg(feature = "package-2020-01-only")]
 mod package_2020_01_only;
 #[cfg(feature = "package-2020-01-only")]
