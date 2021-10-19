@@ -14,9 +14,9 @@ const SKIP_SERVICES: &[&str] = &[
     "machinelearningservices", // untagged enum
     "servicefabric",           // currently generates `async` member names
     "hdinsight",               // job_id appears multiple times?
-    "keyvault",                // `{field_name}` used in formatting url
     "videoanalyzer",           // no operations
     "mediaservices",           // no operations
+    "marketplacecatalog",      // BadRequest400 uses models::String?
 ];
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
@@ -27,9 +27,6 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("datalake-store", "package-2016-11"),         // TODO #81 DataType::File
     ("datalake-store", "package-2015-10-preview"), // TODO #81 DataType::File
     ("purview", "package-2021-05-01-preview"),     // untagged enum
-    ("keyvault", "package-preview-7.3-preview"),   // parse error
-    ("keyvault", "package-7.2"),                   // parse error
-    ("keyvault", "package-7.2-preview"),           // parse error
     ("batch", "package-2018-03.6.1"),              // TODO #81 DataType::File
     ("batch", "package-2017-09.6.0"),              // TODO #81 DataType::File
     ("batch", "package-2017-06.5.1"),              // TODO #81 DataType::File
@@ -68,16 +65,14 @@ const FIX_CASE_PROPERTIES: &[(&str, &str, &str)] = &[
 // https://github.com/ctaggart/autorust/issues/73
 const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     // keyvault
-    (
-        "../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/7.1/common.json",
-        "Error",
-        "innererror",
-    ),
-    (
-        "../../../azure-rest-api-specs/specification/applicationinsights/data-plane/Microsoft.Insights/preview/v1/AppInsights.json",
-        "errorInfo",
-        "innererror",
-    ),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/preview/7.0/keyvault.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/preview/7.1/common.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/preview/7.2-preview/common.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/preview/7.3-preview/common.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/2016-10-01/keyvault.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/7.0/keyvault.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/7.1/common.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/7.2/common.json" , "Error" , "innererror"),
     // webpubsub
     (
         "../../../azure-rest-api-specs/specification/webpubsub/data-plane/WebPubSub/stable/2021-10-01/webpubsub.json",
@@ -112,6 +107,17 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
         "../../../azure-rest-api-specs/specification/timeseriesinsights/data-plane/Microsoft.TimeSeriesInsights/stable/2020-07-31/timeseriesinsights.json",
         "TsiErrorBody",
         "innerError",
+    ),
+    // datalake-analytics
+    (
+        "../../../azure-rest-api-specs/specification/datalake-analytics/data-plane/Microsoft.DataLakeAnalytics/stable/2016-11-01/job.json",
+        "JobInnerError",
+        "innerError"
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/datalake-analytics/data-plane/Microsoft.DataLakeAnalytics/preview/2017-09-01-preview/job.json",
+        "JobInnerError",
+        "innerError"
     )
 ];
 

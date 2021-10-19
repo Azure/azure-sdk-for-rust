@@ -24,7 +24,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         #![allow(unused_mut)]
         #![allow(unused_variables)]
         #![allow(unused_imports)]
-        use crate::models::*;
+        use super::{API_VERSION, models, models::*};
 
     });
     let mut modules: IndexMap<Option<String>, TokenStream> = IndexMap::new();
@@ -59,7 +59,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
                 let name = ident(&module_name).map_err(Error::ModuleName)?;
                 file.extend(quote! {
                     pub mod #name {
-                        use crate::models::*;
+                        use super::{API_VERSION, models, models::*};
 
                         #module
                     }
@@ -133,7 +133,7 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
     if has_param_api_version {
         if let Some(_api_version) = cg.spec.api_version() {
             ts_request_builder.extend(quote! {
-                url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
             });
         }
     }
@@ -465,7 +465,7 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
             }
         }
         pub mod #fname {
-            use crate::{models, models::*};
+            use super::{API_VERSION, models, models::*};
 
             #response_enum
 

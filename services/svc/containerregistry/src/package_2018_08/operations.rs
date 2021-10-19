@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub async fn get_docker_registry_v2_support(
     operation_config: &crate::OperationConfig,
 ) -> std::result::Result<(), get_docker_registry_v2_support::Error> {
@@ -41,7 +41,7 @@ pub async fn get_docker_registry_v2_support(
     }
 }
 pub mod get_docker_registry_v2_support {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -106,7 +106,7 @@ pub async fn get_tag_list(
     }
 }
 pub mod get_tag_list {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -174,7 +174,7 @@ pub async fn get_manifest(
     }
 }
 pub mod get_manifest {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -247,7 +247,7 @@ pub async fn get_repositories(
     }
 }
 pub mod get_repositories {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -318,7 +318,7 @@ pub async fn get_acr_repositories(
     }
 }
 pub mod get_acr_repositories {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -385,7 +385,7 @@ pub async fn get_acr_repository_attributes(
     }
 }
 pub mod get_acr_repository_attributes {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -455,7 +455,7 @@ pub async fn update_acr_repository_attributes(
     }
 }
 pub mod update_acr_repository_attributes {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -524,7 +524,7 @@ pub async fn delete_acr_repository(
     }
 }
 pub mod delete_acr_repository {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -607,7 +607,7 @@ pub async fn get_acr_tags(
     }
 }
 pub mod get_acr_tags {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -677,7 +677,7 @@ pub async fn get_acr_tag_attributes(
     }
 }
 pub mod get_acr_tag_attributes {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -748,7 +748,7 @@ pub async fn update_acr_tag_attributes(
     }
 }
 pub mod update_acr_tag_attributes {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -811,7 +811,7 @@ pub async fn delete_acr_tag(
     }
 }
 pub mod delete_acr_tag {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -890,7 +890,7 @@ pub async fn get_acr_manifests(
     }
 }
 pub mod get_acr_manifests {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -960,7 +960,7 @@ pub async fn get_acr_manifest_attributes(
     }
 }
 pub mod get_acr_manifest_attributes {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -1031,7 +1031,7 @@ pub async fn update_acr_manifest_attributes(
     }
 }
 pub mod update_acr_manifest_attributes {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]

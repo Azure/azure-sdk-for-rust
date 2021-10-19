@@ -27,7 +27,7 @@ pub struct ErrorInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Option<ErrorInfo>,
+    pub innererror: Box<Option<ErrorInfo>>,
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
 }
