@@ -29,7 +29,7 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
             #[cfg(feature = #feature_name)]
             mod #mod_name;
             #[cfg(feature = #feature_name)]
-            pub use #mod_name::{models, operations, API_VERSION};
+            pub use #mod_name::{models, operations};
         });
     }
     let generated_by = create_generated_by_header();
@@ -43,7 +43,6 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
             token_credential: Box<dyn azure_core::TokenCredential>,
         ) -> OperationConfigBuilder {
             OperationConfigBuilder {
-                api_version: None,
                 http_client,
                 base_path: None,
                 token_credential,
@@ -52,7 +51,6 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
         }
 
         pub struct OperationConfigBuilder {
-            api_version: Option<String>,
             http_client: std::sync::Arc<dyn azure_core::HttpClient>,
             base_path: Option<String>,
             token_credential: Box<dyn azure_core::TokenCredential>,
@@ -61,14 +59,12 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
 
         impl OperationConfigBuilder {
             setters! {
-                api_version: String => Some(api_version),
                 base_path: String => Some(base_path),
                 token_credential_resource: String => Some(token_credential_resource),
             }
 
             pub fn build(self) -> OperationConfig {
                 OperationConfig {
-                    api_version: self.api_version.unwrap_or(API_VERSION.to_owned()),
                     http_client: self.http_client,
                     base_path: self.base_path.unwrap_or("https://management.azure.com".to_owned()),
                     token_credential: Some(self.token_credential),
@@ -78,7 +74,6 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
         }
 
         pub struct OperationConfig {
-            api_version: String,
             http_client: std::sync::Arc<dyn azure_core::HttpClient>,
             base_path: String,
             token_credential: Option<Box<dyn azure_core::TokenCredential>>,
@@ -86,9 +81,6 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
         }
 
         impl OperationConfig {
-            pub fn api_version(&self) -> &str {
-                self.api_version.as_str()
-            }
             pub fn http_client(&self) -> &dyn azure_core::HttpClient {
                 self.http_client.as_ref()
             }
