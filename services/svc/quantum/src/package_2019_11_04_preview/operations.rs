@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*};
+use super::{models, models::*, API_VERSION};
 pub mod jobs {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -50,7 +50,7 @@ pub mod jobs {
         }
     }
     pub mod list {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -118,7 +118,7 @@ pub mod jobs {
         }
     }
     pub mod get {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -197,7 +197,7 @@ pub mod jobs {
         }
     }
     pub mod create {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(JobDetails),
@@ -268,7 +268,7 @@ pub mod jobs {
         }
     }
     pub mod cancel {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -292,7 +292,7 @@ pub mod jobs {
     }
 }
 pub mod providers {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn get_status(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -343,7 +343,7 @@ pub mod providers {
         }
     }
     pub mod get_status {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -367,7 +367,7 @@ pub mod providers {
     }
 }
 pub mod storage {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn sas_uri(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -420,7 +420,7 @@ pub mod storage {
         }
     }
     pub mod sas_uri {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -444,7 +444,7 @@ pub mod storage {
     }
 }
 pub mod quotas {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -492,7 +492,7 @@ pub mod quotas {
         }
     }
     pub mod list {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

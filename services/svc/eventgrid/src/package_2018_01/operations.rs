@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*};
+use super::{models, models::*, API_VERSION};
 pub async fn publish_cloud_event_events(
     operation_config: &crate::OperationConfig,
     events: &Vec<&CloudEventEvent>,
@@ -19,7 +19,7 @@ pub async fn publish_cloud_event_events(
             .map_err(publish_cloud_event_events::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(events).map_err(publish_cloud_event_events::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
@@ -36,7 +36,7 @@ pub async fn publish_cloud_event_events(
     }
 }
 pub mod publish_cloud_event_events {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -71,7 +71,7 @@ pub async fn publish_custom_event_events(
             .map_err(publish_custom_event_events::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(events).map_err(publish_custom_event_events::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
@@ -88,7 +88,7 @@ pub async fn publish_custom_event_events(
     }
 }
 pub mod publish_custom_event_events {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]

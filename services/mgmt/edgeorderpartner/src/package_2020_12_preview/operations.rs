@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*};
+use super::{models, models::*, API_VERSION};
 pub async fn list_operations_partner(
     operation_config: &crate::OperationConfig,
 ) -> std::result::Result<OperationListResult, list_operations_partner::Error> {
@@ -18,7 +18,7 @@ pub async fn list_operations_partner(
             .map_err(list_operations_partner::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
@@ -47,7 +47,7 @@ pub async fn list_operations_partner(
     }
 }
 pub mod list_operations_partner {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -96,7 +96,7 @@ pub async fn manage_inventory_metadata(
             .map_err(manage_inventory_metadata::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(manage_inventory_metadata_request).map_err(manage_inventory_metadata::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
@@ -123,7 +123,7 @@ pub async fn manage_inventory_metadata(
     }
 }
 pub mod manage_inventory_metadata {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -178,7 +178,7 @@ pub async fn manage_link(
             .map_err(manage_link::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(manage_link_request).map_err(manage_link::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
@@ -202,7 +202,7 @@ pub async fn manage_link(
     }
 }
 pub mod manage_link {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -250,7 +250,7 @@ pub async fn search_inventories(
             .map_err(search_inventories::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(search_inventories_request).map_err(search_inventories::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
@@ -278,7 +278,7 @@ pub async fn search_inventories(
     }
 }
 pub mod search_inventories {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]

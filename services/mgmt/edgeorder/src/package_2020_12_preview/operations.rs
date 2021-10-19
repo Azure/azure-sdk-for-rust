@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*};
+use super::{models, models::*, API_VERSION};
 pub async fn list_operations(
     operation_config: &crate::OperationConfig,
 ) -> std::result::Result<OperationListResult, list_operations::Error> {
@@ -18,7 +18,7 @@ pub async fn list_operations(
             .map_err(list_operations::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(list_operations::Error::BuildRequestError)?;
@@ -45,7 +45,7 @@ pub async fn list_operations(
     }
 }
 pub mod list_operations {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -89,7 +89,7 @@ pub async fn list_addresses_at_subscription_level(
             .map_err(list_addresses_at_subscription_level::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(filter) = filter {
         url.query_pairs_mut().append_pair("$filter", filter);
     }
@@ -124,7 +124,7 @@ pub async fn list_addresses_at_subscription_level(
     }
 }
 pub mod list_addresses_at_subscription_level {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -169,7 +169,7 @@ pub async fn list_product_families(
             .map_err(list_product_families::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(expand) = expand {
         url.query_pairs_mut().append_pair("$expand", expand);
     }
@@ -205,7 +205,7 @@ pub async fn list_product_families(
     }
 }
 pub mod list_product_families {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -249,7 +249,7 @@ pub async fn list_configurations(
             .map_err(list_configurations::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(skip_token) = skip_token {
         url.query_pairs_mut().append_pair("$skipToken", skip_token);
     }
@@ -280,7 +280,7 @@ pub async fn list_configurations(
     }
 }
 pub mod list_configurations {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -323,7 +323,7 @@ pub async fn list_product_families_metadata(
             .map_err(list_product_families_metadata::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(skip_token) = skip_token {
         url.query_pairs_mut().append_pair("$skipToken", skip_token);
     }
@@ -356,7 +356,7 @@ pub async fn list_product_families_metadata(
     }
 }
 pub mod list_product_families_metadata {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -399,7 +399,7 @@ pub async fn list_order_at_subscription_level(
             .map_err(list_order_at_subscription_level::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(skip_token) = skip_token {
         url.query_pairs_mut().append_pair("$skipToken", skip_token);
     }
@@ -431,7 +431,7 @@ pub async fn list_order_at_subscription_level(
     }
 }
 pub mod list_order_at_subscription_level {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -476,7 +476,7 @@ pub async fn list_order_items_at_subscription_level(
             .map_err(list_order_items_at_subscription_level::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(filter) = filter {
         url.query_pairs_mut().append_pair("$filter", filter);
     }
@@ -514,7 +514,7 @@ pub async fn list_order_items_at_subscription_level(
     }
 }
 pub mod list_order_items_at_subscription_level {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -560,7 +560,7 @@ pub async fn list_addresses_at_resource_group_level(
             .map_err(list_addresses_at_resource_group_level::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(filter) = filter {
         url.query_pairs_mut().append_pair("$filter", filter);
     }
@@ -595,7 +595,7 @@ pub async fn list_addresses_at_resource_group_level(
     }
 }
 pub mod list_addresses_at_resource_group_level {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -641,7 +641,7 @@ pub async fn get_address_by_name(
             .map_err(get_address_by_name::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(get_address_by_name::Error::BuildRequestError)?;
@@ -668,7 +668,7 @@ pub async fn get_address_by_name(
     }
 }
 pub mod get_address_by_name {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -715,7 +715,7 @@ pub async fn create_address(
             .map_err(create_address::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(address_resource).map_err(create_address::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
@@ -744,7 +744,7 @@ pub async fn create_address(
     }
 }
 pub mod create_address {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200(AddressResource),
@@ -797,7 +797,7 @@ pub async fn update_address(
             .map_err(update_address::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(if_match) = if_match {
         req_builder = req_builder.header("If-Match", if_match);
     }
@@ -829,7 +829,7 @@ pub async fn update_address(
     }
 }
 pub mod update_address {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Accepted202,
@@ -880,7 +880,7 @@ pub async fn delete_address_by_name(
             .map_err(delete_address_by_name::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
@@ -906,7 +906,7 @@ pub async fn delete_address_by_name(
     }
 }
 pub mod delete_address_by_name {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -957,7 +957,7 @@ pub async fn list_order_at_resource_group_level(
             .map_err(list_order_at_resource_group_level::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(skip_token) = skip_token {
         url.query_pairs_mut().append_pair("$skipToken", skip_token);
     }
@@ -989,7 +989,7 @@ pub async fn list_order_at_resource_group_level(
     }
 }
 pub mod list_order_at_resource_group_level {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1037,7 +1037,7 @@ pub async fn get_order_by_name(
             .map_err(get_order_by_name::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(get_order_by_name::Error::BuildRequestError)?;
@@ -1064,7 +1064,7 @@ pub async fn get_order_by_name(
     }
 }
 pub mod get_order_by_name {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1111,7 +1111,7 @@ pub async fn list_order_items_at_resource_group_level(
             .map_err(list_order_items_at_resource_group_level::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(filter) = filter {
         url.query_pairs_mut().append_pair("$filter", filter);
     }
@@ -1149,7 +1149,7 @@ pub async fn list_order_items_at_resource_group_level(
     }
 }
 pub mod list_order_items_at_resource_group_level {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1196,7 +1196,7 @@ pub async fn get_order_item_by_name(
             .map_err(get_order_item_by_name::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(expand) = expand {
         url.query_pairs_mut().append_pair("$expand", expand);
     }
@@ -1228,7 +1228,7 @@ pub async fn get_order_item_by_name(
     }
 }
 pub mod get_order_item_by_name {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1275,7 +1275,7 @@ pub async fn create_order_item(
             .map_err(create_order_item::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(order_item_resource).map_err(create_order_item::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
@@ -1304,7 +1304,7 @@ pub async fn create_order_item(
     }
 }
 pub mod create_order_item {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200(OrderItemResource),
@@ -1357,7 +1357,7 @@ pub async fn update_order_item(
             .map_err(update_order_item::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(if_match) = if_match {
         req_builder = req_builder.header("If-Match", if_match);
     }
@@ -1389,7 +1389,7 @@ pub async fn update_order_item(
     }
 }
 pub mod update_order_item {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Accepted202,
@@ -1440,7 +1440,7 @@ pub async fn delete_order_item_by_name(
             .map_err(delete_order_item_by_name::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
@@ -1466,7 +1466,7 @@ pub async fn delete_order_item_by_name(
     }
 }
 pub mod delete_order_item_by_name {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -1519,7 +1519,7 @@ pub async fn cancel_order_item(
             .map_err(cancel_order_item::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(cancellation_reason).map_err(cancel_order_item::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
@@ -1543,7 +1543,7 @@ pub async fn cancel_order_item(
     }
 }
 pub mod cancel_order_item {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -1595,7 +1595,7 @@ pub async fn return_order_item(
             .map_err(return_order_item::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(return_order_item_details).map_err(return_order_item::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
@@ -1619,7 +1619,7 @@ pub async fn return_order_item(
     }
 }
 pub mod return_order_item {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,

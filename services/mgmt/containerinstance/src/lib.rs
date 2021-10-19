@@ -2,70 +2,61 @@
 #[cfg(feature = "package-2021-09")]
 pub mod package_2021_09;
 #[cfg(all(feature = "package-2021-09", not(feature = "no-default-version")))]
-pub use package_2021_09::{models, operations, API_VERSION};
+pub use package_2021_09::{models, operations};
 #[cfg(feature = "package-2021-07")]
 pub mod package_2021_07;
 #[cfg(all(feature = "package-2021-07", not(feature = "no-default-version")))]
-pub use package_2021_07::{models, operations, API_VERSION};
+pub use package_2021_07::{models, operations};
 #[cfg(feature = "package-2021-03")]
 pub mod package_2021_03;
 #[cfg(all(feature = "package-2021-03", not(feature = "no-default-version")))]
-pub use package_2021_03::{models, operations, API_VERSION};
+pub use package_2021_03::{models, operations};
 #[cfg(feature = "package-2020-11")]
 pub mod package_2020_11;
 #[cfg(all(feature = "package-2020-11", not(feature = "no-default-version")))]
-pub use package_2020_11::{models, operations, API_VERSION};
+pub use package_2020_11::{models, operations};
 #[cfg(feature = "package-2019-12")]
 pub mod package_2019_12;
 #[cfg(all(feature = "package-2019-12", not(feature = "no-default-version")))]
-pub use package_2019_12::{models, operations, API_VERSION};
+pub use package_2019_12::{models, operations};
 #[cfg(feature = "package-2018-10")]
 pub mod package_2018_10;
 #[cfg(all(feature = "package-2018-10", not(feature = "no-default-version")))]
-pub use package_2018_10::{models, operations, API_VERSION};
+pub use package_2018_10::{models, operations};
 #[cfg(feature = "package-2018-09")]
 pub mod package_2018_09;
 #[cfg(all(feature = "package-2018-09", not(feature = "no-default-version")))]
-pub use package_2018_09::{models, operations, API_VERSION};
+pub use package_2018_09::{models, operations};
 #[cfg(feature = "package-2018-06")]
 pub mod package_2018_06;
 #[cfg(all(feature = "package-2018-06", not(feature = "no-default-version")))]
-pub use package_2018_06::{models, operations, API_VERSION};
+pub use package_2018_06::{models, operations};
 #[cfg(feature = "package-2018-04")]
 pub mod package_2018_04;
 #[cfg(all(feature = "package-2018-04", not(feature = "no-default-version")))]
-pub use package_2018_04::{models, operations, API_VERSION};
+pub use package_2018_04::{models, operations};
 #[cfg(feature = "package-2018-02-preview")]
 pub mod package_2018_02_preview;
 #[cfg(all(feature = "package-2018-02-preview", not(feature = "no-default-version")))]
-pub use package_2018_02_preview::{models, operations, API_VERSION};
+pub use package_2018_02_preview::{models, operations};
 #[cfg(feature = "package-2017-12-preview")]
 pub mod package_2017_12_preview;
 #[cfg(all(feature = "package-2017-12-preview", not(feature = "no-default-version")))]
-pub use package_2017_12_preview::{models, operations, API_VERSION};
+pub use package_2017_12_preview::{models, operations};
 #[cfg(feature = "package-2017-10-preview")]
 pub mod package_2017_10_preview;
 #[cfg(all(feature = "package-2017-10-preview", not(feature = "no-default-version")))]
-pub use package_2017_10_preview::{models, operations, API_VERSION};
+pub use package_2017_10_preview::{models, operations};
 #[cfg(feature = "package-2017-08-preview")]
 pub mod package_2017_08_preview;
 use azure_core::setters;
 #[cfg(all(feature = "package-2017-08-preview", not(feature = "no-default-version")))]
-pub use package_2017_08_preview::{models, operations, API_VERSION};
-#[cfg(not(feature = "no-default-version"))]
-fn get_default_feature() -> String {
-    API_VERSION.to_owned()
-}
-#[cfg(feature = "no-default-version")]
-fn get_default_feature() -> String {
-    "".to_owned()
-}
+pub use package_2017_08_preview::{models, operations};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,
 ) -> OperationConfigBuilder {
     OperationConfigBuilder {
-        api_version: None,
         http_client,
         base_path: None,
         token_credential,
@@ -73,17 +64,15 @@ pub fn config(
     }
 }
 pub struct OperationConfigBuilder {
-    api_version: Option<String>,
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     base_path: Option<String>,
     token_credential: Box<dyn azure_core::TokenCredential>,
     token_credential_resource: Option<String>,
 }
 impl OperationConfigBuilder {
-    setters! { api_version : String => Some (api_version) , base_path : String => Some (base_path) , token_credential_resource : String => Some (token_credential_resource) , }
+    setters! { base_path : String => Some (base_path) , token_credential_resource : String => Some (token_credential_resource) , }
     pub fn build(self) -> OperationConfig {
         OperationConfig {
-            api_version: self.api_version.unwrap_or_else(|| get_default_feature()),
             http_client: self.http_client,
             base_path: self.base_path.unwrap_or("https://management.azure.com".to_owned()),
             token_credential: Some(self.token_credential),
@@ -92,16 +81,12 @@ impl OperationConfigBuilder {
     }
 }
 pub struct OperationConfig {
-    api_version: String,
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     base_path: String,
     token_credential: Option<Box<dyn azure_core::TokenCredential>>,
     token_credential_resource: String,
 }
 impl OperationConfig {
-    pub fn api_version(&self) -> &str {
-        self.api_version.as_str()
-    }
     pub fn http_client(&self) -> &dyn azure_core::HttpClient {
         self.http_client.as_ref()
     }

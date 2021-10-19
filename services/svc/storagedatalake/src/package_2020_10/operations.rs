@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*};
+use super::{models, models::*, API_VERSION};
 pub mod service {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn list_file_systems(
         operation_config: &crate::OperationConfig,
         resource: &str,
@@ -70,7 +70,7 @@ pub mod service {
         }
     }
     pub mod list_file_systems {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -94,7 +94,7 @@ pub mod service {
     }
 }
 pub mod file_system {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn create(
         operation_config: &crate::OperationConfig,
         filesystem: &str,
@@ -145,7 +145,7 @@ pub mod file_system {
         }
     }
     pub mod create {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -228,7 +228,7 @@ pub mod file_system {
         }
     }
     pub mod set_properties {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -304,7 +304,7 @@ pub mod file_system {
         }
     }
     pub mod delete {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -375,7 +375,7 @@ pub mod file_system {
         }
     }
     pub mod get_properties {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -469,7 +469,7 @@ pub mod file_system {
         }
     }
     pub mod list_paths {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -574,7 +574,7 @@ pub mod file_system {
         }
     }
     pub mod list_blob_hierarchy_segment {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -598,7 +598,7 @@ pub mod file_system {
     }
 }
 pub mod path {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn read(
         operation_config: &crate::OperationConfig,
         filesystem: &str,
@@ -683,7 +683,7 @@ pub mod path {
         }
     }
     pub mod read {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(serde_json::Value),
@@ -792,7 +792,7 @@ pub mod path {
         }
     }
     pub mod lease {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -953,7 +953,7 @@ pub mod path {
         }
     }
     pub mod create {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1125,7 +1125,7 @@ pub mod path {
         }
     }
     pub mod update {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(SetAccessControlRecursiveResponse),
@@ -1225,7 +1225,7 @@ pub mod path {
         }
     }
     pub mod delete {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1323,7 +1323,7 @@ pub mod path {
         }
     }
     pub mod get_properties {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1431,7 +1431,7 @@ pub mod path {
         }
     }
     pub mod set_access_control {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1533,7 +1533,7 @@ pub mod path {
         }
     }
     pub mod set_access_control_recursive {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1666,7 +1666,7 @@ pub mod path {
         }
     }
     pub mod flush_data {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1760,7 +1760,7 @@ pub mod path {
         }
     }
     pub mod append_data {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1838,7 +1838,7 @@ pub mod path {
         }
     }
     pub mod set_expiry {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1914,7 +1914,7 @@ pub mod path {
         }
     }
     pub mod undelete {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

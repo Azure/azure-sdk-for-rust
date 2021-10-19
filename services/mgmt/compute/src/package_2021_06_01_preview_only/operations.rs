@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*};
+use super::{models, models::*, API_VERSION};
 pub mod diagnostic_operations {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn read(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -48,7 +48,7 @@ pub mod diagnostic_operations {
         }
     }
     pub mod read {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -77,7 +77,7 @@ pub mod diagnostic_operations {
     }
 }
 pub mod disk_inspection {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn create(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -101,7 +101,7 @@ pub mod disk_inspection {
                 .map_err(create::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(run_disk_inspection_input).map_err(create::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -126,7 +126,7 @@ pub mod disk_inspection {
         }
     }
     pub mod create {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -193,7 +193,7 @@ pub mod disk_inspection {
         }
     }
     pub mod get {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -217,7 +217,7 @@ pub mod disk_inspection {
     }
 }
 pub mod diagnostics {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -263,7 +263,7 @@ pub mod diagnostics {
         }
     }
     pub mod list {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

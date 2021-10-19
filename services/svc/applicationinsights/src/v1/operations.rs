@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*};
+use super::{models, models::*, API_VERSION};
 pub mod metrics {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         app_id: &str,
@@ -67,7 +67,7 @@ pub mod metrics {
         }
     }
     pub mod get {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -133,7 +133,7 @@ pub mod metrics {
         }
     }
     pub mod get_multiple {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -197,7 +197,7 @@ pub mod metrics {
         }
     }
     pub mod get_metadata {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -221,7 +221,7 @@ pub mod metrics {
     }
 }
 pub mod events {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn get_by_type(
         operation_config: &crate::OperationConfig,
         app_id: &str,
@@ -305,7 +305,7 @@ pub mod events {
         }
     }
     pub mod get_by_type {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -378,7 +378,7 @@ pub mod events {
         }
     }
     pub mod get {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -442,7 +442,7 @@ pub mod events {
         }
     }
     pub mod get_odata_metadata {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -466,7 +466,7 @@ pub mod events {
     }
 }
 pub mod query {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         app_id: &str,
@@ -512,7 +512,7 @@ pub mod query {
         }
     }
     pub mod get {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -578,7 +578,7 @@ pub mod query {
         }
     }
     pub mod execute {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -602,7 +602,7 @@ pub mod query {
     }
 }
 pub mod metadata {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn get(operation_config: &crate::OperationConfig, app_id: &str) -> std::result::Result<MetadataResults, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/apps/{}/metadata", operation_config.base_path(), app_id);
@@ -639,7 +639,7 @@ pub mod metadata {
         }
     }
     pub mod get {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -698,7 +698,7 @@ pub mod metadata {
         }
     }
     pub mod post {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

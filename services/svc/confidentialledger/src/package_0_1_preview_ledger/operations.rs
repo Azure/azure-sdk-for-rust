@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*};
+use super::{models, models::*, API_VERSION};
 pub mod confidential_ledger {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn get_constitution(operation_config: &crate::OperationConfig) -> std::result::Result<Constitution, get_constitution::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/app/governance/constitution", operation_config.base_path(),);
@@ -18,7 +18,7 @@ pub mod confidential_ledger {
                 .map_err(get_constitution::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get_constitution::Error::BuildRequestError)?;
@@ -45,7 +45,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_constitution {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -82,7 +82,7 @@ pub mod confidential_ledger {
                 .map_err(get_consortium_members::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -111,7 +111,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_consortium_members {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -148,7 +148,7 @@ pub mod confidential_ledger {
                 .map_err(get_enclave_quotes::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get_enclave_quotes::Error::BuildRequestError)?;
@@ -175,7 +175,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_enclave_quotes {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -215,7 +215,7 @@ pub mod confidential_ledger {
                 .map_err(get_ledger_entries::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(sub_ledger_id) = sub_ledger_id {
             url.query_pairs_mut().append_pair("subLedgerId", sub_ledger_id);
         }
@@ -251,7 +251,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_ledger_entries {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -290,7 +290,7 @@ pub mod confidential_ledger {
                 .map_err(post_ledger_entry::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(sub_ledger_id) = sub_ledger_id {
             url.query_pairs_mut().append_pair("subLedgerId", sub_ledger_id);
         }
@@ -325,7 +325,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod post_ledger_entry {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -364,7 +364,7 @@ pub mod confidential_ledger {
                 .map_err(get_ledger_entry::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(sub_ledger_id) = sub_ledger_id {
             url.query_pairs_mut().append_pair("subLedgerId", sub_ledger_id);
         }
@@ -394,7 +394,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_ledger_entry {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -432,7 +432,7 @@ pub mod confidential_ledger {
                 .map_err(get_receipt::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get_receipt::Error::BuildRequestError)?;
@@ -459,7 +459,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_receipt {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -497,7 +497,7 @@ pub mod confidential_ledger {
                 .map_err(get_transaction_status::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -526,7 +526,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_transaction_status {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -564,7 +564,7 @@ pub mod confidential_ledger {
                 .map_err(get_current_ledger_entry::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(sub_ledger_id) = sub_ledger_id {
             url.query_pairs_mut().append_pair("subLedgerId", sub_ledger_id);
         }
@@ -596,7 +596,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_current_ledger_entry {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -631,7 +631,7 @@ pub mod confidential_ledger {
                 .map_err(get_user::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get_user::Error::BuildRequestError)?;
@@ -658,7 +658,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_user {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -697,7 +697,7 @@ pub mod confidential_ledger {
                 .map_err(create_or_update_user::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(user_details).map_err(create_or_update_user::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -727,7 +727,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod create_or_update_user {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -762,7 +762,7 @@ pub mod confidential_ledger {
                 .map_err(delete_user::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete_user::Error::BuildRequestError)?;
@@ -784,7 +784,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod delete_user {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

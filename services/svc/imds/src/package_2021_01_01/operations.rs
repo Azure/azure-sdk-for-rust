@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*};
+use super::{models, models::*, API_VERSION};
 pub mod instances {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn get_metadata(
         operation_config: &crate::OperationConfig,
         metadata: &str,
@@ -21,7 +21,7 @@ pub mod instances {
                 .map_err(get_metadata::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("Metadata", metadata);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -49,7 +49,7 @@ pub mod instances {
         }
     }
     pub mod get_metadata {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -73,7 +73,7 @@ pub mod instances {
     }
 }
 pub mod attested {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn get_document(
         operation_config: &crate::OperationConfig,
         nonce: Option<&str>,
@@ -91,7 +91,7 @@ pub mod attested {
                 .map_err(get_document::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(nonce) = nonce {
             url.query_pairs_mut().append_pair("nonce", nonce);
         }
@@ -122,7 +122,7 @@ pub mod attested {
         }
     }
     pub mod get_document {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -146,7 +146,7 @@ pub mod attested {
     }
 }
 pub mod identity {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn get_token(
         operation_config: &crate::OperationConfig,
         metadata: &str,
@@ -169,7 +169,7 @@ pub mod identity {
                 .map_err(get_token::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("Metadata", metadata);
         url.query_pairs_mut().append_pair("resource", resource);
         if let Some(client_id) = client_id {
@@ -213,7 +213,7 @@ pub mod identity {
         }
     }
     pub mod get_token {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -251,7 +251,7 @@ pub mod identity {
                 .map_err(get_info::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("Metadata", metadata);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -279,7 +279,7 @@ pub mod identity {
         }
     }
     pub mod get_info {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

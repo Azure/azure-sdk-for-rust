@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*};
+use super::{models, models::*, API_VERSION};
 pub mod catalog {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn grant_acl(
         operation_config: &crate::OperationConfig,
         parameters: &AclCreateOrUpdateParameters,
@@ -22,7 +22,7 @@ pub mod catalog {
                 .map_err(grant_acl::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(grant_acl::Error::SerializeError)?;
         url.query_pairs_mut().append_pair("op", op);
@@ -44,7 +44,7 @@ pub mod catalog {
         }
     }
     pub mod grant_acl {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -85,7 +85,7 @@ pub mod catalog {
                 .map_err(grant_acl_to_database::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(grant_acl_to_database::Error::SerializeError)?;
         url.query_pairs_mut().append_pair("op", op);
@@ -109,7 +109,7 @@ pub mod catalog {
         }
     }
     pub mod grant_acl_to_database {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -145,7 +145,7 @@ pub mod catalog {
                 .map_err(revoke_acl::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(revoke_acl::Error::SerializeError)?;
         url.query_pairs_mut().append_pair("op", op);
@@ -167,7 +167,7 @@ pub mod catalog {
         }
     }
     pub mod revoke_acl {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -208,7 +208,7 @@ pub mod catalog {
                 .map_err(revoke_acl_from_database::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(revoke_acl_from_database::Error::SerializeError)?;
         url.query_pairs_mut().append_pair("op", op);
@@ -232,7 +232,7 @@ pub mod catalog {
         }
     }
     pub mod revoke_acl_from_database {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

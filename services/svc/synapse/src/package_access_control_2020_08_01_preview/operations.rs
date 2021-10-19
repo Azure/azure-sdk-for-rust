@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*};
+use super::{models, models::*, API_VERSION};
 pub mod role_assignments {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn check_principal_access(
         operation_config: &crate::OperationConfig,
         request: &CheckPrincipalAccessRequest,
@@ -21,7 +21,7 @@ pub mod role_assignments {
                 .map_err(check_principal_access::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(request).map_err(check_principal_access::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -51,7 +51,7 @@ pub mod role_assignments {
         }
     }
     pub mod check_principal_access {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -92,7 +92,7 @@ pub mod role_assignments {
                 .map_err(list_role_assignments::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(role_id) = role_id {
             url.query_pairs_mut().append_pair("roleId", role_id);
         }
@@ -133,7 +133,7 @@ pub mod role_assignments {
         }
     }
     pub mod list_role_assignments {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -171,7 +171,7 @@ pub mod role_assignments {
                 .map_err(get_role_assignment_by_id::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -200,7 +200,7 @@ pub mod role_assignments {
         }
     }
     pub mod get_role_assignment_by_id {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -239,7 +239,7 @@ pub mod role_assignments {
                 .map_err(create_role_assignment::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(request).map_err(create_role_assignment::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -269,7 +269,7 @@ pub mod role_assignments {
         }
     }
     pub mod create_role_assignment {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -308,7 +308,7 @@ pub mod role_assignments {
                 .map_err(delete_role_assignment_by_id::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(scope) = scope {
             url.query_pairs_mut().append_pair("scope", scope);
         }
@@ -336,7 +336,7 @@ pub mod role_assignments {
         }
     }
     pub mod delete_role_assignment_by_id {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -365,7 +365,7 @@ pub mod role_assignments {
     }
 }
 pub mod role_definitions {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn list_role_definitions(
         operation_config: &crate::OperationConfig,
         is_built_in: Option<bool>,
@@ -383,7 +383,7 @@ pub mod role_definitions {
                 .map_err(list_role_definitions::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(is_built_in) = is_built_in {
             url.query_pairs_mut().append_pair("isBuiltIn", is_built_in.to_string().as_str());
         }
@@ -418,7 +418,7 @@ pub mod role_definitions {
         }
     }
     pub mod list_role_definitions {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -456,7 +456,7 @@ pub mod role_definitions {
                 .map_err(get_role_definition_by_id::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -485,7 +485,7 @@ pub mod role_definitions {
         }
     }
     pub mod get_role_definition_by_id {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -520,7 +520,7 @@ pub mod role_definitions {
                 .map_err(list_scopes::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_scopes::Error::BuildRequestError)?;
@@ -547,7 +547,7 @@ pub mod role_definitions {
         }
     }
     pub mod list_scopes {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

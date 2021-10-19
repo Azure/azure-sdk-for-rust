@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*};
+use super::{models, models::*, API_VERSION};
 pub mod spark_batch {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn get_spark_batch_jobs(
         operation_config: &crate::OperationConfig,
         from: Option<i32>,
@@ -56,7 +56,7 @@ pub mod spark_batch {
         }
     }
     pub mod get_spark_batch_jobs {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -122,7 +122,7 @@ pub mod spark_batch {
         }
     }
     pub mod create_spark_batch_job {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -185,7 +185,7 @@ pub mod spark_batch {
         }
     }
     pub mod get_spark_batch_job {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -241,7 +241,7 @@ pub mod spark_batch {
         }
     }
     pub mod cancel_spark_batch_job {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -262,7 +262,7 @@ pub mod spark_batch {
     }
 }
 pub mod spark_session {
-    use super::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     pub async fn get_spark_sessions(
         operation_config: &crate::OperationConfig,
         from: Option<i32>,
@@ -314,7 +314,7 @@ pub mod spark_session {
         }
     }
     pub mod get_spark_sessions {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -378,7 +378,7 @@ pub mod spark_session {
         }
     }
     pub mod create_spark_session {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -441,7 +441,7 @@ pub mod spark_session {
         }
     }
     pub mod get_spark_session {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -495,7 +495,7 @@ pub mod spark_session {
         }
     }
     pub mod cancel_spark_session {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -551,7 +551,7 @@ pub mod spark_session {
         }
     }
     pub mod reset_spark_session_timeout {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -610,7 +610,7 @@ pub mod spark_session {
         }
     }
     pub mod get_spark_statements {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -673,7 +673,7 @@ pub mod spark_session {
         }
     }
     pub mod create_spark_statement {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -738,7 +738,7 @@ pub mod spark_session {
         }
     }
     pub mod get_spark_statement {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -806,7 +806,7 @@ pub mod spark_session {
         }
     }
     pub mod cancel_spark_statement {
-        use super::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
