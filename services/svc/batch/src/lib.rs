@@ -25,9 +25,21 @@ pub mod package_2018_12_8_0;
 pub use package_2018_12_8_0::{models, operations};
 #[cfg(feature = "package-2018-08.7.0")]
 pub mod package_2018_08_7_0;
-use azure_core::setters;
 #[cfg(all(feature = "package-2018-08.7.0", not(feature = "no-default-version")))]
 pub use package_2018_08_7_0::{models, operations};
+#[cfg(feature = "package-2018-03.6.1")]
+pub mod package_2018_03_6_1;
+#[cfg(all(feature = "package-2018-03.6.1", not(feature = "no-default-version")))]
+pub use package_2018_03_6_1::{models, operations};
+#[cfg(feature = "package-2017-09.6.0")]
+pub mod package_2017_09_6_0;
+#[cfg(all(feature = "package-2017-09.6.0", not(feature = "no-default-version")))]
+pub use package_2017_09_6_0::{models, operations};
+#[cfg(feature = "package-2017-06.5.1")]
+pub mod package_2017_06_5_1;
+use azure_core::setters;
+#[cfg(all(feature = "package-2017-06.5.1", not(feature = "no-default-version")))]
+pub use package_2017_06_5_1::{models, operations};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,
