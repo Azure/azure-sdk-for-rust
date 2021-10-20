@@ -85,7 +85,7 @@ impl DataLakeClient {
             }
         ))?;
 
-        let options = &ClientOptions::default();
+        let options = ClientOptions::default();
         let per_call_policies = Vec::new();
         // let per_retry_policies = Vec::new();
         /*
