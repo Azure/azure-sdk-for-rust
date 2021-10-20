@@ -2618,7 +2618,7 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(rsp_value)
             }
             status_code => {
@@ -2692,7 +2692,7 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(rsp_value)
             }
             status_code => {
@@ -3668,7 +3668,7 @@ pub mod dsc_configuration {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(rsp_value)
             }
             status_code => {
@@ -6232,7 +6232,7 @@ pub mod runbook_draft {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(rsp_value)
             }
             status_code => {
@@ -6308,7 +6308,7 @@ pub mod runbook_draft {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(replace_content::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(replace_content::Response::Accepted202),
@@ -6610,7 +6610,7 @@ pub mod runbook {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(rsp_value)
             }
             status_code => {

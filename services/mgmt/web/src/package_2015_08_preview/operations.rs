@@ -19111,7 +19111,7 @@ pub mod sites {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(rsp_value)
             }
             status_code => {
@@ -19184,7 +19184,7 @@ pub mod sites {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(rsp_value)
             }
             status_code => {

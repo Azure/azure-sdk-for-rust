@@ -11004,7 +11004,7 @@ pub mod web_apps {
             http::StatusCode::NO_CONTENT => Ok(get_web_site_container_logs::Response::NoContent204),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(get_web_site_container_logs::Response::Ok200(rsp_value))
             }
             status_code => {
@@ -11080,7 +11080,7 @@ pub mod web_apps {
             http::StatusCode::NO_CONTENT => Ok(get_container_logs_zip::Response::NoContent204),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(get_container_logs_zip::Response::Ok200(rsp_value))
             }
             status_code => {
@@ -15308,7 +15308,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(rsp_value)
             }
             http::StatusCode::NOT_FOUND => Err(get_instance_process_dump::Error::NotFound404 {}),
@@ -18150,7 +18150,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(rsp_value)
             }
             http::StatusCode::NOT_FOUND => Err(get_process_dump::Error::NotFound404 {}),
@@ -18825,7 +18825,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(rsp_value)
             }
             status_code => {
@@ -22507,7 +22507,7 @@ pub mod web_apps {
             http::StatusCode::NO_CONTENT => Ok(get_web_site_container_logs_slot::Response::NoContent204),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(get_web_site_container_logs_slot::Response::Ok200(rsp_value))
             }
             status_code => {
@@ -22585,7 +22585,7 @@ pub mod web_apps {
             http::StatusCode::NO_CONTENT => Ok(get_container_logs_zip_slot::Response::NoContent204),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(get_container_logs_zip_slot::Response::Ok200(rsp_value))
             }
             status_code => {
@@ -26951,7 +26951,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(rsp_value)
             }
             http::StatusCode::NOT_FOUND => Err(get_instance_process_dump_slot::Error::NotFound404 {}),
@@ -29725,7 +29725,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(rsp_value)
             }
             http::StatusCode::NOT_FOUND => Err(get_process_dump_slot::Error::NotFound404 {}),
@@ -30426,7 +30426,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value = rsp.body().clone();
+                let rsp_value = rsp_body.clone();
                 Ok(rsp_value)
             }
             status_code => {
