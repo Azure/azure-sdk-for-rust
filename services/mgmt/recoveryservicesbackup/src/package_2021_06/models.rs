@@ -4197,6 +4197,13 @@ pub struct CrrAccessTokenResource {
     pub properties: Option<CrrAccessToken>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IdentityBasedRestoreDetails {
+    #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
+    pub object_type: Option<String>,
+    #[serde(rename = "targetStorageAccountId", default, skip_serializing_if = "Option::is_none")]
+    pub target_storage_account_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BmsaadPropertiesQueryObject {
     #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
     pub backup_management_type: Option<bmsaad_properties_query_object::BackupManagementType>,

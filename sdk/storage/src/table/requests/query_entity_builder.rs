@@ -47,6 +47,7 @@ impl<'a> QueryEntityBuilder<'a> {
         let mut url = self.table_client.url().to_owned();
         url.path_segments_mut()
             .map_err(|_| "Invalid table URL")?
+            .pop()
             .push(&format!("{}()", self.table_client.table_name()));
 
         self.filter.append_to_url_query(&mut url);

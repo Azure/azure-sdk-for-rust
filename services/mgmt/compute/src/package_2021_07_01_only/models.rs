@@ -1915,7 +1915,7 @@ pub mod network_profile {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkApiVersion {
         #[serde(rename = "2020-11-01")]
-        _2020_11_01,
+        N2020_11_01,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2706,7 +2706,7 @@ pub mod virtual_machine_scale_set_network_profile {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkApiVersion {
         #[serde(rename = "2020-11-01")]
-        _2020_11_01,
+        N2020_11_01,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2723,7 +2723,7 @@ pub mod virtual_machine_scale_set_update_network_profile {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkApiVersion {
         #[serde(rename = "2020-11-01")]
-        _2020_11_01,
+        N2020_11_01,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3341,7 +3341,8 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -4501,6 +4502,86 @@ pub struct SharedGalleryImageVersion {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedGalleryImageVersionProperties {
+    #[serde(rename = "publishedDate", default, skip_serializing_if = "Option::is_none")]
+    pub published_date: Option<String>,
+    #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
+    pub end_of_life_date: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PirCommunityGalleryResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identifier: Option<CommunityGalleryIdentifier>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CommunityGalleryIdentifier {
+    #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
+    pub unique_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CommunityGallery {
+    #[serde(flatten)]
+    pub pir_community_gallery_resource: PirCommunityGalleryResource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CommunityGalleryImage {
+    #[serde(flatten)]
+    pub pir_community_gallery_resource: PirCommunityGalleryResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CommunityGalleryImageProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CommunityGalleryImageProperties {
+    #[serde(rename = "osType")]
+    pub os_type: community_gallery_image_properties::OsType,
+    #[serde(rename = "osState")]
+    pub os_state: community_gallery_image_properties::OsState,
+    #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
+    pub end_of_life_date: Option<String>,
+    pub identifier: GalleryImageIdentifier,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recommended: Option<RecommendedMachineConfiguration>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub disallowed: Option<Disallowed>,
+    #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
+    pub hyper_v_generation: Option<community_gallery_image_properties::HyperVGeneration>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub features: Vec<GalleryImageFeature>,
+    #[serde(rename = "purchasePlan", default, skip_serializing_if = "Option::is_none")]
+    pub purchase_plan: Option<ImagePurchasePlan>,
+}
+pub mod community_gallery_image_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsType {
+        Windows,
+        Linux,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsState {
+        Generalized,
+        Specialized,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HyperVGeneration {
+        V1,
+        V2,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CommunityGalleryImageVersion {
+    #[serde(flatten)]
+    pub pir_community_gallery_resource: PirCommunityGalleryResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CommunityGalleryImageVersionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CommunityGalleryImageVersionProperties {
     #[serde(rename = "publishedDate", default, skip_serializing_if = "Option::is_none")]
     pub published_date: Option<String>,
     #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]

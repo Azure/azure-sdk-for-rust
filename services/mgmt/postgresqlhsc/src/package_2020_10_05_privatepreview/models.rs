@@ -5,26 +5,26 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PostgreSqlVersion {
     #[serde(rename = "11")]
-    _11,
+    N11,
     #[serde(rename = "12")]
-    _12,
+    N12,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CitusVersion {
     #[serde(rename = "8.3")]
-    _8_3,
+    N8_3,
     #[serde(rename = "9.0")]
-    _9_0,
+    N9_0,
     #[serde(rename = "9.1")]
-    _9_1,
+    N9_1,
     #[serde(rename = "9.2")]
-    _9_2,
+    N9_2,
     #[serde(rename = "9.3")]
-    _9_3,
+    N9_3,
     #[serde(rename = "9.4")]
-    _9_4,
+    N9_4,
     #[serde(rename = "9.5")]
-    _9_5,
+    N9_5,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServerState {
@@ -52,8 +52,7 @@ pub enum ServerRole {
     Coordinator,
     Worker,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FullyQualifiedDomainName {}
+pub type FullyQualifiedDomainName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerProperties {
     #[serde(rename = "serverEdition", default, skip_serializing_if = "Option::is_none")]

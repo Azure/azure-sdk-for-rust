@@ -15,12 +15,13 @@ pub enum Security {
     #[serde(rename = "oauth2")]
     Oauth2 {
         flow: Flow,
-        #[serde(rename = "authorizationUrl")]
-        authorization_url: String,
+        #[serde(rename = "authorizationUrl", skip_serializing_if = "Option::is_none")]
+        authorization_url: Option<String>,
         #[serde(rename = "tokenUrl")]
         #[serde(skip_serializing_if = "Option::is_none")]
         token_url: Option<String>,
-        /// Required. The available scopes for the OAuth2 security scheme.
+        /// The available scopes for the OAuth2 security scheme.
+        #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
         scopes: IndexMap<String, String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         description: Option<String>,
@@ -98,7 +99,7 @@ mod tests {
             serde_json::from_str::<Security>(&json).unwrap(),
             Security::Oauth2 {
                 flow: Flow::Implicit,
-                authorization_url: "foo/bar".into(),
+                authorization_url: Some("foo/bar".into()),
                 token_url: None,
                 scopes: scopes,
                 description: None,
@@ -115,7 +116,7 @@ mod tests {
             json,
             serde_json::to_string(&Security::Oauth2 {
                 flow: Flow::Implicit,
-                authorization_url: "foo/bar".into(),
+                authorization_url: Some("foo/bar".into()),
                 token_url: None,
                 scopes: scopes,
                 description: None,

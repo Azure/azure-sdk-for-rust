@@ -5,12 +5,12 @@ use crate::{
     },
     codegen::{parse_params, PARAM_RE},
     identifier::ident,
-    spec,
+    spec::{self, WebOperation, WebVerb},
     status_codes::{get_error_responses, get_response_type_name, get_success_responses, has_default_response},
     status_codes::{get_response_type_ident, get_status_code_ident},
-    CodeGen, OperationVerb,
+    CodeGen,
 };
-use autorust_openapi::{CollectionFormat, Parameter, ParameterType, Response};
+use autorust_openapi::{CollectionFormat, DataType, Parameter, ParameterType, Response};
 use heck::SnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
@@ -24,7 +24,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         #![allow(unused_mut)]
         #![allow(unused_variables)]
         #![allow(unused_imports)]
-        use crate::models::*;
+        use super::{API_VERSION, models, models::*};
 
     });
     let mut modules: IndexMap<Option<String>, TokenStream> = IndexMap::new();
@@ -33,11 +33,11 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         // only operations from listed input files
         // println!("doc_file {:?}", doc_file);
         if cg.spec.is_input_file(&doc_file) {
-            let paths = cg.spec.resolve_path_map(doc_file, &doc.paths)?;
+            let paths = cg.spec.resolve_path_map(doc_file, doc.paths())?;
             for (path, item) in &paths {
-                for op in spec::path_item_operations(item) {
-                    let (module_name, function_name) = op.function_name(path);
-                    let function = create_function(cg, doc_file, path, &op, &function_name)?;
+                for operation in spec::path_operations(path, item) {
+                    let module_name = operation.rust_module_name();
+                    let function = create_function(cg, doc_file, &operation)?;
                     if modules.contains_key(&module_name) {}
                     match modules.get_mut(&module_name) {
                         Some(module) => {
@@ -59,7 +59,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
                 let name = ident(&module_name).map_err(Error::ModuleName)?;
                 file.extend(quote! {
                     pub mod #name {
-                        use crate::models::*;
+                        use super::{API_VERSION, models, models::*};
 
                         #module
                     }
@@ -73,16 +73,11 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
     Ok(file)
 }
 
-fn create_function(
-    cg: &CodeGen,
-    doc_file: &Path,
-    path: &str,
-    operation_verb: &OperationVerb,
-    function_name: &str,
-) -> Result<TokenStream, Error> {
-    let fname = ident(function_name).map_err(Error::FunctionName)?;
+// Create a Rust function for the web operation
+fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> Result<TokenStream, Error> {
+    let fname = ident(&operation.rust_function_name()).map_err(Error::FunctionName)?;
 
-    let params = parse_params(path);
+    let params = parse_params(&operation.path);
     // println!("path params {:#?}", params);
     let params: Result<Vec<_>, Error> = params
         .iter()
@@ -91,13 +86,13 @@ fn create_function(
     let params = params?;
     let url_str_args = quote! { #(#params),* };
 
-    let fpath = format!("{{}}{}", &format_path(path));
+    let fpath = format!("{{}}{}", &format_path(&operation.path));
 
-    let parameters: Vec<Parameter> = cg.spec.resolve_parameters(doc_file, &operation_verb.operation().parameters)?;
+    let parameters: Vec<Parameter> = cg.spec.resolve_parameters(doc_file, &operation.parameters)?;
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
     let has_param_api_version = param_names.contains("api-version");
     let mut skip = HashSet::new();
-    if cg.api_version().is_some() {
+    if cg.spec.api_version().is_some() {
         skip.insert("api-version");
     }
     let parameters = parameters.into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
@@ -110,17 +105,17 @@ fn create_function(
     let mut ts_request_builder = TokenStream::new();
 
     let mut is_post = false;
-    let req_verb = match operation_verb {
-        OperationVerb::Get(_) => quote! { req_builder = req_builder.method(http::Method::GET); },
-        OperationVerb::Post(_) => {
+    let req_verb = match operation.verb {
+        WebVerb::Get => quote! { req_builder = req_builder.method(http::Method::GET); },
+        WebVerb::Post => {
             is_post = true;
             quote! { req_builder = req_builder.method(http::Method::POST); }
         }
-        OperationVerb::Put(_) => quote! { req_builder = req_builder.method(http::Method::PUT); },
-        OperationVerb::Patch(_) => quote! { req_builder = req_builder.method(http::Method::PATCH); },
-        OperationVerb::Delete(_) => quote! { req_builder = req_builder.method(http::Method::DELETE); },
-        OperationVerb::Options(_) => quote! { req_builder = req_builder.method(http::Method::OPTIONS); },
-        OperationVerb::Head(_) => quote! { req_builder = req_builder.method(http::Method::HEAD); },
+        WebVerb::Put => quote! { req_builder = req_builder.method(http::Method::PUT); },
+        WebVerb::Patch => quote! { req_builder = req_builder.method(http::Method::PATCH); },
+        WebVerb::Delete => quote! { req_builder = req_builder.method(http::Method::DELETE); },
+        WebVerb::Options => quote! { req_builder = req_builder.method(http::Method::OPTIONS); },
+        WebVerb::Head => quote! { req_builder = req_builder.method(http::Method::HEAD); },
     };
     ts_request_builder.extend(req_verb);
 
@@ -136,9 +131,9 @@ fn create_function(
 
     // api-version param
     if has_param_api_version {
-        if let Some(_api_version) = cg.api_version() {
+        if let Some(_api_version) = cg.spec.api_version() {
             ts_request_builder.extend(quote! {
-                url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
             });
         }
     }
@@ -149,6 +144,7 @@ fn create_function(
         let param_name = &param.name;
         let param_name_var = get_param_name(&param)?;
         let required = param.required.unwrap_or(false);
+        let is_bool = matches!(&param.common.type_, Some(DataType::Boolean));
         match param.in_ {
             ParameterType::Path => {} // handled above
             ParameterType::Query => {
@@ -200,28 +196,45 @@ fn create_function(
                 }
             }
             ParameterType::Header => {
+                // println!("header builder: {:?}", param);
                 if required {
-                    ts_request_builder.extend(quote! {
-                        req_builder = req_builder.header(#param_name, #param_name_var);
-                    });
-                } else {
-                    ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = #param_name_var {
+                    if is_bool {
+                        ts_request_builder.extend(quote! {
+                            req_builder = req_builder.header(#param_name, #param_name_var .to_string());
+                        });
+                    } else {
+                        ts_request_builder.extend(quote! {
                             req_builder = req_builder.header(#param_name, #param_name_var);
-                        }
-                    });
+                        });
+                    }
+                } else {
+                    if is_bool {
+                        ts_request_builder.extend(quote! {
+                            if let Some(#param_name_var) = #param_name_var {
+                                req_builder = req_builder.header(#param_name, #param_name_var .to_string());
+                            }
+                        });
+                    } else {
+                        ts_request_builder.extend(quote! {
+                            if let Some(#param_name_var) = #param_name_var {
+                                req_builder = req_builder.header(#param_name, #param_name_var);
+                            }
+                        });
+                    }
                 }
             }
             ParameterType::Body => {
                 has_body_parameter = true;
                 if required {
                     ts_request_builder.extend(quote! {
+                        req_builder = req_builder.header("content-type", "application/json");
                         let req_body = azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?;
                     });
                 } else {
                     ts_request_builder.extend(quote! {
                         let req_body =
                             if let Some(#param_name_var) = #param_name_var {
+                                req_builder = req_builder.header("content-type", "application/json");
                                 azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?
                             } else {
                                 bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -258,7 +271,7 @@ fn create_function(
         });
     }
 
-    let responses = &operation_verb.operation().responses;
+    let responses = &operation.responses;
     let success_responses = get_success_responses(responses);
     let error_responses = get_error_responses(responses);
     let is_single_response = success_responses.len() == 1;
@@ -449,7 +462,7 @@ fn create_function(
             }
         }
         pub mod #fname {
-            use crate::{models, models::*};
+            use super::{API_VERSION, models, models::*};
 
             #response_enum
 

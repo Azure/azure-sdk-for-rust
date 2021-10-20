@@ -9,6 +9,7 @@ pub enum ReferenceOr<T> {
     Reference {
         #[serde(rename = "$ref")]
         reference: Reference,
+
         // $ref with sibling elements are not OpenAPI spec compliant
         // https://github.com/ctaggart/autorust_openapi/issues/13
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -25,8 +26,29 @@ pub enum ReferenceOr<T> {
         /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-client-flatten
         #[serde(rename = "x-ms-client-flatten", skip_serializing_if = "Option::is_none")]
         x_ms_client_flatten: Option<bool>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        xml: Option<MsXml>,
+
+        #[serde(rename = "x-nullable", skip_serializing_if = "Option::is_none")]
+        x_nullable: Option<bool>,
     },
     Item(T),
+}
+
+impl<T> ReferenceOr<T> {
+    pub fn from_reference(reference: Reference) -> Self {
+        Self::Reference {
+            reference,
+            title: None,
+            description: None,
+            x_ms_client_flatten: None,
+            type_: None,
+            read_only: None,
+            xml: None,
+            x_nullable: None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -40,6 +62,13 @@ impl Reference {
     pub fn parse(str: &str) -> Result<Self, serde_json::Error> {
         let str = format!("\"{}\"", str);
         serde_json::from_str(&str)
+    }
+    pub fn from_file(file: &str) -> Self {
+        Self {
+            file: Some(file.to_owned()),
+            path: Vec::new(),
+            name: None,
+        }
     }
 }
 
@@ -158,18 +187,7 @@ mod tests {
         let json = r#"{"$ref":"foo/bar"}"#;
         assert_eq!(
             serde_json::from_str::<ReferenceOr<Parameter>>(&json).unwrap(),
-            ReferenceOr::<Parameter>::Reference {
-                reference: Reference {
-                    file: Some("foo/bar".into()),
-                    path: vec![],
-                    name: None
-                },
-                title: None,
-                description: None,
-                x_ms_client_flatten: None,
-                type_: None,
-                read_only: None
-            }
+            ReferenceOr::<Parameter>::from_reference(Reference::from_file("foo/bar"))
         );
     }
 
@@ -178,19 +196,7 @@ mod tests {
         let json = r#"{"$ref":"foo/bar"}"#;
         assert_eq!(
             json,
-            serde_json::to_string(&ReferenceOr::<Parameter>::Reference {
-                reference: Reference {
-                    file: Some("foo/bar".into()),
-                    path: vec![],
-                    name: None
-                },
-                title: None,
-                description: None,
-                x_ms_client_flatten: None,
-                type_: None,
-                read_only: None
-            })
-            .unwrap()
+            serde_json::to_string(&ReferenceOr::<Parameter>::from_reference(Reference::from_file("foo/bar"))).unwrap()
         );
     }
 }

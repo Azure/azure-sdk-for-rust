@@ -174,7 +174,7 @@ pub struct ReportConfigFilter {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub or: Vec<ReportConfigFilter>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub not: Option<ReportConfigFilter>,
+    pub not: Box<Option<ReportConfigFilter>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimension: Option<ReportConfigComparisonExpression>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

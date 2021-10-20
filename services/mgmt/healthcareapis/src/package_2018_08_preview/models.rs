@@ -63,12 +63,9 @@ pub struct ServiceCorsConfigurationInfo {
     #[serde(rename = "allowCredentials", default, skip_serializing_if = "Option::is_none")]
     pub allow_credentials: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceCorsConfigurationOriginEntry {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceCorsConfigurationHeaderEntry {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceCorsConfigurationMethodEntry {}
+pub type ServiceCorsConfigurationOriginEntry = String;
+pub type ServiceCorsConfigurationHeaderEntry = String;
+pub type ServiceCorsConfigurationMethodEntry = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicesDescription {
     #[serde(flatten)]

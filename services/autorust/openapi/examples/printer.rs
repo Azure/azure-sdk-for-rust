@@ -16,8 +16,8 @@ fn main() -> Result<()> {
             // https://github.com/serde-rs/json/issues/160
             let bytes = fs::read(path)?;
             let spec: OpenAPI = serde_json::from_slice(&bytes)?;
-            println!("# of paths: {}", spec.paths.len());
-            for (path, _op) in spec.paths {
+            println!("# of paths: {}", spec.paths().len());
+            for (path, _op) in spec.paths() {
                 println!("  {}", path);
             }
             println!("# of definitions: {}", spec.definitions.len());

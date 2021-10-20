@@ -51,6 +51,8 @@ pub struct ListDatabasesResponse {
 }
 
 impl ListDatabasesResponse {
+    // TODO: To remove pragma when list_databases has been re-enabled
+    #[allow(dead_code)]
     pub(crate) async fn try_from(response: Response) -> Result<Self, crate::Error> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;

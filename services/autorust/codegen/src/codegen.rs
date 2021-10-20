@@ -28,8 +28,20 @@ impl CodeGen {
         &self.config.output_folder
     }
 
-    pub fn api_version(&self) -> Option<&str> {
-        self.config.api_version.as_deref()
+    pub fn has_case_workaround(&self, path: &Path) -> bool {
+        self.config.fix_case_properties.iter().any(|x| x.file_path == path)
+    }
+
+    pub fn should_workaround_case(&self, prop_nm: &PropertyName) -> bool {
+        self.config.fix_case_properties.contains(prop_nm)
+    }
+
+    pub fn should_force_optional(&self, prop_nm: &PropertyName) -> bool {
+        self.config.optional_properties.contains(prop_nm)
+    }
+
+    pub fn should_force_obj(&self, prop_nm: &PropertyName) -> bool {
+        self.config.invalid_types.contains(prop_nm)
     }
 
     pub fn should_box_property(&self, prop_nm: &PropertyName) -> bool {
@@ -61,10 +73,16 @@ pub enum Error {
     PropertyName(#[source] crate::identifier::Error),
     #[error("creating name for module: {0}")]
     ModuleName(#[source] crate::identifier::Error),
-    #[error("creating name for enum: {0}")]
-    EnumName(#[source] crate::identifier::Error),
-    #[error("creating name for enum value: {0}")]
-    EnumValueName(#[source] crate::identifier::Error),
+    #[error("creating name for enum {property}: {source}")]
+    EnumName {
+        source: crate::identifier::Error,
+        property: String,
+    },
+    #[error("creating name for enum value {property}: {source}")]
+    EnumValueName {
+        source: crate::identifier::Error,
+        property: String,
+    },
     #[error("creating name for Vec alias: {0}")]
     VecAliasName(#[source] crate::identifier::Error),
     #[error("creating name for struct: {0}")]
@@ -87,6 +105,8 @@ pub enum Error {
     ExamplesName(#[source] crate::identifier::Error),
     #[error("status code: {0}")]
     StatusCode(#[from] crate::status_codes::Error),
+    #[error("DataType::File not handled")]
+    UnsupportedDataTypeFile,
 }
 
 /// Whether or not to pass a type is a reference.
@@ -125,6 +145,13 @@ pub fn is_local_enum(property: &ResolvedSchema) -> bool {
 
 pub fn is_local_struct(property: &ResolvedSchema) -> bool {
     property.schema.properties.len() > 0
+}
+
+pub fn is_basic_type(property: &ResolvedSchema) -> bool {
+    matches!(
+        property.schema.common.type_,
+        Some(DataType::Integer | DataType::String | DataType::Number | DataType::Boolean)
+    )
 }
 
 /// Wraps a type in an Option if is not required.
@@ -181,7 +208,9 @@ pub fn get_type_name_for_schema(schema: &SchemaCommon, as_ref: AsReference) -> R
                 AsReference::True => quote! { &serde_json::Value },
                 AsReference::False => quote! { serde_json::Value },
             },
-            DataType::File => todo!("Handle DataType::File"),
+            DataType::File => {
+                return Err(Error::UnsupportedDataTypeFile);
+            }
         };
         Ok(ts)
     } else {
@@ -214,13 +243,36 @@ pub fn create_mod(api_version: &str) -> TokenStream {
     quote! {
         pub mod models;
         pub mod operations;
+        #[allow(dead_code)]
         pub const API_VERSION: &str = #api_version;
     }
 }
 
-pub static PARAM_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\{(\w+)\}").unwrap());
+// any word character or `-` between curly braces
+pub static PARAM_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\{([\w-]+)\}").unwrap());
 
 pub fn parse_params(path: &str) -> Vec<String> {
     // capture 0 is the whole match and 1 is the actual capture like other languages
     PARAM_RE.captures_iter(path).into_iter().map(|c| c[1].to_string()).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_enum_values_as_strings() {
+        let values = vec![json!("/"), json!("/keys")];
+        assert_eq!(enum_values_as_strings(&values), vec!["/", "/keys"]);
+    }
+
+    #[test]
+    fn test_parse_params_keyvault() -> Result<(), Error> {
+        assert_eq!(
+            parse_params("/storage/{storage-account-name}/sas/{sas-definition-name}"),
+            vec!["storage-account-name".to_owned(), "sas-definition-name".to_owned()]
+        );
+        Ok(())
+    }
 }

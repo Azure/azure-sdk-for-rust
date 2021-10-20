@@ -202,7 +202,7 @@ pub enum ManagementGroupChildType {
     #[serde(rename = "Microsoft.Management/managementGroups")]
     MicrosoftManagementManagementGroups,
     #[serde(rename = "/subscriptions")]
-    Subscriptions,
+    U2fsubscriptions,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationResults {

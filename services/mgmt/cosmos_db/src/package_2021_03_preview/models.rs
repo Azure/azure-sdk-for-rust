@@ -964,8 +964,7 @@ pub mod container_partition_key {
         MultiHash,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Path {}
+pub type Path = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UniqueKeyPolicy {
     #[serde(rename = "uniqueKeys", default, skip_serializing_if = "Vec::is_empty")]
@@ -1059,8 +1058,7 @@ pub struct MongoIndexKeys {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub keys: Vec<Key>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Key {}
+pub type Key = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MongoIndexOptions {
     #[serde(rename = "expireAfterSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -1173,8 +1171,7 @@ pub mod managed_service_identity {
         None,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProvisioningState {}
+pub type ProvisioningState = String;
 pub type IpRules = Vec<IpAddressOrRange>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IpAddressOrRange {
@@ -1414,11 +1411,11 @@ pub mod api_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServerVersion {
         #[serde(rename = "3.2")]
-        _3_2,
+        N3_2,
         #[serde(rename = "3.6")]
-        _3_6,
+        N3_6,
         #[serde(rename = "4.0")]
-        _4_0,
+        N4_0,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1451,8 +1448,7 @@ pub struct DatabaseRestoreResource {
     #[serde(rename = "collectionNames", default, skip_serializing_if = "Vec::is_empty")]
     pub collection_names: Vec<CollectionName>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CollectionName {}
+pub type CollectionName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupPolicy {
     #[serde(rename = "type")]

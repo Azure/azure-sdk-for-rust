@@ -6,7 +6,7 @@ This repository is for the development of the *unofficial* Azure SDK for Rust. U
 
 🚨🚨🚨**WARNING**: This project is currently under very active development.🚨🚨🚨
 
-This projects' crates have yet to released to crates.io so in order to use them you will need to specify them as git dependencies. You should be aware that large, breaking changes can happen at any time, and thus it's not yet recommended to use these crates in any serious capacity yet. 
+This projects' crates have yet to released to crates.io so in order to use them you will need to specify them as git dependencies. You should be aware that large, breaking changes can happen at any time, and thus it's not yet recommended to use these crates in any serious capacity yet.
 
 Additionally, this project is the logical successor to the previous Azure SDK crates found under [github.com/MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust). The crates have been renamed, so those older crates should be considered fully deprecated.
 
@@ -15,6 +15,10 @@ Additionally, this project is the logical successor to the previous Azure SDK cr
 Each supported Azure service is its own separate crate. If a particular service provides logically separate sub-services (e.g., Azure Storage offers blob, queue, and table storage), these are exposed as cargo features of the service's crate.
 
 Building each crate should be as straight forward as `cargo build`, but check each crate's README for more specific information.
+
+### Mock testing framework
+
+This library comes with a testing framework that executes against prerecorded sessions to quickly validate code changes without incurring in Azure costs. You can read more about it in the [Mock testing framework's README](docs/mock_transport.md).
 
 ## Contributing
 

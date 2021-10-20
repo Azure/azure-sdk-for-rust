@@ -54,6 +54,8 @@ pub struct KeyProperties {
     pub key_uri_with_version: Option<String>,
     #[serde(rename = "rotationPolicy", default, skip_serializing_if = "Option::is_none")]
     pub rotation_policy: Option<RotationPolicy>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub release_policy: Option<KeyReleasePolicy>,
 }
 pub mod key_properties {
     use super::*;
@@ -94,6 +96,8 @@ pub struct KeyAttributes {
     pub updated: Option<i64>,
     #[serde(rename = "recoveryLevel", default, skip_serializing_if = "Option::is_none")]
     pub recovery_level: Option<key_attributes::RecoveryLevel>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exportable: Option<bool>,
 }
 pub mod key_attributes {
     use super::*;
@@ -170,6 +174,13 @@ pub mod action {
         #[serde(rename = "notify")]
         Notify,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyReleasePolicy {
+    #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
+    pub content_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
@@ -689,7 +700,7 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Option<Error>,
+    pub innererror: Box<Option<Error>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeletedManagedHsm {
