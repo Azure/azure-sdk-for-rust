@@ -8,6 +8,7 @@ use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
 use std::sync::Arc;
+use url::Url;
 
 pub trait AsBlobClient<BN: Into<String>> {
     fn as_blob_client(&self, blob_name: BN) -> Arc<BlobClient>;
@@ -103,7 +104,7 @@ impl BlobClient {
         DeleteBlobVersionBuilder::new(self, version_id)
     }
 
-    pub fn copy<'a>(&'a self, copy_source: &'a str) -> CopyBlobBuilder<'a> {
+    pub fn copy<'a>(&'a self, copy_source: &'a Url) -> CopyBlobBuilder<'a> {
         CopyBlobBuilder::new(self, copy_source)
     }
 
@@ -161,9 +162,10 @@ impl BlobClient {
     pub fn generate_signed_blob_url(
         &self,
         signature: &SharedAccessSignature,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        let url = self.url_with_segments(None)?;
-        Ok(format!("{}?{}", url.as_str(), signature.token()))
+    ) -> Result<url::Url, Box<dyn std::error::Error + Send + Sync>> {
+        let mut url = self.url_with_segments(None)?;
+        url.set_query(Some(&signature.token()));
+        Ok(url)
     }
 
     pub(crate) fn prepare_request(
