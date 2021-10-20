@@ -26,6 +26,7 @@ mod range;
 mod sequence_number;
 mod sequence_number_condition;
 mod source_lease_id;
+mod tags;
 mod timeout;
 mod user_agent;
 
@@ -57,5 +58,6 @@ pub use range::Range;
 pub use sequence_number::SequenceNumber;
 pub use sequence_number_condition::SequenceNumberCondition;
 pub use source_lease_id::SourceLeaseId;
+pub use tags::Tags;
 pub use timeout::Timeout;
 pub use user_agent::UserAgent;
