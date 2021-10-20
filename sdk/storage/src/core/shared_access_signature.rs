@@ -113,8 +113,17 @@ pub struct SasPermissions {
 
 impl fmt::Display for SasPermissions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // NOTE: order *must* be `racwdxltmeop` per documentation:
+        // https://docs.microsoft.com/en-us/rest/api/storageservices/create-service-sas#specifying-permissions
+
         if self.read {
             write!(f, "r")?;
+        }
+        if self.add {
+            write!(f, "a")?;
+        }
+        if self.create {
+            write!(f, "c")?;
         }
         if self.write {
             write!(f, "w")?;
@@ -124,12 +133,6 @@ impl fmt::Display for SasPermissions {
         }
         if self.list {
             write!(f, "l")?;
-        }
-        if self.add {
-            write!(f, "a")?;
-        }
-        if self.create {
-            write!(f, "c")?;
         }
         if self.update {
             write!(f, "u")?;
