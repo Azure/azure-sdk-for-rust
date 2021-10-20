@@ -493,7 +493,7 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
 fn create_rsp_value(tp: Option<&TokenStream>, fname: &TokenStream) -> TokenStream {
     if tp.map(|tp| tp.to_string()) == Some("bytes :: Bytes".to_owned()) {
         quote! {
-            let rsp_value = rsp.body().clone();
+            let rsp_value = rsp_body.clone();
         }
     } else {
         quote! {
