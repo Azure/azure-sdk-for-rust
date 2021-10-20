@@ -75,7 +75,6 @@ impl<'a, 'b> ReplaceReferenceAttachmentOptions<'a, 'b> {
         })?;
 
         request.set_body(body.into());
-        debug!("request == {:#?}", request);
 
         Ok(())
     }

@@ -68,7 +68,6 @@ impl<'a, 'b> CreateReferenceAttachmentOptions<'a, 'b> {
         })?;
 
         request.set_body(body.into());
-        debug!("request == {:#?}", request);
 
         Ok(())
     }

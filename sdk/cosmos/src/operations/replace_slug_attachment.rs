@@ -61,8 +61,6 @@ impl<'a, 'b> ReplaceSlugAttachmentOptions<'a, 'b> {
         let body = body.into();
         request.set_body(body.into());
 
-        debug!("request == {:#?}", request);
-
         Ok(())
     }
 }

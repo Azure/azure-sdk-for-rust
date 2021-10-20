@@ -45,7 +45,6 @@ impl<'a, 'b> DeleteAttachmentOptions<'a, 'b> {
         );
 
         request.set_body(bytes::Bytes::from_static(EMPTY_BODY).into());
-        debug!("request == {:#?}", request);
 
         Ok(())
     }
