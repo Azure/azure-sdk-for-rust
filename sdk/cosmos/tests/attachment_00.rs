@@ -107,7 +107,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
 
     // create reference attachment
     let attachment_client = document_client.clone().into_attachment_client("reference");
-    let options = CreateReferenceAttachmentOptions::new(&attachment_client).consistency_level(&ret);
+    let options = CreateReferenceAttachmentOptions::new().consistency_level(&ret);
     let resp = attachment_client
         .create_reference(
             Context::new(),
@@ -118,8 +118,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
         .await?;
 
     // replace reference attachment
-    let options =
-        ReplaceReferenceAttachmentOptions::new(&attachment_client).consistency_level(&resp);
+    let options = ReplaceReferenceAttachmentOptions::new().consistency_level(&resp);
     let resp = attachment_client
         .replace_reference(
             Context::new(),
@@ -131,7 +130,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
 
     // create slug attachment
     let attachment_client = document_client.clone().into_attachment_client("slug");
-    let options = CreateSlugAttachmentOptions::new(&attachment_client)
+    let options = CreateSlugAttachmentOptions::new()
         .consistency_level(&resp)
         .content_type("text/plain");
     let resp = attachment_client
@@ -166,8 +165,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
     assert_eq!("text/plain", slug_attachment.attachment.content_type);
 
     // delete slug attachment
-    let options =
-        DeleteAttachmentOptions::new(&attachment_client).consistency_level(&slug_attachment);
+    let options = DeleteAttachmentOptions::new().consistency_level(&slug_attachment);
     let resp_delete = attachment_client.delete(Context::new(), options).await?;
 
     // list attachments, there must be one.

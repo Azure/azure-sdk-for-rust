@@ -8,18 +8,16 @@ use bytes::Bytes;
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct ReplaceSlugAttachmentOptions<'a, 'b> {
-    attachment_client: &'a AttachmentClient,
-    content_type: Option<ContentType<'b>>,
-    if_match_condition: Option<IfMatchCondition<'b>>,
-    activity_id: Option<ActivityId<'b>>,
+pub struct ReplaceSlugAttachmentOptions<'a> {
+    content_type: Option<ContentType<'a>>,
+    if_match_condition: Option<IfMatchCondition<'a>>,
+    activity_id: Option<ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, 'b> ReplaceSlugAttachmentOptions<'a, 'b> {
-    pub fn new(attachment_client: &'a AttachmentClient) -> Self {
+impl<'a> ReplaceSlugAttachmentOptions<'a> {
+    pub fn new() -> Self {
         Self {
-            attachment_client,
             content_type: None,
             if_match_condition: None,
             activity_id: None,
@@ -28,19 +26,21 @@ impl<'a, 'b> ReplaceSlugAttachmentOptions<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ReplaceSlugAttachmentOptions<'a, 'b> {
+impl<'a> ReplaceSlugAttachmentOptions<'a> {
     setters! {
-        activity_id: &'b str => Some(ActivityId::new(activity_id)),
+        activity_id: &'a str => Some(ActivityId::new(activity_id)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
-        content_type: ContentType<'b> => Some(content_type),
+        if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
+        content_type: ContentType<'a> => Some(content_type),
     }
 }
 
-impl<'a, 'b> ReplaceSlugAttachmentOptions<'a, 'b> {
+impl<'a> ReplaceSlugAttachmentOptions<'a> {
     pub(crate) fn decorate_request<B: Into<Bytes>>(
         &self,
         request: &mut HttpRequest,
+        partition_key: &str,
+        attachment_name: &str,
         body: B,
     ) -> Result<(), crate::Error> {
         azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
@@ -48,14 +48,9 @@ impl<'a, 'b> ReplaceSlugAttachmentOptions<'a, 'b> {
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
         azure_core::headers::add_optional_header2(&self.content_type, request)?;
 
-        crate::cosmos_entity::add_as_partition_key_header_serialized2(
-            self.attachment_client
-                .document_client()
-                .partition_key_serialized(),
-            request,
-        );
+        crate::cosmos_entity::add_as_partition_key_header_serialized2(partition_key, request);
 
-        let slug = Slug::new(self.attachment_client.attachment_name());
+        let slug = Slug::new(attachment_name);
         azure_core::headers::add_mandatory_header2(&slug, request)?;
 
         let body = body.into();

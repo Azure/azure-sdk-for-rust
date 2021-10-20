@@ -79,12 +79,15 @@ impl AttachmentClient {
     pub async fn delete(
         &self,
         ctx: Context,
-        options: DeleteAttachmentOptions<'_, '_>,
+        options: DeleteAttachmentOptions<'_>,
     ) -> Result<DeleteAttachmentResponse, crate::Error> {
         let mut request = self.prepare_request_with_attachment_name(http::Method::DELETE);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
-        options.decorate_request(&mut request)?;
+        options.decorate_request(
+            &mut request,
+            self.document_client().partition_key_serialized(),
+        )?;
         let response = self
             .cosmos_client()
             .pipeline()
@@ -101,12 +104,17 @@ impl AttachmentClient {
         &self,
         ctx: Context,
         body: B,
-        options: CreateSlugAttachmentOptions<'_, '_>,
+        options: CreateSlugAttachmentOptions<'_>,
     ) -> Result<CreateSlugAttachmentResponse, crate::Error> {
         let mut request = self.prepare_request(http::Method::POST);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
-        options.decorate_request(&mut request, body)?;
+        options.decorate_request(
+            &mut request,
+            self.document_client().partition_key_serialized(),
+            self.attachment_name(),
+            body,
+        )?;
         let response = self
             .cosmos_client()
             .pipeline()
@@ -123,12 +131,17 @@ impl AttachmentClient {
         &self,
         ctx: Context,
         body: B,
-        options: ReplaceSlugAttachmentOptions<'_, '_>,
+        options: ReplaceSlugAttachmentOptions<'_>,
     ) -> Result<ReplaceSlugAttachmentResponse, crate::Error> {
         let mut request = self.prepare_request_with_attachment_name(http::Method::PUT);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
-        options.decorate_request(&mut request, body)?;
+        options.decorate_request(
+            &mut request,
+            self.document_client().partition_key_serialized(),
+            self.attachment_name(),
+            body,
+        )?;
         let response = self
             .cosmos_client()
             .pipeline()
@@ -146,7 +159,7 @@ impl AttachmentClient {
         ctx: Context,
         media: M,
         content_type: C,
-        options: CreateReferenceAttachmentOptions<'_, '_>,
+        options: CreateReferenceAttachmentOptions<'_>,
     ) -> Result<CreateReferenceAttachmentResponse, crate::Error>
     where
         M: AsRef<str>,
@@ -155,7 +168,13 @@ impl AttachmentClient {
         let mut request = self.prepare_request(http::Method::POST);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
-        options.decorate_request(&mut request, media, content_type)?;
+        options.decorate_request(
+            &mut request,
+            self.document_client.partition_key_serialized(),
+            self.attachment_name(),
+            media,
+            content_type,
+        )?;
         let response = self
             .cosmos_client()
             .pipeline()
@@ -173,7 +192,7 @@ impl AttachmentClient {
         ctx: Context,
         media: M,
         content_type: C,
-        options: ReplaceReferenceAttachmentOptions<'_, '_>,
+        options: ReplaceReferenceAttachmentOptions<'_>,
     ) -> Result<ReplaceReferenceAttachmentResponse, crate::Error>
     where
         M: AsRef<str>,
@@ -182,7 +201,13 @@ impl AttachmentClient {
         let mut request = self.prepare_request_with_attachment_name(http::Method::PUT);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
-        options.decorate_request(&mut request, media, content_type)?;
+        options.decorate_request(
+            &mut request,
+            self.document_client().partition_key_serialized(),
+            self.attachment_name(),
+            media,
+            content_type,
+        )?;
         let response = self
             .cosmos_client()
             .pipeline()

@@ -9,17 +9,15 @@ use azure_core::{
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct DeleteAttachmentOptions<'a, 'b> {
-    attachment_client: &'a AttachmentClient,
-    if_match_condition: Option<IfMatchCondition<'b>>,
-    activity_id: Option<ActivityId<'b>>,
+pub struct DeleteAttachmentOptions<'a> {
+    if_match_condition: Option<IfMatchCondition<'a>>,
+    activity_id: Option<ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, 'b> DeleteAttachmentOptions<'a, 'b> {
-    pub fn new(attachment_client: &'a AttachmentClient) -> Self {
+impl<'a> DeleteAttachmentOptions<'a> {
+    pub fn new() -> Self {
         Self {
-            attachment_client,
             if_match_condition: None,
             activity_id: None,
             consistency_level: None,
@@ -27,22 +25,21 @@ impl<'a, 'b> DeleteAttachmentOptions<'a, 'b> {
     }
 
     setters! {
-        activity_id: &'b str => Some(ActivityId::new(activity_id)),
+        activity_id: &'a str => Some(ActivityId::new(activity_id)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
+        if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
     }
 
-    pub fn decorate_request(&self, request: &mut HttpRequest) -> Result<(), crate::Error> {
+    pub fn decorate_request(
+        &self,
+        request: &mut HttpRequest,
+        partition_key: &str,
+    ) -> Result<(), crate::Error> {
         azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
         azure_core::headers::add_optional_header2(&self.activity_id, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
 
-        crate::cosmos_entity::add_as_partition_key_header_serialized2(
-            self.attachment_client
-                .document_client()
-                .partition_key_serialized(),
-            request,
-        );
+        crate::cosmos_entity::add_as_partition_key_header_serialized2(partition_key, request);
 
         request.set_body(bytes::Bytes::from_static(EMPTY_BODY).into());
 

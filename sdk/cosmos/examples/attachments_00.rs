@@ -78,7 +78,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // reference attachment
     println!("creating");
     let attachment_client = document_client.clone().into_attachment_client("myref06");
-    let options = CreateReferenceAttachmentOptions::new(&attachment_client).consistency_level(ret);
+    let options = CreateReferenceAttachmentOptions::new().consistency_level(ret);
     let resp = attachment_client
         .create_reference(
             Context::new(),
@@ -105,8 +105,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("replacing");
     let attachment_client = document_client.clone().into_attachment_client("myref06");
-    let options =
-        ReplaceReferenceAttachmentOptions::new(&attachment_client).consistency_level(session_token);
+    let options = ReplaceReferenceAttachmentOptions::new().consistency_level(session_token);
     let resp = attachment_client
         .replace_reference(
             Context::new(),
@@ -118,14 +117,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("replace reference == {:#?}", resp);
 
     println!("deleting");
-    let options = DeleteAttachmentOptions::new(&attachment_client).consistency_level(&resp);
+    let options = DeleteAttachmentOptions::new().consistency_level(&resp);
     let resp_delete = attachment_client.delete(Context::new(), options).await?;
     println!("delete attachment == {:#?}", resp_delete);
 
     // slug attachment
     println!("creating slug attachment");
     let attachment_client = document_client.into_attachment_client("slug00".to_owned());
-    let options = CreateSlugAttachmentOptions::new(&attachment_client)
+    let options = CreateSlugAttachmentOptions::new()
         .consistency_level(&resp_delete)
         .content_type("text/plain");
     let resp = attachment_client
@@ -136,7 +135,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // slug replacement
     println!("replacing slug attachment");
-    let options = ReplaceSlugAttachmentOptions::new(&attachment_client)
+    let options = ReplaceSlugAttachmentOptions::new()
         .consistency_level(&resp_delete)
         .content_type("text/plain");
     let resp = attachment_client
@@ -144,7 +143,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
 
     println!("deleting");
-    let options = DeleteAttachmentOptions::new(&attachment_client).consistency_level(&resp);
+    let options = DeleteAttachmentOptions::new().consistency_level(&resp);
     let resp_delete = attachment_client.delete(Context::new(), options).await?;
     println!("delete attachment == {:#?}", resp_delete);
 
