@@ -24,15 +24,10 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("attestation", "package-2018-09-01"),      // uses models::String?
     ("containerregistry", "package-2019-08"),   // untagged enum
     ("containerregistry", "package-2019-07"),   // untagged enum
-    // ("datalake-store", "package-2016-11"),         // TODO #81 DataType::File
-    // ("datalake-store", "package-2015-10-preview"), // TODO #81 DataType::File
-    ("purview", "package-2021-05-01-preview"), // untagged enum
-    // ("batch", "package-2018-03.6.1"),              // TODO #81 DataType::File
-    // ("batch", "package-2017-09.6.0"),              // TODO #81 DataType::File
-    // ("batch", "package-2017-06.5.1"),              // TODO #81 DataType::File
-    ("maps", "package-preview-2.0"),        // string \"200Async\", expected length 3"
-    ("maps", "package-1.0-preview"),        // "invalid value: string \"201Async\"
-    ("storagedatalake", "package-2018-11"), // "invalid value: string \"ErrorResponse\", expected length 3"
+    ("purview", "package-2021-05-01-preview"),  // untagged enum
+    ("maps", "package-preview-2.0"),            // string \"200Async\", expected length 3"
+    ("maps", "package-1.0-preview"),            // "invalid value: string \"201Async\"
+    ("storagedatalake", "package-2018-11"),     // "invalid value: string \"ErrorResponse\", expected length 3"
     ("storagedatalake", "package-2018-06-preview"),
     ("storagedatalake", "package-2019-10"),
 ];
