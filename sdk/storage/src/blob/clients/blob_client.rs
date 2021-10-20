@@ -8,6 +8,7 @@ use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
 use std::sync::Arc;
+use url::Url;
 
 pub trait AsBlobClient<BN: Into<String>> {
     fn as_blob_client(&self, blob_name: BN) -> Arc<BlobClient>;
@@ -103,7 +104,7 @@ impl BlobClient {
         DeleteBlobVersionBuilder::new(self, version_id)
     }
 
-    pub fn copy<'a>(&'a self, copy_source: &'a str) -> CopyBlobBuilder<'a> {
+    pub fn copy<'a>(&'a self, copy_source: &'a Url) -> CopyBlobBuilder<'a> {
         CopyBlobBuilder::new(self, copy_source)
     }
 
