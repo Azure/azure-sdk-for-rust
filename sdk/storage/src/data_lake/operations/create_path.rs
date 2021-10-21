@@ -24,8 +24,6 @@ impl<'a> CreatePathOptions<'a> {
         azure_core::headers::add_optional_header2(&self.if_match_condition, req)?;
         azure_core::headers::add_mandatory_header2(&ContentLength::new(0), req)?; // Length is required for creating files
 
-        req.set_body(bytes::Bytes::new().into()); // TODO: needed?
-
         Ok(())
     }
 }
