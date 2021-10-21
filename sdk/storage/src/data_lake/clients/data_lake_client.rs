@@ -87,13 +87,6 @@ impl DataLakeClient {
 
         let options = ClientOptions::default();
         let per_call_policies = Vec::new();
-        // let per_retry_policies = Vec::new();
-        /*
-                HAVE TO IMPLEMENT A STORAGE SPECIFIC AuthorizationPolicy
-                THAT DOES WHAT THE AZURE STORAGE REST API AUTH SAYS TO DO (SIGNATURE WITH BEARER TOKEN)
-                GETTING THE BEARER TOKEN IS ALREADY IMPLEMENTED in DefaultCredential
-                    REALLY? HOW DOES IT WORK IN A RUST SERVICE - NEEDS CERT!?
-        */
         let auth_policy: Arc<dyn azure_core::Policy<Vec<i32>>> =
             Arc::new(AuthorizationPolicy::new(bearer_token.clone()));
 
