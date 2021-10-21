@@ -1,6 +1,7 @@
 use crate::blob::prelude::PublicAccess;
 use crate::container::requests::*;
 use crate::core::clients::{StorageAccountClient, StorageClient};
+use crate::shared_access_signature::SharedAccessSignature;
 use azure_core::prelude::*;
 use bytes::Bytes;
 use http::method::Method;
@@ -105,6 +106,15 @@ impl ContainerClient {
     ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
         self.storage_client
             .prepare_request(url, method, http_header_adder, request_body)
+    }
+
+    pub fn generate_signed_container_url(
+        &self,
+        signature: &SharedAccessSignature,
+    ) -> Result<url::Url, Box<dyn std::error::Error + Send + Sync>> {
+        let mut url = self.url_with_segments(None)?;
+        url.set_query(Some(&signature.token()));
+        Ok(url)
     }
 }
 
