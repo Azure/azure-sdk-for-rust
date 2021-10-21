@@ -112,7 +112,7 @@ impl FileSystemClient {
         http::request::Builder::new()
             .method(http_method)
             .uri(uri)
-            .body(bytes::Bytes::new()) // TODO: can we actually upload the file here? docs don't say, but thought I read that we can't; how can I not specify a body?
+            .body(bytes::Bytes::new())
             .unwrap()
             .into()
     }
