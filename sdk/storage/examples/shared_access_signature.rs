@@ -47,7 +47,10 @@ fn code() -> Result<(), Box<dyn Error + Sync + Send>> {
         .with_resource_type(AccountSasResourceType::Object)
         .with_start(now)
         .with_expiry(later)
-        .with_permissions(AccountSasPermissions{read: true, .. Default::default()})
+        .with_permissions(AccountSasPermissions {
+            read: true,
+            ..Default::default()
+        })
         .with_protocol(SasProtocol::Https)
         .finalize();
 
