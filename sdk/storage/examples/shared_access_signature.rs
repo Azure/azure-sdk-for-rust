@@ -1,7 +1,7 @@
 use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
-use chrono::{Utc, Duration};
+use chrono::{Duration, Utc};
 use std::error::Error;
 
 fn main() {
@@ -47,7 +47,7 @@ fn code() -> Result<(), Box<dyn Error + Sync + Send>> {
         .with_resource_type(AccountSasResourceType::Object)
         .with_start(now)
         .with_expiry(later)
-        .with_permissions(AccountSasPermissions::Read)
+        .with_permissions(AccountSasPermissions{read: true, .. Default::default()})
         .with_protocol(SasProtocol::Https)
         .finalize();
 
@@ -78,6 +78,7 @@ fn code() -> Result<(), Box<dyn Error + Sync + Send>> {
             write: true,
             ..Default::default()
         })
+        .with_protocol(SasProtocol::HttpHttps)
         .finalize();
 
     println!("container sas token: {}", sas.token());

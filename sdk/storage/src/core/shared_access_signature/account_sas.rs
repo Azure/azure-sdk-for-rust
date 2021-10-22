@@ -82,30 +82,49 @@ impl fmt::Display for AccountSasResourceType {
 }
 
 /// Indicate which operations a key_client may perform on the resource ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-permissions)).
-#[derive(Copy, Clone)]
-pub enum AccountSasPermissions {
-    Read,
-    Write,
-    Delete,
-    List,
-    Add,
-    Create,
-    Update,
-    Process,
+#[derive(Copy, Clone, Default)]
+pub struct AccountSasPermissions {
+    pub read: bool,
+    pub write: bool,
+    pub delete: bool,
+    pub list: bool,
+    pub add: bool,
+    pub create: bool,
+    pub update: bool,
+    pub process: bool,
 }
 
 impl fmt::Display for AccountSasPermissions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Self::Read => write!(f, "r"),
-            Self::Write => write!(f, "w"),
-            Self::Delete => write!(f, "d"),
-            Self::List => write!(f, "l"),
-            Self::Add => write!(f, "a"),
-            Self::Create => write!(f, "c"),
-            Self::Update => write!(f, "u"),
-            Self::Process => write!(f, "p"),
+        // NOTE: order *must* be `racwdxltmeop` per documentation:
+        // https://docs.microsoft.com/en-us/rest/api/storageservices/create-service-sas#specifying-permissions
+
+        if self.read {
+            write!(f, "r")?;
         }
+        if self.add {
+            write!(f, "a")?;
+        }
+        if self.create {
+            write!(f, "c")?;
+        }
+        if self.write {
+            write!(f, "w")?;
+        }
+        if self.delete {
+            write!(f, "d")?;
+        }
+        if self.list {
+            write!(f, "l")?;
+        }
+        if self.update {
+            write!(f, "u")?;
+        }
+        if self.process {
+            write!(f, "p")?;
+        }
+
+        Ok(())
     }
 }
 

@@ -61,7 +61,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .with_resource_type(AccountSasResourceType::Object)
             .with_start(now)
             .with_expiry(later)
-            .with_permissions(AccountSasPermissions::Read)
+            .with_permissions(AccountSasPermissions {
+                read: true,
+                ..Default::default()
+            })
             .with_protocol(SasProtocol::HttpHttps)
             .finalize();
         println!("token: '{}'", sas.token());
