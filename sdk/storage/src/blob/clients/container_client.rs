@@ -139,14 +139,6 @@ impl ContainerClient {
     where
         T: SasToken,
     {
-        /*
-        let resource = format!(
-            "/blob/{}/{}",
-            self.storage_account_client().account(),
-            self.container_name(),
-        );
-        */
-
         let mut url = self.url_with_segments(None)?;
         url.set_query(Some(&signature.token()));
         Ok(url)
