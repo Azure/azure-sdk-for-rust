@@ -144,16 +144,14 @@ fn main() -> Result<()> {
         .iter()
         .enumerate()
     {
-        if ONLY_SERVICES.len() > 0 {
+        if !ONLY_SERVICES.is_empty() {
             if ONLY_SERVICES.contains(&spec.spec()) {
                 println!("{} {}", i + 1, spec.spec());
                 gen_crate(spec)?;
             }
-        } else {
-            if !SKIP_SERVICES.contains(&spec.spec()) {
-                println!("{} {}", i + 1, spec.spec());
-                gen_crate(spec)?;
-            }
+        } else if !SKIP_SERVICES.contains(&spec.spec()) {
+            println!("{} {}", i + 1, spec.spec());
+            gen_crate(spec)?;
         }
     }
     Ok(())
@@ -226,14 +224,14 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         let input_files: Result<Vec<_>> = config
             .input_files
             .iter()
-            .map(|input_file| Ok(path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source })?))
+            .map(|input_file| path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source }))
             .collect();
         let input_files = input_files?;
         // for input_file in &input_files {
         //     println!("  {:?}", input_file);
         // }
         autorust_codegen::run(Config {
-            output_folder: mod_output_folder.into(),
+            output_folder: mod_output_folder,
             input_files,
             box_properties: box_properties.clone(),
             fix_case_properties: fix_case_properties.clone(),
@@ -243,7 +241,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         })
         .map_err(|source| Error::CodegenError { source })?;
     }
-    if feature_mod_names.len() == 0 {
+    if feature_mod_names.is_empty() {
         return Ok(());
     }
     cargo_toml::create(

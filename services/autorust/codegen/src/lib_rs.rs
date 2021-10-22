@@ -13,12 +13,12 @@ pub enum Error {
     WriteFile(#[source] crate::Error),
 }
 
-pub fn create(feature_mod_names: &Vec<(String, String)>, path: &Path, print_writing_file: bool) -> Result<()> {
+pub fn create(feature_mod_names: &[(String, String)], path: &Path, print_writing_file: bool) -> Result<()> {
     write_file(path, &create_body(feature_mod_names)?, print_writing_file).map_err(Error::WriteFile)?;
     Ok(())
 }
 
-fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream> {
+fn create_body(feature_mod_names: &[(String, String)]) -> Result<TokenStream> {
     let mut cfgs = TokenStream::new();
     for (feature_name, mod_name) in feature_mod_names {
         let mod_name = ident(mod_name).map_err(|source| Error::ModName {
@@ -34,6 +34,10 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
     }
     let generated_by = create_generated_by_header();
     Ok(quote! {
+        #![allow(clippy::module_inception)]
+        #![allow(clippy::too_many_arguments)]
+        #![allow(clippy::ptr_arg)]
+        #![allow(clippy::large_enum_variant)]
         #generated_by
         #cfgs
         use azure_core::setters;
@@ -66,9 +70,9 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
             pub fn build(self) -> OperationConfig {
                 OperationConfig {
                     http_client: self.http_client,
-                    base_path: self.base_path.unwrap_or("https://management.azure.com".to_owned()),
+                    base_path: self.base_path.unwrap_or_else(|| "https://management.azure.com".to_owned()),
                     token_credential: Some(self.token_credential),
-                    token_credential_resource: self.token_credential_resource.unwrap_or("https://management.azure.com/".to_owned()),
+                    token_credential_resource: self.token_credential_resource.unwrap_or_else(|| "https://management.azure.com/".to_owned()),
                 }
             }
         }

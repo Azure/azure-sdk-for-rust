@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use serde::Deserialize;
-use std::path::PathBuf;
+use std::path::Path;
 
 #[derive(Debug, Deserialize)]
 pub struct Configuration {
@@ -14,11 +14,13 @@ pub struct Configuration {
 /// Receives the AutoRest configuration file and parses it to its various configurations (by tags/API versions),
 /// according to its extension.
 /// e.g. for "path/to/config.md", it will get parsed as CommonMark [Literate Configuration](http://azure.github.io/autorest/user/literate-file-formats/configuration.html).
-pub fn parse_configurations_from_autorest_config_file(config_file: &PathBuf) -> Vec<Configuration> {
-    let extension = config_file.extension().expect(&format!(
-        "Received AutoRest configuration file did not contain an expected extension (e.g. '.md'): '{0}'",
-        config_file.as_path().to_str().unwrap()
-    ));
+pub fn parse_configurations_from_autorest_config_file(config_file: &Path) -> Vec<Configuration> {
+    let extension = config_file.extension().unwrap_or_else(|| {
+        panic!(
+            "Received AutoRest configuration file did not contain an expected extension (e.g. '.md'): '{0}'",
+            config_file.to_str().unwrap()
+        )
+    });
     let extension = extension.to_str().unwrap();
     match extension.to_lowercase().as_str() {
         "md" => {
@@ -31,7 +33,7 @@ pub fn parse_configurations_from_autorest_config_file(config_file: &PathBuf) -> 
         _ => panic!(
             "Received AutoRest configuration extension not supported: '{0}' (in configuration file '{1}')",
             extension,
-            config_file.as_path().to_str().unwrap()
+            config_file.to_str().unwrap()
         ),
     }
 }
@@ -54,7 +56,7 @@ mod literate_config {
     /// [Literate Configuration](http://azure.github.io/autorest/user/literate-file-formats/configuration.html) [CommonMark](https://commonmark.org/) file.
     pub(crate) fn parse_configurations_from_cmark_config(cmark_content: &str) -> Vec<Configuration> {
         let arena = Arena::new();
-        let root = parse_document(&arena, &cmark_content, &ComrakOptions::default());
+        let root = parse_document(&arena, cmark_content, &ComrakOptions::default());
 
         // Get the AST node corresponding with "## Configuration".
         let configuration_heading_node = get_configuration_section_heading_node(root)
@@ -69,10 +71,12 @@ mod literate_config {
             if is_configuration_tag_heading_node(node) {
                 // Extract the configuration from the first node inside the tag heading ("Tag: ..."),
                 // by looking at the first YAML code block.
-                let code_block = extract_configuration_code_block_node(node).expect(&format!(
-                    "Expected configuration tag ('{0}'...) to contain a YAML code block.",
-                    LITERATE_CONFIGURATION_TAG_PREFIX
-                ));
+                let code_block = extract_configuration_code_block_node(node).unwrap_or_else(|| {
+                    panic!(
+                        "Expected configuration tag ('{0}'...) to contain a YAML code block.",
+                        LITERATE_CONFIGURATION_TAG_PREFIX
+                    )
+                });
                 let mut configuration: Configuration = serde_yaml::from_str(&code_block).expect("TODO(PR)");
                 configuration.tag = extract_configuration_tag_from_heading_node(node);
                 configurations.push(configuration);
@@ -128,9 +132,9 @@ mod literate_config {
                 if !fenced {
                     continue;
                 }
-                let info = std::str::from_utf8(&info).expect("Code block info did not contain UTF-8 characters.");
+                let info = std::str::from_utf8(info).expect("Code block info did not contain UTF-8 characters.");
                 if info.trim_start().to_lowercase().starts_with("yaml") {
-                    let literal = std::str::from_utf8(&literal).expect("Code block content did not contain UTF-8 characters.");
+                    let literal = std::str::from_utf8(literal).expect("Code block content did not contain UTF-8 characters.");
                     return Some(literal.to_owned());
                 }
             }
@@ -140,14 +144,11 @@ mod literate_config {
 }
 
 fn starts_with_number(text: &str) -> bool {
-    match text.chars().next().unwrap_or_default() {
-        '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' => true,
-        _ => false,
-    }
+    text.chars().next().unwrap_or_default().is_numeric()
 }
 
 pub fn get_input_file_api_version(input_file: &str) -> Option<String> {
-    let parts: Vec<_> = input_file.split("/").collect();
+    let parts: Vec<_> = input_file.split('/').collect();
     if parts.len() == 4 {
         Some(parts[2].to_owned())
     } else {
