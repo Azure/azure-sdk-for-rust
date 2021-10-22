@@ -154,7 +154,7 @@ pub async fn get_key_values(
     sync_token: Option<&str>,
     after: Option<&str>,
     accept_datetime: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<KeyValueListResult, get_key_values::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/kv", operation_config.base_path(),);
@@ -239,7 +239,7 @@ pub async fn check_key_values(
     sync_token: Option<&str>,
     after: Option<&str>,
     accept_datetime: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<(), check_key_values::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/kv", operation_config.base_path(),);
@@ -309,7 +309,7 @@ pub async fn get_key_value(
     accept_datetime: Option<&str>,
     if_match: Option<&str>,
     if_none_match: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<KeyValue, get_key_value::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/kv/{}", operation_config.base_path(), key);
@@ -565,7 +565,7 @@ pub async fn check_key_value(
     accept_datetime: Option<&str>,
     if_match: Option<&str>,
     if_none_match: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<(), check_key_value::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/kv/{}", operation_config.base_path(), key);
@@ -633,7 +633,7 @@ pub async fn get_labels(
     sync_token: Option<&str>,
     after: Option<&str>,
     accept_datetime: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<LabelListResult, get_labels::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/labels", operation_config.base_path(),);
@@ -714,7 +714,7 @@ pub async fn check_labels(
     sync_token: Option<&str>,
     after: Option<&str>,
     accept_datetime: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<(), check_labels::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/labels", operation_config.base_path(),);
@@ -942,7 +942,7 @@ pub async fn get_revisions(
     sync_token: Option<&str>,
     after: Option<&str>,
     accept_datetime: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<KeyValueListResult, get_revisions::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/revisions", operation_config.base_path(),);
@@ -1027,7 +1027,7 @@ pub async fn check_revisions(
     sync_token: Option<&str>,
     after: Option<&str>,
     accept_datetime: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<(), check_revisions::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/revisions", operation_config.base_path(),);

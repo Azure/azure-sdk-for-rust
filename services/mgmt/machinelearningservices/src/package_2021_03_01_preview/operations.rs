@@ -4854,7 +4854,7 @@ pub mod datastores {
         skip: Option<&str>,
         count: Option<i32>,
         is_default: Option<bool>,
-        names: &Vec<&str>,
+        names: &[&str],
         search_text: Option<&str>,
         order_by: Option<&str>,
         order_by_asc: Option<bool>,

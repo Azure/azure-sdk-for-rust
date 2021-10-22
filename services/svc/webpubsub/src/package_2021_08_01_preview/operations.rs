@@ -58,7 +58,7 @@ pub mod web_pub_sub {
         operation_config: &crate::OperationConfig,
         hub: &str,
         user_id: Option<&str>,
-        role: &Vec<&str>,
+        role: &[&str],
         minutes_to_expire: Option<i32>,
     ) -> std::result::Result<ClientTokenResponse, generate_client_token::Error> {
         let http_client = operation_config.http_client();
@@ -127,7 +127,7 @@ pub mod web_pub_sub {
     pub async fn send_to_all(
         operation_config: &crate::OperationConfig,
         hub: &str,
-        excluded: &Vec<&str>,
+        excluded: &[&str],
         message: &str,
     ) -> std::result::Result<(), send_to_all::Error> {
         let http_client = operation_config.http_client();
@@ -400,7 +400,7 @@ pub mod web_pub_sub {
         operation_config: &crate::OperationConfig,
         hub: &str,
         group: &str,
-        excluded: &Vec<&str>,
+        excluded: &[&str],
         message: &str,
     ) -> std::result::Result<(), send_to_group::Error> {
         let http_client = operation_config.http_client();

@@ -11,8 +11,8 @@ pub mod heat_map {
         resource_group_name: &str,
         profile_name: &str,
         heat_map_type: &str,
-        top_left: &Vec<f64>,
-        bot_right: &Vec<f64>,
+        top_left: &[f64],
+        bot_right: &[f64],
     ) -> std::result::Result<HeatMapModel, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(

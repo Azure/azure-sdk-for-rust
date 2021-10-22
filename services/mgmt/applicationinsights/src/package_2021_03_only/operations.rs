@@ -10,7 +10,7 @@ pub mod my_workbooks {
         subscription_id: &str,
         resource_group_name: &str,
         category: &str,
-        tags: &Vec<&str>,
+        tags: &[&str],
         source_id: Option<&str>,
         can_fetch_content: Option<bool>,
     ) -> std::result::Result<MyWorkbooksListResult, list_by_resource_group::Error> {
@@ -94,7 +94,7 @@ pub mod my_workbooks {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         category: &str,
-        tags: &Vec<&str>,
+        tags: &[&str],
         can_fetch_content: Option<bool>,
     ) -> std::result::Result<MyWorkbooksListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
@@ -481,7 +481,7 @@ pub mod workbooks {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         category: &str,
-        tags: &Vec<&str>,
+        tags: &[&str],
         can_fetch_content: Option<bool>,
     ) -> std::result::Result<WorkbooksListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
@@ -559,7 +559,7 @@ pub mod workbooks {
         subscription_id: &str,
         resource_group_name: &str,
         category: &str,
-        tags: &Vec<&str>,
+        tags: &[&str],
         source_id: Option<&str>,
         can_fetch_content: Option<bool>,
     ) -> std::result::Result<WorkbooksListResult, list_by_resource_group::Error> {

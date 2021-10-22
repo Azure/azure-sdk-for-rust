@@ -10,7 +10,7 @@ pub mod workbooks {
         subscription_id: &str,
         resource_group_name: &str,
         category: &str,
-        tags: &Vec<&str>,
+        tags: &[&str],
         source_id: &str,
         can_fetch_content: Option<bool>,
     ) -> std::result::Result<WorkbooksListResult, list_by_resource_group::Error> {

@@ -239,7 +239,7 @@ pub mod service {
         prefix: Option<&str>,
         marker: Option<&str>,
         maxresults: Option<i64>,
-        include: &Vec<&str>,
+        include: &[&str],
         timeout: Option<i64>,
         x_ms_version: &str,
         x_ms_client_request_id: Option<&str>,

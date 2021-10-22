@@ -5,7 +5,7 @@
 use super::{models, models::*, API_VERSION};
 pub async fn publish_cloud_event_events(
     operation_config: &crate::OperationConfig,
-    events: &Vec<&CloudEventEvent>,
+    events: &[&CloudEventEvent],
 ) -> std::result::Result<(), publish_cloud_event_events::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/api/events?overload=cloudEvent", operation_config.base_path(),);
@@ -57,7 +57,7 @@ pub mod publish_cloud_event_events {
 }
 pub async fn publish_custom_event_events(
     operation_config: &crate::OperationConfig,
-    events: &Vec<&CustomEventEvent>,
+    events: &[&CustomEventEvent],
 ) -> std::result::Result<(), publish_custom_event_events::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/api/events?overload=customEvent", operation_config.base_path(),);

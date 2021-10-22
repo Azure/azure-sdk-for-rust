@@ -6725,7 +6725,7 @@ pub mod script_executions {
         resource_group_name: &str,
         private_cloud_name: &str,
         script_execution_name: &str,
-        script_output_stream_type: Option<&Vec<&str>>,
+        script_output_stream_type: Option<&[&str]>,
     ) -> std::result::Result<ScriptExecution, get_execution_logs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(

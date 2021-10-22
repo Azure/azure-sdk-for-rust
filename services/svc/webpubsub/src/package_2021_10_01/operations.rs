@@ -58,7 +58,7 @@ pub mod web_pub_sub {
         operation_config: &crate::OperationConfig,
         hub: &str,
         user_id: Option<&str>,
-        role: &Vec<&str>,
+        role: &[&str],
         minutes_to_expire: Option<i32>,
     ) -> std::result::Result<ClientTokenResponse, generate_client_token::Error> {
         let http_client = operation_config.http_client();
@@ -138,7 +138,7 @@ pub mod web_pub_sub {
     pub async fn close_all_connections(
         operation_config: &crate::OperationConfig,
         hub: &str,
-        excluded: &Vec<&str>,
+        excluded: &[&str],
         reason: Option<&str>,
     ) -> std::result::Result<(), close_all_connections::Error> {
         let http_client = operation_config.http_client();
@@ -209,7 +209,7 @@ pub mod web_pub_sub {
     pub async fn send_to_all(
         operation_config: &crate::OperationConfig,
         hub: &str,
-        excluded: &Vec<&str>,
+        excluded: &[&str],
         message: &str,
     ) -> std::result::Result<(), send_to_all::Error> {
         let http_client = operation_config.http_client();
@@ -537,7 +537,7 @@ pub mod web_pub_sub {
         operation_config: &crate::OperationConfig,
         hub: &str,
         group: &str,
-        excluded: &Vec<&str>,
+        excluded: &[&str],
         reason: Option<&str>,
     ) -> std::result::Result<(), close_group_connections::Error> {
         let http_client = operation_config.http_client();
@@ -614,7 +614,7 @@ pub mod web_pub_sub {
         operation_config: &crate::OperationConfig,
         hub: &str,
         group: &str,
-        excluded: &Vec<&str>,
+        excluded: &[&str],
         message: &str,
     ) -> std::result::Result<(), send_to_group::Error> {
         let http_client = operation_config.http_client();
@@ -713,7 +713,6 @@ pub mod web_pub_sub {
             .map_err(add_connection_to_group::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(()),
-            http::StatusCode::NOT_FOUND => Err(add_connection_to_group::Error::NotFound404 {}),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorDetail = serde_json::from_slice(rsp_body)
@@ -729,8 +728,6 @@ pub mod web_pub_sub {
         use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Error response #response_type")]
-            NotFound404 {},
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
@@ -888,7 +885,7 @@ pub mod web_pub_sub {
         operation_config: &crate::OperationConfig,
         hub: &str,
         user_id: &str,
-        excluded: &Vec<&str>,
+        excluded: &[&str],
         reason: Option<&str>,
     ) -> std::result::Result<(), close_user_connections::Error> {
         let http_client = operation_config.http_client();
@@ -1058,7 +1055,6 @@ pub mod web_pub_sub {
             .map_err(add_user_to_group::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => Ok(()),
-            http::StatusCode::NOT_FOUND => Err(add_user_to_group::Error::NotFound404 {}),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorDetail = serde_json::from_slice(rsp_body)
@@ -1074,8 +1070,6 @@ pub mod web_pub_sub {
         use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Error response #response_type")]
-            NotFound404 {},
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
