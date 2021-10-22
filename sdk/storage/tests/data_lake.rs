@@ -12,10 +12,10 @@ use std::num::NonZeroU32;
 #[tokio::test]
 async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
     // First we retrieve the account name and master key from environment variables.
-    let account = std::env::var("ADSL_STORAGE_ACCOUNT")
-        .expect("Set env variable ADSL_STORAGE_ACCOUNT first!");
-    let master_key = std::env::var("ADSL_STORAGE_MASTER_KEY")
-        .expect("Set env variable ADSL_STORAGE_MASTER_KEY first!");
+    let account = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
+        .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
+    let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
+        .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
     let now = Utc::now();
     let file_system_name = format!("azurerustsdk-e2etest-datalake-{}", now.timestamp());
