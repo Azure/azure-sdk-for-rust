@@ -40,7 +40,10 @@ fn code() -> Result<(), Box<dyn Error + Sync + Send>> {
         .with_resource_type(SasResourceType::Object)
         .with_start(now)
         .with_expiry(later)
-        .with_permissions(SasPermissions::Read)
+        .with_permissions(SasPermissions {
+            read: true,
+            ..Default::default()
+        })
         .with_protocol(SasProtocol::HttpHttps)
         .finalize();
     println!("token: '{}'", sas.token());
