@@ -12,6 +12,7 @@ env:
 jobs:
   test-services:
     name: Services Tests
+    timeout-minutes: 60
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
@@ -24,6 +25,7 @@ jobs:
     - uses: Swatinem/rust-cache@v1
 
     - name: services check
+      timeout-minutes: 60
       run: cargo check --manifest-path services/Cargo.toml --all --all-features
 
     - name: display free disk space
