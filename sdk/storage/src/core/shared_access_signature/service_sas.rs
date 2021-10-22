@@ -4,22 +4,6 @@ use std::{fmt, marker::PhantomData};
 
 const SERVICE_SAS_VERSION: &str = "2020-06-12";
 
-/*
-pub struct ServiceSharedAccessSignature {
-    account: String,
-    key: String,
-
-    signed_version: SasVersion,
-    signed_resource: SasResource,
-    signed_resource_type: SasResourceType,
-    signed_start: Option<DateTime<Utc>>,
-    signed_expiry: DateTime<Utc>,
-    signed_permissions: SasPermissions,
-    signed_ip: Option<String>,
-    signed_protocol: Option<SasProtocol>,
-}
-*/
-
 pub enum BlobSignedResource {
     Blob,         // b
     BlobVersion,  // bv
@@ -118,23 +102,6 @@ pub struct BlobSharedAccessSignature {
 
 impl BlobSharedAccessSignature {
     fn sign(&self) -> String {
-        /*
-        StringToSign = signedPermissions + "\n" +
-                       signedStart + "\n" +
-                       signedExpiry + "\n" +
-                       canonicalizedResource + "\n" +
-                       signedIdentifier + "\n" +
-                       signedIP + "\n" +
-                       signedProtocol + "\n" +
-                       signedVersion + "\n" +
-                       signedResource + "\n"
-                       signedSnapshotTime + "\n" +
-                       rscc + "\n" +
-                       rscd + "\n" +
-                       rsce + "\n" +
-                       rscl + "\n" +
-                       rsct
-        */
         let content = vec![
             self.signed_permissions.to_string(),
             self.signed_start.map_or("".to_string(), format_date),
