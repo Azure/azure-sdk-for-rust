@@ -663,7 +663,7 @@ mod tests {
         dbg!(mockito::server_url());
         let mut client = mock_client!(&"test-keyvault", &creds,);
 
-        let secret: KeyVaultSecret = client.get_secret(&"test-secret").await.unwrap();
+        let secret: KeyVaultSecret = client.get_secret("test-secret").await.unwrap();
 
         assert_eq!("secret-value", secret.value());
         assert_eq!(
@@ -732,7 +732,7 @@ mod tests {
         let creds = MockCredential;
         let mut client = mock_client!(&"test-keyvault", &creds,);
 
-        let secret_versions = client.get_secret_versions(&"test-secret").await.unwrap();
+        let secret_versions = client.get_secret_versions("test-secret").await.unwrap();
 
         let secret_1 = &secret_versions[0];
         assert_eq!(

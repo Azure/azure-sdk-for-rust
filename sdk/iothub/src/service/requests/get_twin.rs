@@ -7,8 +7,8 @@ use http::{Method, Response, StatusCode};
 use crate::service::{ServiceClient, API_VERSION};
 
 /// Execute the request to get the twin of a module or device.
-pub(crate) async fn get_twin<'a, T>(
-    service_client: &'a ServiceClient,
+pub(crate) async fn get_twin<T>(
+    service_client: &ServiceClient,
     device_id: String,
     module_id: Option<String>,
 ) -> Result<T, crate::Error>

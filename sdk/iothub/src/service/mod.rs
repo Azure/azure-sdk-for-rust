@@ -233,14 +233,11 @@ impl ServiceClient {
             }
         }
 
-        let iothub_name =
-            iothub_name.ok_or_else(|| FromConnectionStringError::FailedToGetHostname)?;
+        let iothub_name = iothub_name.ok_or(FromConnectionStringError::FailedToGetHostname)?;
 
-        let key_name =
-            key_name.ok_or_else(|| FromConnectionStringError::FailedToGetSharedAccessKey)?;
+        let key_name = key_name.ok_or(FromConnectionStringError::FailedToGetSharedAccessKey)?;
 
-        let primary_key =
-            primary_key.ok_or_else(|| FromConnectionStringError::FailedToGetPrimaryKey)?;
+        let primary_key = primary_key.ok_or(FromConnectionStringError::FailedToGetPrimaryKey)?;
 
         let sas_token =
             Self::generate_sas_token(iothub_name, key_name, primary_key, expires_in_seconds)
@@ -277,7 +274,7 @@ impl ServiceClient {
         T: Into<String>,
     {
         InvokeMethodBuilder::new(
-            &self,
+            self,
             device_id.into(),
             None,
             method_name.into(),
@@ -312,7 +309,7 @@ impl ServiceClient {
         U: Into<String>,
     {
         InvokeMethodBuilder::new(
-            &self,
+            self,
             device_id.into(),
             Some(module_id.into()),
             method_name.into(),
@@ -394,7 +391,7 @@ impl ServiceClient {
         T: Into<String>,
     {
         UpdateOrReplaceTwinBuilder::new(
-            &self,
+            self,
             device_id.into(),
             Some(module_id.into()),
             Method::PATCH,
@@ -425,12 +422,7 @@ impl ServiceClient {
         S: Into<String>,
         T: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(
-            &self,
-            device_id.into(),
-            Some(module_id.into()),
-            Method::PUT,
-        )
+        UpdateOrReplaceTwinBuilder::new(self, device_id.into(), Some(module_id.into()), Method::PUT)
     }
 
     /// Update the device twin of a given device
@@ -455,7 +447,7 @@ impl ServiceClient {
     where
         S: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(&self, device_id.into(), None, Method::PATCH)
+        UpdateOrReplaceTwinBuilder::new(self, device_id.into(), None, Method::PATCH)
     }
 
     /// Replace the device twin of a given device
@@ -480,7 +472,7 @@ impl ServiceClient {
     where
         S: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(&self, device_id.into(), None, Method::PUT)
+        UpdateOrReplaceTwinBuilder::new(self, device_id.into(), None, Method::PUT)
     }
 
     /// Get the identity of a given device
@@ -520,7 +512,7 @@ impl ServiceClient {
     ///     .execute("some-existing-device", Status::Enabled, AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
     pub fn create_device_identity(&self) -> CreateOrUpdateDeviceIdentityBuilder {
-        CreateOrUpdateDeviceIdentityBuilder::new(&self, IdentityOperation::Create, None)
+        CreateOrUpdateDeviceIdentityBuilder::new(self, IdentityOperation::Create, None)
     }
 
     /// Update an existing device identity
@@ -541,11 +533,7 @@ impl ServiceClient {
     where
         S: Into<String>,
     {
-        CreateOrUpdateDeviceIdentityBuilder::new(
-            &self,
-            IdentityOperation::Update,
-            Some(etag.into()),
-        )
+        CreateOrUpdateDeviceIdentityBuilder::new(self, IdentityOperation::Update, Some(etag.into()))
     }
 
     /// Create a new device identity
@@ -572,7 +560,7 @@ impl ServiceClient {
         S: Into<String>,
         T: Into<String>,
     {
-        DeleteIdentityBuilder::new(&self, if_match.into(), device_id.into(), None)
+        DeleteIdentityBuilder::new(self, if_match.into(), device_id.into(), None)
     }
 
     /// Get the identity of a given module
@@ -614,7 +602,7 @@ impl ServiceClient {
     ///     .execute("some-existing-device", "some-existing-module", "IoTEdge", AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
     pub fn create_module_identity(&self) -> CreateOrUpdateModuleIdentityBuilder {
-        CreateOrUpdateModuleIdentityBuilder::new(&self, IdentityOperation::Create, None)
+        CreateOrUpdateModuleIdentityBuilder::new(self, IdentityOperation::Create, None)
     }
 
     /// Update an existing module identity
@@ -635,11 +623,7 @@ impl ServiceClient {
     where
         S: Into<String>,
     {
-        CreateOrUpdateModuleIdentityBuilder::new(
-            &self,
-            IdentityOperation::Update,
-            Some(etag.into()),
-        )
+        CreateOrUpdateModuleIdentityBuilder::new(self, IdentityOperation::Update, Some(etag.into()))
     }
 
     /// Create a new device identity
@@ -669,7 +653,7 @@ impl ServiceClient {
         U: Into<String>,
     {
         DeleteIdentityBuilder::new(
-            &self,
+            self,
             if_match.into(),
             device_id.into(),
             Some(module_id.into()),
@@ -689,7 +673,7 @@ impl ServiceClient {
     /// let query_builder = iothub.query();
     /// ```
     pub fn query(&self) -> QueryBuilder<'_, '_> {
-        QueryBuilder::new(&self)
+        QueryBuilder::new(self)
     }
 
     /// Prepares a request that can be used by any request builders.

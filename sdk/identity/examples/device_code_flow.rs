@@ -81,7 +81,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let storage_client = StorageAccountClient::new_bearer_token(
         http_client.clone(),
         &storage_account_name,
-        &authorization.access_token().secret() as &str,
+        authorization.access_token().secret() as &str,
     )
     .as_storage_client();
 
