@@ -1,106 +1,89 @@
-use super::{No, ToAssign};
-use base64::encode;
+use crate::core::{
+    shared_access_signature::{format_date, format_form, sign, SasProtocol, SasToken},
+    No, ToAssign,
+};
 use chrono::{DateTime, Utc};
-use ring::hmac;
-use std::fmt;
-use std::marker::PhantomData;
-use url::form_urlencoded;
+use std::{fmt, marker::PhantomData};
 
 /// Service version of the shared access signature ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-the-signed-version-field)).
 #[derive(Copy, Clone)]
-pub enum SasVersion {
+pub enum AccountSasVersion {
     V20181109,
     V20150405,
     V20130815,
     V20120212,
 }
 
-impl fmt::Display for SasVersion {
+impl fmt::Display for AccountSasVersion {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            SasVersion::V20181109 => write!(f, "2018-11-09"),
-            SasVersion::V20150405 => write!(f, "2015-04-05"),
-            SasVersion::V20130815 => write!(f, "2013-08-15"),
-            SasVersion::V20120212 => write!(f, "2012-02-12"),
+            Self::V20181109 => write!(f, "2018-11-09"),
+            Self::V20150405 => write!(f, "2015-04-05"),
+            Self::V20130815 => write!(f, "2013-08-15"),
+            Self::V20120212 => write!(f, "2012-02-12"),
         }
     }
 }
 
 #[derive(Copy, Clone)]
-pub enum SasService {
+pub enum AccountSasService {
     Blob,
     Queue,
     Table,
     File,
 }
 
-impl fmt::Display for SasService {
+impl fmt::Display for AccountSasService {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            SasService::Blob => write!(f, "b"),
-            SasService::Queue => write!(f, "q"),
-            SasService::Table => write!(f, "t"),
-            SasService::File => write!(f, "f"),
-        }
-    }
-}
-
-/// Specifies the protocol permitted for a request made with the SAS ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-the-http-protocol)).
-#[derive(Copy, Clone)]
-pub enum SasProtocol {
-    Https,
-    HttpHttps,
-}
-
-impl fmt::Display for SasProtocol {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            SasProtocol::Https => write!(f, "https"),
-            SasProtocol::HttpHttps => write!(f, "http,https"),
+            Self::Blob => write!(f, "b"),
+            Self::Queue => write!(f, "q"),
+            Self::Table => write!(f, "t"),
+            Self::File => write!(f, "f"),
         }
     }
 }
 
 /// Which resources are accessible via the shared access signature ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-the-signed-resource-blob-service-only)).
 #[derive(Copy, Clone)]
-pub enum SasResource {
+pub enum AccountSasResource {
     Blob,
     Queue,
     Table,
     File,
 }
 
-impl fmt::Display for SasResource {
+impl fmt::Display for AccountSasResource {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            SasResource::Blob => write!(f, "b"),
-            SasResource::Queue => write!(f, "q"),
-            SasResource::Table => write!(f, "t"),
-            SasResource::File => write!(f, "f"),
+            Self::Blob => write!(f, "b"),
+            Self::Queue => write!(f, "q"),
+            Self::Table => write!(f, "t"),
+            Self::File => write!(f, "f"),
         }
     }
 }
 
 #[derive(Copy, Clone)]
-pub enum SasResourceType {
+pub enum AccountSasResourceType {
     Service,
     Container,
     Object,
 }
 
-impl fmt::Display for SasResourceType {
+impl fmt::Display for AccountSasResourceType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            SasResourceType::Service => write!(f, "s"),
-            SasResourceType::Container => write!(f, "c"),
-            SasResourceType::Object => write!(f, "o"),
+            Self::Service => write!(f, "s"),
+            Self::Container => write!(f, "c"),
+            Self::Object => write!(f, "o"),
         }
     }
 }
 
 /// Indicate which operations a key_client may perform on the resource ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-permissions)).
 #[derive(Copy, Clone)]
-pub enum SasPermissions {
+pub enum AccountSasPermissions {
     Read,
     Write,
     Delete,
@@ -111,61 +94,56 @@ pub enum SasPermissions {
     Process,
 }
 
-impl fmt::Display for SasPermissions {
+impl fmt::Display for AccountSasPermissions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            SasPermissions::Read => write!(f, "r"),
-            SasPermissions::Write => write!(f, "w"),
-            SasPermissions::Delete => write!(f, "d"),
-            SasPermissions::List => write!(f, "l"),
-            SasPermissions::Add => write!(f, "a"),
-            SasPermissions::Create => write!(f, "c"),
-            SasPermissions::Update => write!(f, "u"),
-            SasPermissions::Process => write!(f, "p"),
+            Self::Read => write!(f, "r"),
+            Self::Write => write!(f, "w"),
+            Self::Delete => write!(f, "d"),
+            Self::List => write!(f, "l"),
+            Self::Add => write!(f, "a"),
+            Self::Create => write!(f, "c"),
+            Self::Update => write!(f, "u"),
+            Self::Process => write!(f, "p"),
         }
     }
 }
 
-pub struct SharedAccessSignature {
+pub struct AccountSharedAccessSignature {
     account: String,
     key: String,
 
-    signed_version: SasVersion,
-    signed_resource: SasResource,
-    signed_resource_type: SasResourceType,
+    signed_version: AccountSasVersion,
+    signed_resource: AccountSasResource,
+    signed_resource_type: AccountSasResourceType,
     signed_start: Option<DateTime<Utc>>,
     signed_expiry: DateTime<Utc>,
-    signed_permissions: SasPermissions,
+    signed_permissions: AccountSasPermissions,
     signed_ip: Option<String>,
     signed_protocol: Option<SasProtocol>,
 }
 
-impl SharedAccessSignature {
+impl AccountSharedAccessSignature {
     #[allow(clippy::new_ret_no_self)]
     pub fn new<'a>(
         account: &'a str,
         key: &'a str,
-    ) -> SharedAccessSignatureBuilder<'a, No, No, No, No> {
-        SharedAccessSignatureBuilder::new(account, key)
-    }
-
-    fn format_date(d: DateTime<Utc>) -> String {
-        d.format("%Y-%m-%dT%H:%M:%SZ").to_string()
+    ) -> AccountSharedAccessSignatureBuilder<'a, No, No, No, No> {
+        AccountSharedAccessSignatureBuilder::new(account, key)
     }
 
     // Azure documentation: https://docs.microsoft.com/rest/api/storageservices/create-service-sas#constructing-the-signature-string
     fn signature(&self) -> String {
         match self.signed_version {
-            SasVersion::V20181109 => {
+            AccountSasVersion::V20181109 => {
                 let string_to_sign = format!(
                     "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
                     self.account,
                     self.signed_permissions,
                     self.signed_resource,
                     self.signed_resource_type,
-                    self.signed_start
-                        .map_or("".to_string(), SharedAccessSignature::format_date),
-                    SharedAccessSignature::format_date(self.signed_expiry),
+                    self.signed_start.map_or("".to_string(), format_date),
+                    format_date(self.signed_expiry),
                     self.signed_ip.clone().unwrap_or_else(|| "".to_string()),
                     self.signed_protocol
                         .as_ref()
@@ -173,11 +151,7 @@ impl SharedAccessSignature {
                     self.signed_version,
                 );
 
-                let key =
-                    hmac::Key::new(ring::hmac::HMAC_SHA256, &base64::decode(&self.key).unwrap());
-                let sig_bytes = hmac::sign(&key, string_to_sign.as_bytes());
-
-                encode(&sig_bytes)
+                sign(&self.key, &string_to_sign)
             }
             _ => {
                 // TODO: support other version tags?
@@ -185,31 +159,21 @@ impl SharedAccessSignature {
             }
         }
     }
+}
 
+impl SasToken for AccountSharedAccessSignature {
     /// [Example](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#service-sas-example) from Azure documentation.
-    pub fn token(&self) -> String {
+    fn token(&self) -> String {
         let mut elements: Vec<String> = vec![
             format!("sv={}", self.signed_version),
             format!("ss={}", self.signed_resource),
             format!("srt={}", self.signed_resource_type),
-            format!(
-                "se={}",
-                form_urlencoded::byte_serialize(
-                    SharedAccessSignature::format_date(self.signed_expiry).as_bytes()
-                )
-                .collect::<String>()
-            ),
+            format!("se={}", format_form(format_date(self.signed_expiry))),
             format!("sp={}", self.signed_permissions),
         ];
 
         if let Some(start) = &self.signed_start {
-            elements.push(format!(
-                "st={}",
-                form_urlencoded::byte_serialize(
-                    SharedAccessSignature::format_date(*start).as_bytes()
-                )
-                .collect::<String>()
-            ))
+            elements.push(format!("st={}", format_form(format_date(*start))))
         }
         if let Some(ip) = &self.signed_ip {
             elements.push(format!("sip={}", ip))
@@ -217,29 +181,26 @@ impl SharedAccessSignature {
         if let Some(protocol) = &self.signed_protocol {
             elements.push(format!("spr={}", protocol))
         }
-        let sig = SharedAccessSignature::signature(self);
-        elements.push(format!(
-            "sig={}",
-            form_urlencoded::byte_serialize(sig.as_bytes()).collect::<String>()
-        ));
+        let sig = AccountSharedAccessSignature::signature(self);
+        elements.push(format!("sig={}", format_form(sig)));
 
         elements.join("&")
     }
 }
 
-impl PartialEq for SharedAccessSignature {
+impl PartialEq for AccountSharedAccessSignature {
     fn eq(&self, other: &Self) -> bool {
         self.signature() == other.signature()
     }
 }
 
-impl std::fmt::Debug for SharedAccessSignature {
+impl std::fmt::Debug for AccountSharedAccessSignature {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "SharedAccessSignature {{{}}}", self.signature())
     }
 }
 
-pub struct SharedAccessSignatureBuilder<
+pub struct AccountSharedAccessSignatureBuilder<
     'a,
     SasResourceSet,
     SasResourceTypeSet,
@@ -253,26 +214,26 @@ pub struct SharedAccessSignatureBuilder<
 {
     account: &'a str,
     key: &'a str,
-    signed_version: SasVersion,
+    signed_version: AccountSasVersion,
     p_signed_resource: PhantomData<SasResourceSet>,
-    signed_resource: Option<SasResource>,
+    signed_resource: Option<AccountSasResource>,
     p_signed_resource_type: PhantomData<SasResourceTypeSet>,
-    signed_resource_type: Option<SasResourceType>,
+    signed_resource_type: Option<AccountSasResourceType>,
     signed_start: Option<DateTime<Utc>>,
     p_signed_expiry: PhantomData<SasExpirySet>,
     signed_expiry: Option<DateTime<Utc>>,
     p_signed_permissions: PhantomData<SasPermissionsSet>,
-    signed_permissions: Option<SasPermissions>,
+    signed_permissions: Option<AccountSasPermissions>,
     signed_ip: Option<String>,
     signed_protocol: Option<SasProtocol>,
 }
 
-impl<'a> SharedAccessSignatureBuilder<'a, No, No, No, No> {
+impl<'a> AccountSharedAccessSignatureBuilder<'a, No, No, No, No> {
     pub fn new(account: &'a str, key: &'a str) -> Self {
         Self {
             account,
             key,
-            signed_version: SasVersion::V20181109,
+            signed_version: AccountSasVersion::V20181109,
             p_signed_resource: PhantomData {},
             signed_resource: None,
             p_signed_resource_type: PhantomData {},
@@ -287,8 +248,8 @@ impl<'a> SharedAccessSignatureBuilder<'a, No, No, No, No> {
         }
     }
 
-    pub fn finalize(&self) -> SharedAccessSignature {
-        SharedAccessSignature {
+    pub fn finalize(&self) -> AccountSharedAccessSignature {
+        AccountSharedAccessSignature {
             account: self.account.to_owned(),
             key: self.key.to_owned(),
             signed_version: self.signed_version,
@@ -303,16 +264,18 @@ impl<'a> SharedAccessSignatureBuilder<'a, No, No, No, No> {
     }
 }
 
-pub trait ClientSharedAccessSignature {
-    fn shared_access_signature(&self) -> SharedAccessSignatureBuilder<'_, No, No, No, No>;
+pub trait ClientAccountSharedAccessSignature {
+    fn shared_access_signature(
+        &self,
+    ) -> Result<AccountSharedAccessSignatureBuilder<'_, No, No, No, No>, crate::Error>;
 }
 
 pub trait SasResourceRequired {
-    fn resource(&self) -> SasResource;
+    fn resource(&self) -> AccountSasResource;
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasResourceRequired
-    for SharedAccessSignatureBuilder<
+    for AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -326,18 +289,18 @@ where
     SasPermissionsSet: ToAssign,
 {
     #[inline]
-    fn resource(&self) -> SasResource {
+    fn resource(&self) -> AccountSasResource {
         self.signed_resource.unwrap()
     }
 }
 
 pub trait SasResourceSupport<'a> {
     type O;
-    fn with_resource(self, resource: SasResource) -> Self::O;
+    fn with_resource(self, resource: AccountSasResource) -> Self::O;
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasResourceSupport<'a>
-    for SharedAccessSignatureBuilder<
+    for AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -350,7 +313,7 @@ where
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<
+    type O = AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -359,8 +322,8 @@ where
     >;
 
     #[inline]
-    fn with_resource(self, resource: SasResource) -> Self::O {
-        SharedAccessSignatureBuilder {
+    fn with_resource(self, resource: AccountSasResource) -> Self::O {
+        AccountSharedAccessSignatureBuilder {
             account: self.account,
             key: self.key,
             signed_version: self.signed_version,
@@ -380,12 +343,12 @@ where
 }
 
 pub trait SasResourceTypeRequired {
-    fn resource_type(&self) -> SasResourceType;
+    fn resource_type(&self) -> AccountSasResourceType;
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
     SasResourceTypeRequired
-    for SharedAccessSignatureBuilder<
+    for AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -399,19 +362,19 @@ where
     SasPermissionsSet: ToAssign,
 {
     #[inline]
-    fn resource_type(&self) -> SasResourceType {
+    fn resource_type(&self) -> AccountSasResourceType {
         self.signed_resource_type.unwrap()
     }
 }
 
 pub trait SasResourceTypeSupport<'a> {
     type O;
-    fn with_resource_type(self, resource_type: SasResourceType) -> Self::O;
+    fn with_resource_type(self, resource_type: AccountSasResourceType) -> Self::O;
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
     SasResourceTypeSupport<'a>
-    for SharedAccessSignatureBuilder<
+    for AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -424,7 +387,7 @@ where
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<
+    type O = AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -433,8 +396,8 @@ where
     >;
 
     #[inline]
-    fn with_resource_type(self, resource_type: SasResourceType) -> Self::O {
-        SharedAccessSignatureBuilder {
+    fn with_resource_type(self, resource_type: AccountSasResourceType) -> Self::O {
+        AccountSharedAccessSignatureBuilder {
             account: self.account,
             key: self.key,
             signed_version: self.signed_version,
@@ -458,7 +421,7 @@ pub trait SasExpiryRequired {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasExpiryRequired
-    for SharedAccessSignatureBuilder<
+    for AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -483,7 +446,7 @@ pub trait SasExpirySupport<'a> {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasExpirySupport<'a>
-    for SharedAccessSignatureBuilder<
+    for AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -496,7 +459,7 @@ where
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<
+    type O = AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -506,7 +469,7 @@ where
 
     #[inline]
     fn with_expiry(self, expiry: DateTime<Utc>) -> Self::O {
-        SharedAccessSignatureBuilder {
+        AccountSharedAccessSignatureBuilder {
             account: self.account,
             key: self.key,
             signed_version: self.signed_version,
@@ -526,11 +489,11 @@ where
 }
 
 pub trait SasPermissionsRequired {
-    fn signed_permissions(&self) -> SasPermissions;
+    fn signed_permissions(&self) -> AccountSasPermissions;
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasPermissionsRequired
-    for SharedAccessSignatureBuilder<
+    for AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -544,19 +507,19 @@ where
     SasPermissionsSet: ToAssign,
 {
     #[inline]
-    fn signed_permissions(&self) -> SasPermissions {
+    fn signed_permissions(&self) -> AccountSasPermissions {
         self.signed_permissions.unwrap()
     }
 }
 
 pub trait SasPermissionsSupport<'a> {
     type O;
-    fn with_permissions(self, permissions: SasPermissions) -> Self::O;
+    fn with_permissions(self, permissions: AccountSasPermissions) -> Self::O;
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
     SasPermissionsSupport<'a>
-    for SharedAccessSignatureBuilder<
+    for AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -569,7 +532,7 @@ where
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<
+    type O = AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -578,8 +541,8 @@ where
     >;
 
     #[inline]
-    fn with_permissions(self, permissions: SasPermissions) -> Self::O {
-        SharedAccessSignatureBuilder {
+    fn with_permissions(self, permissions: AccountSasPermissions) -> Self::O {
+        AccountSharedAccessSignatureBuilder {
             account: self.account,
             key: self.key,
             signed_version: self.signed_version,
@@ -604,7 +567,7 @@ pub trait SasStartSupport<'a> {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasStartSupport<'a>
-    for SharedAccessSignatureBuilder<
+    for AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -617,7 +580,7 @@ where
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<
+    type O = AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -627,7 +590,7 @@ where
 
     #[inline]
     fn with_start(self, start: DateTime<Utc>) -> Self::O {
-        SharedAccessSignatureBuilder {
+        AccountSharedAccessSignatureBuilder {
             account: self.account,
             key: self.key,
             signed_version: self.signed_version,
@@ -652,7 +615,7 @@ pub trait SasIpSupport<'a> {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasIpSupport<'a>
-    for SharedAccessSignatureBuilder<
+    for AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -665,7 +628,7 @@ where
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<
+    type O = AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -675,7 +638,7 @@ where
 
     #[inline]
     fn with_ip(self, ip: &str) -> Self::O {
-        SharedAccessSignatureBuilder {
+        AccountSharedAccessSignatureBuilder {
             account: self.account,
             key: self.key,
             signed_version: self.signed_version,
@@ -700,7 +663,7 @@ pub trait SasProtocolSupport<'a> {
 }
 
 impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasProtocolSupport<'a>
-    for SharedAccessSignatureBuilder<
+    for AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -713,7 +676,7 @@ where
     SasExpirySet: ToAssign,
     SasPermissionsSet: ToAssign,
 {
-    type O = SharedAccessSignatureBuilder<
+    type O = AccountSharedAccessSignatureBuilder<
         'a,
         SasResourceSet,
         SasResourceTypeSet,
@@ -723,7 +686,7 @@ where
 
     #[inline]
     fn with_protocol(self, protocol: SasProtocol) -> Self::O {
-        SharedAccessSignatureBuilder {
+        AccountSharedAccessSignatureBuilder {
             account: self.account,
             key: self.key,
             signed_version: self.signed_version,

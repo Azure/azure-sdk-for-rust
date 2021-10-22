@@ -1,7 +1,7 @@
 use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
-use chrono::{Duration, Utc};
+use chrono::{Utc, Duration};
 use std::error::Error;
 
 fn main() {
@@ -23,30 +23,66 @@ fn code() -> Result<(), Box<dyn Error + Sync + Send>> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
+    // allow for some time skew
+    let now = Utc::now() - Duration::minutes(15);
+    let later = now + Duration::hours(1);
+
+    // let now = Utc.ymd(2021, 10,20).and_hms(0, 0, 0);
+    // let later = now + Duration::days(32);
+
     let http_client = new_http_client();
 
     let storage_account_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
-    let blob = storage_account_client
-        .as_storage_client()
-        .as_container_client(&container_name)
-        .as_blob_client(&blob_name);
 
-    let now = Utc::now();
-    let later = now + Duration::hours(1);
+    let container_client = storage_account_client
+        .as_storage_client()
+        .as_container_client(&container_name);
+
+    let blob_client = container_client.as_blob_client(&blob_name);
+
     let sas = storage_account_client
         .shared_access_signature()?
-        .with_resource(SasResource::Blob)
-        .with_resource_type(SasResourceType::Object)
+        .with_resource(AccountSasResource::Blob)
+        .with_resource_type(AccountSasResourceType::Object)
         .with_start(now)
         .with_expiry(later)
-        .with_permissions(SasPermissions::Read)
-        .with_protocol(SasProtocol::HttpHttps)
+        .with_permissions(AccountSasPermissions::Read)
+        .with_protocol(SasProtocol::Https)
         .finalize();
-    println!("token: '{}'", sas.token());
 
-    let url = blob.generate_signed_blob_url(&sas)?;
-    println!("url: '{}'", url);
+    println!("blob account level token: '{}'", sas.token());
+    let url = blob_client.generate_signed_blob_url(&sas)?;
+    println!("blob account level url: '{}'", url);
+
+    let sas = blob_client
+        .shared_access_signature()?
+        .with_expiry(later)
+        .with_start(now)
+        .with_permissions(BlobSasPermissions {
+            write: true,
+            ..Default::default()
+        })
+        .finalize();
+    println!("blob service token: {}", sas.token());
+    let url = blob_client.generate_signed_blob_url(&sas)?;
+    println!("blob service level url: '{}'", url);
+
+    let sas = container_client
+        .shared_access_signature()?
+        .with_expiry(later)
+        .with_start(now)
+        .with_permissions(BlobSasPermissions {
+            read: true,
+            list: true,
+            write: true,
+            ..Default::default()
+        })
+        .finalize();
+
+    println!("container sas token: {}", sas.token());
+    let url = container_client.generate_signed_container_url(&sas)?;
+    println!("container level url: '{}'", url);
 
     Ok(())
 }
