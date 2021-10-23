@@ -18,3 +18,4 @@ __blobstorage__
 __queuestorage__
 .idea/
 *.iml
+*.bat
