@@ -3,7 +3,6 @@ use azure_core::headers::{
 };
 use azure_core::prelude::ContentLength;
 use azure_core::prelude::IfMatchCondition;
-use azure_core::RequestId;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
