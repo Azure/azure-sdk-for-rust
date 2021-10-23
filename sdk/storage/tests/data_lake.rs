@@ -46,7 +46,10 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         .execute()
         .await?;
     println!("create file system response == {:?}", create_fs_response);
-    assert!(create_fs_response.namespace_enabled, "namespace should be enabled");
+    assert!(
+        create_fs_response.namespace_enabled,
+        "namespace should be enabled"
+    );
     println!("namespace is enabled");
     println!();
 
@@ -73,9 +76,13 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     let get_fs_props_response = file_system_client.get_properties().execute().await?;
     let properties_hashmap = get_fs_props_response.properties.hash_map();
     let added_via_option = properties_hashmap.get("AddedVia");
-    assert!(added_via_option.is_some(), "did not find expected property: AddedVia");
+    assert!(
+        added_via_option.is_some(),
+        "did not find expected property: AddedVia"
+    );
     assert_eq!(
-        added_via_option.unwrap().to_string(), "Azure SDK for Rust",
+        added_via_option.unwrap().to_string(),
+        "Azure SDK for Rust",
         "did not find expected property value for: AddedVia"
     );
     println!("found expected file system property: AddedVia");
@@ -84,11 +91,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     let file_name = "e2etest-file.txt";
     println!("creating path '{}'...", file_name);
     let create_path_response = file_system_client
-        .create_path(
-            Context::default(),
-            file_name,
-            CreatePathOptions::default(),
-        )
+        .create_path(Context::default(), file_name, CreatePathOptions::default())
         .await?;
     println!("create path response == {:?}", create_path_response);
     println!();
@@ -111,9 +114,13 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     let get_fs_props_response = file_system_client.get_properties().execute().await?;
     let properties_hashmap = get_fs_props_response.properties.hash_map();
     let modified_by_option = properties_hashmap.get("ModifiedBy");
-    assert!(added_via_option.is_some(), "did not find expected property: ModifiedBy");
+    assert!(
+        modified_by_option.is_some(),
+        "did not find expected property: ModifiedBy"
+    );
     assert_eq!(
-        modified_by_option.unwrap().to_string(), "Iota",
+        modified_by_option.unwrap().to_string(),
+        "Iota",
         "did not find expected property value for: ModifiedBy"
     );
     println!("found expected file system property: ModifiedBy");
