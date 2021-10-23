@@ -26,7 +26,7 @@ jobs:
 
     - name: services check
       timeout-minutes: 60
-      run: cargo check --manifest-path services/Cargo.toml --all --all-features
+      run: cargo check --manifest-path services/Cargo.toml --all --all-features --verbose
 
     - name: display free disk space
       run: df -h /
