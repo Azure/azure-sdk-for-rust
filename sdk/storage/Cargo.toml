@@ -150,6 +150,3 @@ required-features=["queue"]
 [[example]]
 name="data_lake_00"
 required-features=["data_lake"]
-[[example]]
-name="data_lake_create_path"
-required-features=["data_lake"]
