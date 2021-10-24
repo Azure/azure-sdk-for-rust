@@ -28,7 +28,7 @@ where
     /// If left unspecified, the id will be set to a random v4 uuid.
     /// If left unspecified, the data version will be set to "0.1".
     /// ```
-    /// # use azure_event_grid::Event;
+    /// # use azure_messaging_eventgrid::Event;
     /// # use serde::Serialize;
     /// #[derive(Serialize)]
     /// struct Data { number: i32 }

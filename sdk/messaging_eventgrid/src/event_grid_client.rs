@@ -13,7 +13,7 @@ pub struct EventGridClient {
 impl EventGridClient {
     /// Create an event grid client that can publish events to an event grid topic.
     /// ```
-    /// # use azure_event_grid::EventGridClient;
+    /// # use azure_messaging_eventgrid::EventGridClient;
     /// let client = EventGridClient::new(String::from("https://name.location.eventgrid.azure.net"), String::from("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="));
     /// # assert_eq!(client.topic_host_name, "https://name.location.eventgrid.azure.net");
     /// # assert_eq!(client.topic_key, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
