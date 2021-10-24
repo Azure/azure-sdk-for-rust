@@ -11,7 +11,7 @@ pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSI
 /// # Example
 ///
 /// ```no_run
-/// use azure_key_vault::KeyClient;
+/// use azure_security_keyvault::KeyClient;
 /// use azure_identity::token_credentials::DefaultCredential;
 /// let creds = DefaultCredential::default();
 /// let client = KeyClient::new(&"https://test-key-vault.vault.azure.net", &creds).unwrap();
@@ -30,7 +30,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// let creds = DefaultCredential::default();
     /// let client = KeyClient::new("test-key-vault.vault.azure.net", &creds).unwrap();

@@ -1,5 +1,5 @@
 use azure_identity::token_credentials::{ClientSecretCredential, TokenCredentialOptions};
-use azure_key_vault::{KeyClient, RecoveryLevel};
+use azure_security_keyvault::{KeyClient, RecoveryLevel};
 use chrono::prelude::*;
 use chrono::Duration;
 use std::env;

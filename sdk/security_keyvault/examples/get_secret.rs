@@ -1,5 +1,5 @@
 use azure_identity::token_credentials::{ClientSecretCredential, TokenCredentialOptions};
-use azure_key_vault::KeyClient;
+use azure_security_keyvault::KeyClient;
 use std::env;
 
 #[tokio::main]
