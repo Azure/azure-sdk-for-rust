@@ -231,7 +231,7 @@ pub fn get_svc_readmes() -> Result<Vec<SpecReadme>> {
 }
 
 fn get_service_name(spec_name: &str) -> String {
-    spec_name.replace("azure", "").replace("_", "").replace("-", "")
+    spec_name.replace("azure", "").replace("_", "").replace("-", "").to_lowercase()
 }
 
 #[cfg(test)]
@@ -244,5 +244,6 @@ mod tests {
         assert_eq!("cosmosdb", get_service_name("cosmos_db"));
         assert_eq!("datalakestore", get_service_name("datalake_store"));
         assert_eq!("kusto", get_service_name("azure-kusto"));
+        assert_eq!("enterpriseknowledgegraph", get_service_name("EnterpriseKnowledgeGraph"));
     }
 }
