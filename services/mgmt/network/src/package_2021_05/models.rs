@@ -6955,6 +6955,8 @@ pub struct VirtualNetworkGatewayPropertiesFormat {
     pub enable_private_ip_address: Option<bool>,
     #[serde(rename = "activeActive", default, skip_serializing_if = "Option::is_none")]
     pub active_active: Option<bool>,
+    #[serde(rename = "disableIPSecReplayProtection", default, skip_serializing_if = "Option::is_none")]
+    pub disable_ip_sec_replay_protection: Option<bool>,
     #[serde(rename = "gatewayDefaultSite", default, skip_serializing_if = "Option::is_none")]
     pub gateway_default_site: Option<SubResource>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

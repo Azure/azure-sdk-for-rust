@@ -65,9 +65,13 @@ pub mod package_preview_2021_07;
 pub use package_preview_2021_07::{models, operations};
 #[cfg(feature = "package-preview-2021-10")]
 pub mod package_preview_2021_10;
-use azure_core::setters;
 #[cfg(all(feature = "package-preview-2021-10", not(feature = "no-default-version")))]
 pub use package_preview_2021_10::{models, operations};
+#[cfg(feature = "package-preview-2021-07-preview-only")]
+pub mod package_preview_2021_07_preview_only;
+use azure_core::setters;
+#[cfg(all(feature = "package-preview-2021-07-preview-only", not(feature = "no-default-version")))]
+pub use package_preview_2021_07_preview_only::{models, operations};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,
