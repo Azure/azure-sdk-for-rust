@@ -180,6 +180,9 @@ impl SpecReadme {
     pub fn spec(&self) -> &str {
         self.spec.as_str()
     }
+    pub fn service_name(&self) -> String {
+        get_service_name(&self.spec)
+    }
     pub fn readme(&self) -> &Path {
         self.readme.as_path()
     }
@@ -225,4 +228,22 @@ pub fn get_svc_readmes() -> Result<Vec<SpecReadme>> {
         readme: path::join(SPEC_FOLDER, "storage/data-plane/Microsoft.StorageDataLake/readme.md")?,
     });
     Ok(readmes)
+}
+
+fn get_service_name(spec_name: &str) -> String {
+    spec_name.replace("azure", "").replace("_", "").replace("-", "").to_lowercase()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_service_name() {
+        assert_eq!("activedirectory", get_service_name("azureactivedirectory"));
+        assert_eq!("cosmosdb", get_service_name("cosmos_db"));
+        assert_eq!("datalakestore", get_service_name("datalake_store"));
+        assert_eq!("kusto", get_service_name("azure-kusto"));
+        assert_eq!("enterpriseknowledgegraph", get_service_name("EnterpriseKnowledgeGraph"));
+    }
 }
