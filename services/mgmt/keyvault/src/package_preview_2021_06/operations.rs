@@ -738,12 +738,6 @@ pub mod vaults {
                     .map_err(|source| update_access_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_access_policy::Response::Ok200(rsp_value))
             }
-            http::StatusCode::NOT_FOUND => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| update_access_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update_access_policy::Error::NotFound404 { value: rsp_value })
-            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError = serde_json::from_slice(rsp_body)
@@ -764,8 +758,6 @@ pub mod vaults {
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Error response #response_type")]
-            NotFound404 { value: models::CloudError },
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
@@ -1113,12 +1105,6 @@ pub mod vaults {
         match rsp.status() {
             http::StatusCode::OK => Ok(purge_deleted::Response::Ok200),
             http::StatusCode::ACCEPTED => Ok(purge_deleted::Response::Accepted202),
-            http::StatusCode::NOT_FOUND => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| purge_deleted::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(purge_deleted::Error::NotFound404 { value: rsp_value })
-            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: CloudError =
@@ -1139,8 +1125,6 @@ pub mod vaults {
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Error response #response_type")]
-            NotFound404 { value: models::CloudError },
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,

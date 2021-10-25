@@ -337,15 +337,16 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
+                let rsp_value = create_rsp_value(tp.as_ref(), &fname);
                 let status_code_name = get_status_code_ident(status_code)?;
                 let response_type_name = get_response_type_ident(status_code)?;
                 if is_single_response {
                     match tp {
-                        Some(tp) => {
+                        Some(_tp) => {
                             match_status.extend(quote! {
                                 http::StatusCode::#status_code_name => {
                                     let rsp_body = rsp.body();
-                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
+                                    #rsp_value
                                     Ok(rsp_value)
                                 }
                             });
@@ -360,11 +361,11 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
                     }
                 } else {
                     match tp {
-                        Some(tp) => {
+                        Some(_tp) => {
                             match_status.extend(quote! {
                                 http::StatusCode::#status_code_name => {
                                     let rsp_body = rsp.body();
-                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
+                                    #rsp_value
                                     Ok(#fname::Response::#response_type_name(rsp_value))
                                 }
                             });
@@ -386,14 +387,15 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
+                let rsp_value = create_rsp_value(tp.as_ref(), &fname);
                 let status_code_name = get_status_code_ident(status_code)?;
                 let response_type_name = get_response_type_ident(status_code)?;
                 match tp {
-                    Some(tp) => {
+                    Some(_tp) => {
                         match_status.extend(quote! {
                             http::StatusCode::#status_code_name => {
                                 let rsp_body = rsp.body();
-                                let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
+                                #rsp_value
                                 Err(#fname::Error::#response_type_name{value: rsp_value})
                             }
                         });
@@ -417,12 +419,13 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
                 autorust_openapi::StatusCode::Code(_) => {}
                 autorust_openapi::StatusCode::Default => {
                     let tp = create_response_type(rsp)?;
+                    let rsp_value = create_rsp_value(tp.as_ref(), &fname);
                     match tp {
-                        Some(tp) => {
+                        Some(_tp) => {
                             match_status.extend(quote! {
                                 status_code => {
                                     let rsp_body = rsp.body();
-                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
+                                    #rsp_value
                                     Err(#fname::Error::DefaultResponse{status_code, value: rsp_value})
                                 }
                             });
@@ -485,6 +488,18 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
         }
     };
     Ok(TokenStream::from(func))
+}
+
+fn create_rsp_value(tp: Option<&TokenStream>, fname: &TokenStream) -> TokenStream {
+    if tp.map(|tp| tp.to_string()) == Some("bytes :: Bytes".to_owned()) {
+        quote! {
+            let rsp_value = rsp_body.clone();
+        }
+    } else {
+        quote! {
+            let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
+        }
+    }
 }
 
 fn format_path(path: &str) -> String {

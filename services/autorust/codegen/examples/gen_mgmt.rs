@@ -1,7 +1,6 @@
 // cargo run --example gen_mgmt --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/compute/resource-manager
 use autorust_codegen::{self, cargo_toml, config_parser::to_mod_name, get_mgmt_readmes, lib_rs, path, Config, PropertyName, SpecReadme};
-use heck::SnakeCase;
 use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
@@ -9,7 +8,6 @@ const OUTPUT_FOLDER: &str = "../mgmt";
 const ONLY_SERVICES: &[&str] = &[];
 
 const SKIP_SERVICES: &[&str] = &[
-    "automation", // TODO #81 DataType::File
     "datamigration",
     "deviceprovisioningservices", // TODO #82 certificate_name used as parameter more than once
     "dnc",                        // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
@@ -17,12 +15,10 @@ const SKIP_SERVICES: &[&str] = &[
     "m365securityandcompliance",  // can't find privateLinkServicesForO365ManagementActivityAPI.json
     "marketplace",
     "mixedreality",  // TODO #83 AccountKeyRegenerateRequest not generated
-    "netapp",        // Ident "10minutely"
     "powerplatform", // https://github.com/Azure/azure-rest-api-specs/pull/11580 incorrect ref & duplicate Operations_List
     "service-map",   // Ident "Ref:machine"
     "servicefabric", // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
     "servicefabricmanagedclusters",
-    "web", // TODO #81 DataType::File
 ];
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
@@ -33,15 +29,8 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("authorization", "package-2021-03-01-preview-only"),
     ("authorization", "package-2021-07-01-preview-only"),
     ("azureactivedirectory", "package-preview-2020-07"),
-    ("compute", "package-2021-06-01-preview"),      // TODO #81 DataType::File
-    ("compute", "package-2020-10-01-preview"),      // TODO #81 DataType::File
-    ("compute", "package-2020-10-01-preview-only"), // TODO #81 DataType::File
-    ("compute", "package-2021-03-01"),              // TODO #81 DataType::File
-    ("compute", "package-2021-03-01-only"),         // TODO #81 DataType::File
-    ("compute", "package-2021-04-01"),              // TODO #81 DataType::File
-    ("compute", "package-2021-07-01"),              // TODO #81 DataType::File
-    ("consumption", "package-2018-03"),             // defines get_balances_by_billing_account twice
-    ("consumption", "package-2019-11"),             // ReservationRecommendationDetails_Get has a path and query param both named "scope"
+    ("consumption", "package-2018-03"), // defines get_balances_by_billing_account twice
+    ("consumption", "package-2019-11"), // ReservationRecommendationDetails_Get has a path and query param both named "scope"
     ("consumption", "package-2021-05"),
     ("cosmos-db", "package-2021-06"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14996
     ("databricks", "package-2021-04-01-preview"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/14995
@@ -334,7 +323,7 @@ fn main() -> Result<()> {
 }
 
 fn gen_crate(spec: &SpecReadme) -> Result<()> {
-    let service_name = &get_service_name(spec.spec());
+    let service_name = &spec.service_name();
     let crate_name = &format!("azure_mgmt_{}", service_name);
     let output_folder = &path::join(OUTPUT_FOLDER, service_name).map_err(|source| Error::PathError { source })?;
 
@@ -416,8 +405,4 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     .map_err(|source| Error::LibRsError { source })?;
 
     Ok(())
-}
-
-fn get_service_name(spec_folder: &str) -> String {
-    spec_folder.to_snake_case().replace("-", "_")
 }

@@ -1257,6 +1257,8 @@ pub struct CustomDomainProperties {
     pub custom_https_provisioning_state: Option<custom_domain_properties::CustomHttpsProvisioningState>,
     #[serde(rename = "customHttpsProvisioningSubstate", default, skip_serializing_if = "Option::is_none")]
     pub custom_https_provisioning_substate: Option<custom_domain_properties::CustomHttpsProvisioningSubstate>,
+    #[serde(rename = "customHttpsParameters", default, skip_serializing_if = "Option::is_none")]
+    pub custom_https_parameters: Option<CustomDomainHttpsParameters>,
     #[serde(rename = "validationData", default, skip_serializing_if = "Option::is_none")]
     pub validation_data: Option<String>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]

@@ -5,11 +5,12 @@ use azure_core::headers::COPY_SOURCE;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 use std::convert::TryInto;
+use url::Url;
 
 #[derive(Debug, Clone)]
 pub struct CopyBlobBuilder<'a> {
     blob_client: &'a BlobClient,
-    source_url: &'a str,
+    source_url: &'a Url,
     metadata: Option<&'a Metadata>,
     sequence_number_condition: Option<SequenceNumberCondition>,
     if_modified_since_condition: Option<IfModifiedSinceCondition>,
@@ -25,7 +26,7 @@ pub struct CopyBlobBuilder<'a> {
 }
 
 impl<'a> CopyBlobBuilder<'a> {
-    pub(crate) fn new(blob_client: &'a BlobClient, source_url: &'a str) -> Self {
+    pub(crate) fn new(blob_client: &'a BlobClient, source_url: &'a Url) -> Self {
         Self {
             blob_client,
             source_url,
@@ -72,7 +73,7 @@ impl<'a> CopyBlobBuilder<'a> {
             url.as_str(),
             &http::Method::PUT,
             &|mut request| {
-                request = request.header(COPY_SOURCE, self.source_url);
+                request = request.header(COPY_SOURCE, self.source_url.as_str());
                 request = add_optional_header(&self.metadata, request);
                 request = add_optional_header(&self.sequence_number_condition, request);
                 request = add_optional_header(&self.if_modified_since_condition, request);
