@@ -41,7 +41,7 @@ impl<'a> CreateOrUpdateModuleIdentityBuilder<'a> {
     {
         let uri = format!(
             "https://{}.azure-devices.net/devices/{}/modules/{}?api-version={}",
-            self.service_client.iothub_name,
+            self.service_client.iot_hub_name,
             device_id.as_ref(),
             module_id.as_ref(),
             API_VERSION

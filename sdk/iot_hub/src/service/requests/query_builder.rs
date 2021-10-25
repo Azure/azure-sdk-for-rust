@@ -42,12 +42,12 @@ impl<'a, 'b> QueryBuilder<'a, 'b> {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let query_builder = iothub.query().max_item_count(1).continuation("some_token").execute("SELECT * FROM devices");
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let query_builder = iot_hub.query().max_item_count(1).continuation("some_token").execute("SELECT * FROM devices");
     /// ```
     pub async fn execute<S>(self, query: S) -> Result<QueryResponse, crate::Error>
     where
@@ -55,7 +55,7 @@ impl<'a, 'b> QueryBuilder<'a, 'b> {
     {
         let uri = format!(
             "https://{}.azure-devices.net/devices/query?api-version={}",
-            self.service_client.iothub_name, API_VERSION
+            self.service_client.iot_hub_name, API_VERSION
         );
 
         let query_body = QueryBody {

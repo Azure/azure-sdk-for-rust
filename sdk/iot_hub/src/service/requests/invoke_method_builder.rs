@@ -9,7 +9,7 @@ use crate::service::{ServiceClient, API_VERSION};
 /// The InvokeMethodBuilder is used for constructing the request to
 /// invoke a module or device method.
 pub struct InvokeMethodBuilder<'a> {
-    iothub_service: &'a ServiceClient,
+    iot_hub_service: &'a ServiceClient,
     device_id: String,
     module_id: Option<String>,
     method_name: String,
@@ -20,7 +20,7 @@ pub struct InvokeMethodBuilder<'a> {
 impl<'a> InvokeMethodBuilder<'a> {
     /// Create a new DirectMethod
     pub(crate) fn new(
-        iothub_service: &'a ServiceClient,
+        iot_hub_service: &'a ServiceClient,
         device_id: String,
         module_id: Option<String>,
         method_name: String,
@@ -28,7 +28,7 @@ impl<'a> InvokeMethodBuilder<'a> {
         connect_time_out: u64,
     ) -> Self {
         Self {
-            iothub_service,
+            iot_hub_service,
             device_id,
             module_id,
             method_name,
@@ -48,7 +48,7 @@ impl<'a> InvokeMethodBuilder<'a> {
     /// ```
     /// # use std::sync::Arc;
     /// # use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     /// # let http_client = azure_core::new_http_client();
     ///
     /// let service = ServiceClient::from_sas_token(http_client, "some-iot-hub", "sas_token");
@@ -68,15 +68,15 @@ impl<'a> InvokeMethodBuilder<'a> {
         let uri = match &self.module_id {
             Some(module_id_value) => format!(
                 "https://{}.azure-devices.net/twins/{}/modules/{}/methods?api-version={}",
-                self.iothub_service.iothub_name, self.device_id, module_id_value, API_VERSION
+                self.iot_hub_service.iot_hub_name, self.device_id, module_id_value, API_VERSION
             ),
             None => format!(
                 "https://{}.azure-devices.net/twins/{}/methods?api-version={}",
-                self.iothub_service.iothub_name, self.device_id, API_VERSION
+                self.iot_hub_service.iot_hub_name, self.device_id, API_VERSION
             ),
         };
 
-        let request = self.iothub_service.prepare_request(&uri, Method::POST);
+        let request = self.iot_hub_service.prepare_request(&uri, Method::POST);
         let method = InvokeMethodBody {
             connect_timeout_in_seconds: self.connect_time_out,
             method_name: &self.method_name,
@@ -89,7 +89,7 @@ impl<'a> InvokeMethodBuilder<'a> {
         let request = request.body(body)?;
 
         Ok(self
-            .iothub_service
+            .iot_hub_service
             .http_client()
             .execute_request_check_status(request, StatusCode::OK)
             .await?

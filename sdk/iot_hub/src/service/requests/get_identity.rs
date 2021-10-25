@@ -17,11 +17,11 @@ where
     let uri = match module_id {
         Some(module_id) => format!(
             "https://{}.azure-devices.net/devices/{}/modules/{}?api-version={}",
-            service_client.iothub_name, device_id, module_id, API_VERSION
+            service_client.iot_hub_name, device_id, module_id, API_VERSION
         ),
         None => format!(
             "https://{}.azure-devices.net/devices/{}?api-version={}",
-            service_client.iothub_name, device_id, API_VERSION
+            service_client.iot_hub_name, device_id, API_VERSION
         ),
     };
 
