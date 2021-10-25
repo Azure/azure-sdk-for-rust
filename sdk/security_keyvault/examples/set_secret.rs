@@ -1,7 +1,5 @@
 use azure_identity::token_credentials::{ClientSecretCredential, TokenCredentialOptions};
-use azure_key_vault::{KeyClient, RecoveryLevel};
-use chrono::prelude::*;
-use chrono::Duration;
+use azure_security_keyvault::KeyClient;
 use std::env;
 
 #[tokio::main]
@@ -13,8 +11,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let keyvault_url =
         env::var("KEYVAULT_URL").expect("Missing KEYVAULT_URL environment variable.");
     let secret_name = env::var("SECRET_NAME").expect("Missing SECRET_NAME environment variable.");
-    let secret_version =
-        env::var("SECRET_VERSION").expect("Missing SECRET_VERSION environment variable.");
+    let secret_value =
+        env::var("SECRET_VALUE").expect("Missing SECRET_VALUE environment variable.");
 
     let creds = ClientSecretCredential::new(
         tenant_id,
@@ -24,24 +22,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     let mut client = KeyClient::new(&keyvault_url, &creds)?;
 
-    // Disable secret.
-    client
-        .update_secret_enabled(&secret_name, &secret_version, false)
-        .await?;
+    client.set_secret(&secret_name, &secret_value).await?;
 
-    // Update secret recovery level to `Purgeable`.
-    client
-        .update_secret_recovery_level(&secret_name, &secret_version, RecoveryLevel::Purgeable)
-        .await?;
-
-    // Update secret to expire in two weeks.
-    client
-        .update_secret_expiration_time(
-            &secret_name,
-            &secret_version,
-            Utc::now() + Duration::days(14),
-        )
-        .await?;
+    let secret = client.get_secret(&secret_name).await?;
+    assert_eq!(secret.value(), "whatup");
 
     Ok(())
 }

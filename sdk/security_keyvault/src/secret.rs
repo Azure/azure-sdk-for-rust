@@ -122,7 +122,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
@@ -148,7 +148,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
@@ -195,7 +195,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// Lists all the secrets in the Key Vault.
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
@@ -250,7 +250,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
@@ -315,7 +315,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
@@ -362,7 +362,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
@@ -403,7 +403,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::{KeyClient, RecoveryLevel};
+    /// use azure_security_keyvault::{KeyClient, RecoveryLevel};
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
@@ -447,7 +447,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::{KeyClient, RecoveryLevel};
+    /// use azure_security_keyvault::{KeyClient, RecoveryLevel};
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     /// use chrono::{Utc, Duration};
@@ -506,7 +506,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
@@ -544,7 +544,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::KeyClient;
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
@@ -589,7 +589,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::{KeyClient, RecoveryLevel};
+    /// use azure_security_keyvault::{KeyClient, RecoveryLevel};
     /// use azure_identity::token_credentials::DefaultCredential;
     /// use tokio::runtime::Runtime;
     ///
