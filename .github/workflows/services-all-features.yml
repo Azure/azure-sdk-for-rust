@@ -1,0 +1,44 @@
+name: Check All Features for Services
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+env:
+  RUSTFLAGS: --deny warnings --allow unused_attributes
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  test-services:
+    name: Services Tests
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+
+    - uses: Swatinem/rust-cache@v1
+
+    - name: azure_mgmt_cosmosdb
+      continue-on-error: true
+      run: cargo check --manifest-path services/mgmt/cosmos_db/Cargo.toml --all-features
+
+    - name: azure_mgmt_compute
+      continue-on-error: true
+      run: cargo check --manifest-path services/mgmt/compute/Cargo.toml --all-features
+
+    - name: azure_mgmt_containerservice
+      continue-on-error: true
+      run: cargo check --manifest-path services/mgmt/containerservice/Cargo.toml --all-features
+
+    - name: azure_mgmt_network
+      continue-on-error: true
+      run: cargo check --manifest-path services/mgmt/network/Cargo.toml --all-features
+
+    - name: display free disk space
+      run: df -h /
+      if: ${{ always() }}
