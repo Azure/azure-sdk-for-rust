@@ -1,3 +1,4 @@
+use crate::data_lake::authorization_policy::DataLakeContext;
 use crate::data_lake::operations::*;
 use crate::data_lake::requests::*;
 use crate::{data_lake::clients::DataLakeClient, Properties};
@@ -69,7 +70,7 @@ impl FileSystemClient {
         options: CreatePathOptions<'_>,
     ) -> Result<CreatePathResponse, crate::Error> {
         let mut request = self.prepare_request_pipeline(&path_name, http::Method::PUT);
-        let contents: Vec<i32> = Vec::new();
+        let contents: DataLakeContext = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
         options.decorate_request(&mut request)?;
@@ -117,7 +118,7 @@ impl FileSystemClient {
             .into()
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline<Vec<i32>> {
+    pub(crate) fn pipeline(&self) -> &Pipeline<DataLakeContext> {
         &self.data_lake_client.pipeline()
     }
 }

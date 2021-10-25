@@ -1,5 +1,6 @@
 use crate::core::prelude::*;
 use crate::data_lake::authorization_policy::AuthorizationPolicy;
+use crate::data_lake::authorization_policy::DataLakeContext;
 use crate::data_lake::requests::*;
 use azure_core::pipeline::Pipeline;
 use azure_core::prelude::*;
@@ -80,7 +81,7 @@ impl<DS: Into<String>, A: Into<String>> AsCustomDataLakeClient<DS, A> for Arc<St
 
 #[derive(Debug, Clone)]
 pub struct DataLakeClient {
-    pipeline: Pipeline<Vec<i32>>,
+    pipeline: Pipeline<DataLakeContext>,
     storage_client: Arc<StorageClient>,
     account: String,
     custom_dns_suffix: Option<String>,
@@ -93,7 +94,7 @@ impl DataLakeClient {
         account: String,
         bearer_token: String,
         custom_dns_suffix: Option<String>,
-        options: ClientOptions<Vec<i32>>,
+        options: ClientOptions<DataLakeContext>,
     ) -> Result<Arc<Self>, url::ParseError> {
         // we precalculate the url once in the constructor
         // so we do not have to do it at every request.
@@ -110,7 +111,7 @@ impl DataLakeClient {
         ))?;
 
         let per_call_policies = Vec::new();
-        let auth_policy: Arc<dyn azure_core::Policy<Vec<i32>>> =
+        let auth_policy: Arc<dyn azure_core::Policy<DataLakeContext>> =
             Arc::new(AuthorizationPolicy::new(bearer_token.clone()));
 
         let mut per_retry_policies = Vec::new();
@@ -163,7 +164,7 @@ impl DataLakeClient {
             account,
             bearer_token,
             None,
-            ClientOptions::<Vec<i32>>::new_with_transaction_name(transaction_name.into()),
+            ClientOptions::<DataLakeContext>::new_with_transaction_name(transaction_name.into()),
         )
     }
 
@@ -194,7 +195,7 @@ impl DataLakeClient {
             .prepare_request(url, method, http_header_adder, request_body)
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline<Vec<i32>> {
+    pub(crate) fn pipeline(&self) -> &Pipeline<DataLakeContext> {
         &self.pipeline
     }
 }

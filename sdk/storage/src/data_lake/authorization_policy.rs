@@ -14,13 +14,16 @@ impl AuthorizationPolicy {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub(crate) struct DataLakeContext {}
+
 #[async_trait::async_trait]
-impl Policy<Vec<i32>> for AuthorizationPolicy {
+impl Policy<DataLakeContext> for AuthorizationPolicy {
     async fn send(
         &self,
-        ctx: &mut PipelineContext<Vec<i32>>,
+        ctx: &mut PipelineContext<DataLakeContext>,
         request: &mut Request,
-        next: &[Arc<dyn Policy<Vec<i32>>>],
+        next: &[Arc<dyn Policy<DataLakeContext>>],
     ) -> PolicyResult<Response> {
         let auth_header_value = format!("Bearer {}", &self.bearer_token);
 
