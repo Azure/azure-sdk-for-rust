@@ -112,22 +112,6 @@ pub(crate) struct KeyVaultCertificateBackupResponseRaw {
 
 #[derive(Debug, Getters)]
 #[getset(get = "pub")]
-pub struct KeyVaultCertificateBackupBlob {
-    value: String,
-}
-
-#[derive(Debug, Getters)]
-#[getset(get = "pub")]
-pub struct KeyVaultCertificateBaseIdentifier {
-    id: String,
-    name: String,
-    enabled: bool,
-    time_created: DateTime<Utc>,
-    time_updated: DateTime<Utc>,
-}
-
-#[derive(Debug, Getters)]
-#[getset(get = "pub")]
 pub struct KeyVaultCertificate {
     key_id: String,
     secret_id: String,
@@ -161,12 +145,12 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_security_keyvault::CertificateClient;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = CertificateClient::new(
     ///         &"KEYVAULT_URL",
     ///         &creds,
@@ -187,12 +171,12 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_security_keyvault::CertificateClient;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     /// let mut client = CertificateClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
@@ -241,17 +225,17 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// Lists all the certificates in the Key Vault.
     ///
     /// ```no_run
-    /// use azure_key_vault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_security_keyvault::CertificateClient;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = CertificateClient::new(
     ///          &"KEYVAULT_URL",
     ///          &creds,
     ///     ).unwrap();
-    ///     let certificates = client.list_properties_of_certificates(None).await.unwrap();
+    ///     let certificates = client.list_properties_of_certificates().await.unwrap();
     ///     dbg!(&certificates);
     /// }
     ///
@@ -259,19 +243,12 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// ```
     pub async fn list_properties_of_certificates(
         &mut self,
-        max_results: Option<usize>,
     ) -> Result<Vec<CertificateProperties>, Error> {
-        let max_results = format!(
-            "{}&maxresults={}",
-            API_VERSION_PARAM,
-            max_results.unwrap_or(25).clamp(0, 25)
-        );
-
         let mut certificates = Vec::<CertificateProperties>::new();
 
         let mut uri = self.vault_url.clone();
         uri.set_path("certificates");
-        uri.set_query(Some(&max_results));
+        uri.set_query(Some(&API_VERSION_PARAM));
 
         loop {
             let resp_body = self.get_authed(uri.to_string()).await?;
@@ -309,17 +286,17 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_security_keyvault::CertificateClient;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = CertificateClient::new(
     ///         &"KEYVAULT_URL",
     ///         &creds,
     ///     ).unwrap();
-    ///     let certificate_versions = client.list_properties_of_certificate_versions(&"CERTIFICATE_NAME", None).await.unwrap();
+    ///     let certificate_versions = client.list_properties_of_certificate_versions(&"CERTIFICATE_NAME").await.unwrap();
     ///     dbg!(&certificate_versions);
     /// }
     ///
@@ -328,19 +305,12 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     pub async fn list_properties_of_certificate_versions(
         &mut self,
         name: &'a str,
-        max_results: Option<usize>,
     ) -> Result<Vec<CertificateProperties>, Error> {
-        let max_results = format!(
-            "{}&maxresults={}",
-            API_VERSION_PARAM,
-            max_results.unwrap_or(25).clamp(0, 25)
-        );
-
         let mut versions = Vec::<CertificateProperties>::new();
 
         let mut uri = self.vault_url.clone();
         uri.set_path(&format!("certificates/{}/versions", name));
-        uri.set_query(Some(&max_results));
+        uri.set_query(Some(&API_VERSION_PARAM));
 
         loop {
             let resp_body = self.get_authed(uri.to_string()).await?;
@@ -429,12 +399,12 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_security_keyvault::CertificateClient;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = CertificateClient::new(
     ///         &"KEYVAULT_URL",
     ///         &creds,
@@ -467,12 +437,12 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_security_keyvault::CertificateClient;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = CertificateClient::new(
     ///         &"KEYVAULT_URL",
     ///         &creds,
@@ -514,12 +484,12 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::{CertificateClient, RecoveryLevel};
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_security_keyvault::CertificateClient;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = CertificateClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
@@ -690,7 +660,7 @@ mod tests {
         let mut client = mock_cert_client!(&"test-keyvault", &creds,);
 
         let certificate_versions = client
-            .list_properties_of_certificate_versions(&"test-certificate", None)
+            .list_properties_of_certificate_versions(&"test-certificate")
             .await
             .unwrap();
 

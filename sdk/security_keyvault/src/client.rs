@@ -169,9 +169,9 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
 /// # Example
 ///
 /// ```no_run
-/// use azure_key_vault::CertificateClient;
-/// use azure_identity::token_credentials::DefaultCredential;
-/// let creds = DefaultCredential::default();
+/// use azure_security_keyvault::CertificateClient;
+/// use azure_identity::token_credentials::DefaultAzureCredential;
+/// let creds = DefaultAzureCredential::default();
 /// let client = CertificateClient::new(&"https://test-key-vault.vault.azure.net", &creds).unwrap();
 /// ```
 #[derive(Debug)]
@@ -188,9 +188,9 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_key_vault::CertificateClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
-    /// let creds = DefaultCredential::default();
+    /// use azure_security_keyvault::CertificateClient;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
+    /// let creds = DefaultAzureCredential::default();
     /// let client = CertificateClient::new("test-key-vault.vault.azure.net", &creds).unwrap();
     /// ```
     pub fn new(vault_url: &str, token_credential: &'a T) -> Result<Self, Error> {

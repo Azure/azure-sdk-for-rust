@@ -5,30 +5,6 @@ pub mod secret;
 
 pub use client::{CertificateClient, KeyClient};
 
-use std::fmt;
-
-/// Reflects the deletion recovery level currently in effect for keys in the current Key Vault.
-/// If it contains 'Purgeable' the key can be permanently deleted by a privileged user;
-/// otherwise, only the system can purge the key, at the end of the retention interval.
-pub enum RecoveryLevel {
-    Purgeable,
-    Recoverable,
-    RecoverableAndProtectedSubscription,
-    RecoverableAndPurgeable,
-}
-
-impl fmt::Display for RecoveryLevel {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            RecoveryLevel::Purgeable => write!(f, "Purgeable"),
-            RecoveryLevel::Recoverable => write!(f, "Recoverable"),
-            RecoveryLevel::RecoverableAndProtectedSubscription => {
-                write!(f, "Recoverable+ProtectedSubscription")
-            }
-            RecoveryLevel::RecoverableAndPurgeable => write!(f, "Recoverable+Purgeable"),
-        }
-    }
-}
 #[non_exhaustive]
 #[derive(thiserror::Error, Debug)]
 pub enum Error {

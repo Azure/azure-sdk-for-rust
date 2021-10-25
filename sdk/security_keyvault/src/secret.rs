@@ -1,7 +1,6 @@
 use crate::client::API_VERSION_PARAM;
 use crate::Error;
 use crate::KeyClient;
-use crate::RecoveryLevel;
 
 use azure_core::TokenCredential;
 use chrono::serde::{ts_seconds, ts_seconds_option};
@@ -380,7 +379,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_security_keyvault::{KeyClient, RecoveryLevel};
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
@@ -390,7 +389,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
-    ///     client.update_secret_recovery_level(&"SECRET_NAME", &"", RecoveryLevel::Purgeable).await.unwrap();
+    ///     client.update_secret_recovery_level(&"SECRET_NAME", &"", "Purgeable".into()).await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
@@ -399,13 +398,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         &mut self,
         secret_name: &str,
         secret_version: &str,
-        recovery_level: RecoveryLevel,
+        recovery_level: String,
     ) -> Result<(), Error> {
         let mut attributes = Map::new();
-        attributes.insert(
-            "enabled".to_owned(),
-            Value::String(recovery_level.to_string()),
-        );
+        attributes.insert("enabled".to_owned(), Value::String(recovery_level));
 
         self.update_secret(secret_name, secret_version, attributes)
             .await?;
@@ -424,7 +420,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_security_keyvault::{KeyClient, RecoveryLevel};
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     /// use chrono::{Utc, Duration};
@@ -566,7 +562,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_security_keyvault::{KeyClient, RecoveryLevel};
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
