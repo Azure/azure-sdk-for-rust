@@ -1,3 +1,4 @@
+use azure_core::prelude::IfMatchCondition;
 use azure_core::prelude::*;
 use azure_identity::token_credentials::DefaultCredential;
 use azure_identity::token_credentials::TokenCredential;
@@ -68,6 +69,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!();
 
     let file_name = "example-file.txt";
+
     println!("creating path '{}'...", file_name);
     let create_path_response = file_system
         .create_path(Context::default(), file_name, CreatePathOptions::default())
@@ -75,7 +77,24 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create path response == {:?}", create_path_response);
     println!();
 
-    // TODO: create path with IfMatchCondition
+    println!("creating path '{}' (overwrite)...", file_name);
+    let create_path_response = file_system
+        .create_path(Context::default(), file_name, CreatePathOptions::default())
+        .await?;
+    println!("create path response == {:?}", create_path_response);
+    println!();
+
+    println!("creating path '{}' (do not overwrite)...", file_name);
+    let do_not_overwrite =
+        CreatePathOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
+    let create_path_result = file_system
+        .create_path(Context::default(), file_name, do_not_overwrite)
+        .await;
+    println!(
+        "create path result (should fail) == {:?}",
+        create_path_result
+    );
+    println!();
 
     println!("setting file system properties...");
     fs_properties.insert("ModifiedBy", "Iota");

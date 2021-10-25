@@ -89,6 +89,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     println!();
 
     let file_name = "e2etest-file.txt";
+
     println!("creating path '{}'...", file_name);
     let create_path_response = file_system_client
         .create_path(Context::default(), file_name, CreatePathOptions::default())
@@ -96,7 +97,25 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     println!("create path response == {:?}", create_path_response);
     println!();
 
-    // TODO: create path with IfMatchCondition
+    println!("creating path '{}' (overwrite)...", file_name);
+    let create_path_response = file_system_client
+        .create_path(Context::default(), file_name, CreatePathOptions::default())
+        .await?;
+    println!("create path response == {:?}", create_path_response);
+    println!();
+
+    println!("creating path '{}' (do not overwrite)...", file_name);
+    let do_not_overwrite =
+        CreatePathOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
+    let create_path_result = file_system_client
+        .create_path(Context::default(), file_name, do_not_overwrite)
+        .await;
+    assert!(create_path_result.is_err());
+    println!(
+        "create path result (should fail) == {:?}",
+        create_path_result
+    );
+    println!();
 
     println!("setting file system properties...");
     fs_properties.insert("ModifiedBy", "Iota");
