@@ -248,7 +248,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
 
         let mut uri = self.vault_url.clone();
         uri.set_path("certificates");
-        uri.set_query(Some(&API_VERSION_PARAM));
+        uri.set_query(Some(API_VERSION_PARAM));
 
         loop {
             let resp_body = self.get_authed(uri.to_string()).await?;
@@ -310,7 +310,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
 
         let mut uri = self.vault_url.clone();
         uri.set_path(&format!("certificates/{}/versions", name));
-        uri.set_query(Some(&API_VERSION_PARAM));
+        uri.set_query(Some(API_VERSION_PARAM));
 
         loop {
             let resp_body = self.get_authed(uri.to_string()).await?;
