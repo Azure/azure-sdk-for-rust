@@ -8,7 +8,7 @@ use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
 use std::sync::Arc;
-use url::Url;
+use url::{ParseError, Url};
 
 const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";
 
@@ -17,6 +17,14 @@ pub trait AsDataLakeClient<A: Into<String>> {
         &self,
         account: A,
         bearer_token: String,
+    ) -> Result<Arc<DataLakeClient>, url::ParseError>;
+
+    #[cfg(feature = "mock_transport_framework")]
+    fn as_data_lake_client_with_transaction(
+        &self,
+        account: A,
+        bearer_token: String,
+        transaction_name: impl Into<String>,
     ) -> Result<Arc<DataLakeClient>, url::ParseError>;
 }
 
@@ -36,6 +44,21 @@ impl<A: Into<String>> AsDataLakeClient<A> for Arc<StorageClient> {
         bearer_token: String,
     ) -> Result<Arc<DataLakeClient>, url::ParseError> {
         DataLakeClient::new(self.clone(), account.into(), bearer_token, None)
+    }
+
+    #[cfg(feature = "mock_transport_framework")]
+    fn as_data_lake_client_with_transaction(
+        &self,
+        account: A,
+        bearer_token: String,
+        transaction_name: impl Into<String>,
+    ) -> Result<Arc<DataLakeClient>, url::ParseError> {
+        DataLakeClient::new_with_transaction(
+            self.clone(),
+            account.into(),
+            bearer_token,
+            transaction_name,
+        )
     }
 }
 
@@ -65,11 +88,12 @@ pub struct DataLakeClient {
 }
 
 impl DataLakeClient {
-    pub(crate) fn new(
+    pub(crate) fn new_with_options(
         storage_client: Arc<StorageClient>,
         account: String,
         bearer_token: String,
         custom_dns_suffix: Option<String>,
+        options: ClientOptions<Vec<i32>>,
     ) -> Result<Arc<Self>, url::ParseError> {
         // we precalculate the url once in the constructor
         // so we do not have to do it at every request.
@@ -85,7 +109,6 @@ impl DataLakeClient {
             }
         ))?;
 
-        let options = ClientOptions::default();
         let per_call_policies = Vec::new();
         let auth_policy: Arc<dyn azure_core::Policy<Vec<i32>>> =
             Arc::new(AuthorizationPolicy::new(bearer_token.clone()));
@@ -111,6 +134,37 @@ impl DataLakeClient {
             custom_dns_suffix,
             url,
         }))
+    }
+
+    pub fn new(
+        storage_client: Arc<StorageClient>,
+        account: String,
+        bearer_token: String,
+        custom_dns_suffix: Option<String>,
+    ) -> Result<Arc<DataLakeClient>, ParseError> {
+        Self::new_with_options(
+            storage_client,
+            account,
+            bearer_token,
+            custom_dns_suffix,
+            ClientOptions::default(),
+        )
+    }
+
+    #[cfg(feature = "mock_transport_framework")]
+    pub fn new_with_transaction(
+        storage_client: Arc<StorageClient>,
+        account: String,
+        bearer_token: String,
+        transaction_name: impl Into<String>,
+    ) -> Result<Arc<DataLakeClient>, ParseError> {
+        Self::new_with_options(
+            storage_client,
+            account,
+            bearer_token,
+            None,
+            ClientOptions::<Vec<i32>>::new_with_transaction_name(transaction_name.into()),
+        )
     }
 
     pub fn custom_dns_suffix(&self) -> Option<&str> {

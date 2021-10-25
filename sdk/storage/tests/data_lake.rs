@@ -1,4 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
+// #![cfg(feature = "mock_transport_framework")]
+
 use azure_core::prelude::*;
 use azure_identity::token_credentials::DefaultCredential;
 use azure_identity::token_credentials::TokenCredential;
@@ -32,6 +34,8 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 
     let data_lake_client = storage_account_client
         .as_storage_client()
+        // This test won't work during replay in CI until all operations are converted to pipeline architecture
+        // .as_data_lake_client_with_transaction(account, bearer_token.token.secret().to_owned(), "test_data_lake_file_system_functions")?;
         .as_data_lake_client(account, bearer_token.token.secret().to_owned())?;
 
     let file_system_client = data_lake_client.as_file_system_client(&file_system_name)?;
