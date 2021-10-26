@@ -2,7 +2,7 @@
 // #[macro_use]
 // extern crate log;
 
-// use azure_service_bus::event_hub::Client;
+// use azure_messaging_servicebus::event_hub::Client;
 // use chrono::Duration;
 
 // #[tokio::test]
