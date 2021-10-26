@@ -69,6 +69,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         for fs in list_fs_response.unwrap().file_systems {
             if fs.name == file_system_name {
                 found = true;
+                break;
             }
         }
     }
