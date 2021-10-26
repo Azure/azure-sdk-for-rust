@@ -7,7 +7,7 @@ https://docs.microsoft.com/cli/azure/ext/vmware/vmware/private-cloud?view=azure-
 API documentation:
 https://docs.microsoft.com/rest/api/vmware/privateclouds/list
 
-cargo run --example vmware_private_cloud_list
+cargo run --package azure_mgmt_vmware --example private_cloud_list
 */
 
 use azure_identity::token_credentials::AzureCliCredential;

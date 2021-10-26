@@ -2,7 +2,7 @@
 Lists the virtual , similar to:
 az vm list --query [].id
 
-cargo run --example vm_list
+cargo run --package azure_mgmt_compute --example vm_list
 */
 
 use azure_identity::token_credentials::AzureCliCredential;
