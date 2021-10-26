@@ -135,7 +135,9 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
         }
     }
 
-    let has_content_type_header = parameters.iter().any(|p| p.name.to_snake_case() == "content_type");
+    let has_content_type_header = parameters
+        .iter()
+        .any(|p| p.name.to_snake_case() == "content_type" && p.in_ == ParameterType::Header);
 
     // params
     let mut has_body_parameter = false;
