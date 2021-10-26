@@ -61,10 +61,7 @@ impl<'a> InvokeMethodBuilder<'a> {
     ///
     /// great_method.execute(serde_json::json!({"hello": "world"}));
     /// ```
-    pub async fn execute(
-        &self,
-        payload: serde_json::Value,
-    ) -> crate::Result<InvokeMethodResponse> {
+    pub async fn execute(&self, payload: serde_json::Value) -> crate::Result<InvokeMethodResponse> {
         let uri = match &self.module_id {
             Some(module_id_value) => format!(
                 "https://{}.azure-devices.net/twins/{}/modules/{}/methods?api-version={}",
