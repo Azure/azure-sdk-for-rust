@@ -8,7 +8,7 @@ pub mod file_system {
     pub async fn concat(
         operation_config: &crate::OperationConfig,
         destination_path: &str,
-        sources: &Vec<&str>,
+        sources: &[&str],
         op: &str,
     ) -> std::result::Result<(), concat::Error> {
         let http_client = operation_config.http_client();

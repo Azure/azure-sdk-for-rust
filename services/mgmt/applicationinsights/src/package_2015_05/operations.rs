@@ -2460,7 +2460,7 @@ pub mod favorites {
         favorite_type: Option<&str>,
         source_type: Option<&str>,
         can_fetch_content: Option<bool>,
-        tags: &Vec<&str>,
+        tags: &[&str],
     ) -> std::result::Result<Vec<ApplicationInsightsComponentFavorite>, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3647,7 +3647,7 @@ pub mod workbooks {
         subscription_id: &str,
         resource_group_name: &str,
         category: &str,
-        tags: &Vec<&str>,
+        tags: &[&str],
         can_fetch_content: Option<bool>,
     ) -> std::result::Result<WorkbooksListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -4030,7 +4030,7 @@ pub mod my_workbooks {
         subscription_id: &str,
         resource_group_name: &str,
         category: &str,
-        tags: &Vec<&str>,
+        tags: &[&str],
         can_fetch_content: Option<bool>,
     ) -> std::result::Result<MyWorkbooksListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -4110,7 +4110,7 @@ pub mod my_workbooks {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         category: &str,
-        tags: &Vec<&str>,
+        tags: &[&str],
         can_fetch_content: Option<bool>,
     ) -> std::result::Result<MyWorkbooksListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();

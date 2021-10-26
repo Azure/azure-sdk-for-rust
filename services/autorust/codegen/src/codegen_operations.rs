@@ -79,10 +79,7 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
 
     let params = parse_params(&operation.path);
     // println!("path params {:#?}", params);
-    let params: Result<Vec<_>, Error> = params
-        .iter()
-        .map(|s| Ok(ident(&s.to_snake_case()).map_err(Error::ParamName)?))
-        .collect();
+    let params: Result<Vec<_>, Error> = params.iter().map(|s| ident(&s.to_snake_case()).map_err(Error::ParamName)).collect();
     let params = params?;
     let url_str_args = quote! { #(#params),* };
 
@@ -95,7 +92,7 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
     if cg.spec.api_version().is_some() {
         skip.insert("api-version");
     }
-    let parameters = parameters.into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
+    let parameters: Vec<_> = parameters.into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
 
     let fparams = create_function_params(cg, doc_file, &parameters)?;
 
@@ -142,7 +139,7 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
     let mut has_body_parameter = false;
     for param in &parameters {
         let param_name = &param.name;
-        let param_name_var = get_param_name(&param)?;
+        let param_name_var = get_param_name(param)?;
         let required = param.required.unwrap_or(false);
         let is_bool = matches!(&param.common.type_, Some(DataType::Boolean));
         match param.in_ {
@@ -207,20 +204,18 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
                             req_builder = req_builder.header(#param_name, #param_name_var);
                         });
                     }
+                } else if is_bool {
+                    ts_request_builder.extend(quote! {
+                        if let Some(#param_name_var) = #param_name_var {
+                            req_builder = req_builder.header(#param_name, #param_name_var .to_string());
+                        }
+                    });
                 } else {
-                    if is_bool {
-                        ts_request_builder.extend(quote! {
-                            if let Some(#param_name_var) = #param_name_var {
-                                req_builder = req_builder.header(#param_name, #param_name_var .to_string());
-                            }
-                        });
-                    } else {
-                        ts_request_builder.extend(quote! {
-                            if let Some(#param_name_var) = #param_name_var {
-                                req_builder = req_builder.header(#param_name, #param_name_var);
-                            }
-                        });
-                    }
+                    ts_request_builder.extend(quote! {
+                        if let Some(#param_name_var) = #param_name_var {
+                            req_builder = req_builder.header(#param_name, #param_name_var);
+                        }
+                    });
                 }
             }
             ParameterType::Body => {
@@ -487,7 +482,7 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
             }
         }
     };
-    Ok(TokenStream::from(func))
+    Ok(func)
 }
 
 fn create_rsp_value(tp: Option<&TokenStream>, fname: &TokenStream) -> TokenStream {
@@ -506,7 +501,7 @@ fn format_path(path: &str) -> String {
     PARAM_RE.replace_all(path, "{}").to_string()
 }
 
-fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Parameter>) -> Result<TokenStream, Error> {
+fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &[Parameter]) -> Result<TokenStream, Error> {
     let mut params: Vec<TokenStream> = Vec::new();
     for param in parameters {
         let name = get_param_name(param)?;

@@ -157,6 +157,103 @@ pub mod group_information_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionProxyListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PrivateEndpointConnectionProxy>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionProxy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    pub properties: PrivateEndpointConnectionProxyProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionProxyProperties {
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
+    #[serde(rename = "remotePrivateEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub remote_private_endpoint: Option<RemotePrivateEndpoint>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<PrivateEndpointConnectionProxyProvisioningState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RemotePrivateEndpoint {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "vnetTrafficTag", default, skip_serializing_if = "Option::is_none")]
+    pub vnet_traffic_tag: Option<String>,
+    #[serde(rename = "manualPrivateLinkServiceConnections", default, skip_serializing_if = "Vec::is_empty")]
+    pub manual_private_link_service_connections: Vec<PrivateLinkServiceConnection>,
+    #[serde(rename = "privateLinkServiceConnections", default, skip_serializing_if = "Vec::is_empty")]
+    pub private_link_service_connections: Vec<PrivateLinkServiceConnection>,
+    #[serde(rename = "privateLinkServiceProxies", default, skip_serializing_if = "Vec::is_empty")]
+    pub private_link_service_proxies: Vec<PrivateLinkServiceProxy>,
+    #[serde(rename = "connectionDetails", default, skip_serializing_if = "Vec::is_empty")]
+    pub connection_details: Vec<ConnectionDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkServiceConnection {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "groupIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub group_ids: Vec<String>,
+    #[serde(rename = "requestMessage", default, skip_serializing_if = "Option::is_none")]
+    pub request_message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkServiceProxy {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(
+        rename = "remotePrivateLinkServiceConnectionState",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub remote_private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
+    #[serde(rename = "remotePrivateEndpointConnection", default, skip_serializing_if = "Option::is_none")]
+    pub remote_private_endpoint_connection: Option<serde_json::Value>,
+    #[serde(rename = "groupConnectivityInformation", default, skip_serializing_if = "Vec::is_empty")]
+    pub group_connectivity_information: Vec<GroupConnectivityInformation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RemotePrivateEndpointConnection {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GroupConnectivityInformation {
+    #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
+    pub group_id: Option<String>,
+    #[serde(rename = "memberName", default, skip_serializing_if = "Option::is_none")]
+    pub member_name: Option<String>,
+    #[serde(rename = "customerVisibleFqdns", default, skip_serializing_if = "Vec::is_empty")]
+    pub customer_visible_fqdns: Vec<String>,
+    #[serde(rename = "internalFqdn", default, skip_serializing_if = "Option::is_none")]
+    pub internal_fqdn: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConnectionDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
+    pub private_ip_address: Option<String>,
+    #[serde(rename = "linkIdentifier", default, skip_serializing_if = "Option::is_none")]
+    pub link_identifier: Option<String>,
+    #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
+    pub group_id: Option<String>,
+    #[serde(rename = "memberName", default, skip_serializing_if = "Option::is_none")]
+    pub member_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum PrivateEndpointConnectionProxyProvisioningState {
+    Succeeded,
+    Creating,
+    Deleting,
+    Failed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

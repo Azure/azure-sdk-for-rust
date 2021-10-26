@@ -4289,7 +4289,7 @@ pub mod invoices {
     pub async fn download_multiple_ea_invoices(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
-        download_urls: &Vec<&str>,
+        download_urls: &[&str],
     ) -> std::result::Result<download_multiple_ea_invoices::Response, download_multiple_ea_invoices::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4441,7 +4441,7 @@ pub mod invoices {
     pub async fn download_multiple_billing_subscription_invoices(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        download_urls: &Vec<&str>,
+        download_urls: &[&str],
     ) -> std::result::Result<
         download_multiple_billing_subscription_invoices::Response,
         download_multiple_billing_subscription_invoices::Error,
@@ -4602,7 +4602,7 @@ pub mod invoices {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_profile_name: &str,
-        download_urls: &Vec<&str>,
+        download_urls: &[&str],
     ) -> std::result::Result<download_multiple_billing_profile_invoices::Response, download_multiple_billing_profile_invoices::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(

@@ -78,20 +78,18 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
             //     "WARN schema {} already created from {:?}, duplicate from {:?}",
             //     schema_name, _first_doc_file, doc_file
             // );
+        } else if is_array(&schema.schema.common) {
+            file.extend(create_vec_alias(schema_name, schema)?);
+        } else if is_local_enum(schema) {
+            let no_namespace = TokenStream::new();
+            let (_tp_name, tp) = create_enum(&no_namespace, schema_name, schema, false)?;
+            file.extend(tp);
+        } else if is_basic_type(schema) {
+            let (id, value) = create_basic_type_alias(schema_name, schema)?;
+            file.extend(quote! { pub type #id = #value;});
         } else {
-            if is_array(&schema.schema.common) {
-                file.extend(create_vec_alias(schema_name, schema)?);
-            } else if is_local_enum(schema) {
-                let no_namespace = TokenStream::new();
-                let (_tp_name, tp) = create_enum(&no_namespace, schema_name, schema, false)?;
-                file.extend(tp);
-            } else if is_basic_type(schema) {
-                let (id, value) = create_basic_type_alias(schema_name, schema)?;
-                file.extend(quote! { pub type #id = #value;});
-            } else {
-                for stream in create_struct(cg, doc_file, schema_name, schema)? {
-                    file.extend(stream);
-                }
+            for stream in create_struct(cg, doc_file, schema_name, schema)? {
+                file.extend(stream);
             }
         }
     }
@@ -113,13 +111,11 @@ fn add_schema_refs(
 ) -> Result<(), Error> {
     let schema = cg.spec.resolve_schema_ref(doc_file, schema_ref)?;
     if let Some(ref_key) = schema.ref_key.clone() {
-        if !schemas.contains_key(&ref_key) {
-            if !cg.spec.is_input_file(&ref_key.file_path) {
-                let refs = get_schema_schema_references(&schema.schema);
-                schemas.insert(ref_key.clone(), schema);
-                for reference in refs {
-                    add_schema_refs(cg, schemas, &ref_key.file_path, reference)?;
-                }
+        if !schemas.contains_key(&ref_key) && !cg.spec.is_input_file(&ref_key.file_path) {
+            let refs = get_schema_schema_references(&schema.schema);
+            schemas.insert(ref_key.clone(), schema);
+            for reference in refs {
+                add_schema_refs(cg, schemas, &ref_key.file_path, reference)?;
             }
         }
     }
@@ -144,14 +140,12 @@ fn create_enum(
             property: property_name.to_owned(),
         })?;
         let lower = name.to_lowercase();
-        let rename = if &nm.to_string() == name {
+        let rename = if nm.to_string() == name {
             quote! {}
+        } else if name != lower && lowercase_workaround {
+            quote! { #[serde(rename = #name, alias = #lower)] }
         } else {
-            if name != lower && lowercase_workaround {
-                quote! { #[serde(rename = #name, alias = #lower)] }
-            } else {
-                quote! { #[serde(rename = #name)] }
-            }
+            quote! { #[serde(rename = #name)] }
         };
         let value = quote! {
             #rename
@@ -176,7 +170,7 @@ fn create_enum(
 fn create_vec_alias(alias_name: &str, schema: &ResolvedSchema) -> Result<TokenStream, Error> {
     let items = get_schema_array_items(&schema.schema.common)?;
     let typ = ident(&alias_name.to_camel_case()).map_err(Error::VecAliasName)?;
-    let items_typ = get_type_name_for_schema_ref(&items, AsReference::False)?;
+    let items_typ = get_type_name_for_schema_ref(items, AsReference::False)?;
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
@@ -239,7 +233,7 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
         if is_local_enum(property) && lowercase_workaround {
             serde_attrs.push(quote! { deserialize_with = "case_insensitive"});
         }
-        let serde = if serde_attrs.len() > 0 {
+        let serde = if !serde_attrs.is_empty() {
             quote! { #[serde(#(#serde_attrs),*)] }
         } else {
             quote! {}
@@ -261,9 +255,9 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
             #props
         }
     };
-    streams.push(TokenStream::from(st));
+    streams.push(st);
 
-    if local_types.len() > 0 {
+    if !local_types.is_empty() {
         let mut types = TokenStream::new();
         local_types.into_iter().for_each(|tp| types.extend(tp));
         streams.push(quote! {

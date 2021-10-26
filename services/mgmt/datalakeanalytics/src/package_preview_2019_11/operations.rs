@@ -838,7 +838,7 @@ pub mod data_lake_store_accounts {
         resource_group_name: &str,
         account_name: &str,
         data_lake_store_account_name: &str,
-    ) -> std::result::Result<(), delete::Error> {
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/dataLakeStoreAccounts/{}",
@@ -864,7 +864,8 @@ pub mod data_lake_store_accounts {
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
         let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
         match rsp.status() {
-            http::StatusCode::OK => Ok(()),
+            http::StatusCode::OK => Ok(delete::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: ErrorResponse =
@@ -878,6 +879,11 @@ pub mod data_lake_store_accounts {
     }
     pub mod delete {
         use super::{models, models::*, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -35,6 +35,6 @@ impl PathItem {
             self.head.as_ref(),
         ]
         .into_iter()
-        .filter_map(|x| x)
+        .flatten()
     }
 }
