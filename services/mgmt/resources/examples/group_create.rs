@@ -4,7 +4,7 @@ az group create --name $RESOURCE_GROUP_NAME --location $RESOURCE_GROUP_LOCATION
 
 export RESOURCE_GROUP_NAME=azuresdkforrust
 export RESOURCE_GROUP_LOCATION=southcentralus
-cargo run --example group_create
+cargo run --package azure_mgmt_resources --example group_create
 */
 
 use azure_identity::token_credentials::AzureCliCredential;

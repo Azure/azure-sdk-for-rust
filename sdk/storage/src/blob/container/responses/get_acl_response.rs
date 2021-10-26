@@ -35,7 +35,7 @@ impl GetACLResponse {
         body: &Bytes,
         headers: &HeaderMap,
     ) -> Result<GetACLResponse, crate::Error> {
-        let public_access = public_access_from_header(&headers)?;
+        let public_access = public_access_from_header(headers)?;
 
         let etag = match headers.get(header::ETAG) {
             Some(etag) => etag.to_str()?,
@@ -68,7 +68,7 @@ impl GetACLResponse {
         };
         let date = DateTime::parse_from_rfc2822(date)?;
 
-        let stored_access_policy_list = StoredAccessPolicyList::from_xml(&body)?;
+        let stored_access_policy_list = StoredAccessPolicyList::from_xml(body)?;
 
         Ok(GetACLResponse {
             public_access,

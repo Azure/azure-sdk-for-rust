@@ -23,9 +23,8 @@ pub enum Error {
 
 fn get_status_code_name_u16(status_code: &u16) -> Result<&'static str, Error> {
     let sc = HttpStatusCode::from_u16(*status_code)?;
-    Ok(sc
-        .canonical_reason()
-        .ok_or_else(|| Error::NoCanonicalReason(status_code.to_owned()))?)
+    sc.canonical_reason()
+        .ok_or_else(|| Error::NoCanonicalReason(status_code.to_owned()))
 }
 
 /// Get the status code canonical reason
@@ -51,7 +50,7 @@ pub fn get_status_code_ident_camel_case(status_code: &StatusCode) -> Result<Toke
 
 fn response_name(status_code: &HttpStatusCode) -> Result<String, Error> {
     let sc = status_code.as_u16();
-    let name = status_code.canonical_reason().ok_or_else(|| Error::NoCanonicalReason(sc))?;
+    let name = status_code.canonical_reason().ok_or(Error::NoCanonicalReason(sc))?;
     let name = name.to_camel_case();
     Ok(format!("{}{}", name, sc))
 }

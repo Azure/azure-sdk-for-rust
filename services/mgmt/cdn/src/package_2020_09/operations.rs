@@ -7521,15 +7521,15 @@ pub mod log_analytics {
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
-        metrics: &Vec<&str>,
+        metrics: &[&str],
         date_time_begin: &str,
         date_time_end: &str,
         granularity: &str,
-        group_by: &Vec<&str>,
-        continents: &Vec<&str>,
-        country_or_regions: &Vec<&str>,
-        custom_domains: &Vec<&str>,
-        protocols: &Vec<&str>,
+        group_by: &[&str],
+        continents: &[&str],
+        country_or_regions: &[&str],
+        custom_domains: &[&str],
+        protocols: &[&str],
     ) -> std::result::Result<MetricsResponse, get_log_analytics_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -7626,12 +7626,12 @@ pub mod log_analytics {
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
-        rankings: &Vec<&str>,
-        metrics: &Vec<&str>,
+        rankings: &[&str],
+        metrics: &[&str],
         max_ranking: i32,
         date_time_begin: &str,
         date_time_end: &str,
-        custom_domains: &Vec<&str>,
+        custom_domains: &[&str],
     ) -> std::result::Result<RankingsResponse, get_log_analytics_rankings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -7869,13 +7869,13 @@ pub mod log_analytics {
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
-        metrics: &Vec<&str>,
+        metrics: &[&str],
         date_time_begin: &str,
         date_time_end: &str,
         granularity: &str,
-        actions: &Vec<&str>,
-        group_by: &Vec<&str>,
-        rule_types: &Vec<&str>,
+        actions: &[&str],
+        group_by: &[&str],
+        rule_types: &[&str],
     ) -> std::result::Result<WafMetricsResponse, get_waf_log_analytics_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -7966,13 +7966,13 @@ pub mod log_analytics {
         subscription_id: &str,
         resource_group_name: &str,
         profile_name: &str,
-        metrics: &Vec<&str>,
+        metrics: &[&str],
         date_time_begin: &str,
         date_time_end: &str,
         max_ranking: i32,
-        rankings: &Vec<&str>,
-        actions: &Vec<&str>,
-        rule_types: &Vec<&str>,
+        rankings: &[&str],
+        actions: &[&str],
+        rule_types: &[&str],
     ) -> std::result::Result<WafRankingsResponse, get_waf_log_analytics_rankings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(

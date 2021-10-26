@@ -3442,7 +3442,7 @@ pub mod deployments {
         resource_group_name: &str,
         service_name: &str,
         app_name: &str,
-        version: &Vec<&str>,
+        version: &[&str],
     ) -> std::result::Result<DeploymentResourceCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3517,7 +3517,7 @@ pub mod deployments {
         subscription_id: &str,
         resource_group_name: &str,
         service_name: &str,
-        version: &Vec<&str>,
+        version: &[&str],
     ) -> std::result::Result<DeploymentResourceCollection, list_for_cluster::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(

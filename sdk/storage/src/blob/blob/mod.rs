@@ -75,10 +75,10 @@ where
 {
     let s: Option<String> = Option::deserialize(deserializer)?;
 
-    Ok(s.filter(|s| s.len() > 0)
+    s.filter(|s| !s.is_empty())
         .map(crate::ConsistencyCRC64::decode)
         .transpose()
-        .map_err(serde::de::Error::custom)?)
+        .map_err(serde::de::Error::custom)
 }
 
 fn deserialize_md5_optional<'de, D>(
@@ -89,10 +89,10 @@ where
 {
     let s: Option<String> = Option::deserialize(deserializer)?;
 
-    Ok(s.filter(|s| s.len() > 0)
+    s.filter(|s| !s.is_empty())
         .map(crate::ConsistencyMD5::decode)
         .transpose()
-        .map_err(serde::de::Error::custom)?)
+        .map_err(serde::de::Error::custom)
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -104,6 +104,26 @@ pub struct Blob {
     pub is_current_version: Option<bool>,
     pub deleted: Option<bool>,
     pub properties: BlobProperties,
+    pub tags: Option<Tags>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct Tags {
+    pub tag_set: Option<TagSet>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct TagSet {
+    pub tag: Vec<Tag>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct Tag {
+    pub key: String,
+    pub value: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -369,6 +389,7 @@ impl Blob {
                 metadata,
                 extra: HashMap::new(),
             },
+            tags: None,
         })
     }
 }

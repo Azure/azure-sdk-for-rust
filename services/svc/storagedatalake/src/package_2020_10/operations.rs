@@ -500,7 +500,7 @@ pub mod file_system {
         delimiter: Option<&str>,
         marker: Option<&str>,
         max_results: Option<i32>,
-        include: &Vec<&str>,
+        include: &[&str],
         showonly: Option<&str>,
         timeout: Option<i64>,
         x_ms_version: &str,

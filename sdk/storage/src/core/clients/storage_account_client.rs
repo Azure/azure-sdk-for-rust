@@ -307,7 +307,7 @@ impl StorageAccountClient {
                 Err(crate::Error::GenericErrorWithText(
                     "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
                         .to_owned(),
-                ).into())
+                ))
             }
         }
     }
@@ -386,7 +386,7 @@ impl StorageAccountClient {
         // SAS token for example)
         let request = match &self.storage_credentials {
             StorageCredentials::Key(account, key) => {
-                if url.query_pairs().find(|(k, _)| k == "sig").is_none() {
+                if !url.query_pairs().any(|(k, _)| k == "sig") {
                     let auth = generate_authorization(
                         request.headers_ref().unwrap(),
                         &url,

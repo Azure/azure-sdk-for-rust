@@ -69,7 +69,7 @@ impl Policy<CosmosContext> for AuthorizationPolicy {
         trace!("uri_path used by AuthorizationPolicy == {:#?}", uri_path);
 
         let auth = {
-            let resource_link = generate_resource_link(&uri_path);
+            let resource_link = generate_resource_link(uri_path);
             trace!("resource_link == {}", resource_link);
             generate_authorization(
                 &self.authorization_token,
@@ -143,9 +143,9 @@ pub(crate) fn generate_resource_link(uri: &str) -> &str {
         .map(|ending| &ending[1..]) // this is safe since every ENDING_STRING starts with a slash
         .any(|item| uri == item)
     {
-        return "";
+        ""
     } else {
-        return uri;
+        uri
     }
 }
 

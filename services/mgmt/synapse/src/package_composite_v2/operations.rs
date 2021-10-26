@@ -13000,7 +13000,7 @@ pub mod kusto_operations {
         }
     }
 }
-pub mod kusto_pool {
+pub mod kusto_pools {
     use super::{models, models::*, API_VERSION};
     pub async fn list_skus(
         operation_config: &crate::OperationConfig,
@@ -13071,9 +13071,6 @@ pub mod kusto_pool {
             GetTokenError(azure_core::Error),
         }
     }
-}
-pub mod kusto_pools {
-    use super::{models, models::*, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,

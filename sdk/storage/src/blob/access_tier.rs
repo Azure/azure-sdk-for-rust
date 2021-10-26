@@ -19,7 +19,7 @@ impl AddAsHeader for AccessTier {
     ) -> Result<(), azure_core::HTTPHeaderError> {
         request.headers_mut().append(
             azure_core::headers::BLOB_ACCESS_TIER,
-            http::header::HeaderValue::from_str(&self.as_ref())?,
+            http::header::HeaderValue::from_str(self.as_ref())?,
         );
 
         Ok(())

@@ -86,14 +86,14 @@ impl Spec {
         let mut versions: Vec<&str> = self
             .docs()
             .values()
-            .filter(|doc| doc.paths().len() > 0)
+            .filter(|doc| !doc.paths().is_empty())
             .filter_map(|api| api.info.version.as_deref())
             .collect();
-        versions.sort();
+        versions.sort_unstable();
         versions.last().map(|version| version.to_string())
     }
 
-    pub fn input_docs<'a>(&'a self) -> impl Iterator<Item = (&'a PathBuf, &'a OpenAPI)> {
+    pub fn input_docs(&self) -> impl Iterator<Item = (&PathBuf, &OpenAPI)> {
         self.docs.iter().filter(move |(p, _)| self.is_input_file(p))
     }
 
@@ -109,7 +109,7 @@ impl Spec {
             Some(file) => path::join(doc_path, &file).map_err(|source| Error::PathJoin { source })?,
         };
 
-        let name = reference.name.ok_or_else(|| Error::NoNameInReference)?;
+        let name = reference.name.ok_or(Error::NoNameInReference)?;
         let ref_key = RefKey {
             file_path: full_path,
             name,
@@ -132,16 +132,12 @@ impl Spec {
             None => doc_path.to_owned(),
             Some(file) => path::join(doc_path, &file).map_err(|source| Error::PathJoin { source })?,
         };
-        let name = reference.name.ok_or_else(|| Error::NoNameInReference)?;
+        let name = reference.name.ok_or(Error::NoNameInReference)?;
         let ref_key = RefKey {
             file_path: full_path,
             name,
         };
-        Ok(self
-            .parameters
-            .get(&ref_key)
-            .ok_or_else(|| Error::ParameterNotFound { ref_key })?
-            .clone())
+        Ok(self.parameters.get(&ref_key).ok_or(Error::ParameterNotFound { ref_key })?.clone())
     }
 
     /// Resolve a reference or schema to a resolved schema
@@ -203,7 +199,7 @@ impl Spec {
         }
     }
 
-    pub fn resolve_parameters(&self, doc_file: &Path, parameters: &Vec<ReferenceOr<Parameter>>) -> Result<Vec<Parameter>> {
+    pub fn resolve_parameters(&self, doc_file: &Path, parameters: &[ReferenceOr<Parameter>]) -> Result<Vec<Parameter>> {
         let mut resolved = Vec::new();
         for param in parameters {
             resolved.push(self.resolve_parameter(doc_file, param)?);
@@ -294,7 +290,7 @@ pub mod openapi {
             match item {
                 ReferenceOr::Reference { reference, .. } => list.push(TypedReference::PathItem(reference.clone())),
                 ReferenceOr::Item(item) => {
-                    for operation in path_operations(path, &item) {
+                    for operation in path_operations(path, item) {
                         // parameters
                         for param in &operation.parameters {
                             match param {
@@ -484,9 +480,9 @@ pub enum TypedReference {
     Example(Reference),
 }
 
-impl Into<Reference> for TypedReference {
-    fn into(self) -> Reference {
-        match self {
+impl From<TypedReference> for Reference {
+    fn from(s: TypedReference) -> Reference {
+        match s {
             TypedReference::PathItem(r) => r,
             TypedReference::Parameter(r) => r,
             TypedReference::Schema(r) => r,
@@ -514,22 +510,21 @@ fn add_references_for_schema(list: &mut Vec<TypedReference>, schema: &Schema) {
             ReferenceOr::Item(schema) => add_references_for_schema(list, schema),
         }
     }
-    match schema.additional_properties.as_ref() {
-        Some(ap) => match ap {
+
+    if let Some(ap) = schema.additional_properties.as_ref() {
+        match ap {
             AdditionalProperties::Boolean(_) => {}
             AdditionalProperties::Schema(schema) => match schema {
                 ReferenceOr::Reference { reference, .. } => list.push(TypedReference::Schema(reference.clone())),
                 ReferenceOr::Item(schema) => add_references_for_schema(list, schema),
             },
-        },
-        _ => {}
+        }
     }
-    match schema.common.items.as_ref() {
-        Some(schema) => match schema {
+    if let Some(schema) = schema.common.items.as_ref() {
+        match schema {
             ReferenceOr::Reference { reference, .. } => list.push(TypedReference::Schema(reference.clone())),
             ReferenceOr::Item(schema) => add_references_for_schema(list, schema),
-        },
-        _ => {}
+        }
     }
     for schema in &schema.all_of {
         match schema {

@@ -14,7 +14,7 @@ pub trait CamelCaseIdent: ToOwned {
 
 impl CamelCaseIdent for str {
     fn to_camel_case_ident(&self) -> Result<TokenStream, Error> {
-        let is_number = starts_with_number(&self);
+        let is_number = starts_with_number(self);
         let mut txt = replace_first(self, true);
         txt = replace_special_chars(&txt);
         if !is_number {
@@ -30,7 +30,7 @@ impl CamelCaseIdent for str {
 }
 
 pub fn ident(text: &str) -> Result<TokenStream, Error> {
-    let mut txt = replace_first(&text, false);
+    let mut txt = replace_first(text, false);
     txt = replace_special_chars(&txt);
     txt = remove_spaces(&txt);
     txt = suffix_keyword(&txt);
@@ -77,7 +77,7 @@ fn replace_first(text: &str, uppercase: bool) -> String {
         if text.len() > 1 {
             format!("{}{}", unicode(first, uppercase), &text[1..])
         } else {
-            format!("{}", unicode(first, uppercase),)
+            unicode(first, uppercase)
         }
     } else {
         text.to_owned()
@@ -86,7 +86,7 @@ fn replace_first(text: &str, uppercase: bool) -> String {
 
 /// add an underscore suffix it is a keyword
 fn suffix_keyword(text: &str) -> String {
-    if is_keyword(&text) {
+    if is_keyword(text) {
         format!("{}_", text)
     } else {
         text.to_owned()

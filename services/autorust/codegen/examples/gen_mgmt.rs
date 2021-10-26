@@ -1,7 +1,6 @@
 // cargo run --example gen_mgmt --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/compute/resource-manager
 use autorust_codegen::{self, cargo_toml, config_parser::to_mod_name, get_mgmt_readmes, lib_rs, path, Config, PropertyName, SpecReadme};
-use heck::SnakeCase;
 use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
@@ -265,6 +264,8 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2021-02-01/publicIpAddress.json", "PublicIPAddress", "properties"),
     ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2021-03-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
     ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2021-03-01/publicIpAddress.json", "PublicIPAddress", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2021-05-01/customIpPrefix.json", "CustomIpPrefix", "properties"),
+    ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2021-05-01/publicIpAddress.json", "PublicIPAddress", "properties"),
     ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2016-06-01/network.json", "PublicIPAddressPropertiesFormat", "ipConfiguration"),
     ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2016-06-01/network.json", "PublicIPAddress", "properties"),
     ("../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2016-06-01/network.json", "IPConfigurationPropertiesFormat", "publicIPAddress"),
@@ -308,23 +309,21 @@ fn main() -> Result<()> {
         .iter()
         .enumerate()
     {
-        if ONLY_SERVICES.len() > 0 {
+        if !ONLY_SERVICES.is_empty() {
             if ONLY_SERVICES.contains(&spec.spec()) {
                 println!("{} {}", i + 1, spec.spec());
                 gen_crate(spec)?;
             }
-        } else {
-            if !SKIP_SERVICES.contains(&spec.spec()) {
-                println!("{} {}", i + 1, spec.spec());
-                gen_crate(spec)?;
-            }
+        } else if !SKIP_SERVICES.contains(&spec.spec()) {
+            println!("{} {}", i + 1, spec.spec());
+            gen_crate(spec)?;
         }
     }
     Ok(())
 }
 
 fn gen_crate(spec: &SpecReadme) -> Result<()> {
-    let service_name = &get_service_name(spec.spec());
+    let service_name = &spec.service_name();
     let crate_name = &format!("azure_mgmt_{}", service_name);
     let output_folder = &path::join(OUTPUT_FOLDER, service_name).map_err(|source| Error::PathError { source })?;
 
@@ -373,14 +372,14 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         let input_files: Result<Vec<_>> = config
             .input_files
             .iter()
-            .map(|input_file| Ok(path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source })?))
+            .map(|input_file| path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source }))
             .collect();
         let input_files = input_files?;
         // for input_file in &input_files {
         //     println!("  {:?}", input_file);
         // }
         autorust_codegen::run(Config {
-            output_folder: mod_output_folder.into(),
+            output_folder: mod_output_folder,
             input_files,
             box_properties: box_properties.clone(),
             optional_properties: optional_properties.clone(),
@@ -389,7 +388,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         })
         .map_err(|source| Error::CodegenError { source })?;
     }
-    if feature_mod_names.len() == 0 {
+    if feature_mod_names.is_empty() {
         return Ok(());
     }
     cargo_toml::create(
@@ -406,8 +405,4 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     .map_err(|source| Error::LibRsError { source })?;
 
     Ok(())
-}
-
-fn get_service_name(spec_folder: &str) -> String {
-    spec_folder.to_snake_case().replace("-", "_")
 }

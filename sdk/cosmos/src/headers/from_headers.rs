@@ -38,14 +38,14 @@ pub(crate) fn resource_quota_from_headers(
     headers: &HeaderMap,
 ) -> Result<Vec<ResourceQuota>, Error> {
     let s = get_str_from_headers(headers, HEADER_RESOURCE_QUOTA)?;
-    Ok(resource_quotas_from_str(s).map_err(|e| Error::ParsingError(e.into()))?)
+    resource_quotas_from_str(s).map_err(|e| Error::ParsingError(e.into()))
 }
 
 pub(crate) fn resource_usage_from_headers(
     headers: &HeaderMap,
 ) -> Result<Vec<ResourceQuota>, Error> {
     let s = get_str_from_headers(headers, HEADER_RESOURCE_USAGE)?;
-    Ok(resource_quotas_from_str(s).map_err(|e| Error::ParsingError(e.into()))?)
+    resource_quotas_from_str(s).map_err(|e| Error::ParsingError(e.into()))
 }
 
 pub(crate) fn quorum_acked_lsn_from_headers(headers: &HeaderMap) -> Result<u64, Error> {

@@ -80,7 +80,7 @@ pub mod custom_assessment_automations {
         subscription_id: &str,
         resource_group_name: &str,
         custom_assessment_automation_name: &str,
-        custom_assessment_automation_body: &CustomAssessmentAutomation,
+        custom_assessment_automation_body: &CustomAssessmentAutomationRequest,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(

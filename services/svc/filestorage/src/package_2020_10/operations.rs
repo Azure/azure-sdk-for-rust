@@ -154,7 +154,7 @@ pub mod service {
         prefix: Option<&str>,
         marker: Option<&str>,
         maxresults: Option<i64>,
-        include: &Vec<&str>,
+        include: &[&str],
         timeout: Option<i64>,
         x_ms_version: &str,
     ) -> std::result::Result<ListSharesResponse, list_shares_segment::Error> {
@@ -1992,7 +1992,7 @@ pub mod directory {
         maxresults: Option<i64>,
         timeout: Option<i64>,
         x_ms_version: &str,
-        include: &Vec<&str>,
+        include: &[&str],
         x_ms_file_extended_info: Option<bool>,
     ) -> std::result::Result<ListFilesAndDirectoriesSegmentResponse, list_files_and_directories_segment::Error> {
         let http_client = operation_config.http_client();

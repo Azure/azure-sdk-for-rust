@@ -81,7 +81,7 @@ impl<'de> Deserialize<'de> for ConsistencyCRC64 {
         D: Deserializer<'de>,
     {
         let bytes = String::deserialize(deserializer)?;
-        Ok(ConsistencyCRC64::decode(bytes).map_err(serde::de::Error::custom)?)
+        ConsistencyCRC64::decode(bytes).map_err(serde::de::Error::custom)
     }
 }
 
@@ -123,7 +123,7 @@ impl<'de> Deserialize<'de> for ConsistencyMD5 {
         D: Deserializer<'de>,
     {
         let bytes = String::deserialize(deserializer)?;
-        Ok(ConsistencyMD5::decode(bytes).map_err(serde::de::Error::custom)?)
+        ConsistencyMD5::decode(bytes).map_err(serde::de::Error::custom)
     }
 }
 

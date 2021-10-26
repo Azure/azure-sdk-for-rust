@@ -134,7 +134,7 @@ fn write_file<P: AsRef<Path>>(file: P, tokens: &TokenStream, print_writing_file:
     let code = tokens.to_string();
     let mut buffer = File::create(&file).map_err(|source| Error::CreateFile { source, file: file.into() })?;
     buffer
-        .write_all(&code.as_bytes())
+        .write_all(code.as_bytes())
         .map_err(|source| Error::WriteFile { source, file: file.into() })?;
     Ok(())
 }
@@ -149,7 +149,7 @@ fn get_spec_folders(spec_folder: &str) -> Result<Vec<String>, Error> {
         let path = path.map_err(Error::Io)?;
         if path.file_type().map_err(Error::Io)?.is_dir() {
             let file_name = path.file_name();
-            let spec_folder = file_name.to_str().ok_or_else(|| Error::FileNameNotUtf8)?;
+            let spec_folder = file_name.to_str().ok_or(Error::FileNameNotUtf8)?;
             spec_folders.push(spec_folder.to_owned());
         }
     }
@@ -180,6 +180,9 @@ impl SpecReadme {
     pub fn spec(&self) -> &str {
         self.spec.as_str()
     }
+    pub fn service_name(&self) -> String {
+        get_service_name(&self.spec)
+    }
     pub fn readme(&self) -> &Path {
         self.readme.as_path()
     }
@@ -192,10 +195,7 @@ fn get_spec_readmes(spec_folders: Vec<String>, readme: impl AsRef<Path>) -> Resu
     Ok(spec_folders
         .into_iter()
         .filter_map(|spec| match path::join(SPEC_FOLDER, &spec) {
-            Ok(spec_folder_full) => match get_readme(&spec_folder_full, &readme) {
-                Some(readme) => Some(SpecReadme { spec, readme }),
-                None => None,
-            },
+            Ok(spec_folder_full) => get_readme(&spec_folder_full, &readme).map(|readme| SpecReadme { spec, readme }),
             Err(_) => None,
         })
         .collect())
@@ -225,4 +225,22 @@ pub fn get_svc_readmes() -> Result<Vec<SpecReadme>> {
         readme: path::join(SPEC_FOLDER, "storage/data-plane/Microsoft.StorageDataLake/readme.md")?,
     });
     Ok(readmes)
+}
+
+fn get_service_name(spec_name: &str) -> String {
+    spec_name.replace("azure", "").replace("_", "").replace("-", "").to_lowercase()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_service_name() {
+        assert_eq!("activedirectory", get_service_name("azureactivedirectory"));
+        assert_eq!("cosmosdb", get_service_name("cosmos_db"));
+        assert_eq!("datalakestore", get_service_name("datalake_store"));
+        assert_eq!("kusto", get_service_name("azure-kusto"));
+        assert_eq!("enterpriseknowledgegraph", get_service_name("EnterpriseKnowledgeGraph"));
+    }
 }
