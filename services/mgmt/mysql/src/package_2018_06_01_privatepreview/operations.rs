@@ -2356,7 +2356,7 @@ pub mod query_texts {
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
-        query_ids: &Vec<&str>,
+        query_ids: &[&str],
     ) -> std::result::Result<QueryTextsResultList, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(

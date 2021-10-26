@@ -39,6 +39,8 @@ pub struct ClusterResourceProperties {
     pub version: Option<i32>,
     #[serde(rename = "serviceId", default, skip_serializing_if = "Option::is_none")]
     pub service_id: Option<String>,
+    #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
+    pub power_state: Option<cluster_resource_properties::PowerState>,
 }
 pub mod cluster_resource_properties {
     use super::*;
@@ -53,6 +55,11 @@ pub mod cluster_resource_properties {
         Moving,
         Moved,
         MoveFailed,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PowerState {
+        Running,
+        Stopped,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -738,6 +745,15 @@ pub struct ResourceRequests {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogFileUrlResponse {
     pub url: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiagnosticParameters {
+    #[serde(rename = "appInstance", default, skip_serializing_if = "Option::is_none")]
+    pub app_instance: Option<String>,
+    #[serde(rename = "filePath", default, skip_serializing_if = "Option::is_none")]
+    pub file_path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceResourceList {

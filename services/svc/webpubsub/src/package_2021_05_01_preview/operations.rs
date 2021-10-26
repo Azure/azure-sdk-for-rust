@@ -57,7 +57,7 @@ pub mod web_pub_sub {
     pub async fn send_to_all(
         operation_config: &crate::OperationConfig,
         hub: &str,
-        excluded: &Vec<&str>,
+        excluded: &[&str],
         message: &str,
     ) -> std::result::Result<(), send_to_all::Error> {
         let http_client = operation_config.http_client();
@@ -330,7 +330,7 @@ pub mod web_pub_sub {
         operation_config: &crate::OperationConfig,
         hub: &str,
         group: &str,
-        excluded: &Vec<&str>,
+        excluded: &[&str],
         message: &str,
     ) -> std::result::Result<(), send_to_group::Error> {
         let http_client = operation_config.http_client();

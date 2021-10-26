@@ -84,6 +84,10 @@ impl StorageClient {
         crate::account::requests::GetAccountInformationBuilder::new(self)
     }
 
+    pub fn find_blobs_by_tags(&self) -> crate::account::requests::FindBlobsByTagsBuilder {
+        crate::account::requests::FindBlobsByTagsBuilder::new(self)
+    }
+
     #[cfg(feature = "blob")]
     pub fn list_containers(&self) -> crate::container::requests::ListContainersBuilder {
         crate::container::requests::ListContainersBuilder::new(self)

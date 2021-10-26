@@ -299,8 +299,8 @@ pub mod extensions {
         resource_group_name: &str,
         subscription_id: &str,
         farm_beats_resource_name: &str,
-        extension_ids: &Vec<&str>,
-        extension_categories: &Vec<&str>,
+        extension_ids: &[&str],
+        extension_categories: &[&str],
         max_page_size: Option<i32>,
         skip_token: Option<&str>,
     ) -> std::result::Result<ExtensionListResponse, list_by_farm_beats::Error> {
@@ -389,10 +389,10 @@ pub mod farm_beats_extensions {
     use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        farm_beats_extension_ids: &Vec<&str>,
-        farm_beats_extension_names: &Vec<&str>,
-        extension_categories: &Vec<&str>,
-        publisher_ids: &Vec<&str>,
+        farm_beats_extension_ids: &[&str],
+        farm_beats_extension_names: &[&str],
+        extension_categories: &[&str],
+        publisher_ids: &[&str],
         max_page_size: Option<i32>,
     ) -> std::result::Result<FarmBeatsExtensionListResponse, list::Error> {
         let http_client = operation_config.http_client();

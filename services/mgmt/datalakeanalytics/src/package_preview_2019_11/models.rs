@@ -191,6 +191,8 @@ pub mod data_lake_analytics_account_properties_basic {
 pub struct DataLakeAnalyticsAccountListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataLakeAnalyticsAccountBasic>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i32>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

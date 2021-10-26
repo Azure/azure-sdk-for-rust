@@ -11,7 +11,7 @@ pub enum Error {
     IoError { source: std::io::Error },
 }
 
-pub fn create(crate_name: &str, feature_mod_names: &Vec<(String, String)>, path: &Path) -> Result<()> {
+pub fn create(crate_name: &str, feature_mod_names: &[(String, String)], path: &Path) -> Result<()> {
     let file = File::create(path).map_err(|source| Error::IoError { source })?;
     let mut file = LineWriter::new(file);
     let version = &env!("CARGO_PKG_VERSION");
@@ -55,7 +55,7 @@ no-default-version = []
     Ok(())
 }
 
-fn get_default_feature(feature_mod_names: &Vec<(String, String)>) -> String {
+fn get_default_feature(feature_mod_names: &[(String, String)]) -> String {
     let default = feature_mod_names
         .iter()
         .map(|(feature, _)| feature)
