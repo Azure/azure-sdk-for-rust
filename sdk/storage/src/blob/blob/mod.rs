@@ -34,7 +34,7 @@ use http::header;
 use std::{collections::HashMap, convert::TryInto, str::FromStr};
 
 #[cfg(feature = "azurite_workaround")]
-fn get_creation_time(h: &header::HeaderMap) -> Result<Option<DateTime<Utc>>, crate::Error> {
+fn get_creation_time(h: &header::HeaderMap) -> crate::Result<Option<DateTime<Utc>>> {
     if let Some(creation_time) = h.get(CREATION_TIME) {
         // Check that the creation time is valid
         let creation_time = creation_time.to_str()?;
@@ -202,7 +202,7 @@ impl Blob {
     pub(crate) fn from_headers<BN: Into<String>>(
         blob_name: BN,
         h: &header::HeaderMap,
-    ) -> Result<Blob, crate::Error> {
+    ) -> crate::Result<Blob> {
         trace!("\n{:?}", h);
 
         #[cfg(not(feature = "azurite_workaround"))]
@@ -394,9 +394,7 @@ impl Blob {
     }
 }
 
-pub(crate) fn copy_status_from_headers(
-    headers: &http::HeaderMap,
-) -> Result<CopyStatus, crate::Error> {
+pub(crate) fn copy_status_from_headers(headers: &http::HeaderMap) -> crate::Result<CopyStatus> {
     let val = headers
         .get_as_str(azure_core::headers::COPY_STATUS)
         .ok_or_else(|| crate::Error::HeaderNotFound(azure_core::headers::COPY_STATUS.to_owned()))?;

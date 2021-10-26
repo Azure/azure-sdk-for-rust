@@ -32,7 +32,7 @@ impl<'a> GetDocumentOptions<'a> {
         if_modified_since: &'a DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
     }
 
-    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> Result<(), crate::Error> {
+    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
         // add trait headers
         azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
         azure_core::headers::add_optional_header2(&self.if_modified_since, request)?;
@@ -54,7 +54,7 @@ impl<T> GetDocumentResponse<T>
 where
     T: DeserializeOwned,
 {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (status_code, headers, pinned_stream) = response.deconstruct();
 
         let has_been_found =
@@ -105,7 +105,7 @@ impl<T> FoundDocumentResponse<T>
 where
     T: DeserializeOwned,
 {
-    async fn try_from(headers: &HeaderMap, body: bytes::Bytes) -> Result<Self, crate::Error> {
+    async fn try_from(headers: &HeaderMap, body: bytes::Bytes) -> crate::Result<Self> {
         Ok(Self {
             document: serde_json::from_slice(&body)?,
 
@@ -158,7 +158,7 @@ pub struct NotFoundDocumentResponse {
 }
 
 impl NotFoundDocumentResponse {
-    async fn try_from(headers: &HeaderMap) -> Result<Self, crate::Error> {
+    async fn try_from(headers: &HeaderMap) -> crate::Result<Self> {
         Ok(Self {
             content_location: content_location_from_headers(headers)?.to_owned(),
             last_state_change: last_state_change_from_headers(headers)?,

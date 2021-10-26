@@ -335,7 +335,7 @@ impl ServiceClient {
         &self,
         device_id: S,
         module_id: T,
-    ) -> Result<ModuleTwinResponse, crate::Error>
+    ) -> crate::Result<ModuleTwinResponse>
     where
         S: Into<String>,
         T: Into<String>,
@@ -360,7 +360,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.get_device_twin("some-device");
     /// ```
-    pub async fn get_device_twin<S>(&self, device_id: S) -> Result<DeviceTwinResponse, crate::Error>
+    pub async fn get_device_twin<S>(&self, device_id: S) -> crate::Result<DeviceTwinResponse>
     where
         S: Into<String>,
     {
@@ -491,7 +491,7 @@ impl ServiceClient {
     pub async fn get_device_identity<S>(
         &self,
         device_id: S,
-    ) -> Result<DeviceIdentityResponse, crate::Error>
+    ) -> crate::Result<DeviceIdentityResponse>
     where
         S: Into<String>,
     {
@@ -580,7 +580,7 @@ impl ServiceClient {
         &self,
         device_id: S,
         module_id: T,
-    ) -> Result<ModuleIdentityResponse, crate::Error>
+    ) -> crate::Result<ModuleIdentityResponse>
     where
         S: Into<String>,
         T: Into<String>,

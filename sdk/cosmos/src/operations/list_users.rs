@@ -27,7 +27,7 @@ impl ListUsersOptions {
         max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 
-    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> Result<(), crate::Error> {
+    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
         azure_core::headers::add_mandatory_header2(&self.max_item_count, request)?;
 
@@ -47,7 +47,7 @@ pub struct ListUsersResponse {
 }
 
 impl ListUsersResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

@@ -203,7 +203,7 @@ impl CosmosClient {
         &self,
         ctx: Context,
         options: ListDatabasesOptions,
-    ) -> impl Stream<Item = Result<ListDatabasesResponse, crate::Error>> + '_ {
+    ) -> impl Stream<Item = crate::Result<ListDatabasesResponse>> + '_ {
         macro_rules! r#try {
             ($expr:expr $(,)?) => {
                 match $expr {

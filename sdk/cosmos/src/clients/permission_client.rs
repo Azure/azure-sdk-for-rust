@@ -50,7 +50,7 @@ impl PermissionClient {
         ctx: Context,
         options: CreatePermissionOptions,
         permission_mode: &PermissionMode<'_>,
-    ) -> Result<PermissionResponse<'_>, crate::Error> {
+    ) -> crate::Result<PermissionResponse<'_>> {
         let mut request = self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/users/{}/permissions",
@@ -80,7 +80,7 @@ impl PermissionClient {
         ctx: Context,
         options: ReplacePermissionOptions,
         permission_mode: &PermissionMode<'_>,
-    ) -> Result<PermissionResponse<'_>, crate::Error> {
+    ) -> crate::Result<PermissionResponse<'_>> {
         let mut request = self.prepare_request_with_permission_name(http::Method::PUT);
 
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Permissions.into());
@@ -102,7 +102,7 @@ impl PermissionClient {
         &self,
         ctx: Context,
         options: GetPermissionOptions,
-    ) -> Result<PermissionResponse<'_>, crate::Error> {
+    ) -> crate::Result<PermissionResponse<'_>> {
         let mut request = self.prepare_request_with_permission_name(http::Method::GET);
 
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Permissions.into());
@@ -124,7 +124,7 @@ impl PermissionClient {
         &self,
         ctx: Context,
         options: DeletePermissionOptions,
-    ) -> Result<DeletePermissionResponse, crate::Error> {
+    ) -> crate::Result<DeletePermissionResponse> {
         let mut request = self.prepare_request_with_permission_name(http::Method::DELETE);
 
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Permissions.into());

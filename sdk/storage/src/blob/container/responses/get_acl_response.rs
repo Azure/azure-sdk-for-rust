@@ -34,7 +34,7 @@ impl GetACLResponse {
     pub(crate) fn from_response(
         body: &Bytes,
         headers: &HeaderMap,
-    ) -> Result<GetACLResponse, crate::Error> {
+    ) -> crate::Result<GetACLResponse> {
         let public_access = public_access_from_header(headers)?;
 
         let etag = match headers.get(header::ETAG) {

@@ -32,7 +32,7 @@ impl ReplaceCollectionOptions {
         &self,
         request: &mut HttpRequest,
         collection_name: &str,
-    ) -> Result<(), crate::Error> {
+    ) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
 
         let collection = ReplaceCollectionBody {
@@ -86,7 +86,7 @@ pub struct ReplaceCollectionResponse {
 }
 
 impl ReplaceCollectionResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
         Ok(Self {

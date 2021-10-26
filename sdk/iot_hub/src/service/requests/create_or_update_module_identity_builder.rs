@@ -33,7 +33,7 @@ impl<'a> CreateOrUpdateModuleIdentityBuilder<'a> {
         module_id: T,
         managed_by: U,
         authentication: AuthenticationMechanism,
-    ) -> Result<ModuleIdentityResponse, crate::Error>
+    ) -> crate::Result<ModuleIdentityResponse>
     where
         S: AsRef<str>,
         T: AsRef<str>,

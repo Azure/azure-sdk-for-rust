@@ -48,7 +48,7 @@ impl CollectionClient {
         &self,
         ctx: Context,
         options: GetCollectionOptions,
-    ) -> Result<GetCollectionResponse, crate::Error> {
+    ) -> crate::Result<GetCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::GET);
 
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
@@ -70,7 +70,7 @@ impl CollectionClient {
         &self,
         ctx: Context,
         options: DeleteCollectionOptions,
-    ) -> Result<DeleteCollectionResponse, crate::Error> {
+    ) -> crate::Result<DeleteCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::DELETE);
 
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
@@ -92,7 +92,7 @@ impl CollectionClient {
         &self,
         ctx: Context,
         options: ReplaceCollectionOptions,
-    ) -> Result<ReplaceCollectionResponse, crate::Error> {
+    ) -> crate::Result<ReplaceCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::PUT);
 
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
@@ -120,7 +120,7 @@ impl CollectionClient {
         ctx: Context,
         document: &'a D,
         options: CreateDocumentOptions<'_>,
-    ) -> Result<CreateDocumentResponse, crate::Error> {
+    ) -> crate::Result<CreateDocumentResponse> {
         let mut request = self.prepare_doc_request_pipeline(http::Method::POST);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
 

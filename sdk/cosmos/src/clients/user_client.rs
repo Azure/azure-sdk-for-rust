@@ -68,7 +68,7 @@ impl UserClient {
         &self,
         ctx: Context,
         options: GetUserOptions,
-    ) -> Result<UserResponse, crate::Error> {
+    ) -> crate::Result<UserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::GET);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
 
@@ -89,7 +89,7 @@ impl UserClient {
         ctx: Context,
         user_name: S,
         options: ReplaceUserOptions,
-    ) -> Result<UserResponse, crate::Error> {
+    ) -> crate::Result<UserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::PUT);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
 
@@ -109,7 +109,7 @@ impl UserClient {
         &self,
         ctx: Context,
         options: DeleteUserOptions,
-    ) -> Result<DeleteUserResponse, crate::Error> {
+    ) -> crate::Result<DeleteUserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::DELETE);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
 

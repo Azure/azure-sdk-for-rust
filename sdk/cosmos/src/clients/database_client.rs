@@ -98,7 +98,7 @@ impl DatabaseClient {
         &self,
         ctx: Context,
         options: ListUsersOptions,
-    ) -> impl Stream<Item = Result<ListUsersResponse, crate::Error>> + '_ {
+    ) -> impl Stream<Item = crate::Result<ListUsersResponse>> + '_ {
         macro_rules! r#try {
             ($expr:expr $(,)?) => {
                 match $expr {

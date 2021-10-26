@@ -10,7 +10,7 @@ pub(crate) async fn get_identity<T>(
     service_client: &ServiceClient,
     device_id: String,
     module_id: Option<String>,
-) -> Result<T, crate::Error>
+) -> crate::Result<T>
 where
     T: TryFrom<Response<Bytes>, Error = crate::Error>,
 {
