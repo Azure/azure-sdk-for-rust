@@ -40,7 +40,6 @@ pub mod metrics {
         req_builder = req_builder.header("Content-Type", content_type);
         req_builder = req_builder.header("Content-Length", content_length);
         req_builder = req_builder.header("Authorization", authorization);
-        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(create::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
