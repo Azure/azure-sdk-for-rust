@@ -114,11 +114,10 @@ impl DataLakeClient {
         let auth_policy: Arc<dyn azure_core::Policy<DataLakeContext>> =
             Arc::new(AuthorizationPolicy::new(bearer_token.clone()));
 
-        let mut per_retry_policies = Vec::new();
         // take care of adding the AuthorizationPolicy as **last** retry policy.
         // Policies can change the url and/or the headers and the AuthorizationPolicy
         // must be able to inspect them or the resulting token will be invalid.
-        per_retry_policies.push(auth_policy);
+        let per_retry_policies = vec![auth_policy];
 
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
