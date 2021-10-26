@@ -82,7 +82,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
 
         let req = if let Some(partition_key_serialized) = self.partition_key_serialized.as_ref() {
             crate::cosmos_entity::add_as_partition_key_header_serialized(
-                &partition_key_serialized,
+                partition_key_serialized,
                 req,
             )
         } else {

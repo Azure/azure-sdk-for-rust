@@ -46,7 +46,7 @@ impl AddAsHeader for PublicAccess {
 
         request.headers_mut().append(
             header_name,
-            http::header::HeaderValue::from_str(&header_value)?,
+            http::header::HeaderValue::from_str(header_value)?,
         );
 
         Ok(())
@@ -142,7 +142,7 @@ impl Container {
             None => None,
         };
 
-        let public_access = public_access_from_header(&headers)?;
+        let public_access = public_access_from_header(headers)?;
 
         let has_immutability_policy = match headers.get(HAS_IMMUTABILITY_POLICY) {
             Some(has_immutability_policy) => bool::from_str(has_immutability_policy.to_str()?)?,

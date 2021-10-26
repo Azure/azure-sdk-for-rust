@@ -59,7 +59,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
             .prepare_request_with_stored_procedure_name(http::Method::POST);
 
         let request = if let Some(pk) = self.partition_key.as_ref() {
-            crate::cosmos_entity::add_as_partition_key_header_serialized(&pk, request)
+            crate::cosmos_entity::add_as_partition_key_header_serialized(pk, request)
         } else {
             request
         };

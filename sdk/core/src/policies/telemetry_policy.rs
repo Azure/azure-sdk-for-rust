@@ -32,7 +32,7 @@ impl<'a> TelemetryPolicy {
         rustc_version: Option<&'a str>,
         options: &TelemetryOptions,
     ) -> Self {
-        const UNKNOWN: &'static str = "unknown";
+        const UNKNOWN: &str = "unknown";
         let mut crate_name = crate_name.unwrap_or(UNKNOWN);
         let crate_version = crate_version.unwrap_or(UNKNOWN);
         let rustc_version = rustc_version.unwrap_or(UNKNOWN);

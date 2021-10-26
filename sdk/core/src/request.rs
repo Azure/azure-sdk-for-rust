@@ -21,7 +21,7 @@ impl From<Box<dyn SeekableStream>> for Body {
     }
 }
 
-const FIELDS: &'static [&'static str] = &["uri", "method", "headers", "body"];
+const FIELDS: &[&str] = &["uri", "method", "headers", "body"];
 
 /// A pipeline request.
 ///

@@ -160,7 +160,7 @@ pub struct JsonWebKey {
 
 const BASE64_URL_SAFE: Config = Config::new(CharacterSet::UrlSafe, false);
 
-fn ser_base64<S>(bytes: &Vec<u8>, serializer: S) -> Result<S::Ok, S::Error>
+fn ser_base64<S>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {

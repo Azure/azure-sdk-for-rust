@@ -75,10 +75,10 @@ where
 {
     let s: Option<String> = Option::deserialize(deserializer)?;
 
-    Ok(s.filter(|s| s.len() > 0)
+    s.filter(|s| !s.is_empty())
         .map(crate::ConsistencyCRC64::decode)
         .transpose()
-        .map_err(serde::de::Error::custom)?)
+        .map_err(serde::de::Error::custom)
 }
 
 fn deserialize_md5_optional<'de, D>(
@@ -89,10 +89,10 @@ where
 {
     let s: Option<String> = Option::deserialize(deserializer)?;
 
-    Ok(s.filter(|s| s.len() > 0)
+    s.filter(|s| !s.is_empty())
         .map(crate::ConsistencyMD5::decode)
         .transpose()
-        .map_err(serde::de::Error::custom)?)
+        .map_err(serde::de::Error::custom)
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]

@@ -64,7 +64,7 @@ where
                 Ok(response) => return Ok(response),
                 Err(error) => {
                     log::error!("Error occurred when making request: {}", error);
-                    if self.is_expired(&mut first_retry_time, &mut current_retries) {
+                    if self.is_expired(&mut first_retry_time, &current_retries) {
                         return Err(error);
                     } else {
                         current_retries += 1;

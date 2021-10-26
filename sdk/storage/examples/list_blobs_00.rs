@@ -29,8 +29,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     if iv
         .incomplete_vector
         .iter()
-        .find(|item| item.name == container_name)
-        .is_some()
+        .any(|item| item.name == container_name)
     {
         panic!("The specified container must not exists!");
     }

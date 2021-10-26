@@ -36,7 +36,7 @@ impl ReplaceCollectionOptions {
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
 
         let collection = ReplaceCollectionBody {
-            id: collection_name.as_ref(),
+            id: collection_name,
             indexing_policy: &self.indexing_policy,
             partition_key: &self.partition_key,
         };
