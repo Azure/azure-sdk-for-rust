@@ -1,5 +1,7 @@
 /*
 Prints the name of pools using the data plane APIs
+
+cargo run --package azure_svc_batch --example list_pools
 */
 
 use azure_identity::token_credentials::AzureCliCredential;
