@@ -27,7 +27,6 @@ fn code() -> Result<(), Box<dyn Error + Sync + Send>> {
     let now = Utc::now() - Duration::minutes(15);
     let later = now + Duration::hours(1);
 
-
     let http_client = new_http_client();
 
     let storage_account_client =
