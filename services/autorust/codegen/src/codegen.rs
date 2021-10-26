@@ -47,6 +47,16 @@ impl CodeGen {
     pub fn should_box_property(&self, prop_nm: &PropertyName) -> bool {
         self.config.box_properties.contains(prop_nm)
     }
+
+    pub fn get_request_content_type_json(&self) -> String {
+        let consumes = self.spec.consumes();
+        consumes
+            .into_iter()
+            .filter(|x| x.starts_with("application/json"))
+            .map(|x| x.to_string())
+            .nth(0)
+            .unwrap_or_else(|| "application/json".to_string())
+    }
 }
 
 #[derive(Debug, thiserror::Error)]

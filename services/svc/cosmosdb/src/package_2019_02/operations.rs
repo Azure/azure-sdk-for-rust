@@ -105,7 +105,7 @@ pub mod service {
         }
         url.query_pairs_mut().append_pair("restype", restype);
         url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("content-type", "application/json");
+        req_builder = req_builder.header("content-type", "application/json;odata=nometadata");
         let req_body = azure_core::to_json(table_service_properties).map_err(set_properties::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
