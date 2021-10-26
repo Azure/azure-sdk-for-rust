@@ -1,14 +1,13 @@
-use std::convert::TryFrom;
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 
 use bytes::Bytes;
 use http::{Method, Response, StatusCode};
 
 use crate::service::{ServiceClient, API_VERSION};
 
-/// Execute the request to get the twin of a module or device.
-pub(crate) async fn get_twin<'a, T>(
-    service_client: &'a ServiceClient,
+/// Execute the request to create or update the module or device identity.
+pub(crate) async fn get_identity<T>(
+    service_client: &ServiceClient,
     device_id: String,
     module_id: Option<String>,
 ) -> Result<T, crate::Error>
@@ -16,13 +15,13 @@ where
     T: TryFrom<Response<Bytes>, Error = crate::Error>,
 {
     let uri = match module_id {
-        Some(val) => format!(
-            "https://{}.azure-devices.net/twins/{}/modules/{}?api-version={}",
-            service_client.iothub_name, device_id, val, API_VERSION
+        Some(module_id) => format!(
+            "https://{}.azure-devices.net/devices/{}/modules/{}?api-version={}",
+            service_client.iot_hub_name, device_id, module_id, API_VERSION
         ),
         None => format!(
-            "https://{}.azure-devices.net/twins/{}?api-version={}",
-            service_client.iothub_name, device_id, API_VERSION
+            "https://{}.azure-devices.net/devices/{}?api-version={}",
+            service_client.iot_hub_name, device_id, API_VERSION
         ),
     };
 

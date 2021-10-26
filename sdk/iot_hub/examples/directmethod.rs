@@ -1,10 +1,10 @@
-use iothub::service::ServiceClient;
+use iot_hub::service::ServiceClient;
 use serde_json;
 use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let iothub_connection_string = std::env::var("IOTHUB_CONNECTION_STRING")
+    let iot_hub_connection_string = std::env::var("IOTHUB_CONNECTION_STRING")
         .expect("Set env variable IOTHUB_CONNECTION_STRING first!");
 
     let device_id = std::env::args()
@@ -25,10 +25,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let http_client = azure_core::new_http_client();
     let service_client =
-        ServiceClient::from_connection_string(http_client, iothub_connection_string, 3600)?;
+        ServiceClient::from_connection_string(http_client, iot_hub_connection_string, 3600)?;
     println!(
         "Sending direct method {} to {}:{} on: {}",
-        method_name, device_id, module_id, service_client.iothub_name
+        method_name, device_id, module_id, service_client.iot_hub_name
     );
 
     let direct_method =

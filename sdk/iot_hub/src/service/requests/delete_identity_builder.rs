@@ -30,11 +30,11 @@ impl<'a> DeleteIdentityBuilder<'a> {
         let uri = match &self.module_id {
             Some(module_id) => format!(
                 "https://{}.azure-devices.net/devices/{}/modules/{}?api-version={}",
-                self.service_client.iothub_name, self.device_id, module_id, API_VERSION
+                self.service_client.iot_hub_name, self.device_id, module_id, API_VERSION
             ),
             None => format!(
                 "https://{}.azure-devices.net/devices/{}?api-version={}",
-                self.service_client.iothub_name, self.device_id, API_VERSION
+                self.service_client.iot_hub_name, self.device_id, API_VERSION
             ),
         };
 

@@ -1,19 +1,24 @@
-use crate::service::resources::{identity::IdentityOperation, AuthenticationMechanism};
-use crate::service::responses::ModuleIdentityResponse;
-use crate::service::{ServiceClient, API_VERSION};
 use http::Method;
 use serde::Serialize;
 use std::convert::TryInto;
 
-/// The CreateOrUpdateModuleIdentityBuilder is used to construct a new module identity
+use crate::service::resources::{
+    identity::DesiredCapability, identity::IdentityOperation, AuthenticationMechanism,
+    DeviceCapabilities, Status,
+};
+use crate::service::responses::DeviceIdentityResponse;
+use crate::service::{ServiceClient, API_VERSION};
+
+/// The CreateOrUpdateDeviceIdentityBuilder is used to construct a new device identity
 /// or the update an existing one.
-pub struct CreateOrUpdateModuleIdentityBuilder<'a> {
+pub struct CreateOrUpdateDeviceIdentityBuilder<'a> {
     service_client: &'a ServiceClient,
+    capabilities: DeviceCapabilities,
     etag: Option<String>,
     operation: IdentityOperation,
 }
 
-impl<'a> CreateOrUpdateModuleIdentityBuilder<'a> {
+impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
     pub(crate) fn new(
         service_client: &'a ServiceClient,
         operation: IdentityOperation,
@@ -21,29 +26,34 @@ impl<'a> CreateOrUpdateModuleIdentityBuilder<'a> {
     ) -> Self {
         Self {
             service_client,
+            capabilities: DeviceCapabilities::default(),
             etag,
             operation,
         }
     }
 
+    /// Sets a device capability on the device
+    pub fn device_capability(mut self, desired_capability: DesiredCapability) -> Self {
+        match desired_capability {
+            DesiredCapability::IotEdge => self.capabilities.iotedge = true,
+        }
+        self
+    }
+
     /// Performs the create or update request on the device identity
-    pub async fn execute<S, T, U>(
+    pub async fn execute<S>(
         self,
         device_id: S,
-        module_id: T,
-        managed_by: U,
+        status: Status,
         authentication: AuthenticationMechanism,
-    ) -> Result<ModuleIdentityResponse, crate::Error>
+    ) -> Result<DeviceIdentityResponse, crate::Error>
     where
         S: AsRef<str>,
-        T: AsRef<str>,
-        U: AsRef<str>,
     {
         let uri = format!(
-            "https://{}.azure-devices.net/devices/{}/modules/{}?api-version={}",
-            self.service_client.iothub_name,
+            "https://{}.azure-devices.net/devices/{}?api-version={}",
+            self.service_client.iot_hub_name,
             device_id.as_ref(),
-            module_id.as_ref(),
             API_VERSION
         );
 
@@ -58,11 +68,11 @@ impl<'a> CreateOrUpdateModuleIdentityBuilder<'a> {
             }
         }
 
-        let body = CreateOrUpdateModuleIdentityBody {
+        let body = CreateOrUpdateDeviceIdentityBody {
             authentication,
             device_id: device_id.as_ref(),
-            module_id: module_id.as_ref(),
-            managed_by: managed_by.as_ref(),
+            status,
+            capabilities: self.capabilities,
             etag: self.etag,
         };
 
@@ -83,11 +93,11 @@ impl<'a> CreateOrUpdateModuleIdentityBuilder<'a> {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct CreateOrUpdateModuleIdentityBody<'a, 'b, 'c> {
+struct CreateOrUpdateDeviceIdentityBody<'a> {
     authentication: AuthenticationMechanism,
     device_id: &'a str,
-    module_id: &'b str,
-    managed_by: &'c str,
+    status: Status,
+    capabilities: DeviceCapabilities,
     #[serde(skip_serializing_if = "Option::is_none")]
     etag: Option<String>,
 }

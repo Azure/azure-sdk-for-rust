@@ -37,7 +37,7 @@ pub const API_VERSION: &str = "2020-05-31-preview";
 pub struct ServiceClient {
     http_client: Arc<dyn HttpClient>,
     /// The name of the IoT Hub.
-    pub iothub_name: String,
+    pub iot_hub_name: String,
     /// The SAS token that is used for authentication.
     pub(crate) sas_token: String,
 }
@@ -75,17 +75,17 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// let http_client = azure_core::new_http_client();
-    /// let iothub_name = "cool-iot-hub";
+    /// let iot_hub_name = "cool-iot-hub";
     /// let sas_token = "<a generated sas token>";
     ///
-    /// let iothub = ServiceClient::from_sas_token(http_client, iothub_name, sas_token);
+    /// let iot_hub = ServiceClient::from_sas_token(http_client, iot_hub_name, sas_token);
     /// ```
     pub fn from_sas_token<S, T>(
         http_client: Arc<dyn HttpClient>,
-        iothub_name: S,
+        iot_hub_name: S,
         sas_token: T,
     ) -> Self
     where
@@ -94,14 +94,14 @@ impl ServiceClient {
     {
         Self {
             http_client,
-            iothub_name: iothub_name.into(),
+            iot_hub_name: iot_hub_name.into(),
             sas_token: sas_token.into(),
         }
     }
 
     /// Generate a new SAS token to use for authentication with IoT Hub
     fn generate_sas_token(
-        iothub_name: &str,
+        iot_hub_name: &str,
         key_name: &str,
         private_key: &str,
         expires_in_seconds: i64,
@@ -111,7 +111,7 @@ impl ServiceClient {
         let expiry_date_seconds = expiry_date.timestamp();
         let data = format!(
             "{}.azure-devices.net\n{}",
-            iothub_name, &expiry_date_seconds
+            iot_hub_name, &expiry_date_seconds
         );
 
         let key = decode(private_key).map_err(GenerateSasTokenError::DecodePrivateKeyError)?;
@@ -124,7 +124,7 @@ impl ServiceClient {
         let sas_token: &str = &encode_config(&result.into_bytes(), base64::STANDARD);
 
         let encoded: String = url::form_urlencoded::Serializer::new(String::new())
-            .append_pair("sr", &format!("{}.azure-devices.net", iothub_name))
+            .append_pair("sr", &format!("{}.azure-devices.net", iot_hub_name))
             .append_pair("sig", sas_token)
             .append_pair("skn", key_name)
             .append_pair("se", &expiry_date_seconds.to_string())
@@ -139,20 +139,20 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// let http_client = azure_core::new_http_client();
     ///
-    /// let iothub_name = "iot-hub";
-    /// let key_name = "iothubowner";
+    /// let iot_hub_name = "iot-hub";
+    /// let key_name = "iot_hubowner";
     /// let private_key = "YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     ///
-    /// let result = ServiceClient::from_private_key(http_client, iothub_name, key_name, private_key, 3600);
+    /// let result = ServiceClient::from_private_key(http_client, iot_hub_name, key_name, private_key, 3600);
     /// assert!(result.is_ok(), true);
     /// ```
     pub fn from_private_key<S, T, U>(
         http_client: Arc<dyn HttpClient>,
-        iothub_name: S,
+        iot_hub_name: S,
         key_name: T,
         private_key: U,
         expires_in_seconds: i64,
@@ -162,10 +162,10 @@ impl ServiceClient {
         T: AsRef<str>,
         U: AsRef<str>,
     {
-        let iothub_name_str = iothub_name.into();
+        let iot_hub_name_str = iot_hub_name.into();
 
         let sas_token = Self::generate_sas_token(
-            iothub_name_str.as_str(),
+            iot_hub_name_str.as_str(),
             key_name.as_ref(),
             private_key.as_ref(),
             expires_in_seconds,
@@ -173,7 +173,7 @@ impl ServiceClient {
 
         Ok(Self {
             http_client,
-            iothub_name: iothub_name_str,
+            iot_hub_name: iot_hub_name_str,
             sas_token,
         })
     }
@@ -184,10 +184,10 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// let http_client = azure_core::new_http_client();
-    /// let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     ///
     /// let result = ServiceClient::from_connection_string(http_client, connection_string, 3600);
     /// assert!(result.is_ok(), true);
@@ -202,7 +202,7 @@ impl ServiceClient {
     {
         let parts: Vec<&str> = connection_string.as_ref().split(';').collect();
 
-        let mut iothub_name: Option<&str> = None;
+        let mut iot_hub_name: Option<&str> = None;
         let mut key_name: Option<&str> = None;
         let mut primary_key: Option<&str> = None;
 
@@ -221,7 +221,7 @@ impl ServiceClient {
                     Some(size) => size,
                     None => continue,
                 };
-                iothub_name = Some(&val[start..end]);
+                iot_hub_name = Some(&val[start..end]);
             }
 
             if val.contains("SharedAccessKeyName=") {
@@ -233,8 +233,8 @@ impl ServiceClient {
             }
         }
 
-        let iothub_name =
-            iothub_name.ok_or_else(|| FromConnectionStringError::FailedToGetHostname)?;
+        let iot_hub_name =
+            iot_hub_name.ok_or_else(|| FromConnectionStringError::FailedToGetHostname)?;
 
         let key_name =
             key_name.ok_or_else(|| FromConnectionStringError::FailedToGetSharedAccessKey)?;
@@ -243,12 +243,12 @@ impl ServiceClient {
             primary_key.ok_or_else(|| FromConnectionStringError::FailedToGetPrimaryKey)?;
 
         let sas_token =
-            Self::generate_sas_token(iothub_name, key_name, primary_key, expires_in_seconds)
+            Self::generate_sas_token(iot_hub_name, key_name, primary_key, expires_in_seconds)
                 .map_err(FromConnectionStringError::GenerateSasTokenError)?;
 
         Ok(Self {
             http_client,
-            iothub_name: iothub_name.to_string(),
+            iot_hub_name: iot_hub_name.to_string(),
             sas_token,
         })
     }
@@ -258,12 +258,12 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the service client!");
-    /// let device_method = iothub.create_device_method("some-device", "hello-world", 30, 30);
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the service client!");
+    /// let device_method = iot_hub.create_device_method("some-device", "hello-world", 30, 30);
     /// ```
     pub fn create_device_method<S, T>(
         &self,
@@ -291,12 +291,12 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let device_method = iothub.create_module_method("some-device", "some-module", "hello-world", 30, 30);
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device_method = iot_hub.create_module_method("some-device", "some-module", "hello-world", 30, 30);
     /// ```
     pub fn create_module_method<S, T, U>(
         &self,
@@ -326,12 +326,12 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let twin = iothub.get_module_twin("some-device", "some-module");
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iot_hub.get_module_twin("some-device", "some-module");
     /// ```
     pub async fn get_module_twin<S, T>(
         &self,
@@ -355,12 +355,12 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let twin = iothub.get_device_twin("some-device");
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iot_hub.get_device_twin("some-device");
     /// ```
     pub async fn get_device_twin<S>(&self, device_id: S) -> Result<DeviceTwinResponse, crate::Error>
     where
@@ -374,12 +374,12 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let twin = iothub.update_module_twin("some-device", "some-module")
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iot_hub.update_module_twin("some-device", "some-module")
     ///              .tag("TagName", "TagValue")
     ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
     ///              .execute();
@@ -406,12 +406,12 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let twin = iothub.replace_module_twin("some-device", "some-module")
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iot_hub.replace_module_twin("some-device", "some-module")
     ///              .tag("TagName", "TagValue")
     ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
     ///              .execute();
@@ -438,12 +438,12 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let twin = iothub.update_device_twin("some-device")
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iot_hub.update_device_twin("some-device")
     ///              .tag("TagName", "TagValue")
     ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
     ///              .execute();
@@ -463,12 +463,12 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let twin = iothub.replace_device_twin("some-device")
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let twin = iot_hub.replace_device_twin("some-device")
     ///              .tag("TagName", "TagValue")
     ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
     ///              .execute();
@@ -488,12 +488,12 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let device = iothub.get_device_identity("some-device");
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iot_hub.get_device_identity("some-device");
     /// ```
     pub async fn get_device_identity<S>(
         &self,
@@ -510,13 +510,13 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
-    /// use iothub::service::resources::{Status, AuthenticationMechanism};
+    /// use iot_hub::service::ServiceClient;
+    /// use iot_hub::service::resources::{Status, AuthenticationMechanism};
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let device = iothub.create_device_identity()
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iot_hub.create_device_identity()
     ///     .execute("some-existing-device", Status::Enabled, AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
     pub fn create_device_identity(&self) -> CreateOrUpdateDeviceIdentityBuilder {
@@ -528,13 +528,13 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
-    /// use iothub::service::resources::{Status, AuthenticationMechanism};
+    /// use iot_hub::service::ServiceClient;
+    /// use iot_hub::service::resources::{Status, AuthenticationMechanism};
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let device = iothub.update_device_identity("etag-of-device-to-update")
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iot_hub.update_device_identity("etag-of-device-to-update")
     ///     .execute("some-existing-device", Status::Enabled, AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
     pub fn update_device_identity<S>(&self, etag: S) -> CreateOrUpdateDeviceIdentityBuilder
@@ -556,12 +556,12 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let device = iothub.delete_device_identity("some-device-id", "some-etag");
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iot_hub.delete_device_identity("some-device-id", "some-etag");
     /// ```
     pub fn delete_device_identity<S, T>(
         &self,
@@ -580,12 +580,12 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let device = iothub.get_module_identity("some-device", "some-module");
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iot_hub.get_module_identity("some-device", "some-module");
     /// ```
     pub async fn get_module_identity<S, T>(
         &self,
@@ -604,13 +604,13 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
-    /// use iothub::service::resources::{Status, AuthenticationMechanism};
+    /// use iot_hub::service::ServiceClient;
+    /// use iot_hub::service::resources::{Status, AuthenticationMechanism};
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let device = iothub.create_module_identity()
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iot_hub.create_module_identity()
     ///     .execute("some-existing-device", "some-existing-module", "IoTEdge", AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
     pub fn create_module_identity(&self) -> CreateOrUpdateModuleIdentityBuilder {
@@ -622,13 +622,13 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
-    /// use iothub::service::resources::{Status, AuthenticationMechanism};
+    /// use iot_hub::service::ServiceClient;
+    /// use iot_hub::service::resources::{Status, AuthenticationMechanism};
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let device = iothub.update_module_identity("etag-of-device-to-update")
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iot_hub.update_module_identity("etag-of-device-to-update")
     ///     .execute("some-existing-device", "some-existing-module", "IoTEdge", AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
     pub fn update_module_identity<S>(&self, etag: S) -> CreateOrUpdateModuleIdentityBuilder
@@ -650,12 +650,12 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let device = iothub.delete_module_identity("some-device-id", "some-module-id", "some-etag");
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let device = iot_hub.delete_module_identity("some-device-id", "some-module-id", "some-etag");
     /// ```
     pub fn delete_module_identity<S, T, U>(
         &self,
@@ -681,12 +681,12 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iothub::service::ServiceClient;
+    /// use iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iothub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let query_builder = iothub.query();
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let query_builder = iot_hub.query();
     /// ```
     pub fn query(&self) -> QueryBuilder<'_, '_> {
         QueryBuilder::new(&self)
@@ -710,7 +710,7 @@ mod tests {
         use crate::service::ServiceClient;
 
         let http_client = azure_core::new_http_client();
-        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
         let _ = ServiceClient::from_connection_string(http_client, connection_string, 3600)?;
         Ok(())
     }
@@ -721,11 +721,11 @@ mod tests {
         use crate::service::ServiceClient;
 
         let http_client = azure_core::new_http_client();
-        let connection_string = "HostName==cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+        let connection_string = "HostName==cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
         let _ = ServiceClient::from_connection_string(http_client.clone(), connection_string, 3600)
             .is_err();
 
-        let connection_string = "HostName=cool-iot-hub.azure-;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+        let connection_string = "HostName=cool-iot-hub.azure-;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
         let _ =
             ServiceClient::from_connection_string(http_client, connection_string, 3600).is_err();
         Ok(())
@@ -756,7 +756,7 @@ mod tests {
         use crate::service::ServiceClient;
         let http_client = azure_core::new_http_client();
 
-        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
         let service_client =
             ServiceClient::from_connection_string(http_client, connection_string, 3600)?;
 
@@ -773,7 +773,7 @@ mod tests {
         use crate::service::ServiceClient;
         let http_client = azure_core::new_http_client();
 
-        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
         let service_client =
             ServiceClient::from_connection_string(http_client, connection_string, 3600)?;
 
@@ -790,7 +790,7 @@ mod tests {
         use crate::service::ServiceClient;
         let http_client = azure_core::new_http_client();
 
-        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
         let service_client =
             ServiceClient::from_connection_string(http_client, connection_string, 3600)?;
 
@@ -807,7 +807,7 @@ mod tests {
         use crate::service::ServiceClient;
         let http_client = azure_core::new_http_client();
 
-        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
         let service_client =
             ServiceClient::from_connection_string(http_client, connection_string, 3600)?;
 

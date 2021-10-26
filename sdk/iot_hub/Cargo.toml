@@ -1,5 +1,5 @@
 [package]
-name = "iothub"
+name = "iot_hub"
 version = "0.1.0"
 authors = ["Microsoft Corp."]
 edition = "2018"
