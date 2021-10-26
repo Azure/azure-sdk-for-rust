@@ -1,4 +1,4 @@
-// use azure_event_grid::{Event, EventGridClient};
+// use azure_messaging_eventgrid::{Event, EventGridClient};
 // use serde::Serialize;
 // use std::env;
 
