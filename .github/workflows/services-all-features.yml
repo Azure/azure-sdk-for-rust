@@ -12,12 +12,12 @@ env:
 jobs:
   test-services:
     name: Services Tests
-    runs-on: ubuntu-20.04
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
       with:
-        toolchain: 1.55.0
+        toolchain: stable
         profile: minimal
         override: true
 
