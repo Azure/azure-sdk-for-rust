@@ -491,7 +491,6 @@ pub mod service {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(submit_batch::Error::SerializeError)?;
         req_builder = req_builder.header("Content-Length", content_length);
         req_builder = req_builder.header("Content-Type", content_type);
@@ -1334,7 +1333,6 @@ pub mod container {
         }
         url.query_pairs_mut().append_pair("restype", restype);
         url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(submit_batch::Error::SerializeError)?;
         req_builder = req_builder.header("Content-Length", content_length);
         req_builder = req_builder.header("Content-Type", content_type);

@@ -135,6 +135,10 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
         }
     }
 
+    let has_content_type_header = parameters
+        .iter()
+        .any(|p| p.name.to_snake_case() == "content_type" && p.in_ == ParameterType::Header);
+
     // params
     let mut has_body_parameter = false;
     for param in &parameters {
@@ -220,16 +224,25 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
             }
             ParameterType::Body => {
                 has_body_parameter = true;
+                let set_content_type = if !has_content_type_header {
+                    let json_content_type = cg.get_request_content_type_json();
+                    quote! {
+                        req_builder = req_builder.header("content-type", #json_content_type);
+                    }
+                } else {
+                    quote! {}
+                };
+
                 if required {
                     ts_request_builder.extend(quote! {
-                        req_builder = req_builder.header("content-type", "application/json");
+                        #set_content_type
                         let req_body = azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?;
                     });
                 } else {
                     ts_request_builder.extend(quote! {
                         let req_body =
                             if let Some(#param_name_var) = #param_name_var {
-                                req_builder = req_builder.header("content-type", "application/json");
+                                #set_content_type
                                 azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?
                             } else {
                                 bytes::Bytes::from_static(azure_core::EMPTY_BODY)

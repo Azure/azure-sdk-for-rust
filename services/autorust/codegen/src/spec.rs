@@ -81,6 +81,19 @@ impl Spec {
         &self.docs
     }
 
+    pub fn consumes(&self) -> Vec<&String> {
+        let versions: Vec<_> = self
+            .docs()
+            .values()
+            .filter(|doc| !doc.paths().is_empty())
+            .map(|api| &api.consumes)
+            .collect();
+
+        let mut versions: Vec<_> = versions.into_iter().flatten().collect();
+        versions.sort_unstable();
+        versions
+    }
+
     /// Look for specs with operations and return the last one sorted alphabetically
     pub fn api_version(&self) -> Option<String> {
         let mut versions: Vec<&str> = self

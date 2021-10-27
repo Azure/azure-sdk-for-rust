@@ -197,7 +197,7 @@ impl CollectionClient {
             self.collection_name()
         );
         self.cosmos_client()
-            .prepare_request_pipeline(&path, http_method)
+            .prepare_request_pipeline(path, http_method)
     }
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
@@ -215,6 +215,6 @@ impl CollectionClient {
             self.collection_name()
         );
         self.cosmos_client()
-            .prepare_request_pipeline(&path, http_method)
+            .prepare_request_pipeline(path, http_method)
     }
 }

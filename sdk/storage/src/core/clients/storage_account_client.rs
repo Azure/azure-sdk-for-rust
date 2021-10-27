@@ -1,7 +1,9 @@
 use crate::headers::CONTENT_MD5;
 use crate::{
     core::{ConnectionString, No},
-    shared_access_signature::SharedAccessSignatureBuilder,
+    shared_access_signature::account_sas::{
+        AccountSharedAccessSignatureBuilder, ClientAccountSharedAccessSignature,
+    },
 };
 use azure_core::headers::*;
 use azure_core::prelude::*;
@@ -53,6 +55,7 @@ pub struct StorageAccountClient {
     queue_storage_url: Url,
     queue_storage_secondary_url: Url,
     filesystem_url: Url,
+    account: String,
 }
 
 fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>, url::ParseError> {
@@ -98,8 +101,9 @@ impl StorageAccountClient {
             .unwrap(),
             filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
                 .unwrap(),
-            storage_credentials: StorageCredentials::Key(account, key.into()),
+            storage_credentials: StorageCredentials::Key(account.clone(), key.into()),
             http_client,
+            account,
         })
     }
 
@@ -167,8 +171,9 @@ impl StorageAccountClient {
             queue_storage_url: queue_storage_url.clone(),
             queue_storage_secondary_url: queue_storage_url,
             filesystem_url,
-            storage_credentials: StorageCredentials::Key(account, key.into()),
+            storage_credentials: StorageCredentials::Key(account.clone(), key.into()),
             http_client,
+            account,
         })
     }
 
@@ -196,6 +201,7 @@ impl StorageAccountClient {
                 sas_token.as_ref(),
             )?),
             http_client,
+            account,
         }))
     }
 
@@ -227,6 +233,7 @@ impl StorageAccountClient {
                 .unwrap(),
             storage_credentials: StorageCredentials::BearerToken(bearer_token),
             http_client,
+            account,
         })
     }
 
@@ -257,6 +264,7 @@ impl StorageAccountClient {
                     queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
                     filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                     http_client,
+                    account: account.to_string(),
                 }))
             }
             ConnectionString {
@@ -275,6 +283,7 @@ impl StorageAccountClient {
                 queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
                 filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                 http_client,
+                    account: account.to_string(),
             })),
             ConnectionString {
                 account_name: Some(account),
@@ -292,12 +301,13 @@ impl StorageAccountClient {
                 queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
                 filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                 http_client,
+                    account: account.to_string(),
             })),
            _ => {
                 Err(crate::Error::GenericErrorWithText(
                     "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
                         .to_owned(),
-                ).into())
+                ))
             }
         }
     }
@@ -326,19 +336,12 @@ impl StorageAccountClient {
         &self.filesystem_url
     }
 
-    pub fn shared_access_signature(
-        &self,
-    ) -> Result<SharedAccessSignatureBuilder<No, No, No, No>, crate::Error> {
-        match self.storage_credentials {
-            StorageCredentials::Key(ref account, ref key) => {
-                Ok(SharedAccessSignatureBuilder::new(account, key))
-            }
-            _ => Err(crate::Error::OperationNotSupported(
-                "Shared access signature generation".to_owned(),
-                "SAS can be generated only from key and account clients".to_owned(),
-            )
-            .into()),
-        }
+    pub fn account(&self) -> &str {
+        &self.account
+    }
+
+    pub fn storage_credentials(&self) -> &StorageCredentials {
+        &self.storage_credentials
     }
 
     pub(crate) fn prepare_request(
@@ -383,7 +386,7 @@ impl StorageAccountClient {
         // SAS token for example)
         let request = match &self.storage_credentials {
             StorageCredentials::Key(account, key) => {
-                if url.query_pairs().find(|(k, _)| k == "sig").is_none() {
+                if !url.query_pairs().any(|(k, _)| k == "sig") {
                     let auth = generate_authorization(
                         request.headers_ref().unwrap(),
                         &url,
@@ -416,6 +419,22 @@ impl StorageAccountClient {
         debug!("using request == {:#?}", request);
 
         Ok((request, url))
+    }
+}
+
+impl ClientAccountSharedAccessSignature for StorageAccountClient {
+    fn shared_access_signature(
+        &self,
+    ) -> Result<AccountSharedAccessSignatureBuilder<No, No, No, No>, crate::Error> {
+        match self.storage_credentials {
+            StorageCredentials::Key(ref account, ref key) => {
+                Ok(AccountSharedAccessSignatureBuilder::new(account, key))
+            }
+            _ => Err(crate::Error::OperationNotSupported(
+                "Shared access signature generation".to_owned(),
+                "SAS can be generated only from key and account clients".to_owned(),
+            )),
+        }
     }
 }
 

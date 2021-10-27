@@ -71,7 +71,7 @@ mod tests {
 
     #[test]
     fn deserde_azure() {
-        const S: &'static str = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+        const S: &str = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
 <EnumerationResults ServiceEndpoint=\"https://azureskdforrust.blob.core.windows.net/\" ContainerName=\"osa2\">
     <Blobs>
         <Blob>
@@ -153,7 +153,7 @@ mod tests {
 
     #[test]
     fn deserde_azurite() {
-        const S: &'static str = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+        const S: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
 <EnumerationResults ServiceEndpoint=\"http://127.0.0.1:10000/devstoreaccount1\" ContainerName=\"osa2\">
     <Prefix/>
     <Marker/>

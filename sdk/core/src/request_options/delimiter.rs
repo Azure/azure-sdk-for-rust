@@ -11,7 +11,7 @@ impl<'a> Delimiter<'a> {
 
 impl<'a> AppendToUrlQuery for Delimiter<'a> {
     fn append_to_url_query(&self, url: &mut url::Url) {
-        url.query_pairs_mut().append_pair("delimiter", &self.0);
+        url.query_pairs_mut().append_pair("delimiter", self.0);
     }
 }
 

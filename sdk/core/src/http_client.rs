@@ -166,7 +166,7 @@ impl HttpClient for reqwest::Client {
         request: &crate::Request,
     ) -> Result<crate::Response, HttpError> {
         let mut reqwest_request = self.request(
-            request.method().clone(),
+            request.method(),
             url::Url::parse(&request.uri().to_string()).unwrap(),
         );
         for header in request.headers() {
