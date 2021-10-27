@@ -58,7 +58,7 @@ impl AttachmentClient {
         options: GetAttachmentOptions<'_>,
     ) -> Result<GetAttachmentResponse, crate::Error> {
         let mut request = self.prepare_request_with_attachment_name(http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Attachments.into());
 
         options.decorate_request(
             &mut request,
@@ -82,7 +82,7 @@ impl AttachmentClient {
         options: DeleteAttachmentOptions<'_>,
     ) -> Result<DeleteAttachmentResponse, crate::Error> {
         let mut request = self.prepare_request_with_attachment_name(http::Method::DELETE);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Attachments.into());
 
         options.decorate_request(
             &mut request,
@@ -107,7 +107,7 @@ impl AttachmentClient {
         options: CreateSlugAttachmentOptions<'_>,
     ) -> Result<CreateSlugAttachmentResponse, crate::Error> {
         let mut request = self.prepare_request(http::Method::POST);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Attachments.into());
 
         options.decorate_request(
             &mut request,
@@ -134,7 +134,7 @@ impl AttachmentClient {
         options: ReplaceSlugAttachmentOptions<'_>,
     ) -> Result<ReplaceSlugAttachmentResponse, crate::Error> {
         let mut request = self.prepare_request_with_attachment_name(http::Method::PUT);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Attachments.into());
 
         options.decorate_request(
             &mut request,
@@ -166,7 +166,7 @@ impl AttachmentClient {
         C: Into<ContentType<'c>>,
     {
         let mut request = self.prepare_request(http::Method::POST);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Attachments.into());
 
         options.decorate_request(
             &mut request,
@@ -199,7 +199,7 @@ impl AttachmentClient {
         C: Into<ContentType<'c>>,
     {
         let mut request = self.prepare_request_with_attachment_name(http::Method::PUT);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Attachments.into());
 
         options.decorate_request(
             &mut request,
