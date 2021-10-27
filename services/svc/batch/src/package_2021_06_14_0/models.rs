@@ -2143,7 +2143,7 @@ pub struct OutputFileBlobContainerDestination {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutputFileUploadOptions {
-    #[serde(rename = "uploadCondition")]
+    #[serde(rename = "uploadCondition", deserialize_with = "case_insensitive")]
     pub upload_condition: OutputFileUploadCondition,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

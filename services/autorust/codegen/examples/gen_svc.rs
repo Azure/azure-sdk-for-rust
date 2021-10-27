@@ -53,6 +53,11 @@ const FIX_CASE_PROPERTIES: &[(&str, &str, &str)] = &[
         "PublicIPAddressConfiguration",
         "provision",
     ),
+    (
+        "../../../azure-rest-api-specs/specification/batch/data-plane/Microsoft.Batch/stable/2021-06-01.14.0/BatchService.json",
+        "OutputFileUploadOptions",
+        "uploadCondition",
+    ),
 ];
 
 // because of recursive types, some properties have to be boxed
