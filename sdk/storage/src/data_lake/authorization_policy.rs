@@ -25,6 +25,12 @@ impl Policy<DataLakeContext> for AuthorizationPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy<DataLakeContext>>],
     ) -> PolicyResult<Response> {
+        if next.is_empty() {
+            return Err(Box::new(azure_core::PipelineError::InvalidTailPolicy(
+                "Authorization policies cannot be the last policy of a pipeline".to_owned(),
+            )));
+        }
+
         let auth_header_value = format!("Bearer {}", &self.bearer_token);
 
         request

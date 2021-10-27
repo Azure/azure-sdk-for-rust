@@ -70,7 +70,7 @@ impl FileSystemClient {
         options: CreatePathOptions<'_>,
     ) -> Result<CreatePathResponse, crate::Error> {
         let mut request = self.prepare_request_pipeline(&path_name, http::Method::PUT);
-        let contents: DataLakeContext = DataLakeContext {};
+        let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
         options.decorate_request(&mut request)?;
