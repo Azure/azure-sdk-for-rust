@@ -66,7 +66,7 @@ pub struct Config {
     pub output_folder: PathBuf,
     pub box_properties: HashSet<PropertyName>,
     pub optional_properties: HashSet<PropertyName>,
-    pub fix_case_properties: HashSet<PropertyName>,
+    pub fix_case_properties: HashSet<String>,
     pub invalid_types: HashSet<PropertyName>,
     pub runs: Vec<Runs>,
     pub print_writing_file: bool,

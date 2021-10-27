@@ -81,6 +81,19 @@ impl Spec {
         &self.docs
     }
 
+    pub fn title(&self) -> Option<&str> {
+        let mut titles: Vec<_> = self
+            .docs
+            .values()
+            .map(|doc| &doc.info.title)
+            .filter(|t| t.is_some())
+            .flatten()
+            .collect();
+        titles.sort_unstable();
+
+        titles.get(0).map(|t| t.as_str())
+    }
+
     pub fn consumes(&self) -> Vec<&String> {
         let versions: Vec<_> = self
             .docs()
