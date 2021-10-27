@@ -98,7 +98,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     assert!(create_path_result.is_err());
 
     fs_properties.insert("ModifiedBy", "Iota");
-    let set_fs_props_response = file_system_client
+    file_system_client
         .set_properties(Some(&fs_properties))
         .execute()
         .await?;
@@ -116,7 +116,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         "did not find expected property value for: ModifiedBy"
     );
 
-    let delete_fs_response = file_system_client.delete().execute().await?;
+    file_system_client.delete().execute().await?;
 
     Ok(())
 }
