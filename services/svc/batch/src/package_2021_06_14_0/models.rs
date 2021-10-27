@@ -788,6 +788,7 @@ pub struct CloudJobScheduleListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobSchedulingError {
+    #[serde(deserialize_with = "case_insensitive")]
     pub category: ErrorCategory,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
