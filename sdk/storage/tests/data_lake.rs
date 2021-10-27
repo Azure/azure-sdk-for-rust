@@ -27,10 +27,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
 
     let resource_id = "https://storage.azure.com/";
-    println!("getting bearer token for '{}'...", resource_id);
     let bearer_token = DefaultCredential::default().get_token(resource_id).await?;
-    println!("token expires on {}", bearer_token.expires_on);
-    println!();
 
     let data_lake_client = storage_account_client
         .as_storage_client()
@@ -43,21 +40,16 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     let mut fs_properties = Properties::new();
     fs_properties.insert("AddedVia", "Azure SDK for Rust");
 
-    println!("creating file system '{}'...", &file_system_name);
     let create_fs_response = file_system_client
         .create()
         .properties(&fs_properties)
         .execute()
         .await?;
-    println!("create file system response == {:?}", create_fs_response);
     assert!(
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
     );
-    println!("namespace is enabled");
-    println!();
 
-    println!("listing file systems...");
     let mut stream = Box::pin(
         data_lake_client
             .list()
@@ -74,10 +66,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         }
     }
     assert!(found, "did not find created file system");
-    println!("found created file system");
-    println!();
 
-    println!("getting file system properties...");
     let get_fs_props_response = file_system_client.get_properties().execute().await?;
     let properties_hashmap = get_fs_props_response.properties.hash_map();
     let added_via_option = properties_hashmap.get("AddedVia");
@@ -90,51 +79,30 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         "Azure SDK for Rust",
         "did not find expected property value for: AddedVia"
     );
-    println!("found expected file system property: AddedVia");
-    println!();
 
     let file_name = "e2etest-file.txt";
 
-    println!("creating path '{}'...", file_name);
-    let create_path_response = file_system_client
+    file_system_client
         .create_path(Context::default(), file_name, CreatePathOptions::default())
         .await?;
-    println!("create path response == {:?}", create_path_response);
-    println!();
 
-    println!("creating path '{}' (overwrite)...", file_name);
-    let create_path_response = file_system_client
+    file_system_client
         .create_path(Context::default(), file_name, CreatePathOptions::default())
         .await?;
-    println!("create path response == {:?}", create_path_response);
-    println!();
 
-    println!("creating path '{}' (do not overwrite)...", file_name);
     let do_not_overwrite =
         CreatePathOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
     let create_path_result = file_system_client
         .create_path(Context::default(), file_name, do_not_overwrite)
         .await;
     assert!(create_path_result.is_err());
-    println!(
-        "create path result (should fail) == {:?}",
-        create_path_result
-    );
-    println!();
 
-    println!("setting file system properties...");
     fs_properties.insert("ModifiedBy", "Iota");
     let set_fs_props_response = file_system_client
         .set_properties(Some(&fs_properties))
         .execute()
         .await?;
-    println!(
-        "set file system properties response == {:?}",
-        set_fs_props_response
-    );
-    println!();
 
-    println!("getting file system properties...");
     let get_fs_props_response = file_system_client.get_properties().execute().await?;
     let properties_hashmap = get_fs_props_response.properties.hash_map();
     let modified_by_option = properties_hashmap.get("ModifiedBy");
@@ -147,13 +115,8 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         "Iota",
         "did not find expected property value for: ModifiedBy"
     );
-    println!("found expected file system property: ModifiedBy");
-    println!();
 
-    println!("deleting file system...");
     let delete_fs_response = file_system_client.delete().execute().await?;
-    println!("delete file system response == {:?}", delete_fs_response);
-    println!();
 
     Ok(())
 }
