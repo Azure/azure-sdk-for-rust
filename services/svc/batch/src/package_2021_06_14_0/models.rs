@@ -39,13 +39,13 @@ pub struct ImageInformation {
     pub node_agent_sku_id: String,
     #[serde(rename = "imageReference")]
     pub image_reference: ImageReference,
-    #[serde(rename = "osType")]
+    #[serde(rename = "osType", deserialize_with = "case_insensitive")]
     pub os_type: image_information::OsType,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub capabilities: Vec<String>,
     #[serde(rename = "batchSupportEndOfLife", default, skip_serializing_if = "Option::is_none")]
     pub batch_support_end_of_life: Option<String>,
-    #[serde(rename = "verificationType")]
+    #[serde(rename = "verificationType", deserialize_with = "case_insensitive")]
     pub verification_type: image_information::VerificationType,
 }
 pub mod image_information {
@@ -181,11 +181,16 @@ pub struct Certificate {
     pub thumbprint_algorithm: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub state: Option<CertificateState>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
-    #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "previousState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub previous_state: Option<CertificateState>,
     #[serde(rename = "previousStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub previous_state_transition_time: Option<String>,
@@ -214,7 +219,12 @@ pub struct CertificateAddParameter {
     #[serde(rename = "thumbprintAlgorithm")]
     pub thumbprint_algorithm: String,
     pub data: String,
-    #[serde(rename = "certificateFormat", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "certificateFormat",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub certificate_format: Option<certificate_add_parameter::CertificateFormat>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
@@ -298,16 +308,21 @@ pub struct TaskContainerSettings {
     pub image_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<ContainerRegistry>,
-    #[serde(rename = "workingDirectory", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workingDirectory",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub working_directory: Option<task_container_settings::WorkingDirectory>,
 }
 pub mod task_container_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum WorkingDirectory {
-        #[serde(rename = "taskWorkingDirectory")]
+        #[serde(rename = "taskWorkingDirectory", alias = "taskworkingdirectory")]
         TaskWorkingDirectory,
-        #[serde(rename = "containerImageDefault")]
+        #[serde(rename = "containerImageDefault", alias = "containerimagedefault")]
         ContainerImageDefault,
     }
 }
@@ -362,9 +377,19 @@ pub struct ExitCodeRangeMapping {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExitOptions {
-    #[serde(rename = "jobAction", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "jobAction",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub job_action: Option<exit_options::JobAction>,
-    #[serde(rename = "dependencyAction", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dependencyAction",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub dependency_action: Option<exit_options::DependencyAction>,
 }
 pub mod exit_options {
@@ -388,9 +413,14 @@ pub mod exit_options {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoUserSpecification {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub scope: Option<auto_user_specification::Scope>,
-    #[serde(rename = "elevationLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "elevationLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub elevation_level: Option<ElevationLevel>,
 }
 pub mod auto_user_specification {
@@ -421,7 +451,12 @@ pub struct LinuxUserConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WindowsUserConfiguration {
-    #[serde(rename = "loginMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "loginMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub login_mode: Option<windows_user_configuration::LoginMode>,
 }
 pub mod windows_user_configuration {
@@ -438,7 +473,12 @@ pub mod windows_user_configuration {
 pub struct UserAccount {
     pub name: String,
     pub password: String,
-    #[serde(rename = "elevationLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "elevationLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub elevation_level: Option<ElevationLevel>,
     #[serde(rename = "linuxUserConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub linux_user_configuration: Option<LinuxUserConfiguration>,
@@ -563,7 +603,12 @@ pub struct CertificateReference {
     pub thumbprint: String,
     #[serde(rename = "thumbprintAlgorithm")]
     pub thumbprint_algorithm: String,
-    #[serde(rename = "storeLocation", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storeLocation",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub store_location: Option<certificate_reference::StoreLocation>,
     #[serde(rename = "storeName", default, skip_serializing_if = "Option::is_none")]
     pub store_name: Option<String>,
@@ -634,7 +679,7 @@ pub struct PoolSpecification {
 pub struct AutoPoolSpecification {
     #[serde(rename = "autoPoolIdPrefix", default, skip_serializing_if = "Option::is_none")]
     pub auto_pool_id_prefix: Option<String>,
-    #[serde(rename = "poolLifetimeOption")]
+    #[serde(rename = "poolLifetimeOption", deserialize_with = "case_insensitive")]
     pub pool_lifetime_option: auto_pool_specification::PoolLifetimeOption,
     #[serde(rename = "keepAlive", default, skip_serializing_if = "Option::is_none")]
     pub keep_alive: Option<bool>,
@@ -668,9 +713,19 @@ pub struct JobSpecification {
     pub display_name: Option<String>,
     #[serde(rename = "usesTaskDependencies", default, skip_serializing_if = "Option::is_none")]
     pub uses_task_dependencies: Option<bool>,
-    #[serde(rename = "onAllTasksComplete", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "onAllTasksComplete",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub on_all_tasks_complete: Option<OnAllTasksComplete>,
-    #[serde(rename = "onTaskFailure", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "onTaskFailure",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub on_task_failure: Option<OnTaskFailure>,
     #[serde(rename = "networkConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub network_configuration: Option<JobNetworkConfiguration>,
@@ -749,11 +804,16 @@ pub struct CloudJobSchedule {
     pub last_modified: Option<String>,
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub state: Option<JobScheduleState>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
-    #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "previousState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub previous_state: Option<JobScheduleState>,
     #[serde(rename = "previousStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub previous_state_transition_time: Option<String>,
@@ -826,11 +886,16 @@ pub struct CloudJob {
     pub last_modified: Option<String>,
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub state: Option<JobState>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
-    #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "previousState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub previous_state: Option<JobState>,
     #[serde(rename = "previousStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub previous_state_transition_time: Option<String>,
@@ -850,9 +915,19 @@ pub struct CloudJob {
     pub common_environment_settings: Vec<EnvironmentSetting>,
     #[serde(rename = "poolInfo", default, skip_serializing_if = "Option::is_none")]
     pub pool_info: Option<PoolInformation>,
-    #[serde(rename = "onAllTasksComplete", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "onAllTasksComplete",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub on_all_tasks_complete: Option<OnAllTasksComplete>,
-    #[serde(rename = "onTaskFailure", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "onTaskFailure",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub on_task_failure: Option<OnTaskFailure>,
     #[serde(rename = "networkConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub network_configuration: Option<JobNetworkConfiguration>,
@@ -884,9 +959,19 @@ pub struct JobAddParameter {
     pub common_environment_settings: Vec<EnvironmentSetting>,
     #[serde(rename = "poolInfo")]
     pub pool_info: PoolInformation,
-    #[serde(rename = "onAllTasksComplete", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "onAllTasksComplete",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub on_all_tasks_complete: Option<OnAllTasksComplete>,
-    #[serde(rename = "onTaskFailure", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "onTaskFailure",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub on_task_failure: Option<OnTaskFailure>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
@@ -928,6 +1013,7 @@ pub struct JobPreparationTaskExecutionInformation {
     pub start_time: String,
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[serde(deserialize_with = "case_insensitive")]
     pub state: job_preparation_task_execution_information::State,
     #[serde(rename = "taskRootDirectory", default, skip_serializing_if = "Option::is_none")]
     pub task_root_directory: Option<String>,
@@ -943,7 +1029,7 @@ pub struct JobPreparationTaskExecutionInformation {
     pub retry_count: i32,
     #[serde(rename = "lastRetryTime", default, skip_serializing_if = "Option::is_none")]
     pub last_retry_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub result: Option<TaskExecutionResult>,
 }
 pub mod job_preparation_task_execution_information {
@@ -962,6 +1048,7 @@ pub struct JobReleaseTaskExecutionInformation {
     pub start_time: String,
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[serde(deserialize_with = "case_insensitive")]
     pub state: job_release_task_execution_information::State,
     #[serde(rename = "taskRootDirectory", default, skip_serializing_if = "Option::is_none")]
     pub task_root_directory: Option<String>,
@@ -973,7 +1060,7 @@ pub struct JobReleaseTaskExecutionInformation {
     pub container_info: Option<TaskContainerExecutionInformation>,
     #[serde(rename = "failureInfo", default, skip_serializing_if = "Option::is_none")]
     pub failure_info: Option<TaskFailureInformation>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub result: Option<TaskExecutionResult>,
 }
 pub mod job_release_task_execution_information {
@@ -1085,11 +1172,16 @@ pub struct WindowsConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataDisk {
     pub lun: i32,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub caching: Option<CachingType>,
     #[serde(rename = "diskSizeGB")]
     pub disk_size_gb: i32,
-    #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageAccountType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub storage_account_type: Option<StorageAccountType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1144,7 +1236,7 @@ pub struct ContainerRegistry {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerConfiguration {
-    #[serde(rename = "type")]
+    #[serde(rename = "type", deserialize_with = "case_insensitive")]
     pub type_: container_configuration::Type,
     #[serde(rename = "containerImageNames", default, skip_serializing_if = "Vec::is_empty")]
     pub container_image_names: Vec<String>,
@@ -1155,7 +1247,7 @@ pub mod container_configuration {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
-        #[serde(rename = "dockerCompatible")]
+        #[serde(rename = "dockerCompatible", alias = "dockercompatible")]
         DockerCompatible,
     }
 }
@@ -1199,7 +1291,7 @@ pub struct InstanceViewStatus {
     pub code: Option<String>,
     #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
     pub display_status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub level: Option<instance_view_status::Level>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -1246,7 +1338,7 @@ pub enum DiffDiskPlacement {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiffDiskSettings {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub placement: Option<DiffDiskPlacement>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1274,7 +1366,12 @@ pub struct PublicIpAddressConfiguration {
 pub struct NetworkConfiguration {
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
-    #[serde(rename = "dynamicVNetAssignmentScope", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dynamicVNetAssignmentScope",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub dynamic_v_net_assignment_scope: Option<network_configuration::DynamicVNetAssignmentScope>,
     #[serde(rename = "endpointConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_configuration: Option<PoolEndpointConfiguration>,
@@ -1305,11 +1402,16 @@ pub struct CloudPool {
     pub last_modified: Option<String>,
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub state: Option<cloud_pool::State>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
-    #[serde(rename = "allocationState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allocationState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub allocation_state: Option<cloud_pool::AllocationState>,
     #[serde(rename = "allocationStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub allocation_state_transition_time: Option<String>,
@@ -1470,7 +1572,7 @@ pub struct TaskExecutionInformation {
     pub requeue_count: i32,
     #[serde(rename = "lastRequeueTime", default, skip_serializing_if = "Option::is_none")]
     pub last_requeue_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub result: Option<TaskExecutionResult>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1555,11 +1657,16 @@ pub struct CloudTask {
     pub creation_time: Option<String>,
     #[serde(rename = "exitConditions", default, skip_serializing_if = "Option::is_none")]
     pub exit_conditions: Option<ExitConditions>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub state: Option<TaskState>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
-    #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "previousState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub previous_state: Option<TaskState>,
     #[serde(rename = "previousStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub previous_state_transition_time: Option<String>,
@@ -1636,6 +1743,7 @@ pub struct TaskAddCollectionParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskAddResult {
+    #[serde(deserialize_with = "case_insensitive")]
     pub status: task_add_result::Status,
     #[serde(rename = "taskId")]
     pub task_id: String,
@@ -1681,15 +1789,20 @@ pub struct SubtaskInformation {
     pub container_info: Option<TaskContainerExecutionInformation>,
     #[serde(rename = "failureInfo", default, skip_serializing_if = "Option::is_none")]
     pub failure_info: Option<TaskFailureInformation>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub state: Option<SubtaskState>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
-    #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "previousState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub previous_state: Option<SubtaskState>,
     #[serde(rename = "previousStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub previous_state_transition_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub result: Option<TaskExecutionResult>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1714,13 +1827,14 @@ pub struct TaskInformation {
     pub task_id: Option<String>,
     #[serde(rename = "subtaskId", default, skip_serializing_if = "Option::is_none")]
     pub subtask_id: Option<i32>,
-    #[serde(rename = "taskState")]
+    #[serde(rename = "taskState", deserialize_with = "case_insensitive")]
     pub task_state: TaskState,
     #[serde(rename = "executionInfo", default, skip_serializing_if = "Option::is_none")]
     pub execution_info: Option<TaskExecutionInformation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StartTaskInformation {
+    #[serde(deserialize_with = "case_insensitive")]
     pub state: start_task_information::State,
     #[serde(rename = "startTime")]
     pub start_time: String,
@@ -1736,7 +1850,7 @@ pub struct StartTaskInformation {
     pub retry_count: i32,
     #[serde(rename = "lastRetryTime", default, skip_serializing_if = "Option::is_none")]
     pub last_retry_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub result: Option<TaskExecutionResult>,
 }
 pub mod start_task_information {
@@ -1764,9 +1878,14 @@ pub struct ComputeNode {
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "case_insensitive")]
     pub state: Option<compute_node::State>,
-    #[serde(rename = "schedulingState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "schedulingState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub scheduling_state: Option<compute_node::SchedulingState>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
@@ -1859,6 +1978,7 @@ pub struct PoolEndpointConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InboundNatPool {
     pub name: String,
+    #[serde(deserialize_with = "case_insensitive")]
     pub protocol: InboundEndpointProtocol,
     #[serde(rename = "backendPort")]
     pub backend_port: i32,
@@ -1872,6 +1992,7 @@ pub struct InboundNatPool {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkSecurityGroupRule {
     pub priority: i32,
+    #[serde(deserialize_with = "case_insensitive")]
     pub access: network_security_group_rule::Access,
     #[serde(rename = "sourceAddressPrefix")]
     pub source_address_prefix: String,
@@ -1896,6 +2017,7 @@ pub struct ComputeNodeEndpointConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InboundEndpoint {
     pub name: String,
+    #[serde(deserialize_with = "case_insensitive")]
     pub protocol: InboundEndpointProtocol,
     #[serde(rename = "publicIPAddress")]
     pub public_ip_address: String,
@@ -1951,7 +2073,7 @@ pub struct JobScheduleUpdateParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDisableParameter {
-    #[serde(rename = "disableTasks")]
+    #[serde(rename = "disableTasks", deserialize_with = "case_insensitive")]
     pub disable_tasks: job_disable_parameter::DisableTasks,
 }
 pub mod job_disable_parameter {
@@ -1977,7 +2099,12 @@ pub struct JobPatchParameter {
     pub priority: Option<i32>,
     #[serde(rename = "maxParallelTasks", default, skip_serializing_if = "Option::is_none")]
     pub max_parallel_tasks: Option<i32>,
-    #[serde(rename = "onAllTasksComplete", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "onAllTasksComplete",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub on_all_tasks_complete: Option<OnAllTasksComplete>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints: Option<JobConstraints>,
@@ -1996,7 +2123,12 @@ pub struct JobUpdateParameter {
     pub pool_info: PoolInformation,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
-    #[serde(rename = "onAllTasksComplete", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "onAllTasksComplete",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub on_all_tasks_complete: Option<OnAllTasksComplete>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2019,7 +2151,12 @@ pub struct PoolResizeParameter {
     pub target_low_priority_nodes: Option<i32>,
     #[serde(rename = "resizeTimeout", default, skip_serializing_if = "Option::is_none")]
     pub resize_timeout: Option<String>,
-    #[serde(rename = "nodeDeallocationOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "nodeDeallocationOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub node_deallocation_option: Option<ComputeNodeDeallocationOption>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2059,7 +2196,12 @@ pub struct NodeUpdateUserParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeRebootParameter {
-    #[serde(rename = "nodeRebootOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "nodeRebootOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub node_reboot_option: Option<node_reboot_parameter::NodeRebootOption>,
 }
 pub mod node_reboot_parameter {
@@ -2078,7 +2220,12 @@ pub mod node_reboot_parameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeReimageParameter {
-    #[serde(rename = "nodeReimageOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "nodeReimageOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub node_reimage_option: Option<node_reimage_parameter::NodeReimageOption>,
 }
 pub mod node_reimage_parameter {
@@ -2097,7 +2244,12 @@ pub mod node_reimage_parameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeDisableSchedulingParameter {
-    #[serde(rename = "nodeDisableSchedulingOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "nodeDisableSchedulingOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub node_disable_scheduling_option: Option<node_disable_scheduling_parameter::NodeDisableSchedulingOption>,
 }
 pub mod node_disable_scheduling_parameter {
@@ -2118,7 +2270,12 @@ pub struct NodeRemoveParameter {
     pub node_list: Vec<String>,
     #[serde(rename = "resizeTimeout", default, skip_serializing_if = "Option::is_none")]
     pub resize_timeout: Option<String>,
-    #[serde(rename = "nodeDeallocationOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "nodeDeallocationOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive"
+    )]
     pub node_deallocation_option: Option<ComputeNodeDeallocationOption>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2407,7 +2564,7 @@ pub struct AzureFileShareConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BatchPoolIdentity {
-    #[serde(rename = "type")]
+    #[serde(rename = "type", deserialize_with = "case_insensitive")]
     pub type_: batch_pool_identity::Type,
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Vec::is_empty")]
     pub user_assigned_identities: Vec<UserAssignedIdentity>,

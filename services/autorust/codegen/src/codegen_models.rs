@@ -21,7 +21,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
     let mut file = TokenStream::new();
     file.extend(create_generated_by_header());
 
-    let has_case_workaround = cg.spec.input_docs().any(|(x, _)| cg.has_case_workaround(x));
+    let has_case_workaround = cg.should_workaround_case();
 
     file.extend(quote! {
         #![allow(non_camel_case_types)]
@@ -201,7 +201,7 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
             property_name: property_name.to_string(),
         };
 
-        let lowercase_workaround = cg.should_workaround_case(prop_nm);
+        let lowercase_workaround = cg.should_workaround_case();
 
         let (mut field_tp_name, field_tp) = create_struct_field_type(cg, doc_file, &ns, property_name, property, lowercase_workaround)?;
         // uncomment the next two lines to help identify entries that need boxed

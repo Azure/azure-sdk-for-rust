@@ -5,7 +5,7 @@ use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../svc";
 
-const ONLY_SERVICES: &[&str] = &["batch"];
+const ONLY_SERVICES: &[&str] = &[];
 
 const SKIP_SERVICES: &[&str] = &[
     "deviceupdate",            // missing field `authorizationUrl`
@@ -37,38 +37,7 @@ const INVALID_TYPE_WORKAROUND: &[(&str, &str, &str)] = &[(
     "rows",
 )];
 
-const FIX_CASE_PROPERTIES: &[(&str, &str, &str)] = &[
-    (
-        "../../../azure-rest-api-specs/specification/batch/data-plane/Microsoft.Batch/stable/2021-06-01.14.0/BatchService.json",
-        "TaskSchedulingPolicy",
-        "nodeFillType",
-    ),
-    (
-        "../../../azure-rest-api-specs/specification/batch/data-plane/Microsoft.Batch/stable/2021-06-01.14.0/BatchService.json",
-        "NodePlacementConfiguration",
-        "policy",
-    ),
-    (
-        "../../../azure-rest-api-specs/specification/batch/data-plane/Microsoft.Batch/stable/2021-06-01.14.0/BatchService.json",
-        "PublicIPAddressConfiguration",
-        "provision",
-    ),
-    (
-        "../../../azure-rest-api-specs/specification/batch/data-plane/Microsoft.Batch/stable/2021-06-01.14.0/BatchService.json",
-        "OutputFileUploadOptions",
-        "uploadCondition",
-    ),
-    (
-        "../../../azure-rest-api-specs/specification/batch/data-plane/Microsoft.Batch/stable/2021-06-01.14.0/BatchService.json",
-        "JobSchedulingError",
-        "category",
-    ),
-    (
-        "../../../azure-rest-api-specs/specification/batch/data-plane/Microsoft.Batch/stable/2021-06-01.14.0/BatchService.json",
-        "TaskFailureInformation",
-        "category",
-    ),
-];
+const FIX_CASE_PROPERTIES: &[&str] = &["BatchServiceClient", "BatchService"];
 
 // because of recursive types, some properties have to be boxed
 // https://github.com/ctaggart/autorust/issues/73
@@ -194,12 +163,8 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let mut feature_mod_names = Vec::new();
 
     let mut fix_case_properties = HashSet::new();
-    for (file_path, schema_name, property_name) in FIX_CASE_PROPERTIES {
-        fix_case_properties.insert(PropertyName {
-            file_path: PathBuf::from(file_path),
-            schema_name: schema_name.to_string(),
-            property_name: property_name.to_string(),
-        });
+    for spec_title in FIX_CASE_PROPERTIES {
+        fix_case_properties.insert(spec_title.to_string());
     }
 
     let mut box_properties = HashSet::new();

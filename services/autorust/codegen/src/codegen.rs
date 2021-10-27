@@ -28,12 +28,12 @@ impl CodeGen {
         &self.config.output_folder
     }
 
-    pub fn has_case_workaround(&self, path: &Path) -> bool {
-        self.config.fix_case_properties.iter().any(|x| x.file_path == path)
-    }
-
-    pub fn should_workaround_case(&self, prop_nm: &PropertyName) -> bool {
-        self.config.fix_case_properties.contains(prop_nm)
+    pub fn should_workaround_case(&self) -> bool {
+        if let Some(title) = self.spec.title() {
+            self.config.fix_case_properties.contains(title)
+        } else {
+            false
+        }
     }
 
     pub fn should_force_optional(&self, prop_nm: &PropertyName) -> bool {
