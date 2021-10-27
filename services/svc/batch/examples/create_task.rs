@@ -1,5 +1,5 @@
 /*
-Prints the name of pools using the data plane APIs
+Creates a batch job and task using the data plane APIs
 
 cargo run --package azure_svc_batch --example create_task
 */
