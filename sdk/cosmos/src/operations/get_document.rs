@@ -32,11 +32,19 @@ impl<'a> GetDocumentOptions<'a> {
         if_modified_since: &'a DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
     }
 
-    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> Result<(), crate::Error> {
+    pub(crate) fn decorate_request(
+        &self,
+        request: &mut HttpRequest,
+        partition_key_serialized: &str,
+    ) -> Result<(), crate::Error> {
         // add trait headers
         azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
         azure_core::headers::add_optional_header2(&self.if_modified_since, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
+        crate::cosmos_entity::add_as_partition_key_header_serialized2(
+            partition_key_serialized,
+            request,
+        );
 
         request.set_body(bytes::Bytes::from_static(EMPTY_BODY).into());
 

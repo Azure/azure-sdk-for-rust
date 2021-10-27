@@ -61,7 +61,10 @@ async fn create_and_delete_collection() {
     let collections = database_client.list_collections().execute().await.unwrap();
     assert!(collections.collections.len() == 0);
 
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -148,5 +151,8 @@ async fn replace_collection() {
         .collect();
     assert!(eps.len() > 0);
 
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }

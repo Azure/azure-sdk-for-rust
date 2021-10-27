@@ -76,9 +76,9 @@ impl DocumentClient {
         T: DeserializeOwned,
     {
         let mut request = self.prepare_request_pipeline_with_document_name(http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
 
-        options.decorate_request(&mut request)?;
+        options.decorate_request(&mut request, self.partition_key_serialized())?;
 
         let response = self
             .cosmos_client()
