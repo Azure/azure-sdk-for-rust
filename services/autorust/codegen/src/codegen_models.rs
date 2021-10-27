@@ -30,8 +30,8 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
     });
     if has_case_workaround {
         file.extend(quote! {
-        use serde::de::{self, Deserializer, DeserializeOwned};
-        })
+        use azure_core::util::case_insensitive_deserialize;
+        });
     }
 
     let mut all_schemas: IndexMap<RefKey, ResolvedSchema> = IndexMap::new();
@@ -55,18 +55,6 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
         for reference in openapi::get_api_schema_references(doc) {
             add_schema_refs(cg, &mut all_schemas, doc_file, reference)?;
         }
-    }
-
-    if has_case_workaround {
-        file.extend(quote! {
-            fn case_insensitive<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-            where T: DeserializeOwned + std::fmt::Debug,
-                  D: Deserializer<'de>
-        {
-            let v = String::deserialize(deserializer)?;
-            T::deserialize(serde_json::Value::String(v.clone())).or_else(|_| T::deserialize(serde_json::Value::String(v.to_lowercase()))).map_err(de::Error::custom)
-        }
-            });
     }
 
     let mut schema_names = IndexMap::new();
@@ -231,7 +219,7 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
             }
         }
         if is_local_enum(property) && lowercase_workaround {
-            serde_attrs.push(quote! { deserialize_with = "case_insensitive"});
+            serde_attrs.push(quote! { deserialize_with = "case_insensitive_deserialize"});
         }
         let serde = if !serde_attrs.is_empty() {
             quote! { #[serde(#(#serde_attrs),*)] }
