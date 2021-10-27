@@ -913,6 +913,7 @@ pub struct TaskContainerExecutionInformation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskFailureInformation {
+    #[serde(deserialize_with = "case_insensitive")]
     pub category: ErrorCategory,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
