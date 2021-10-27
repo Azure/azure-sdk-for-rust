@@ -5,7 +5,7 @@ use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 use azure_core::pipeline::Pipeline;
 use azure_core::prelude::Continuation;
-use azure_core::{AddAsHeader, Context, HttpClient, PipelineContext};
+use azure_core::{AddAsHeader, Context, HttpClient, PipelineContext, Request as HttpRequest};
 use futures::stream::unfold;
 use futures::Stream;
 
@@ -43,9 +43,7 @@ impl DatabaseClient {
         ctx: Context,
         options: GetDatabaseOptions,
     ) -> Result<GetDatabaseResponse, crate::Error> {
-        let mut request = self
-            .cosmos_client()
-            .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), http::Method::GET);
+        let mut request = self.prepare_request_with_database_name(http::Method::GET);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
         options.decorate_request(&mut request)?;
@@ -65,8 +63,23 @@ impl DatabaseClient {
     }
 
     /// Delete the database
-    pub fn delete_database(&self) -> requests::DeleteDatabaseBuilder<'_> {
-        requests::DeleteDatabaseBuilder::new(self)
+    pub async fn delete_database(
+        &self,
+        ctx: Context,
+        options: DeleteDatabaseOptions<'_>,
+    ) -> Result<DeleteDatabaseResponse, crate::Error> {
+        let mut request = self.prepare_request_with_database_name(http::Method::DELETE);
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+
+        options.decorate_request(&mut request)?;
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::NO_CONTENT)
+            .await?;
+
+        Ok(DeleteDatabaseResponse::try_from(response).await?)
     }
 
     /// Create a collection
@@ -188,15 +201,9 @@ impl DatabaseClient {
         UserClient::new(self, user_name)
     }
 
-    pub(crate) fn prepare_request_with_database_name(
-        &self,
-        method: http::Method,
-    ) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
-            &format!("dbs/{}", self.database_name()),
-            method,
-            ResourceType::Databases,
-        )
+    pub(crate) fn prepare_request_with_database_name(&self, method: http::Method) -> HttpRequest {
+        self.cosmos_client()
+            .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), method)
     }
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
