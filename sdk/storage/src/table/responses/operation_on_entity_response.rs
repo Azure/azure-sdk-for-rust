@@ -16,8 +16,8 @@ impl TryFrom<&Response<Bytes>> for OperationOnEntityResponse {
     type Error = crate::Error;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
-        println!("{}", std::str::from_utf8(response.body())?);
-        println!("headers == {:#?}", response.headers());
+        debug!("{}", std::str::from_utf8(response.body())?);
+        debug!("headers == {:#?}", response.headers());
 
         Ok(OperationOnEntityResponse {
             common_storage_response_headers: response.headers().try_into()?,

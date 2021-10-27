@@ -46,10 +46,10 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
         E: Serialize,
     {
         let url = self.entity_client.url();
-        println!("url = {}", url);
+        debug!("url = {}", url);
 
         let request_body_serialized = serde_json::to_string(entity)?;
-        println!("payload == {}", request_body_serialized);
+        debug!("payload == {}", request_body_serialized);
 
         let request = self.entity_client.prepare_request(
             url.as_str(),
@@ -66,7 +66,7 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;
 
-        println!("request == {:#?}\n", request);
+        debug!("request == {:#?}\n", request);
 
         let response = self
             .entity_client
