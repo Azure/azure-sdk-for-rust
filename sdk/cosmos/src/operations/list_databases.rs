@@ -26,7 +26,7 @@ impl ListDatabasesOptions {
         max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 
-    pub async fn decorate_request(&self, request: &mut Request) -> Result<(), crate::Error> {
+    pub async fn decorate_request(&self, request: &mut Request) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
         azure_core::headers::add_mandatory_header2(&self.max_item_count, request)?;
         Ok(())
@@ -53,7 +53,7 @@ pub struct ListDatabasesResponse {
 impl ListDatabasesResponse {
     // TODO: To remove pragma when list_databases has been re-enabled
     #[allow(dead_code)]
-    pub(crate) async fn try_from(response: Response) -> Result<Self, crate::Error> {
+    pub(crate) async fn try_from(response: Response) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

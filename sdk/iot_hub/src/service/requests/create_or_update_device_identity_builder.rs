@@ -46,7 +46,7 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
         device_id: S,
         status: Status,
         authentication: AuthenticationMechanism,
-    ) -> Result<DeviceIdentityResponse, crate::Error>
+    ) -> crate::Result<DeviceIdentityResponse>
     where
         S: AsRef<str>,
     {

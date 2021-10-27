@@ -42,7 +42,7 @@ impl DatabaseClient {
         &self,
         ctx: Context,
         options: GetDatabaseOptions,
-    ) -> Result<GetDatabaseResponse, crate::Error> {
+    ) -> crate::Result<GetDatabaseResponse> {
         let mut request = self
             .cosmos_client()
             .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), http::Method::GET);
@@ -75,7 +75,7 @@ impl DatabaseClient {
         ctx: Context,
         collection_name: S,
         options: CreateCollectionOptions,
-    ) -> Result<CreateCollectionResponse, crate::Error> {
+    ) -> crate::Result<CreateCollectionResponse> {
         let mut request = self.cosmos_client().prepare_request_pipeline(
             &format!("dbs/{}/colls", self.database_name()),
             http::Method::POST,
@@ -98,7 +98,7 @@ impl DatabaseClient {
         &self,
         ctx: Context,
         options: ListUsersOptions,
-    ) -> impl Stream<Item = Result<ListUsersResponse, crate::Error>> + '_ {
+    ) -> impl Stream<Item = crate::Result<ListUsersResponse>> + '_ {
         macro_rules! r#try {
             ($expr:expr $(,)?) => {
                 match $expr {

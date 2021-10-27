@@ -189,7 +189,7 @@ impl DataLakeClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
+    ) -> crate::Result<(Request<Bytes>, url::Url)> {
         self.storage_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

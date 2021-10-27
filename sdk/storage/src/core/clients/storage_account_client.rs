@@ -240,7 +240,7 @@ impl StorageAccountClient {
     pub fn new_connection_string(
         http_client: Arc<dyn HttpClient>,
         connection_string: &str,
-    ) -> Result<Arc<Self>, crate::Error> {
+    ) -> crate::Result<Arc<Self>> {
         match ConnectionString::new(connection_string)? {
             ConnectionString {
                 account_name: Some(account),
@@ -351,7 +351,7 @@ impl StorageAccountClient {
         http_header_adder: &dyn Fn(Builder) -> Builder,
         service_type: ServiceType,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
+    ) -> crate::Result<(Request<Bytes>, url::Url)> {
         let dt = chrono::Utc::now();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 

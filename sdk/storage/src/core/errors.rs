@@ -1,4 +1,8 @@
 use std::cmp::PartialEq;
+
+/// A specialized Result type.
+pub type Result<T> = std::result::Result<T, Error>;
+
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

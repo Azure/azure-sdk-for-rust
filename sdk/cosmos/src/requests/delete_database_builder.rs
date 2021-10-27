@@ -31,7 +31,7 @@ impl<'a> DeleteDatabaseBuilder<'a> {
 }
 
 impl<'a> DeleteDatabaseBuilder<'a> {
-    pub async fn execute(&self) -> Result<DeleteDatabaseResponse, crate::Error> {
+    pub async fn execute(&self) -> crate::Result<DeleteDatabaseResponse> {
         trace!("DeleteDatabaseResponse::execute called");
 
         let request = self

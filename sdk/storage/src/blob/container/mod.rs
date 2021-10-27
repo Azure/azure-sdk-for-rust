@@ -53,9 +53,7 @@ impl AddAsHeader for PublicAccess {
     }
 }
 
-pub(crate) fn public_access_from_header(
-    header_map: &HeaderMap,
-) -> Result<PublicAccess, crate::Error> {
+pub(crate) fn public_access_from_header(header_map: &HeaderMap) -> crate::Result<PublicAccess> {
     let pa = match header_map.get(BLOB_PUBLIC_ACCESS) {
         Some(pa) => PublicAccess::from_str(pa.to_str()?)?,
         None => PublicAccess::None,
@@ -99,10 +97,7 @@ impl Container {
         }
     }
 
-    pub(crate) fn from_response<NAME>(
-        name: NAME,
-        headers: &HeaderMap,
-    ) -> Result<Container, crate::Error>
+    pub(crate) fn from_response<NAME>(name: NAME, headers: &HeaderMap) -> crate::Result<Container>
     where
         NAME: Into<String>,
     {
@@ -179,7 +174,7 @@ impl Container {
         })
     }
 
-    fn parse(elem: &Element) -> Result<Container, crate::Error> {
+    fn parse(elem: &Element) -> crate::Result<Container> {
         let name = cast_must::<String>(elem, &["Name"])?;
         let last_modified = cast_must::<DateTime<Utc>>(elem, &["Properties", "Last-Modified"])?;
         let e_tag = cast_must::<String>(elem, &["Properties", "Etag"])?;
@@ -259,7 +254,7 @@ impl Container {
 
 pub(crate) fn incomplete_vector_from_container_response(
     body: &str,
-) -> Result<IncompleteVector<Container>, crate::Error> {
+) -> crate::Result<IncompleteVector<Container>> {
     let elem: Element = body.parse()?;
 
     let mut v = Vec::new();

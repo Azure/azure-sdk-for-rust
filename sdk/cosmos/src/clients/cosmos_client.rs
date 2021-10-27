@@ -182,7 +182,7 @@ impl CosmosClient {
         ctx: Context,
         database_name: S,
         options: CreateDatabaseOptions,
-    ) -> Result<CreateDatabaseResponse, crate::Error> {
+    ) -> crate::Result<CreateDatabaseResponse> {
         let mut request = self.prepare_request_pipeline("dbs", http::Method::POST);
 
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
@@ -203,7 +203,7 @@ impl CosmosClient {
         &self,
         ctx: Context,
         options: ListDatabasesOptions,
-    ) -> impl Stream<Item = Result<ListDatabasesResponse, crate::Error>> + '_ {
+    ) -> impl Stream<Item = crate::Result<ListDatabasesResponse>> + '_ {
         macro_rules! r#try {
             ($expr:expr $(,)?) => {
                 match $expr {

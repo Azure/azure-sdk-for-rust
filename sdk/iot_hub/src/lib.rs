@@ -4,6 +4,9 @@
 /// The service module contains the IoT Hub Service Client that can be used to manage the IoT Hub.
 pub mod service;
 
+/// A specialized Result type.
+pub type Result<T> = std::result::Result<T, Error>;
+
 /// A general error having to do with the IoTHub.
 #[allow(missing_docs)]
 #[non_exhaustive]

@@ -40,7 +40,7 @@ impl StoredAccessPolicyList {
         StoredAccessPolicyList::default()
     }
 
-    pub fn from_xml(xml: &Bytes) -> Result<StoredAccessPolicyList, crate::Error> {
+    pub fn from_xml(xml: &Bytes) -> crate::Result<StoredAccessPolicyList> {
         debug!("{:?}", xml);
 
         let mut sal = StoredAccessPolicyList::default();

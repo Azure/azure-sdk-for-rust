@@ -127,7 +127,7 @@ where
     ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
     ///              .execute();
     /// ```
-    pub async fn execute(self) -> Result<R, crate::Error> {
+    pub async fn execute(self) -> crate::Result<R> {
         let body = DesiredTwinBody {
             tags: self.desired_tags,
             properties: DesiredTwinProperties {

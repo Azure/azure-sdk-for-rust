@@ -39,7 +39,7 @@ impl<'a, 'b> ReplaceReferenceAttachmentBuilder<'a, 'b> {
         &self,
         media: M,
         content_type: C,
-    ) -> Result<crate::responses::ReplaceReferenceAttachmentResponse, crate::Error>
+    ) -> crate::Result<crate::responses::ReplaceReferenceAttachmentResponse>
     where
         M: AsRef<str>,
         C: Into<ContentType<'b>>,
