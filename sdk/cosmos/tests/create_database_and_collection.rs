@@ -2,6 +2,7 @@
 
 use azure_core::Context;
 use azure_cosmos::prelude::*;
+use futures::stream::StreamExt;
 use std::error::Error;
 
 mod setup;
@@ -36,7 +37,7 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
     log::info!("Creating a collection with name '{}'...", collection_name);
     let collection = db_client
         .create_collection(
-            context,
+            context.clone(),
             collection_name,
             CreateCollectionOptions::new("/id"),
         )
@@ -46,6 +47,14 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
 
     log::info!("Successfully created a collection");
     log::debug!("The create_collection response: {:#?}", collection);
+
+    let collections = Box::pin(db_client.list_collections(context, ListCollectionsOptions::new()))
+        .next()
+        .await
+        .expect("No collection page")?;
+    assert_eq!(collections.count, 1);
+    log::info!("Successfully listed collections");
+    log::debug!("The list_collection response: {:#?}", collections);
 
     Ok(())
 }

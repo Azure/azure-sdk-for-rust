@@ -1,0 +1,12 @@
+{
+	"uri": "/dbs/sample/colls",
+	"method": "GET",
+	"headers": {
+		"x-ms-max-item-count": "-1",
+		"x-ms-date": "Thu, 28 Oct 2021 12:38:57 GMT",
+		"x-ms-version": "2018-12-31",
+		"authorization": "<<STRIPPED>>",
+		"user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)"
+	},
+	"body": ""
+}

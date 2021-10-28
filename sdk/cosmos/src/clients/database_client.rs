@@ -104,7 +104,6 @@ impl DatabaseClient {
     /// List collections in the database
     pub fn list_collections(
         &self,
-
         ctx: Context,
         options: ListCollectionsOptions,
     ) -> impl Stream<Item = crate::Result<ListCollectionsResponse>> + '_ {
@@ -120,7 +119,7 @@ impl DatabaseClient {
                             http::Method::GET,
                         );
                         let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Users.into());
+                            PipelineContext::new(ctx.clone(), ResourceType::Collections.into());
 
                         r#try!(options.decorate_request(&mut request));
                         let response = r#try!(
@@ -138,7 +137,7 @@ impl DatabaseClient {
                             http::Method::GET,
                         );
                         let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Users.into());
+                            PipelineContext::new(ctx.clone(), ResourceType::Collections.into());
 
                         r#try!(options.decorate_request(&mut request));
                         r#try!(continuation.add_as_header2(&mut request));

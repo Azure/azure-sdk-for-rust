@@ -1,11 +1,11 @@
 {
-  "uri": "/dbs/sample/colls",
-  "method": "POST",
-  "headers": {
-    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.55.0; linux; x86_64)",
-    "x-ms-date": "Sun, 19 Sep 2021 10:01:02 GMT",
-    "authorization": "<<STRIPPED>>",
-    "x-ms-version": "2018-12-31"
-  },
-  "body": "eyJpZCI6InBhbnphZG9ybyIsInBhcnRpdGlvbktleSI6eyJwYXRocyI6WyIvaWQiXSwia2luZCI6Ikhhc2gifX0="
+	"uri": "/dbs/sample/colls",
+	"method": "POST",
+	"headers": {
+		"authorization": "<<STRIPPED>>",
+		"user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
+		"x-ms-date": "Thu, 28 Oct 2021 12:38:56 GMT",
+		"x-ms-version": "2018-12-31"
+	},
+	"body": "eyJpZCI6InBhbnphZG9ybyIsInBhcnRpdGlvbktleSI6eyJwYXRocyI6WyIvaWQiXSwia2luZCI6Ikhhc2gifX0="
 }
