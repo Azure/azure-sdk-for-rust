@@ -17,7 +17,6 @@ mod execute_stored_procedure_response;
 mod get_attachment_response;
 mod get_partition_key_ranges_response;
 mod list_attachments_response;
-mod list_collections_response;
 mod list_documents_response;
 mod list_permissions_response;
 mod list_stored_procedures_response;
@@ -43,7 +42,6 @@ pub use execute_stored_procedure_response::ExecuteStoredProcedureResponse;
 pub use get_attachment_response::GetAttachmentResponse;
 pub use get_partition_key_ranges_response::GetPartitionKeyRangesResponse;
 pub use list_attachments_response::ListAttachmentsResponse;
-pub use list_collections_response::ListCollectionsResponse;
 pub use list_documents_response::{
     ListDocumentsResponse, ListDocumentsResponseAttributes, ListDocumentsResponseEntities,
 };

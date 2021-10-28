@@ -120,7 +120,9 @@ async fn user_defined_function00() -> Result<(), azure_cosmos::Error> {
         .await?;
 
     // delete the database
-    database_client.delete_database().execute().await?;
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await?;
 
     Ok(())
 }
