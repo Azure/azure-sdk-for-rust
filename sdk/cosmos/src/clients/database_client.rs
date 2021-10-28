@@ -65,8 +65,25 @@ impl DatabaseClient {
     }
 
     /// Delete the database
-    pub fn delete_database(&self) -> requests::DeleteDatabaseBuilder<'_> {
-        requests::DeleteDatabaseBuilder::new(self)
+    pub async fn delete_database(
+        &self,
+        ctx: Context,
+        options: GetDatabaseOptions,
+    ) -> crate::Result<DeleteDatabaseResponse> {
+        let mut request = self
+            .cosmos_client()
+            .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), http::Method::GET);
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+
+        options.decorate_request(&mut request)?;
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
+            .await?;
+
+        Ok(DeleteDatabaseResponse::try_from(response).await?)
     }
 
     /// Create a collection
@@ -186,17 +203,6 @@ impl DatabaseClient {
     /// Convert into a [`UserClient`]
     pub fn into_user_client<S: Into<ReadonlyString>>(self, user_name: S) -> UserClient {
         UserClient::new(self, user_name)
-    }
-
-    pub(crate) fn prepare_request_with_database_name(
-        &self,
-        method: http::Method,
-    ) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
-            &format!("dbs/{}", self.database_name()),
-            method,
-            ResourceType::Databases,
-        )
     }
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
