@@ -55,7 +55,7 @@ pub struct OpenAPI {
 
 impl OpenAPI {
     pub fn paths(&self) -> &IndexMap<String, ReferenceOr<PathItem>> {
-        if self.x_ms_paths.len() > 0 {
+        if !self.x_ms_paths.is_empty() {
             &self.x_ms_paths
         } else {
             &self.paths

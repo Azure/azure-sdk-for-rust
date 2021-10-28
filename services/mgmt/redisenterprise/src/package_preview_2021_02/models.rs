@@ -91,11 +91,11 @@ pub mod cluster_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MinimumTlsVersion {
         #[serde(rename = "1.0")]
-        _1_0,
+        N1_0,
         #[serde(rename = "1.1")]
-        _1_1,
+        N1_1,
         #[serde(rename = "1.2")]
-        _1_2,
+        N1_2,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -198,18 +198,18 @@ pub mod persistence {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AofFrequency {
         #[serde(rename = "1s")]
-        _1s,
+        N1s,
         #[serde(rename = "always")]
         Always,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RdbFrequency {
         #[serde(rename = "1h")]
-        _1h,
+        N1h,
         #[serde(rename = "6h")]
-        _6h,
+        N6h,
         #[serde(rename = "12h")]
-        _12h,
+        N12h,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

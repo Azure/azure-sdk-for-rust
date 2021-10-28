@@ -1915,7 +1915,7 @@ pub mod network_profile {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkApiVersion {
         #[serde(rename = "2020-11-01")]
-        _2020_11_01,
+        N2020_11_01,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2706,7 +2706,7 @@ pub mod virtual_machine_scale_set_network_profile {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkApiVersion {
         #[serde(rename = "2020-11-01")]
-        _2020_11_01,
+        N2020_11_01,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2723,7 +2723,7 @@ pub mod virtual_machine_scale_set_update_network_profile {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkApiVersion {
         #[serde(rename = "2020-11-01")]
-        _2020_11_01,
+        N2020_11_01,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

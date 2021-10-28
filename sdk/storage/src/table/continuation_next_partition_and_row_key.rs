@@ -15,7 +15,7 @@ impl ContinuationNextPartitionAndRowKey {
         &self.0
     }
 
-    pub fn from_header_optional(headers: &http::HeaderMap) -> Result<Option<Self>, crate::Error> {
+    pub fn from_header_optional(headers: &http::HeaderMap) -> crate::Result<Option<Self>> {
         let partition_header_as_str = headers
             .get("x-ms-continuation-NextPartitionKey")
             .map(|item| item.to_str())

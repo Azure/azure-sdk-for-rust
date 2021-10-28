@@ -41,7 +41,7 @@ impl<'de> Deserialize<'de> for StatusCode {
             where
                 E: de::Error,
             {
-                if value >= 100 && value < 1000 {
+                if (100..1000).contains(&value) {
                     Ok(StatusCode::Code(value as u16))
                 } else {
                     Err(E::invalid_value(Unexpected::Signed(value), &self))
@@ -52,7 +52,7 @@ impl<'de> Deserialize<'de> for StatusCode {
             where
                 E: de::Error,
             {
-                if value >= 100 && value < 1000 {
+                if (100..1000).contains(&value) {
                     Ok(StatusCode::Code(value as u16))
                 } else {
                     Err(E::invalid_value(Unexpected::Unsigned(value), &self))
@@ -72,7 +72,7 @@ impl<'de> Deserialize<'de> for StatusCode {
                 }
 
                 if let Ok(number) = value.parse::<i64>() {
-                    return self.visit_i64(number);
+                    self.visit_i64(number)
                 } else {
                     return Err(E::invalid_value(Unexpected::Str(value), &"not i64"));
                 }

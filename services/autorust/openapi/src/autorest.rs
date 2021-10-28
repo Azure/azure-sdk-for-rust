@@ -130,7 +130,6 @@ pub struct MsXml {
 #[cfg(test)]
 mod tests {
     use crate::MsPageable;
-    use serde_json;
 
     #[test]
     fn pageable_nextlinkname_may_be_null() {

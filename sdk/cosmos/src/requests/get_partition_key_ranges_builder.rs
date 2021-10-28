@@ -36,7 +36,7 @@ impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
         if_modified_since: &'b DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
     }
 
-    pub async fn execute(&self) -> Result<GetPartitionKeyRangesResponse, crate::Error> {
+    pub async fn execute(&self) -> crate::Result<GetPartitionKeyRangesResponse> {
         trace!("GetPartitionKeyRangesBuilder::execute called");
 
         let request = self.collection_client.cosmos_client().prepare_request(

@@ -139,7 +139,7 @@ where
 mod test {
     use xml::Element;
 
-    const XML: &'static str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+    const XML: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <EnumerationResults \
                                ServiceEndpoint=\"http://mindrust.blob.core.windows.net/\">
   \
@@ -202,7 +202,7 @@ mod test {
         let sub1 = super::find_subnodes(&elem, "Containers");
         assert_eq!(1, sub1.len());
 
-        let sub2 = super::find_subnodes(&sub1[0], "Container");
+        let sub2 = super::find_subnodes(sub1[0], "Container");
         assert_eq!(2, sub2.len());
     }
 
@@ -211,11 +211,11 @@ mod test {
         let elem: Element = XML.parse().unwrap();
 
         let mut sub = super::find_subnodes(&elem, "Containers");
-        sub = super::find_subnodes(&sub[0], "Container");
-        sub = super::find_subnodes(&sub[0], "Properties");
-        sub = super::find_subnodes(&sub[0], "LeaseStatus");
+        sub = super::find_subnodes(sub[0], "Container");
+        sub = super::find_subnodes(sub[0], "Properties");
+        sub = super::find_subnodes(sub[0], "LeaseStatus");
 
-        if let Ok(inner) = super::inner_text(&sub[0]) {
+        if let Ok(inner) = super::inner_text(sub[0]) {
             assert_eq!(inner, "unlocked");
         } else {
             panic!("should have found CharacterNode");
@@ -229,7 +229,7 @@ mod test {
         let mut res = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
         res = super::traverse(res[0], &["Properties", "LeaseStatus"], false).unwrap();
 
-        if let Ok(inner) = super::inner_text(&res[0]) {
+        if let Ok(inner) = super::inner_text(res[0]) {
             assert_eq!(inner, "unlocked");
         } else {
             panic!("should have found CharacterNode");
@@ -243,7 +243,7 @@ mod test {
         let mut res = super::traverse(&elem, &["Containers", "Container"], false).unwrap();
         res = super::traverse(res[1], &["Properties", "LeaseStatus"], false).unwrap();
 
-        if let Ok(inner) = super::inner_text(&res[0]) {
+        if let Ok(inner) = super::inner_text(res[0]) {
             assert_eq!(inner, "locked");
         } else {
             panic!("should have found CharacterNode");

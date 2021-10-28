@@ -1128,7 +1128,7 @@ pub mod security_rule_properties_format {
         Tcp,
         Udp,
         #[serde(rename = "*")]
-        Asterisk,
+        U2a,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Access {
@@ -1199,7 +1199,7 @@ pub struct PublicIpAddressPropertiesFormat {
     #[serde(rename = "publicIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address_version: Option<public_ip_address_properties_format::PublicIpAddressVersion>,
     #[serde(rename = "ipConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub ip_configuration: Option<IpConfiguration>,
+    pub ip_configuration: Box<Option<IpConfiguration>>,
     #[serde(rename = "dnsSettings", default, skip_serializing_if = "Option::is_none")]
     pub dns_settings: Option<PublicIpAddressDnsSettings>,
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
@@ -1229,7 +1229,7 @@ pub struct PublicIpAddress {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PublicIpAddressPropertiesFormat>,
+    pub properties: Box<Option<PublicIpAddressPropertiesFormat>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1321,7 +1321,7 @@ pub struct IpConfigurationPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<Subnet>,
     #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
-    pub public_ip_address: Option<PublicIpAddress>,
+    pub public_ip_address: Box<Option<PublicIpAddress>>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1338,7 +1338,7 @@ pub struct IpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IpConfigurationPropertiesFormat>,
+    pub properties: Box<Option<IpConfigurationPropertiesFormat>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

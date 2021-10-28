@@ -1,13 +1,18 @@
 use crate::blob::blob::requests::*;
 use crate::blob::prelude::*;
+use crate::core::clients::StorageCredentials;
 use crate::core::prelude::*;
-use crate::shared_access_signature::SharedAccessSignature;
+use crate::shared_access_signature::{
+    service_sas::{BlobSharedAccessSignatureBuilder, BlobSignedResource, SetResources},
+    SasToken,
+};
 use azure_core::prelude::*;
 use azure_core::HttpClient;
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
 use std::sync::Arc;
+use url::Url;
 
 pub trait AsBlobClient<BN: Into<String>> {
     fn as_blob_client(&self, blob_name: BN) -> Arc<BlobClient>;
@@ -103,7 +108,7 @@ impl BlobClient {
         DeleteBlobVersionBuilder::new(self, version_id)
     }
 
-    pub fn copy<'a>(&'a self, copy_source: &'a str) -> CopyBlobBuilder<'a> {
+    pub fn copy<'a>(&'a self, copy_source: &'a Url) -> CopyBlobBuilder<'a> {
         CopyBlobBuilder::new(self, copy_source)
     }
 
@@ -158,12 +163,38 @@ impl BlobClient {
         BreakLeaseBuilder::new(self)
     }
 
-    pub fn generate_signed_blob_url(
+    pub fn shared_access_signature(
         &self,
-        signature: &SharedAccessSignature,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        let url = self.url_with_segments(None)?;
-        Ok(format!("{}?{}", url.as_str(), signature.token()))
+    ) -> Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>, crate::Error> {
+        let canonicalized_resource = format!(
+            "/blob/{}/{}/{}",
+            self.container_client.storage_account_client().account(),
+            self.container_client.container_name(),
+            self.blob_name()
+        );
+
+        match self.storage_account_client().storage_credentials() {
+            StorageCredentials::Key(ref _account, ref key) => Ok(
+                BlobSharedAccessSignatureBuilder::new(key.to_string(), canonicalized_resource)
+                    .with_resources(BlobSignedResource::Blob),
+            ),
+            _ => Err(crate::Error::OperationNotSupported(
+                "Shared access signature generation".to_owned(),
+                "SAS can be generated only from key and account clients".to_owned(),
+            )),
+        }
+    }
+
+    pub fn generate_signed_blob_url<T>(
+        &self,
+        signature: &T,
+    ) -> Result<url::Url, Box<dyn std::error::Error + Send + Sync>>
+    where
+        T: SasToken,
+    {
+        let mut url = self.url_with_segments(None)?;
+        url.set_query(Some(&signature.token()));
+        Ok(url)
     }
 
     pub(crate) fn prepare_request(
@@ -172,7 +203,7 @@ impl BlobClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
+    ) -> crate::Result<(Request<Bytes>, url::Url)> {
         self.container_client
             .prepare_request(url, method, http_header_adder, request_body)
     }

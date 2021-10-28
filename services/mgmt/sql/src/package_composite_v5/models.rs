@@ -5212,9 +5212,9 @@ pub mod backup_short_term_retention_policy_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DiffBackupIntervalInHours {
         #[serde(rename = "12")]
-        _12,
+        N12,
         #[serde(rename = "24")]
-        _24,
+        N24,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

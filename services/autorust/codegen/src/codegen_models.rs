@@ -21,7 +21,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
     let mut file = TokenStream::new();
     file.extend(create_generated_by_header());
 
-    let has_case_workaround = cg.spec.input_docs().any(|(x, _)| cg.has_case_workaround(x));
+    let has_case_workaround = cg.should_workaround_case();
 
     file.extend(quote! {
         #![allow(non_camel_case_types)]
@@ -30,8 +30,8 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
     });
     if has_case_workaround {
         file.extend(quote! {
-        use serde::de::{self, Deserializer, DeserializeOwned};
-        })
+        use azure_core::util::case_insensitive_deserialize;
+        });
     }
 
     let mut all_schemas: IndexMap<RefKey, ResolvedSchema> = IndexMap::new();
@@ -57,18 +57,6 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
         }
     }
 
-    if has_case_workaround {
-        file.extend(quote! {
-            fn case_insensitive<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-            where T: DeserializeOwned + std::fmt::Debug,
-                  D: Deserializer<'de>
-        {
-            let v = String::deserialize(deserializer)?;
-            T::deserialize(serde_json::Value::String(v.clone())).or_else(|_| T::deserialize(serde_json::Value::String(v.to_lowercase()))).map_err(de::Error::custom)
-        }
-            });
-    }
-
     let mut schema_names = IndexMap::new();
     for (ref_key, schema) in &all_schemas {
         let doc_file = &ref_key.file_path;
@@ -78,20 +66,18 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
             //     "WARN schema {} already created from {:?}, duplicate from {:?}",
             //     schema_name, _first_doc_file, doc_file
             // );
+        } else if is_array(&schema.schema.common) {
+            file.extend(create_vec_alias(schema_name, schema)?);
+        } else if is_local_enum(schema) {
+            let no_namespace = TokenStream::new();
+            let (_tp_name, tp) = create_enum(&no_namespace, schema_name, schema, false)?;
+            file.extend(tp);
+        } else if is_basic_type(schema) {
+            let (id, value) = create_basic_type_alias(schema_name, schema)?;
+            file.extend(quote! { pub type #id = #value;});
         } else {
-            if is_array(&schema.schema.common) {
-                file.extend(create_vec_alias(schema_name, schema)?);
-            } else if is_local_enum(schema) {
-                let no_namespace = TokenStream::new();
-                let (_tp_name, tp) = create_enum(&no_namespace, schema_name, schema, false)?;
-                file.extend(tp);
-            } else if is_basic_type(schema) {
-                let (id, value) = create_basic_type_alias(schema_name, schema)?;
-                file.extend(quote! { pub type #id = #value;});
-            } else {
-                for stream in create_struct(cg, doc_file, schema_name, schema)? {
-                    file.extend(stream);
-                }
+            for stream in create_struct(cg, doc_file, schema_name, schema)? {
+                file.extend(stream);
             }
         }
     }
@@ -113,13 +99,11 @@ fn add_schema_refs(
 ) -> Result<(), Error> {
     let schema = cg.spec.resolve_schema_ref(doc_file, schema_ref)?;
     if let Some(ref_key) = schema.ref_key.clone() {
-        if !schemas.contains_key(&ref_key) {
-            if !cg.spec.is_input_file(&ref_key.file_path) {
-                let refs = get_schema_schema_references(&schema.schema);
-                schemas.insert(ref_key.clone(), schema);
-                for reference in refs {
-                    add_schema_refs(cg, schemas, &ref_key.file_path, reference)?;
-                }
+        if !schemas.contains_key(&ref_key) && !cg.spec.is_input_file(&ref_key.file_path) {
+            let refs = get_schema_schema_references(&schema.schema);
+            schemas.insert(ref_key.clone(), schema);
+            for reference in refs {
+                add_schema_refs(cg, schemas, &ref_key.file_path, reference)?;
             }
         }
     }
@@ -132,21 +116,24 @@ fn create_enum(
     property: &ResolvedSchema,
     lowercase_workaround: bool,
 ) -> Result<(TokenStream, TokenStream), Error> {
-    // println!("property_name: {:?} enum: {:?}", property_name, property.schema.common.enum_);
     let enum_values = enum_values_as_strings(&property.schema.common.enum_);
-    let id = ident(&property_name.to_camel_case()).map_err(Error::EnumName)?;
+    let id = ident(&property_name.to_camel_case()).map_err(|source| Error::EnumName {
+        source,
+        property: property_name.to_owned(),
+    })?;
     let mut values = TokenStream::new();
     for name in enum_values {
-        let nm = name.to_camel_case_ident().map_err(Error::EnumValueName)?;
+        let nm = name.to_camel_case_ident().map_err(|source| Error::EnumName {
+            source,
+            property: property_name.to_owned(),
+        })?;
         let lower = name.to_lowercase();
-        let rename = if &nm.to_string() == name {
+        let rename = if nm.to_string() == name {
             quote! {}
+        } else if name != lower && lowercase_workaround {
+            quote! { #[serde(rename = #name, alias = #lower)] }
         } else {
-            if name != lower && lowercase_workaround {
-                quote! { #[serde(rename = #name, alias = #lower)] }
-            } else {
-                quote! { #[serde(rename = #name)] }
-            }
+            quote! { #[serde(rename = #name)] }
         };
         let value = quote! {
             #rename
@@ -154,7 +141,10 @@ fn create_enum(
         };
         values.extend(value);
     }
-    let nm = ident(&property_name.to_camel_case()).map_err(Error::EnumName)?;
+    let nm = ident(&property_name.to_camel_case()).map_err(|source| Error::EnumName {
+        source,
+        property: property_name.to_owned(),
+    })?;
     let tp = quote! {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum #nm {
@@ -168,7 +158,7 @@ fn create_enum(
 fn create_vec_alias(alias_name: &str, schema: &ResolvedSchema) -> Result<TokenStream, Error> {
     let items = get_schema_array_items(&schema.schema.common)?;
     let typ = ident(&alias_name.to_camel_case()).map_err(Error::VecAliasName)?;
-    let items_typ = get_type_name_for_schema_ref(&items, AsReference::False)?;
+    let items_typ = get_type_name_for_schema_ref(items, AsReference::False)?;
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
@@ -199,11 +189,11 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
             property_name: property_name.to_string(),
         };
 
-        let lowercase_workaround = cg.should_workaround_case(prop_nm);
+        let lowercase_workaround = cg.should_workaround_case();
 
         let (mut field_tp_name, field_tp) = create_struct_field_type(cg, doc_file, &ns, property_name, property, lowercase_workaround)?;
         // uncomment the next two lines to help identify entries that need boxed
-        // let prop_nm_str = format!("{:?}", prop_nm);
+        // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path.display(), prop_nm.schema_name, property_name);
         // props.extend(quote! { #[doc = #prop_nm_str ]});
 
         if cg.should_force_obj(prop_nm) {
@@ -229,9 +219,9 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
             }
         }
         if is_local_enum(property) && lowercase_workaround {
-            serde_attrs.push(quote! { deserialize_with = "case_insensitive"});
+            serde_attrs.push(quote! { deserialize_with = "case_insensitive_deserialize"});
         }
-        let serde = if serde_attrs.len() > 0 {
+        let serde = if !serde_attrs.is_empty() {
             quote! { #[serde(#(#serde_attrs),*)] }
         } else {
             quote! {}
@@ -253,9 +243,9 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
             #props
         }
     };
-    streams.push(TokenStream::from(st));
+    streams.push(st);
 
-    if local_types.len() > 0 {
+    if !local_types.is_empty() {
         let mut types = TokenStream::new();
         local_types.into_iter().for_each(|tp| types.extend(tp));
         streams.push(quote! {

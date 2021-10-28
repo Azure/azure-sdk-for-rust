@@ -16,7 +16,7 @@ pub struct PutBlobResponse {
 }
 
 impl PutBlobResponse {
-    pub fn from_headers(headers: &HeaderMap) -> Result<PutBlobResponse, crate::Error> {
+    pub fn from_headers(headers: &HeaderMap) -> crate::Result<PutBlobResponse> {
         debug!("{:#?}", headers);
 
         let etag = etag_from_headers(headers)?;

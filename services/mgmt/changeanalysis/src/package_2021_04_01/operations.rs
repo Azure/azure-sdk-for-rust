@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         skip_token: Option<&str>,
@@ -21,7 +21,7 @@ pub mod operations {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(skip_token) = skip_token {
             url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
@@ -48,7 +48,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -72,7 +72,7 @@ pub mod operations {
     }
 }
 pub mod resource_changes {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_id: &str,
@@ -96,7 +96,7 @@ pub mod resource_changes {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         url.query_pairs_mut().append_pair("$startTime", start_time);
         url.query_pairs_mut().append_pair("$endTime", end_time);
         if let Some(skip_token) = skip_token {
@@ -126,7 +126,7 @@ pub mod resource_changes {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -150,7 +150,7 @@ pub mod resource_changes {
     }
 }
 pub mod changes {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list_changes_by_resource_group(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -176,7 +176,7 @@ pub mod changes {
                 .map_err(list_changes_by_resource_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         url.query_pairs_mut().append_pair("$startTime", start_time);
         url.query_pairs_mut().append_pair("$endTime", end_time);
         if let Some(skip_token) = skip_token {
@@ -210,7 +210,7 @@ pub mod changes {
         }
     }
     pub mod list_changes_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -255,7 +255,7 @@ pub mod changes {
                 .map_err(list_changes_by_subscription::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         url.query_pairs_mut().append_pair("$startTime", start_time);
         url.query_pairs_mut().append_pair("$endTime", end_time);
         if let Some(skip_token) = skip_token {
@@ -289,7 +289,7 @@ pub mod changes {
         }
     }
     pub mod list_changes_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

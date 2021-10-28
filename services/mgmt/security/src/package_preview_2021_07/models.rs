@@ -13,8 +13,17 @@ pub struct CustomAssessmentAutomationsListResult {
 pub struct CustomAssessmentAutomation {
     #[serde(flatten)]
     pub resource: Resource,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomAssessmentAutomationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomAssessmentAutomationRequest {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CustomAssessmentAutomationRequestProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomAssessmentAutomationProperties {
@@ -32,8 +41,53 @@ pub struct CustomAssessmentAutomationProperties {
     pub description: Option<String>,
     #[serde(rename = "remediationDescription", default, skip_serializing_if = "Option::is_none")]
     pub remediation_description: Option<String>,
+    #[serde(rename = "assessmentKey", default, skip_serializing_if = "Option::is_none")]
+    pub assessment_key: Option<String>,
 }
 pub mod custom_assessment_automation_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SupportedCloud {
+        #[serde(rename = "AWS")]
+        Aws,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Severity {
+        High,
+        Medium,
+        Low,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum UserImpact {
+        High,
+        Moderate,
+        Low,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ImplementationEffort {
+        High,
+        Moderate,
+        Low,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomAssessmentAutomationRequestProperties {
+    #[serde(rename = "compressedQuery", default, skip_serializing_if = "Option::is_none")]
+    pub compressed_query: Option<String>,
+    #[serde(rename = "supportedCloud", default, skip_serializing_if = "Option::is_none")]
+    pub supported_cloud: Option<custom_assessment_automation_request_properties::SupportedCloud>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<custom_assessment_automation_request_properties::Severity>,
+    #[serde(rename = "userImpact", default, skip_serializing_if = "Option::is_none")]
+    pub user_impact: Option<custom_assessment_automation_request_properties::UserImpact>,
+    #[serde(rename = "implementationEffort", default, skip_serializing_if = "Option::is_none")]
+    pub implementation_effort: Option<custom_assessment_automation_request_properties::ImplementationEffort>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "remediationDescription", default, skip_serializing_if = "Option::is_none")]
+    pub remediation_description: Option<String>,
+}
+pub mod custom_assessment_automation_request_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SupportedCloud {
@@ -70,6 +124,8 @@ pub struct CustomEntityStoreAssignmentsListResult {
 pub struct CustomEntityStoreAssignment {
     #[serde(flatten)]
     pub resource: Resource,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomEntityStoreAssignmentProperties>,
 }
@@ -114,6 +170,38 @@ pub struct ErrorAdditionalInfo {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {

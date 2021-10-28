@@ -26,7 +26,7 @@ impl<'a> DeleteDatabaseOptions<'a> {
 }
 
 impl<'a> DeleteDatabaseOptions<'a> {
-    pub fn decorate_request(&self, request: &mut HttpRequest) -> Result<(), crate::Error> {
+    pub fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.activity_id, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
 
@@ -46,7 +46,7 @@ pub struct DeleteDatabaseResponse {
 }
 
 impl DeleteDatabaseResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         let charge = request_charge_from_headers(&headers)?;

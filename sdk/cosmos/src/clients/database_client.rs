@@ -42,7 +42,7 @@ impl DatabaseClient {
         &self,
         ctx: Context,
         options: GetDatabaseOptions,
-    ) -> Result<GetDatabaseResponse, crate::Error> {
+    ) -> crate::Result<GetDatabaseResponse> {
         let mut request = self.prepare_request_with_database_name(http::Method::GET);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
@@ -67,7 +67,7 @@ impl DatabaseClient {
         &self,
         ctx: Context,
         options: DeleteDatabaseOptions<'_>,
-    ) -> Result<DeleteDatabaseResponse, crate::Error> {
+    ) -> crate::Result<DeleteDatabaseResponse> {
         let mut request = self.prepare_request_with_database_name(http::Method::DELETE);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
@@ -88,7 +88,7 @@ impl DatabaseClient {
         ctx: Context,
         collection_name: S,
         options: CreateCollectionOptions,
-    ) -> Result<CreateCollectionResponse, crate::Error> {
+    ) -> crate::Result<CreateCollectionResponse> {
         let mut request = self.cosmos_client().prepare_request_pipeline(
             &format!("dbs/{}/colls", self.database_name()),
             http::Method::POST,
@@ -111,7 +111,7 @@ impl DatabaseClient {
         &self,
         ctx: Context,
         options: ListUsersOptions,
-    ) -> impl Stream<Item = Result<ListUsersResponse, crate::Error>> + '_ {
+    ) -> impl Stream<Item = crate::Result<ListUsersResponse>> + '_ {
         macro_rules! r#try {
             ($expr:expr $(,)?) => {
                 match $expr {
@@ -180,7 +180,7 @@ impl DatabaseClient {
                 let next_state = response
                     .continuation_token
                     .clone()
-                    .map(|ct| State::Continuation(ct))
+                    .map(State::Continuation)
                     .unwrap_or_else(|| State::Done);
 
                 Some((Ok(response), next_state))

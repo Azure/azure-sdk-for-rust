@@ -15,6 +15,7 @@ use std::ops::Add;
 use std::ops::Deref;
 use std::sync::Arc;
 use std::time::Duration;
+use url::Url;
 use uuid::Uuid;
 
 #[tokio::test]
@@ -309,16 +310,15 @@ async fn copy_blob() {
 
     let cloned_blob = container.as_blob_client("cloned_blob");
 
-    cloned_blob
-        .copy(&format!(
-            "https://{}.blob.core.windows.net/{}/{}",
-            &std::env::var("STORAGE_ACCOUNT").unwrap(),
-            &container_name,
-            &blob_name
-        ))
-        .execute()
-        .await
-        .unwrap();
+    let url = Url::parse(&format!(
+        "https://{}.blob.core.windows.net/{}/{}",
+        &std::env::var("STORAGE_ACCOUNT").unwrap(),
+        &container_name,
+        &blob_name
+    ))
+    .unwrap();
+
+    cloned_blob.copy(&url).execute().await.unwrap();
 }
 
 async fn requires_send_future<F, O>(fut: F) -> O

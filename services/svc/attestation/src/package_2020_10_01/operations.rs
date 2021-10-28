@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub mod policy {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(operation_config: &crate::OperationConfig, attestation_type: &str) -> std::result::Result<PolicyResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/policies/{}", operation_config.base_path(), attestation_type);
@@ -18,7 +18,7 @@ pub mod policy {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -42,7 +42,7 @@ pub mod policy {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -81,7 +81,7 @@ pub mod policy {
                 .map_err(set::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(new_attestation_policy).map_err(set::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -106,7 +106,7 @@ pub mod policy {
         }
     }
     pub mod set {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -145,7 +145,7 @@ pub mod policy {
                 .map_err(reset::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(policy_jws).map_err(reset::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -170,7 +170,7 @@ pub mod policy {
         }
     }
     pub mod reset {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -194,7 +194,7 @@ pub mod policy {
     }
 }
 pub mod policy_certificates {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<PolicyCertificatesResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/certificates", operation_config.base_path(),);
@@ -208,7 +208,7 @@ pub mod policy_certificates {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -232,7 +232,7 @@ pub mod policy_certificates {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -270,7 +270,7 @@ pub mod policy_certificates {
                 .map_err(add::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(policy_certificate_to_add).map_err(add::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -295,7 +295,7 @@ pub mod policy_certificates {
         }
     }
     pub mod add {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -333,7 +333,7 @@ pub mod policy_certificates {
                 .map_err(remove::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(policy_certificate_to_remove).map_err(remove::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -358,7 +358,7 @@ pub mod policy_certificates {
         }
     }
     pub mod remove {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -382,7 +382,7 @@ pub mod policy_certificates {
     }
 }
 pub mod attestation {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn attest_open_enclave(
         operation_config: &crate::OperationConfig,
         request: &AttestOpenEnclaveRequest,
@@ -399,7 +399,7 @@ pub mod attestation {
                 .map_err(attest_open_enclave::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(request).map_err(attest_open_enclave::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -427,7 +427,7 @@ pub mod attestation {
         }
     }
     pub mod attest_open_enclave {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -465,7 +465,7 @@ pub mod attestation {
                 .map_err(attest_sgx_enclave::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(request).map_err(attest_sgx_enclave::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -493,7 +493,7 @@ pub mod attestation {
         }
     }
     pub mod attest_sgx_enclave {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -531,7 +531,7 @@ pub mod attestation {
                 .map_err(attest_tpm::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(request).map_err(attest_tpm::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -559,7 +559,7 @@ pub mod attestation {
         }
     }
     pub mod attest_tpm {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -583,7 +583,7 @@ pub mod attestation {
     }
 }
 pub mod signing_certificates {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<JsonWebKeySet, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/certs", operation_config.base_path(),);
@@ -620,7 +620,7 @@ pub mod signing_certificates {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -644,7 +644,7 @@ pub mod signing_certificates {
     }
 }
 pub mod metadata_configuration {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<serde_json::Value, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/.well-known/openid-configuration", operation_config.base_path(),);
@@ -681,7 +681,7 @@ pub mod metadata_configuration {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

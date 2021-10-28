@@ -37,7 +37,7 @@ impl<'a> DeleteEntityBuilder<'a> {
         let mut url = self.entity_client.url().clone();
 
         self.timeout.append_to_url_query(&mut url);
-        println!("url = {}", url);
+        debug!("url = {}", url);
 
         let request = self.entity_client.prepare_request(
             url.as_str(),
@@ -50,7 +50,7 @@ impl<'a> DeleteEntityBuilder<'a> {
             None,
         )?;
 
-        println!("request == {:#?}\n", request);
+        debug!("request == {:#?}\n", request);
 
         let response = self
             .entity_client

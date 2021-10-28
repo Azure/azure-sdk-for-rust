@@ -56,7 +56,7 @@ impl AttachmentClient {
         &self,
         ctx: Context,
         options: GetAttachmentOptions<'_>,
-    ) -> Result<GetAttachmentResponse, crate::Error> {
+    ) -> crate::Result<GetAttachmentResponse> {
         let mut request = self.prepare_request_with_attachment_name(http::Method::GET);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Attachments.into());
 
@@ -80,7 +80,7 @@ impl AttachmentClient {
         &self,
         ctx: Context,
         options: DeleteAttachmentOptions<'_>,
-    ) -> Result<DeleteAttachmentResponse, crate::Error> {
+    ) -> crate::Result<DeleteAttachmentResponse> {
         let mut request = self.prepare_request_with_attachment_name(http::Method::DELETE);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Attachments.into());
 
@@ -105,7 +105,7 @@ impl AttachmentClient {
         ctx: Context,
         body: B,
         options: CreateSlugAttachmentOptions<'_>,
-    ) -> Result<CreateSlugAttachmentResponse, crate::Error> {
+    ) -> crate::Result<CreateSlugAttachmentResponse> {
         let mut request = self.prepare_request(http::Method::POST);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Attachments.into());
 
@@ -132,7 +132,7 @@ impl AttachmentClient {
         ctx: Context,
         body: B,
         options: ReplaceSlugAttachmentOptions<'_>,
-    ) -> Result<ReplaceSlugAttachmentResponse, crate::Error> {
+    ) -> crate::Result<ReplaceSlugAttachmentResponse> {
         let mut request = self.prepare_request_with_attachment_name(http::Method::PUT);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Attachments.into());
 
@@ -160,7 +160,7 @@ impl AttachmentClient {
         media: M,
         content_type: C,
         options: CreateReferenceAttachmentOptions<'_>,
-    ) -> Result<CreateReferenceAttachmentResponse, crate::Error>
+    ) -> crate::Result<CreateReferenceAttachmentResponse>
     where
         M: AsRef<str>,
         C: Into<ContentType<'c>>,
@@ -193,7 +193,7 @@ impl AttachmentClient {
         media: M,
         content_type: C,
         options: ReplaceReferenceAttachmentOptions<'_>,
-    ) -> Result<ReplaceReferenceAttachmentResponse, crate::Error>
+    ) -> crate::Result<ReplaceReferenceAttachmentResponse>
     where
         M: AsRef<str>,
         C: Into<ContentType<'c>>,

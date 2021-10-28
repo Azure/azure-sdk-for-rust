@@ -86,7 +86,7 @@ impl<'a> GetBlobBuilder<'a> {
         }
 
         // this can either be the range requested by the caller or the complete file.
-        let requested_range = self.range.unwrap_or(Range::new(0, u64::MAX));
+        let requested_range = self.range.unwrap_or_else(|| Range::new(0, u64::MAX));
 
         futures::stream::unfold(States::Init, move |state| async move {
             let mut remaining = match state {

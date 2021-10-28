@@ -42,7 +42,7 @@ impl<'a> ReplaceSlugAttachmentOptions<'a> {
         partition_key: &str,
         attachment_name: &str,
         body: B,
-    ) -> Result<(), crate::Error> {
+    ) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
         azure_core::headers::add_optional_header2(&self.activity_id, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
@@ -88,7 +88,7 @@ pub struct ReplaceSlugAttachmentResponse {
 }
 
 impl ReplaceSlugAttachmentResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

@@ -63,7 +63,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
         })
     }
 
-    pub async fn execute<T, Q>(&self, query: Q) -> Result<QueryDocumentsResponse<T>, crate::Error>
+    pub async fn execute<T, Q>(&self, query: Q) -> crate::Result<QueryDocumentsResponse<T>>
     where
         T: DeserializeOwned,
         Q: Into<Query<'a>>,
@@ -82,7 +82,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
 
         let req = if let Some(partition_key_serialized) = self.partition_key_serialized.as_ref() {
             crate::cosmos_entity::add_as_partition_key_header_serialized(
-                &partition_key_serialized,
+                partition_key_serialized,
                 req,
             )
         } else {
@@ -120,7 +120,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
     pub fn stream<T, Q>(
         &'a self,
         query: Q,
-    ) -> impl Stream<Item = Result<QueryDocumentsResponse<T>, crate::Error>> + 'a
+    ) -> impl Stream<Item = crate::Result<QueryDocumentsResponse<T>>> + 'a
     where
         T: DeserializeOwned,
         Q: Into<Query<'a>> + 'a + Copy,
