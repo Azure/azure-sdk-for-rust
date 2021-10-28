@@ -1,6 +1,6 @@
 use super::TokenCredential;
 use azure_core::TokenResponse;
-use chrono::{DateTime, Utc, TimeZone};
+use chrono::{DateTime, TimeZone, Utc};
 use oauth2::AccessToken;
 use serde::{
     de::{self, Deserializer},
@@ -123,7 +123,8 @@ mod tests {
     fn check_expires_on_string() {
         let as_string = r#"{"date": "1586984735"}"#;
         let expected = Utc.ymd(2020, 4, 15).and_hms(21, 5, 35);
-        let parsed: TestExpires = serde_json::from_str(as_string).expect("deserialize should succeed");
+        let parsed: TestExpires =
+            serde_json::from_str(as_string).expect("deserialize should succeed");
         assert_eq!(expected, parsed.date);
     }
 }
