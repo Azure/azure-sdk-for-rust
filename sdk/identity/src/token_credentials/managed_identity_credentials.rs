@@ -97,7 +97,7 @@ where
     Ok(Utc.timestamp(as_i64, 0))
 }
 
-// NOTE: expires_on is a String version of unix epoc time, not an integer.
+// NOTE: expires_on is a String version of unix epoch time, not an integer.
 // https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=dotnet#rest-protocol-examples
 #[derive(Debug, Clone, Deserialize)]
 struct MsiTokenResponse {
@@ -110,7 +110,6 @@ struct MsiTokenResponse {
 
 #[cfg(test)]
 mod tests {
-    use super::expires_on_string;
     use super::*;
 
     #[derive(Debug, Deserialize)]
