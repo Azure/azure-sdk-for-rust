@@ -2,7 +2,6 @@ use crate::{
     table::prelude::{header_time_value, header_value, ApiVersion, OdataMetadataLevel},
     Filter, Top,
 };
-
 use azure_core::{AppendToUrlQuery, Error, Request, Response};
 use chrono::Utc;
 use http::Uri;

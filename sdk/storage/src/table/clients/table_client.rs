@@ -8,11 +8,9 @@ use crate::table::{
     },
     table_context::TableContext,
 };
-use azure_core::{
-    pipeline::Pipeline, Body, ClientOptions, Context, Error, PipelineContext, Policy,
-};
+use azure_core::{pipeline::Pipeline, ClientOptions, Context, Error, PipelineContext, Policy};
 use http::request::Builder as RequestBuilder;
-use http::{method::Method, HeaderMap, Uri};
+use http::{method::Method, Uri};
 use std::borrow::Cow;
 use std::str::FromStr;
 use std::sync::Arc;
