@@ -224,20 +224,6 @@ pub mod table_client_tests {
     }
 
     #[tokio::test]
-    async fn list_table_with_filter_test() {
-        let response = emulator_table_client()
-            .query_tables(
-                Context::new(),
-                query_tables::QueryTablesOptions::default().filter("TableName gt 'a'"),
-            )
-            .await
-            .unwrap();
-        for table in response.tables {
-            println!("{}", table.name);
-        }
-    }
-
-    #[tokio::test]
     async fn create_and_delete_table_test() {
         let table_name = "TableForTest";
         assert_eq!(
