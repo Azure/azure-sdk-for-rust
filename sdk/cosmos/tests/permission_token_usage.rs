@@ -156,5 +156,8 @@ async fn permission_token_usage() {
     );
 
     // cleanup
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }

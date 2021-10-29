@@ -78,5 +78,8 @@ async fn permissions() {
     assert_eq!(list_permissions_response.permissions.len(), 1);
 
     // delete the database
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }
