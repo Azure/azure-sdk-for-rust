@@ -337,6 +337,28 @@ impl CosmosClient {
             .into()
     }
 
+    pub(crate) async fn run_pipeline<F>(
+        &self,
+        ctx: Context,
+        uri_path: &str,
+        http_method: http::Method,
+        resource_type: ResourceType,
+        decorate_request: F,
+    ) -> crate::Result<azure_core::Response>
+    where
+        F: FnOnce(&mut azure_core::Request) -> crate::Result<()>,
+    {
+        let mut request = self
+            .prepare_request_pipeline(uri_path, http_method);
+        let mut pipeline_context = PipelineContext::new(ctx, resource_type.into());
+        decorate_request(&mut request)?;
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?;
+        Ok(response)
+    }
+
     pub(crate) fn pipeline(&self) -> &Pipeline<CosmosContext> {
         &self.pipeline
     }

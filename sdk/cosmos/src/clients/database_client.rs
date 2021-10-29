@@ -63,15 +63,15 @@ impl DatabaseClient {
         ctx: Context,
         options: GetDatabaseOptions,
     ) -> crate::Result<GetDatabaseResponse> {
-        let mut request = self
-            .cosmos_client()
-            .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
-
-        options.decorate_request(&mut request)?;
         let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
+            .cosmos_client()
+            .run_pipeline(
+                ctx,
+                &format!("dbs/{}", self.database_name()),
+                http::Method::GET,
+                ResourceType::Databases,
+                |request: &mut azure_core::Request| options.decorate_request(request),
+            )
             .await?;
 
         Ok(GetDatabaseResponse::try_from(response).await?)
@@ -83,16 +83,15 @@ impl DatabaseClient {
         ctx: Context,
         options: DeleteDatabaseOptions,
     ) -> crate::Result<DeleteDatabaseResponse> {
-        let mut request = self.cosmos_client().prepare_request_pipeline(
-            &format!("dbs/{}", self.database_name()),
-            http::Method::DELETE,
-        );
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
-
-        options.decorate_request(&mut request)?;
         let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
+            .cosmos_client()
+            .run_pipeline(
+                ctx,
+                &format!("dbs/{}", self.database_name()),
+                http::Method::DELETE,
+                ResourceType::Databases,
+                |request| options.decorate_request(request),
+            )
             .await?;
 
         Ok(DeleteDatabaseResponse::try_from(response).await?)
@@ -167,16 +166,15 @@ impl DatabaseClient {
         collection_name: S,
         options: CreateCollectionOptions,
     ) -> crate::Result<CreateCollectionResponse> {
-        let mut request = self.cosmos_client().prepare_request_pipeline(
-            &format!("dbs/{}/colls", self.database_name()),
-            http::Method::POST,
-        );
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
-
-        options.decorate_request(&mut request, collection_name.as_ref())?;
         let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
+            .cosmos_client()
+            .run_pipeline(
+                ctx,
+                &format!("dbs/{}/colls", self.database_name()),
+                http::Method::POST,
+                ResourceType::Collections,
+                |request| options.decorate_request(request, collection_name.as_ref()),
+            )
             .await?;
 
         Ok(CreateCollectionResponse::try_from(response).await?)
