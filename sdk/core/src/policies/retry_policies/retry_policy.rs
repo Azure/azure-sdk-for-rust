@@ -6,10 +6,31 @@ use http::StatusCode;
 use std::sync::Arc;
 use std::time::Duration;
 
+/// A retry policy.
+///
+/// All retry policies follow a similar pattern only differing in how
+/// they determine if the retry has expired and for how long they should
+/// sleep between retries.
 pub trait RetryPolicy {
+    /// Determine if no more retries should be performed.
+    ///
+    /// Must return true if no more retries should be attempted.
     fn is_expired(&self, first_retry_time: &mut Option<DateTime<Local>>, retry_count: u32) -> bool;
+    /// Determine how long before the next retry should be attempted.
     fn sleep_duration(&self, retry_count: u32) -> Duration;
 }
+
+/// The status codes where a retry should be attempted.
+///
+/// On all other 4xx and 5xx status codes no retry is attempted.
+const RETRY_STATUSES: &[StatusCode] = &[
+    StatusCode::REQUEST_TIMEOUT,
+    StatusCode::TOO_MANY_REQUESTS,
+    StatusCode::INTERNAL_SERVER_ERROR,
+    StatusCode::BAD_GATEWAY,
+    StatusCode::SERVICE_UNAVAILABLE,
+    StatusCode::GATEWAY_TIMEOUT,
+];
 
 #[async_trait::async_trait]
 impl<T, C> Policy<C> for T
@@ -33,12 +54,14 @@ where
                     if status.as_u16() < 400 {
                         // Successful status code
                         return Ok(response);
-                    } else if status.as_u16() < 500 {
-                        // Server returned a client caused error
+                    } else if !RETRY_STATUSES.contains(&status) {
+                        // Server didn't return a status we retry on
                         return Ok(response.validate(StatusCode::OK).await?);
                     }
-                    // Server returned an internal error, try again
-                    log::error!("server returned error 500 status: {}", status);
+                    log::error!(
+                        "server returned error status which requires retry: {}",
+                        status
+                    );
                     Box::new(response.validate(StatusCode::OK).await.unwrap_err())
                 }
                 Err(error) => {
