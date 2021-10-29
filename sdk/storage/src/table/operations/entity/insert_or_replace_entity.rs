@@ -2,7 +2,7 @@ use azure_core::{Error, Request};
 use chrono::{Duration, Utc};
 use http::HeaderValue;
 
-use crate::operations::{ApiVersion, header_time_value, header_value};
+use crate::table::prelude::{header_time_value, header_value, ApiVersion};
 
 use super::TableEntity;
 

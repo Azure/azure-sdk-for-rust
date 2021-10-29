@@ -1,5 +1,5 @@
 use super::entity_client::EntityClient;
-use crate::{
+use crate::table::{
     authorization::{authorization_policy::AuthorizationPolicy, AuthorizationToken},
     operations::table::{
         create_table::{CreateTableOptions, CreateTableResponse},
@@ -8,8 +8,11 @@ use crate::{
     },
     table_context::TableContext,
 };
-use azure_core::{pipeline::Pipeline, ClientOptions, Context, Error, PipelineContext, Policy};
-use http::{method::Method, Uri};
+use azure_core::{
+    pipeline::Pipeline, Body, ClientOptions, Context, Error, PipelineContext, Policy,
+};
+use http::request::Builder as RequestBuilder;
+use http::{method::Method, HeaderMap, Uri};
 use std::borrow::Cow;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -64,7 +67,7 @@ fn pipeline_from_options(
     Pipeline::new(
         option_env!("CARGO_PKG_NAME"),
         option_env!("CARGO_PKG_VERSION"),
-        &options.options,
+        options.options,
         per_retry_policies,
         Vec::new(),
     )
@@ -189,7 +192,13 @@ impl TableClient {
         let url = format!("{}/{}", self.cloud_location.url(), uri_path);
         let url = url::Url::from_str(&url).unwrap();
         let uri = Uri::from_str(url.as_str()).unwrap();
-        azure_core::Request::new(uri, http_method)
+
+        RequestBuilder::new()
+            .method(http_method)
+            .uri(uri)
+            .body(bytes::Bytes::new())
+            .unwrap()
+            .into()
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline<TableContext> {
@@ -205,7 +214,7 @@ impl TableClient {
 #[cfg(test)]
 pub mod table_client_tests {
     use super::{TableClient, TableOptions};
-    use crate::operations::table::{create_table, delete_table, query_tables};
+    use crate::table::operations::table::{create_table, delete_table, query_tables};
     use azure_core::Context;
 
     fn emulator_table_client() -> TableClient {

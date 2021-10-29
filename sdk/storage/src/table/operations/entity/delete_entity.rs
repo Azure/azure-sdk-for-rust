@@ -1,4 +1,4 @@
-use crate::operations::{header_time_value, header_value, ApiVersion, ETag};
+use crate::table::prelude::{header_time_value, header_value, ApiVersion, ETag};
 use azure_core::{Error, Request};
 use chrono::{Duration, Utc};
 

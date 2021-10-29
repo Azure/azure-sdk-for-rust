@@ -2,17 +2,13 @@ pub mod authorization;
 pub mod clients;
 mod continuation_next_partition_and_row_key;
 mod continuation_next_table_name;
-pub mod operations;
 pub mod prelude;
-
 pub mod table_context;
-
 pub use continuation_next_partition_and_row_key::ContinuationNextPartitionAndRowKey;
 pub use continuation_next_table_name::ContinuationNextTableName;
-
-mod filter;
-mod select;
-mod top;
-
+pub mod filter;
+pub mod operations;
+pub mod select;
+pub mod top;
 pub use filter::Filter;
 pub use top::Top;

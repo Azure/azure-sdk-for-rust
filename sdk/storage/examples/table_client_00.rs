@@ -1,6 +1,8 @@
 use azure_core::{Context, Error};
-use azure_storage::{
-    operations::{
+
+use azure_storage::table::{
+    clients::{TableClient, TableOptions},
+    prelude::{
         entity::{
             delete_entity::DeleteEntityOptions, get_entity::QueryEntityOptions,
             insert_entity::InsertEntityOptions,
@@ -13,7 +15,6 @@ use azure_storage::{
         },
         EchoContent, OdataMetadataLevel,
     },
-    table::clients::{TableClient, TableOptions},
 };
 use serde::{Deserialize, Serialize};
 

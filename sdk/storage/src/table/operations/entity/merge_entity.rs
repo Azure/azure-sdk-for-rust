@@ -1,10 +1,8 @@
+use super::TableEntity;
+use crate::table::prelude::{header_time_value, header_value, ApiVersion, ETag};
 use azure_core::{Error, Request};
 use chrono::{Duration, Utc};
 use http::HeaderValue;
-
-use crate::operations::{ApiVersion, ETag, header_time_value, header_value};
-
-use super::TableEntity;
 
 pub struct MergeEntityOptions {
     etag: Option<ETag>,

@@ -1,5 +1,4 @@
-use crate::operations::OdataMetadataLevel;
-use crate::operations::{header_time_value, header_value, ApiVersion};
+use crate::table::prelude::{header_time_value, header_value, ApiVersion, OdataMetadataLevel};
 use azure_core::HTTPHeaderError;
 use azure_core::Request;
 use chrono::Utc;

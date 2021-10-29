@@ -1,8 +1,7 @@
+use crate::table::prelude::{header_time_value, header_value, ApiVersion};
 use azure_core::{HTTPHeaderError, Request};
 use chrono::Utc;
 use http::HeaderValue;
-
-use crate::operations::{header_time_value, header_value, ApiVersion};
 
 #[derive(Debug, Clone)]
 pub struct DeleteTableOptions {

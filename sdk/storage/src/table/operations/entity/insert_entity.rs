@@ -1,6 +1,7 @@
-use crate::operations::{
+use crate::table::prelude::{
     header_time_value, header_value, ApiVersion, EchoContent, OdataMetadataLevel,
 };
+
 use azure_core::{Error, Request};
 use chrono::{Duration, Utc};
 use http::HeaderValue;
