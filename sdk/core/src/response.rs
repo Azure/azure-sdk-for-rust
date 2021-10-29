@@ -64,16 +64,6 @@ impl Response {
         (self.status, self.headers, self.body)
     }
 
-    pub async fn validate(self) -> Result<Self, crate::HttpError> {
-        let status = self.status();
-        if (200..400).contains(&status.as_u16()) {
-            let body = self.into_body_string().await;
-            Err(crate::HttpError::ErrorStatusCode { status, body })
-        } else {
-            Ok(self)
-        }
-    }
-
     pub async fn into_body_string(self) -> String {
         pinned_stream_into_utf8_string(self.body).await
     }

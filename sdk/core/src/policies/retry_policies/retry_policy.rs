@@ -49,27 +49,39 @@ where
 
         loop {
             let error = match next[0].send(ctx, request, &next[1..]).await {
+                Ok(response) if (200..400).contains(&response.status().as_u16()) => {
+                    log::trace!(
+                        "Succesful response. Request={:?} response={:?}",
+                        request,
+                        response
+                    );
+                    // Successful status code
+                    return Ok(response);
+                }
                 Ok(response) => {
+                    // Error status code
                     let status = response.status();
-                    if status.as_u16() < 400 {
-                        // Successful status code
-                        return Ok(response);
-                    }
-
                     let body = response.into_body_string().await;
                     let error = Box::new(HttpError::ErrorStatusCode { status, body });
                     if !RETRY_STATUSES.contains(&status) {
+                        log::error!(
+                            "server returned error status which will not be retried: {}",
+                            status
+                        );
                         // Server didn't return a status we retry on so return early
                         return Err(error);
                     }
-                    log::error!(
+                    log::debug!(
                         "server returned error status which requires retry: {}",
                         status
                     );
                     error
                 }
                 Err(error) => {
-                    log::error!("error occurred when making request: {}", error);
+                    log::debug!(
+                        "error occurred when making request which will be retried: {}",
+                        error
+                    );
                     error
                 }
             };
