@@ -2,15 +2,15 @@ use crate::operations::OdataMetadataLevel;
 use crate::operations::{header_time_value, header_value, ApiVersion};
 use azure_core::HTTPHeaderError;
 use azure_core::Request;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 
 #[derive(Debug, Clone)]
-pub struct QueryEntitiesOptions {
+pub struct QueryEntityOptions {
     api_version: Option<ApiVersion>,
     odata_metadata_level: Option<OdataMetadataLevel>,
 }
 
-impl Default for QueryEntitiesOptions {
+impl Default for QueryEntityOptions {
     fn default() -> Self {
         Self {
             api_version: Some(ApiVersion::default()),
@@ -19,7 +19,7 @@ impl Default for QueryEntitiesOptions {
     }
 }
 
-impl QueryEntitiesOptions {
+impl QueryEntityOptions {
     setters! {
         api_version: ApiVersion => Some(api_version),
         odata_metadata_level: OdataMetadataLevel => Some(odata_metadata_level),
@@ -39,5 +39,3 @@ impl QueryEntitiesOptions {
         Ok(())
     }
 }
-
-

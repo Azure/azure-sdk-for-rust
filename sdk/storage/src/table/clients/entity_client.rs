@@ -1,6 +1,6 @@
 use super::table_client::TableClient;
 use crate::operations::entity::delete_entity::DeleteEntityOptions;
-use crate::operations::entity::get_entity::QueryEntitiesOptions;
+use crate::operations::entity::get_entity::QueryEntityOptions;
 use crate::operations::entity::insert_entity::InsertEntityOptions;
 use crate::operations::entity::insert_or_merge_entity::InsertOrMergeEntityOptions;
 use crate::operations::entity::insert_or_replace_entity::InsertOrReplaceEntityOptions;
@@ -52,12 +52,12 @@ impl EntityClient {
     /// The Query Entities operation queries entities in a table and includes the $filter and $select options.
     /// A query against the Table service may return a maximum of 1,000 entities at one time and may execute for a maximum of five seconds.
     /// If the result set contains more than 1,000 entities, another request will be created.
-    pub async fn query_entities<'a, E: serde::Serialize + DeserializeOwned + TableEntity<'a>>(
+    pub async fn query_entity<'a, E: serde::Serialize + DeserializeOwned + TableEntity<'a>>(
         &self,
         ctx: Context,
         partition_key: &str,
         row_key: &str,
-        options: QueryEntitiesOptions,
+        options: QueryEntityOptions,
     ) -> Result<EntityResponse<E>, Error> {
         let mut request = self.table_client.prepare_table_request(
             format!(

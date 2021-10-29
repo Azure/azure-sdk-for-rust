@@ -1,2 +1,3 @@
-pub use crate::table::clients::TableClient;
-pub use crate::table::{Filter, IfMatchCondition, Top};
+pub use crate::table::clients::{EntityClient, TableClient};
+pub use crate::table::operations::*;
+pub use crate::table::{Filter, Top};

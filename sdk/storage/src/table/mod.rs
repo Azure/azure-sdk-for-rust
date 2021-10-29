@@ -2,21 +2,17 @@ pub mod authorization;
 pub mod clients;
 mod continuation_next_partition_and_row_key;
 mod continuation_next_table_name;
-mod entity_metadata;
-mod entity_with_metadata;
-mod filter;
-mod if_match_condition;
-mod model;
 pub mod operations;
 pub mod prelude;
-mod select;
+
 pub mod table_context;
-mod top;
+
 pub use continuation_next_partition_and_row_key::ContinuationNextPartitionAndRowKey;
 pub use continuation_next_table_name::ContinuationNextTableName;
-pub use entity_metadata::EntityMetadata;
-pub use entity_with_metadata::EntityWithMetadata;
+
+mod filter;
+mod select;
+mod top;
+
 pub use filter::Filter;
-pub use if_match_condition::IfMatchCondition;
-pub use model::Table;
 pub use top::Top;

@@ -2,7 +2,7 @@ use azure_core::{Context, Error};
 use azure_storage::{
     operations::{
         entity::{
-            delete_entity::DeleteEntityOptions, get_entity::QueryEntitiesOptions,
+            delete_entity::DeleteEntityOptions, get_entity::QueryEntityOptions,
             insert_entity::InsertEntityOptions,
             insert_or_replace_entity::InsertOrReplaceEntityOptions, TableEntity,
         },
@@ -104,11 +104,11 @@ async fn main() -> Result<(), Error> {
     // print users from the table using partition_key and row_key;
     for user in users.iter() {
         let entity = entity_client
-            .query_entities::<UserEntity>(
+            .query_entity::<UserEntity>(
                 Context::new(),
                 user.partition_key(),
                 user.row_key(),
-                QueryEntitiesOptions::default(),
+                QueryEntityOptions::default(),
             )
             .await?;
         //println!("{:#?}", entity);
