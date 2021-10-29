@@ -1,8 +1,11 @@
 use super::TokenCredential;
 use azure_core::TokenResponse;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 use oauth2::AccessToken;
-use serde::Deserialize;
+use serde::{
+    de::{self, Deserializer},
+    Deserialize,
+};
 use std::str;
 use url::Url;
 
@@ -85,10 +88,42 @@ impl azure_core::TokenCredential for ManagedIdentityCredential {
     }
 }
 
+pub fn expires_on_string<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let v = String::deserialize(deserializer)?;
+    let as_i64 = v.parse::<i64>().map_err(de::Error::custom)?;
+    Ok(Utc.timestamp(as_i64, 0))
+}
+
+// NOTE: expires_on is a String version of unix epoch time, not an integer.
+// https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=dotnet#rest-protocol-examples
 #[derive(Debug, Clone, Deserialize)]
 struct MsiTokenResponse {
     pub access_token: AccessToken,
+    #[serde(deserialize_with = "expires_on_string")]
     pub expires_on: DateTime<Utc>,
     pub token_type: String,
     pub resource: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Debug, Deserialize)]
+    struct TestExpires {
+        #[serde(deserialize_with = "expires_on_string")]
+        date: DateTime<Utc>,
+    }
+
+    #[test]
+    fn check_expires_on_string() {
+        let as_string = r#"{"date": "1586984735"}"#;
+        let expected = Utc.ymd(2020, 4, 15).and_hms(21, 5, 35);
+        let parsed: TestExpires =
+            serde_json::from_str(as_string).expect("deserialize should succeed");
+        assert_eq!(expected, parsed.date);
+    }
 }

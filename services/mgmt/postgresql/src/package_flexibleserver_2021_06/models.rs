@@ -121,11 +121,11 @@ pub struct CapabilitiesListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServerVersion {
     #[serde(rename = "13")]
-    _13,
+    N13,
     #[serde(rename = "12")]
-    _12,
+    N12,
     #[serde(rename = "11")]
-    _11,
+    N11,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerProperties {
@@ -186,8 +186,6 @@ pub mod server_properties {
 pub struct Server {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<Identity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -453,7 +451,17 @@ pub struct RestartParameter {
     #[serde(rename = "restartWithFailover", default, skip_serializing_if = "Option::is_none")]
     pub restart_with_failover: Option<bool>,
     #[serde(rename = "failoverMode", default, skip_serializing_if = "Option::is_none")]
-    pub failover_mode: Option<String>,
+    pub failover_mode: Option<restart_parameter::FailoverMode>,
+}
+pub mod restart_parameter {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum FailoverMode {
+        PlannedFailover,
+        ForcedFailover,
+        PlannedSwitchover,
+        ForcedSwitchover,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
@@ -483,24 +491,7 @@ pub struct DatabaseListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateDnsZoneSuffix {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Identity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<identity::Type>,
-}
-pub mod identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-    }
-}
+pub type PrivateDnsZoneSuffix = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]

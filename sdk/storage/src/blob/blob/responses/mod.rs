@@ -36,3 +36,5 @@ mod copy_blob_response;
 pub use copy_blob_response::CopyBlobResponse;
 mod get_blob_metadata_response;
 pub use get_blob_metadata_response::GetBlobMetadataResponse;
+mod set_blob_metadata_response;
+pub use set_blob_metadata_response::SetBlobMetadataResponse;

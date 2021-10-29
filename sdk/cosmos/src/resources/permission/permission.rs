@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn parse_permission() {
-        let permission: Permission<'_> = serde_json::from_str(&PERMISSION_JSON).unwrap();
+        let permission: Permission<'_> = serde_json::from_str(PERMISSION_JSON).unwrap();
 
         assert_eq!(
             permission.permission_token,

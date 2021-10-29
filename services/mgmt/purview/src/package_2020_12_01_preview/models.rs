@@ -17,7 +17,7 @@ pub struct Account {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccountProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<AccountSku>,
+    pub sku: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountSku {
@@ -72,6 +72,7 @@ pub mod account_properties {
         SoftDeleted,
         Failed,
         Succeeded,
+        Canceled,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {

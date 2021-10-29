@@ -53,15 +53,13 @@ pub struct TagsObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceOsDisk {}
+pub type ContainerServiceOsDisk = i32;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ContainerServiceStorageProfile {
     StorageAccount,
     ManagedDisks,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceVnetSubnetId {}
+pub type ContainerServiceVnetSubnetId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ContainerServiceVmSize {
     #[serde(rename = "Standard_A1")]
@@ -714,8 +712,7 @@ pub enum WeekDay {
     Friday,
     Saturday,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HourInDay {}
+pub type HourInDay = i32;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimeSpan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1096,8 +1093,24 @@ pub mod managed_cluster_pod_identity {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct ProvisioningInfo {
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub error: Option<CloudError>,
+        pub error: Option<ManagedClusterPodIdentityProvisioningError>,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedClusterPodIdentityProvisioningError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ManagedClusterPodIdentityProvisioningErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedClusterPodIdentityProvisioningErrorBody {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ManagedClusterPodIdentityProvisioningErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterPodIdentityException {
@@ -1184,10 +1197,8 @@ pub enum ScaleSetEvictionPolicy {
     Delete,
     Deallocate,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SpotMaxPrice {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProximityPlacementGroupId {}
+pub type SpotMaxPrice = f64;
+pub type ProximityPlacementGroupId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CredentialResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

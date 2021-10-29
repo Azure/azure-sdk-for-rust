@@ -70,9 +70,11 @@ async fn permission_token_usage() {
     let permission_mode = create_collection_response.collection.read_permission();
 
     let create_permission_response = permission_client
-        .create_permission()
-        .expiry_seconds(18000u64) // 5 hours, max!
-        .execute(&permission_mode)
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
+            &permission_mode,
+        )
         .await
         .unwrap();
 
@@ -115,17 +117,18 @@ async fn permission_token_usage() {
         .unwrap_err();
 
     permission_client
-        .delete_permission()
-        .execute()
+        .delete_permission(Context::new(), DeletePermissionOptions::new())
         .await
         .unwrap();
 
     // All includes read and write.
     let permission_mode = create_collection_response.collection.all_permission();
     let create_permission_response = permission_client
-        .create_permission()
-        .expiry_seconds(18000u64) // 5 hours, max!
-        .execute(&permission_mode)
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
+            &permission_mode,
+        )
         .await
         .unwrap();
 
@@ -153,5 +156,8 @@ async fn permission_token_usage() {
     );
 
     // cleanup
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }

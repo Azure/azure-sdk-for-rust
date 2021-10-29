@@ -1,0 +1,11 @@
+{
+  "uri": "/dbs/sample/colls/sample_collection",
+  "method": "DELETE",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "x-ms-date": "Tue, 12 Oct 2021 18:09:11 GMT",
+    "x-ms-version": "2018-12-31",
+    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.55.0; windows; x86_64)"
+  },
+  "body": ""
+}

@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub async fn get_locations(operation_config: &crate::OperationConfig) -> std::result::Result<LocationCollection, get_locations::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/providers/Microsoft.Intune/locations", operation_config.base_path(),);
@@ -16,7 +16,7 @@ pub async fn get_locations(operation_config: &crate::OperationConfig) -> std::re
             .map_err(get_locations::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(get_locations::Error::BuildRequestError)?;
@@ -43,7 +43,7 @@ pub async fn get_locations(operation_config: &crate::OperationConfig) -> std::re
     }
 }
 pub mod get_locations {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -80,7 +80,7 @@ pub async fn get_location_by_host_name(
             .map_err(get_location_by_host_name::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder
@@ -109,7 +109,7 @@ pub async fn get_location_by_host_name(
     }
 }
 pub mod get_location_by_host_name {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -154,7 +154,7 @@ pub async fn get_apps(
             .map_err(get_apps::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(filter) = filter {
         url.query_pairs_mut().append_pair("$filter", filter);
     }
@@ -190,7 +190,7 @@ pub async fn get_apps(
     }
 }
 pub mod get_apps {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -237,7 +237,7 @@ pub async fn get_mam_user_devices(
             .map_err(get_mam_user_devices::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(filter) = filter {
         url.query_pairs_mut().append_pair("$filter", filter);
     }
@@ -273,7 +273,7 @@ pub async fn get_mam_user_devices(
     }
 }
 pub mod get_mam_user_devices {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -320,7 +320,7 @@ pub async fn get_mam_user_device_by_device_name(
             .map_err(get_mam_user_device_by_device_name::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(select) = select {
         url.query_pairs_mut().append_pair("$select", select);
     }
@@ -352,7 +352,7 @@ pub async fn get_mam_user_device_by_device_name(
     }
 }
 pub mod get_mam_user_device_by_device_name {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -398,7 +398,7 @@ pub async fn wipe_mam_user_device(
             .map_err(wipe_mam_user_device::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
     req_builder = req_builder.uri(url.as_str());
@@ -426,7 +426,7 @@ pub async fn wipe_mam_user_device(
     }
 }
 pub mod wipe_mam_user_device {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -471,7 +471,7 @@ pub async fn get_operation_results(
             .map_err(get_operation_results::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(filter) = filter {
         url.query_pairs_mut().append_pair("$filter", filter);
     }
@@ -509,7 +509,7 @@ pub async fn get_operation_results(
     }
 }
 pub mod get_operation_results {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -551,7 +551,7 @@ pub async fn get_mam_statuses(
             .map_err(get_mam_statuses::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
     let req = req_builder.body(req_body).map_err(get_mam_statuses::Error::BuildRequestError)?;
@@ -578,7 +578,7 @@ pub async fn get_mam_statuses(
     }
 }
 pub mod get_mam_statuses {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -623,7 +623,7 @@ pub async fn get_mam_flagged_users(
             .map_err(get_mam_flagged_users::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(filter) = filter {
         url.query_pairs_mut().append_pair("$filter", filter);
     }
@@ -661,7 +661,7 @@ pub async fn get_mam_flagged_users(
     }
 }
 pub mod get_mam_flagged_users {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -706,7 +706,7 @@ pub async fn get_mam_flagged_user_by_name(
             .map_err(get_mam_flagged_user_by_name::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(select) = select {
         url.query_pairs_mut().append_pair("$select", select);
     }
@@ -738,7 +738,7 @@ pub async fn get_mam_flagged_user_by_name(
     }
 }
 pub mod get_mam_flagged_user_by_name {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -785,7 +785,7 @@ pub async fn get_mam_user_flagged_enrolled_apps(
             .map_err(get_mam_user_flagged_enrolled_apps::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(filter) = filter {
         url.query_pairs_mut().append_pair("$filter", filter);
     }
@@ -823,7 +823,7 @@ pub async fn get_mam_user_flagged_enrolled_apps(
     }
 }
 pub mod get_mam_user_flagged_enrolled_apps {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -846,7 +846,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
     }
 }
 pub mod ios {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get_mam_policies(
         operation_config: &crate::OperationConfig,
         host_name: &str,
@@ -870,7 +870,7 @@ pub mod ios {
                 .map_err(get_mam_policies::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -906,7 +906,7 @@ pub mod ios {
         }
     }
     pub mod get_mam_policies {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -951,7 +951,7 @@ pub mod ios {
                 .map_err(get_mam_policy_by_name::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(select) = select {
             url.query_pairs_mut().append_pair("$select", select);
         }
@@ -983,7 +983,7 @@ pub mod ios {
         }
     }
     pub mod get_mam_policy_by_name {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1028,7 +1028,8 @@ pub mod ios {
                 .map_err(create_or_update_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update_mam_policy::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -1057,7 +1058,7 @@ pub mod ios {
         }
     }
     pub mod create_or_update_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1102,7 +1103,8 @@ pub mod ios {
                 .map_err(patch_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(patch_mam_policy::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(patch_mam_policy::Error::BuildRequestError)?;
@@ -1129,7 +1131,7 @@ pub mod ios {
         }
     }
     pub mod patch_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1173,7 +1175,7 @@ pub mod ios {
                 .map_err(delete_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete_mam_policy::Error::BuildRequestError)?;
@@ -1196,7 +1198,7 @@ pub mod ios {
         }
     }
     pub mod delete_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1248,7 +1250,7 @@ pub mod ios {
                 .map_err(get_app_for_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -1286,7 +1288,7 @@ pub mod ios {
         }
     }
     pub mod get_app_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1333,7 +1335,8 @@ pub mod ios {
                 .map_err(add_app_for_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(add_app_for_mam_policy::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -1358,7 +1361,7 @@ pub mod ios {
         }
     }
     pub mod add_app_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1409,7 +1412,7 @@ pub mod ios {
                 .map_err(delete_app_for_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -1434,7 +1437,7 @@ pub mod ios {
         }
     }
     pub mod delete_app_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1483,7 +1486,7 @@ pub mod ios {
                 .map_err(get_groups_for_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -1512,7 +1515,7 @@ pub mod ios {
         }
     }
     pub mod get_groups_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1559,7 +1562,8 @@ pub mod ios {
                 .map_err(add_group_for_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(add_group_for_mam_policy::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -1584,7 +1588,7 @@ pub mod ios {
         }
     }
     pub mod add_group_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1635,7 +1639,7 @@ pub mod ios {
                 .map_err(delete_group_for_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -1660,7 +1664,7 @@ pub mod ios {
         }
     }
     pub mod delete_group_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1689,7 +1693,7 @@ pub mod ios {
     }
 }
 pub mod android {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get_mam_policies(
         operation_config: &crate::OperationConfig,
         host_name: &str,
@@ -1713,7 +1717,7 @@ pub mod android {
                 .map_err(get_mam_policies::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -1749,7 +1753,7 @@ pub mod android {
         }
     }
     pub mod get_mam_policies {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1794,7 +1798,7 @@ pub mod android {
                 .map_err(get_mam_policy_by_name::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(select) = select {
             url.query_pairs_mut().append_pair("$select", select);
         }
@@ -1826,7 +1830,7 @@ pub mod android {
         }
     }
     pub mod get_mam_policy_by_name {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1871,7 +1875,8 @@ pub mod android {
                 .map_err(create_or_update_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update_mam_policy::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -1900,7 +1905,7 @@ pub mod android {
         }
     }
     pub mod create_or_update_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1945,7 +1950,8 @@ pub mod android {
                 .map_err(patch_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(patch_mam_policy::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(patch_mam_policy::Error::BuildRequestError)?;
@@ -1972,7 +1978,7 @@ pub mod android {
         }
     }
     pub mod patch_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2016,7 +2022,7 @@ pub mod android {
                 .map_err(delete_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete_mam_policy::Error::BuildRequestError)?;
@@ -2039,7 +2045,7 @@ pub mod android {
         }
     }
     pub mod delete_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2091,7 +2097,7 @@ pub mod android {
                 .map_err(get_app_for_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -2129,7 +2135,7 @@ pub mod android {
         }
     }
     pub mod get_app_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2176,7 +2182,8 @@ pub mod android {
                 .map_err(add_app_for_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(add_app_for_mam_policy::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -2201,7 +2208,7 @@ pub mod android {
         }
     }
     pub mod add_app_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2252,7 +2259,7 @@ pub mod android {
                 .map_err(delete_app_for_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -2277,7 +2284,7 @@ pub mod android {
         }
     }
     pub mod delete_app_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2326,7 +2333,7 @@ pub mod android {
                 .map_err(get_groups_for_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -2355,7 +2362,7 @@ pub mod android {
         }
     }
     pub mod get_groups_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2402,7 +2409,8 @@ pub mod android {
                 .map_err(add_group_for_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(add_group_for_mam_policy::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -2427,7 +2435,7 @@ pub mod android {
         }
     }
     pub mod add_group_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2478,7 +2486,7 @@ pub mod android {
                 .map_err(delete_group_for_mam_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -2503,7 +2511,7 @@ pub mod android {
         }
     }
     pub mod delete_group_for_mam_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

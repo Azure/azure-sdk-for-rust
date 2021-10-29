@@ -1,0 +1,11 @@
+{
+  "uri": "/dbs/sample/colls",
+  "method": "POST",
+  "headers": {
+    "x-ms-date": "Tue, 12 Oct 2021 18:09:07 GMT",
+    "x-ms-version": "2018-12-31",
+    "authorization": "<<STRIPPED>>",
+    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.55.0; windows; x86_64)"
+  },
+  "body": "eyJpZCI6InNhbXBsZV9jb2xsZWN0aW9uIiwicGFydGl0aW9uS2V5Ijp7InBhdGhzIjpbIi9pZCJdLCJraW5kIjoiSGFzaCJ9fQ=="
+}

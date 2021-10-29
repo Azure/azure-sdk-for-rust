@@ -1,0 +1,20 @@
+[package]
+name = "autorust_openapi"
+version = "0.2.0"
+authors = ["Cameron Taggart <cameron.taggart@gmail.com>", "softprops <d.tangren@gmail.com>"]
+description = "Rust bindings for OpenAPI v2 as needed by autorust"
+documentation = "https://docs.rs/autorust_openapi"
+homepage = "https://github.com/ctaggart/autorust_openapi"
+repository = "https://github.com/ctaggart/autorust_openapi"
+keywords = ["openapi", "swagger", "AutoRest", "autorust"]
+license = "MIT"
+edition = "2018"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+indexmap = {version = "1.0", features = ["serde-1"]}
+
+[dev-dependencies]
+assert-json-diff = "2.0"
+serde_yaml = "0.8"

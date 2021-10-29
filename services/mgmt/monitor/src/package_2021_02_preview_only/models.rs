@@ -38,7 +38,7 @@ pub struct ScheduledQueryRuleProperties {
     #[serde(rename = "muteActionsDuration", default, skip_serializing_if = "Option::is_none")]
     pub mute_actions_duration: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub actions: Option<serde_json::Value>,
+    pub actions: Option<Actions>,
     #[serde(rename = "isWorkspaceAlertsStorageConfigured", default, skip_serializing_if = "Option::is_none")]
     pub is_workspace_alerts_storage_configured: Option<bool>,
     #[serde(rename = "checkWorkspaceAlertsStorageConfigured", default, skip_serializing_if = "Option::is_none")]
@@ -53,15 +53,15 @@ pub mod scheduled_query_rule_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
         #[serde(rename = "0")]
-        _0,
+        N0,
         #[serde(rename = "1")]
-        _1,
+        N1,
         #[serde(rename = "2")]
-        _2,
+        N2,
         #[serde(rename = "3")]
-        _3,
+        N3,
         #[serde(rename = "4")]
-        _4,
+        N4,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

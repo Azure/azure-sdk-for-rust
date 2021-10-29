@@ -5,12 +5,17 @@ use crate::operations::*;
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::{ReadonlyString, TimeNonce};
+
 use azure_core::pipeline::Pipeline;
+use azure_core::prelude::Continuation;
 use azure_core::HttpClient;
 use azure_core::Request;
 use azure_core::*;
+use futures::stream::unfold;
+use futures::Stream;
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};
+
 use std::fmt::Debug;
 use std::sync::Arc;
 
@@ -30,18 +35,30 @@ pub struct CosmosClient {
 }
 
 /// Options for specifying how a Cosmos client will behave
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct CosmosOptions {
     options: ClientOptions<CosmosContext>,
 }
 
 impl CosmosOptions {
-    /// Create options based on the provided http client
-    pub fn with_client(client: Arc<dyn HttpClient>) -> Self {
+    /// Create new options
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    #[cfg(feature = "mock_transport_framework")]
+    /// Create new options with a given transaction name
+    pub fn new_with_transaction_name(name: String) -> Self {
         Self {
-            options: ClientOptions::default()
-                .retry(RetryOptions::default().mode(RetryMode::Fixed))
-                .transport(TransportOptions::new(client)),
+            options: ClientOptions::new_with_transaction_name(name.into()),
+        }
+    }
+}
+
+impl Default for CosmosOptions {
+    fn default() -> Self {
+        Self {
+            options: Default::default(),
         }
     }
 }
@@ -54,16 +71,15 @@ fn new_pipeline_from_options(
     let auth_policy: Arc<dyn azure_core::Policy<CosmosContext>> =
         Arc::new(crate::AuthorizationPolicy::new(authorization_token));
 
-    let mut per_retry_policies = Vec::new();
     // take care of adding the AuthorizationPolicy as **last** retry policy.
     // Policies can change the url and/or the headers and the AuthorizationPolicy
     // must be able to inspect them or the resulting token will be invalid.
-    per_retry_policies.push(auth_policy);
+    let per_retry_policies = vec![auth_policy];
 
     Pipeline::new(
         option_env!("CARGO_PKG_NAME"),
         option_env!("CARGO_PKG_VERSION"),
-        &options.options,
+        options.options,
         Vec::new(),
         per_retry_policies,
     )
@@ -83,6 +99,20 @@ impl CosmosClient {
             auth_token,
             cloud_location,
         }
+    }
+
+    #[cfg(feature = "mock_transport_framework")]
+    /// Create new options with a given transaction name
+    pub fn new_with_transaction(
+        account: impl Into<String>,
+        auth_token: AuthorizationToken,
+        transaction_name: impl Into<String>,
+    ) -> Self {
+        Self::new(
+            account.into(),
+            auth_token,
+            CosmosOptions::new_with_transaction_name(transaction_name.into()),
+        )
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in the Chinese Azure cloud.
@@ -134,7 +164,16 @@ impl CosmosClient {
 
     /// Set the auth token used
     pub fn auth_token(&mut self, auth_token: AuthorizationToken) {
-        self.auth_token = auth_token;
+        // TODO: To remove once everything uses the AutorizationPolicy
+        self.auth_token = auth_token.clone();
+
+        // we replace the AuthorizationPolicy. This is
+        // the last-1 policy by construction.
+        let auth_policy: Arc<dyn azure_core::Policy<CosmosContext>> =
+            Arc::new(crate::AuthorizationPolicy::new(auth_token));
+
+        self.pipeline
+            .replace_policy(auth_policy, self.pipeline.policies().len() - 2);
     }
 
     /// Create a database
@@ -143,8 +182,9 @@ impl CosmosClient {
         ctx: Context,
         database_name: S,
         options: CreateDatabaseOptions,
-    ) -> Result<CreateDatabaseResponse, crate::Error> {
+    ) -> crate::Result<CreateDatabaseResponse> {
         let mut request = self.prepare_request_pipeline("dbs", http::Method::POST);
+
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
         options.decorate_request(&mut request, database_name.as_ref())?;
@@ -158,28 +198,81 @@ impl CosmosClient {
         Ok(CreateDatabaseResponse::try_from(response).await?)
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline<CosmosContext> {
-        &self.pipeline
-    }
-
     /// List all databases
-    pub async fn list_databases(
+    pub fn list_databases(
         &self,
         ctx: Context,
         options: ListDatabasesOptions,
-    ) -> Result<ListDatabasesResponse, crate::Error> {
-        let mut request = self.prepare_request_pipeline("dbs", http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+    ) -> impl Stream<Item = crate::Result<ListDatabasesResponse>> + '_ {
+        macro_rules! r#try {
+            ($expr:expr $(,)?) => {
+                match $expr {
+                    Result::Ok(val) => val,
+                    Result::Err(err) => {
+                        return Some((Err(err.into()), State::Done));
+                    }
+                }
+            };
+        }
 
-        options.decorate_request(&mut request).await?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
-            .await?;
+        #[derive(Debug, Clone, PartialEq)]
+        enum State {
+            Init,
+            Continuation(String),
+            Done,
+        }
 
-        Ok(ListDatabasesResponse::try_from(response).await?)
+        unfold(State::Init, move |state: State| {
+            let this = self.clone();
+            let ctx = ctx.clone();
+            let options = options.clone();
+            async move {
+                let response = match state {
+                    State::Init => {
+                        let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
+                        let mut pipeline_context =
+                            PipelineContext::new(ctx.clone(), ResourceType::Databases.into());
+
+                        r#try!(options.decorate_request(&mut request).await);
+                        let response = r#try!(
+                            this.pipeline()
+                                .send(&mut pipeline_context, &mut request)
+                                .await
+                        );
+                        let response = r#try!(response.validate(http::StatusCode::OK).await);
+
+                        ListDatabasesResponse::try_from(response).await
+                    }
+                    State::Continuation(continuation_token) => {
+                        let continuation = Continuation::new(continuation_token.as_str());
+                        let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
+                        let mut pipeline_context =
+                            PipelineContext::new(ctx.clone(), ResourceType::Databases.into());
+
+                        r#try!(options.decorate_request(&mut request).await);
+                        r#try!(continuation.add_as_header2(&mut request));
+                        let response = r#try!(
+                            this.pipeline()
+                                .send(&mut pipeline_context, &mut request)
+                                .await
+                        );
+                        let response = r#try!(response.validate(http::StatusCode::OK).await);
+                        ListDatabasesResponse::try_from(response).await
+                    }
+                    State::Done => return None,
+                };
+
+                let response = r#try!(response);
+
+                let next_state = response
+                    .continuation_token
+                    .clone()
+                    .map(State::Continuation)
+                    .unwrap_or(State::Done);
+
+                Some((Ok(response), next_state))
+            }
+        })
     }
 
     /// Convert into a [`DatabaseClient`]
@@ -201,7 +294,7 @@ impl CosmosClient {
         let time = TimeNonce::default();
 
         let auth = {
-            let resource_link = generate_resource_link(&uri_path);
+            let resource_link = generate_resource_link(uri_path);
             trace!(
                 "resource_link generated by prepare_request == {}",
                 resource_link
@@ -214,7 +307,16 @@ impl CosmosClient {
                 time,
             )
         };
-        self.prepare_request_with_signature(uri_path, http_method, time, &auth)
+        trace!("prepare_request::auth == {:?}", auth);
+        let uri = format!("{}/{}", self.cloud_location.url(), uri_path);
+        debug!("building request. uri: {}", uri);
+
+        RequestBuilder::new()
+            .method(http_method)
+            .uri(uri)
+            .header(HEADER_DATE, time.to_string())
+            .header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION))
+            .header(header::AUTHORIZATION, auth)
     }
 
     /// Prepares' an `azure_core::Request`. This function will
@@ -239,30 +341,12 @@ impl CosmosClient {
             .into()
     }
 
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.pipeline.http_client()
+    pub(crate) fn pipeline(&self) -> &Pipeline<CosmosContext> {
+        &self.pipeline
     }
 
-    fn prepare_request_with_signature(
-        &self,
-        uri_path: &str,
-        http_method: http::Method,
-        time_nonce: TimeNonce,
-        signature: &str,
-    ) -> RequestBuilder {
-        trace!("prepare_request::auth == {:?}", signature);
-        let uri = format!("{}/{}", self.cloud_location.url(), uri_path);
-        debug!(
-            "cosmos::client::prepare_request_with_resource_signature::uri == {:?}",
-            uri
-        );
-
-        RequestBuilder::new()
-            .method(http_method)
-            .uri(uri)
-            .header(HEADER_DATE, time_nonce.to_string())
-            .header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION))
-            .header(header::AUTHORIZATION, signature)
+    pub(crate) fn http_client(&self) -> &dyn HttpClient {
+        self.pipeline.http_client()
     }
 }
 

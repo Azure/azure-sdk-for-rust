@@ -158,9 +158,9 @@ pub enum OutputErrorPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CompatibilityLevel {
     #[serde(rename = "1.0")]
-    _1_0,
+    N1_0,
     #[serde(rename = "1.2")]
-    _1_2,
+    N1_2,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobStorageAccount {
@@ -497,8 +497,8 @@ pub struct Transformation {
 pub struct TransformationProperties {
     #[serde(rename = "streamingUnits", default, skip_serializing_if = "Option::is_none")]
     pub streaming_units: Option<i32>,
-    #[serde(rename = "validStreamingUnits", default, skip_serializing_if = "Option::is_none")]
-    pub valid_streaming_units: Option<i32>,
+    #[serde(rename = "validStreamingUnits", default, skip_serializing_if = "Vec::is_empty")]
+    pub valid_streaming_units: Vec<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

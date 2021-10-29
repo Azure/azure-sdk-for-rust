@@ -14,6 +14,7 @@ edition = "2018"
 
 [dependencies]
 async-trait = "0.1"
+base64 = "0.13"
 bytes = "1.0"
 chrono = "0.4"
 dyn-clone = "1.0"
@@ -26,7 +27,7 @@ oauth2 = "4.0"
 rand = "0.8"
 # Add dependency to getrandom to enable WASM support
 getrandom = { version = "0.2", features = ["js"] }
-reqwest = { version = "0.11", features = ["stream"], optional = true }
+reqwest = { version = "0.11", features = ["stream"], default_features=false, optional = true }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
@@ -38,12 +39,14 @@ uuid = { version = "0.8" }
 rustc_version = "0.4"
 
 [dev-dependencies]
-env_logger = "0.9"
-tokio = { version = "1.0", features = ["default"] }
+env_logger = "0.8"
+tokio = { version = "1", features = ["default"] }
 
 [features]
 default = ["enable_reqwest"]
-enable_reqwest = ["reqwest"]
+enable_reqwest = ["reqwest/default-tls"]
+enable_reqwest_rustls = ["reqwest/rustls-tls"]
 enable_hyper = ["hyper", "hyper-rustls"]
 test_e2e = []
 azurite_workaround = []
+mock_transport_framework = []

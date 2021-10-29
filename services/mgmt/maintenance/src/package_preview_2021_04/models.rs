@@ -142,6 +142,8 @@ pub struct InputWindowsParameters {
     pub kb_numbers_to_include: Vec<String>,
     #[serde(rename = "classificationsToInclude", default, skip_serializing_if = "Vec::is_empty")]
     pub classifications_to_include: Vec<String>,
+    #[serde(rename = "excludeKbsRequiringReboot", default, skip_serializing_if = "Option::is_none")]
+    pub exclude_kbs_requiring_reboot: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InputLinuxParameters {

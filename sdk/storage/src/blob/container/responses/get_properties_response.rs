@@ -25,7 +25,7 @@ impl GetPropertiesResponse {
     pub(crate) fn from_response(
         container_name: &str,
         headers: &HeaderMap,
-    ) -> Result<GetPropertiesResponse, crate::Error> {
+    ) -> crate::Result<GetPropertiesResponse> {
         let request_id = match headers.get(REQUEST_ID) {
             Some(request_id) => Uuid::parse_str(request_id.to_str()?)?,
             None => return Err(crate::Error::MissingHeaderError(REQUEST_ID.to_owned())),

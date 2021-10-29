@@ -33,12 +33,12 @@ impl CreateCollectionOptions {
         &self,
         request: &mut HttpRequest,
         collection_name: &str,
-    ) -> Result<(), crate::Error> {
+    ) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.offer, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
 
         let collection = CreateCollectionBody {
-            id: collection_name.as_ref(),
+            id: collection_name,
             indexing_policy: &self.indexing_policy,
             partition_key: &self.partition_key,
         };
@@ -76,7 +76,7 @@ pub struct CreateCollectionResponse {
 }
 
 impl CreateCollectionResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

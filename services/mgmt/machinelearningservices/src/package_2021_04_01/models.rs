@@ -193,6 +193,8 @@ pub struct VirtualMachineSize {
     pub premium_io: Option<bool>,
     #[serde(rename = "estimatedVMPrices", default, skip_serializing_if = "Option::is_none")]
     pub estimated_vm_prices: Option<EstimatedVmPrices>,
+    #[serde(rename = "supportedComputeTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub supported_compute_types: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EstimatedVmPrices {

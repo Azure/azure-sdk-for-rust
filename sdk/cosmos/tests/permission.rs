@@ -54,16 +54,20 @@ async fn permissions() {
     let permission_client_user2 = user2_client.clone().into_permission_client(PERMISSION2);
 
     let _create_permission_user1_response = permission_client_user1
-        .create_permission()
-        .expiry_seconds(18000u64) // 5 hours, max!
-        .execute(&create_collection_response.collection.all_permission())
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
+            &create_collection_response.collection.all_permission(),
+        )
         .await
         .unwrap();
 
     let _create_permission_user2_response = permission_client_user2
-        .create_permission()
-        .expiry_seconds(18000u64) // 5 hours, max!
-        .execute(&create_collection_response.collection.read_permission())
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
+            &create_collection_response.collection.read_permission(),
+        )
         .await
         .unwrap();
 
@@ -74,5 +78,8 @@ async fn permissions() {
     assert_eq!(list_permissions_response.permissions.len(), 1);
 
     // delete the database
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }

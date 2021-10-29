@@ -8,7 +8,7 @@ use super::headers::COPY_ID;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopyId(uuid::Uuid);
 
-pub fn copy_id_from_headers(headers: &HeaderMap) -> Result<CopyId, crate::Error> {
+pub fn copy_id_from_headers(headers: &HeaderMap) -> crate::Result<CopyId> {
     let copy_id = headers
         .get(COPY_ID)
         .ok_or_else(|| crate::Error::HeaderNotFound(COPY_ID.to_owned()))?;

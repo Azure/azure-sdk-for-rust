@@ -34,7 +34,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_collection_client(collection_name.clone());
     let user_client = database_client.into_user_client(user_name);
 
-    let get_collection_response = collection_client.get_collection().execute().await?;
+    let get_collection_response = collection_client
+        .get_collection(Context::new(), GetCollectionOptions::new())
+        .await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
     let create_user_response = user_client
@@ -59,10 +61,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let permission_mode = get_collection_response.collection.read_permission();
 
     let create_permission_response = permission_client
-        .create_permission()
-        .expiry_seconds(18000u64) // 5 hours, max!
-        .execute(&permission_mode)
-        .await?;
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
+            &permission_mode,
+        )
+        .await
+        .unwrap();
     println!(
         "create_permission_response == {:#?}",
         create_permission_response
@@ -129,15 +134,20 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Err(error) => println!("Insert failed: {:#?}", error),
     }
 
-    permission_client.delete_permission().execute().await?;
+    permission_client
+        .delete_permission(Context::new(), DeletePermissionOptions::new())
+        .await?;
 
     // All includes read and write.
     let permission_mode = get_collection_response.collection.all_permission();
     let create_permission_response = permission_client
-        .create_permission()
-        .expiry_seconds(18000u64) // 5 hours, max!
-        .execute(&permission_mode)
-        .await?;
+        .create_permission(
+            Context::new(),
+            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
+            &permission_mode,
+        )
+        .await
+        .unwrap();
     println!(
         "create_permission_response == {:#?}",
         create_permission_response
@@ -174,7 +184,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     println!("Cleaning up user.");
-    let delete_user_response = user_client.delete_user().execute().await?;
+    let delete_user_response = user_client
+        .delete_user(Context::new(), DeleteUserOptions::new())
+        .await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 
     Ok(())

@@ -1,5 +1,6 @@
 use crate::headers;
 use crate::operations::*;
+use crate::resources::user::UserResponse;
 use crate::responses::*;
 use azure_core::AddAsHeader;
 use http::request;
@@ -65,7 +66,7 @@ macro_rules! implement_from {
 
 implement_from!(CreateSlugAttachmentResponse);
 implement_from!(GetCollectionResponse);
-implement_from!(CreateUserResponse);
+implement_from!(UserResponse);
 implement_from!(DeleteAttachmentResponse);
 implement_from!(ReplaceReferenceAttachmentResponse);
 implement_from!(CreateReferenceAttachmentResponse);

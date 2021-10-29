@@ -1,7 +1,10 @@
 use super::*;
+use crate::authorization_policy::CosmosContext;
+use crate::prelude::*;
+use crate::resources::permission::{PermissionMode, PermissionResponse};
 use crate::resources::ResourceType;
-use crate::{requests, ReadonlyString};
-use azure_core::HttpClient;
+use crate::ReadonlyString;
+use azure_core::{pipeline::Pipeline, Context, PipelineContext, Request};
 
 /// A client for Cosmos permission resources.
 #[derive(Debug, Clone)]
@@ -42,30 +45,104 @@ impl PermissionClient {
     }
 
     /// Create the permission
-    pub fn create_permission(&self) -> requests::CreatePermissionBuilder<'_, '_> {
-        requests::CreatePermissionBuilder::new(self)
+    pub async fn create_permission(
+        &self,
+        ctx: Context,
+        options: CreatePermissionOptions,
+        permission_mode: &PermissionMode<'_>,
+    ) -> crate::Result<PermissionResponse<'_>> {
+        let mut request = self.cosmos_client().prepare_request_pipeline(
+            &format!(
+                "dbs/{}/users/{}/permissions",
+                self.database_client().database_name(),
+                self.user_client().user_name()
+            ),
+            http::Method::POST,
+        );
+
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Permissions.into());
+
+        options.decorate_request(&mut request, self.permission_name(), permission_mode)?;
+
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::CREATED)
+            .await?;
+
+        Ok(PermissionResponse::try_from(response).await?)
     }
 
     /// Replace the permission
-    pub fn replace_permission(&self) -> requests::ReplacePermissionBuilder<'_, '_> {
-        requests::ReplacePermissionBuilder::new(self)
+    pub async fn replace_permission(
+        &self,
+        ctx: Context,
+        options: ReplacePermissionOptions,
+        permission_mode: &PermissionMode<'_>,
+    ) -> crate::Result<PermissionResponse<'_>> {
+        let mut request = self.prepare_request_with_permission_name(http::Method::PUT);
+
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Permissions.into());
+
+        options.decorate_request(&mut request, self.permission_name(), permission_mode)?;
+
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
+            .await?;
+
+        Ok(PermissionResponse::try_from(response).await?)
     }
 
     /// Get the permission
-    pub fn get_permission(&self) -> requests::GetPermissionBuilder<'_, '_> {
-        requests::GetPermissionBuilder::new(self)
+    pub async fn get_permission(
+        &self,
+        ctx: Context,
+        options: GetPermissionOptions,
+    ) -> crate::Result<PermissionResponse<'_>> {
+        let mut request = self.prepare_request_with_permission_name(http::Method::GET);
+
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Permissions.into());
+
+        options.decorate_request(&mut request)?;
+
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
+            .await?;
+
+        Ok(PermissionResponse::try_from(response).await?)
     }
 
     /// Delete the permission
-    pub fn delete_permission(&self) -> requests::DeletePermissionsBuilder<'_, '_> {
-        requests::DeletePermissionsBuilder::new(self)
+    pub async fn delete_permission(
+        &self,
+        ctx: Context,
+        options: DeletePermissionOptions,
+    ) -> crate::Result<DeletePermissionResponse> {
+        let mut request = self.prepare_request_with_permission_name(http::Method::DELETE);
+
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Permissions.into());
+
+        options.decorate_request(&mut request)?;
+
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::NO_CONTENT)
+            .await?;
+
+        Ok(DeletePermissionResponse::try_from(response).await?)
     }
 
-    pub(crate) fn prepare_request_with_permission_name(
-        &self,
-        method: http::Method,
-    ) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
+    pub(crate) fn prepare_request_with_permission_name(&self, method: http::Method) -> Request {
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/users/{}/permissions/{}",
                 self.database_client().database_name(),
@@ -73,11 +150,10 @@ impl PermissionClient {
                 self.permission_name()
             ),
             method,
-            ResourceType::Permissions,
         )
     }
 
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
+    fn pipeline(&self) -> &Pipeline<CosmosContext> {
+        self.cosmos_client().pipeline()
     }
 }

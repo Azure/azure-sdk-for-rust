@@ -40,7 +40,7 @@ pub struct BlockWithSizeList {
 }
 
 impl BlockWithSizeList {
-    pub fn try_from_xml(xml: &str) -> Result<Self, crate::Error> {
+    pub fn try_from_xml(xml: &str) -> crate::Result<Self> {
         let bl: BlockList = serde_xml_rs::de::from_reader(xml.as_bytes())?;
         debug!("bl == {:?}", bl);
 

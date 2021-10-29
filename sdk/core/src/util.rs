@@ -1,6 +1,11 @@
 use bytes::Bytes;
 use http::header::{AsHeaderName, HeaderMap, HeaderName, HeaderValue};
 use http::{self, request::Builder};
+use serde::{
+    de::{self, DeserializeOwned, Deserializer},
+    Deserialize,
+};
+
 use std::{convert::TryFrom, fmt::Display, str::FromStr};
 
 pub fn format_header_value<D: Display>(value: D) -> Result<HeaderValue, http::Error> {
@@ -95,11 +100,22 @@ const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
 /// Returns Bytes without the UTF-8 BOM.
 pub fn slice_bom(bytes: &Bytes) -> Bytes {
-    if bytes.len() > 3 && bytes.slice(0..3).as_ref() == &UTF8_BOM {
+    if bytes.len() > 3 && bytes.slice(0..3).as_ref() == UTF8_BOM {
         bytes.slice(3..)
     } else {
         bytes.clone()
     }
+}
+
+pub fn case_insensitive_deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+where
+    T: DeserializeOwned + std::fmt::Debug,
+    D: Deserializer<'de>,
+{
+    let v = String::deserialize(deserializer)?;
+    T::deserialize(serde_json::Value::String(v.clone()))
+        .or_else(|_| T::deserialize(serde_json::Value::String(v.to_lowercase())))
+        .map_err(de::Error::custom)
 }
 
 #[cfg(test)]
