@@ -25,11 +25,7 @@ impl FixedRetryPolicy {
 }
 
 impl super::RetryPolicy for FixedRetryPolicy {
-    fn is_expired(
-        &self,
-        first_retry_time: &mut Option<DateTime<Local>>,
-        retry_count: u32,
-    ) -> bool {
+    fn is_expired(&self, first_retry_time: &mut Option<DateTime<Local>>, retry_count: u32) -> bool {
         if retry_count > self.max_retries {
             return true;
         }
