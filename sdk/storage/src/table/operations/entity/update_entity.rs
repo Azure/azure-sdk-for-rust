@@ -1,20 +1,20 @@
 use crate::table::prelude::{header_time_value, header_value, ApiVersion, ETag};
 use azure_core::{Error, Request};
-use chrono::{Duration, Utc};
+use chrono::Utc;
 use http::HeaderValue;
 
 use super::TableEntity;
 
 pub struct UpdateEntityOptions {
     etag: Option<ETag>,
-    timeout: Option<Duration>,
+    // timeout: Option<Duration>,
     api_version: Option<ApiVersion>,
 }
 
 impl Default for UpdateEntityOptions {
     fn default() -> Self {
         Self {
-            timeout: Default::default(),
+            // timeout: Default::default(),
             etag: Some(ETag::default()),
             api_version: Some(ApiVersion::default()),
         }
@@ -24,7 +24,7 @@ impl Default for UpdateEntityOptions {
 impl UpdateEntityOptions {
     setters! {
         etag: ETag => Some(etag),
-        timeout: Duration => Some(timeout),
+        // timeout: Duration => Some(timeout),
         api_version: ApiVersion => Some(api_version),
     }
 

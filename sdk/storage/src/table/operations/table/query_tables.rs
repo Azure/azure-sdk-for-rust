@@ -12,7 +12,7 @@ pub struct QueryTablesOptions<'a> {
     top: Option<Top>,
     filter: Option<Filter<'a>>,
     api_version: Option<ApiVersion>,
-    next_table_name: Option<String>, // TODO: try use the next_table_name option
+    // next_table_name: Option<String>, // TODO: try use the next_table_name option
     odata_metadata_level: Option<OdataMetadataLevel>,
 }
 
@@ -21,7 +21,7 @@ impl Default for QueryTablesOptions<'_> {
         Self {
             top: Default::default(),
             filter: Default::default(),
-            next_table_name: Default::default(),
+            // next_table_name: Default::default(),
             api_version: Some(ApiVersion::default()),
             odata_metadata_level: Some(OdataMetadataLevel::FullMetadata),
         }

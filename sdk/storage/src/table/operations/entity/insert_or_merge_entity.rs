@@ -1,18 +1,18 @@
 use super::TableEntity;
 use crate::table::prelude::{header_time_value, header_value, ApiVersion};
 use azure_core::{Error, Request};
-use chrono::{Duration, Utc};
+use chrono::Utc;
 use http::HeaderValue;
 
 pub struct InsertOrMergeEntityOptions {
-    timeout: Option<Duration>,
+    // timeout: Option<Duration>,
     api_version: Option<ApiVersion>,
 }
 
 impl Default for InsertOrMergeEntityOptions {
     fn default() -> Self {
         Self {
-            timeout: Default::default(),
+            // timeout: Default::default(),
             api_version: Some(ApiVersion::default()),
         }
     }
@@ -20,7 +20,7 @@ impl Default for InsertOrMergeEntityOptions {
 
 impl InsertOrMergeEntityOptions {
     setters! {
-        timeout: Duration => Some(timeout),
+        // timeout: Duration => Some(timeout),
         api_version: ApiVersion => Some(api_version),
     }
 

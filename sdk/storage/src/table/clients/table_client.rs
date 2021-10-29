@@ -23,14 +23,14 @@ const EMULATOR_KEY: &'static str =
 
 /// The cloud with which you want to interact.
 #[derive(Debug, Clone)]
-enum CloudTableLocation {
+pub enum CloudTableLocation {
     /// Azure public cloud
     Public(String),
     /// Azure China cloud
     China(String),
     // TODO: Other govt clouds?
     /// A custom base URL
-    Custom { account: String, url: String },
+    Custom { url: String, account: String },
 }
 
 impl CloudTableLocation {
@@ -78,9 +78,13 @@ pub struct TableClient {
 
 impl TableClient {
     /// Create a new `TableClient`
-    pub fn new(account: String, auth_token: AuthorizationToken, options: TableOptions) -> Self {
+    pub fn new(
+        cloud_location: CloudTableLocation,
+        auth_token: AuthorizationToken,
+        options: TableOptions,
+    ) -> Self {
         Self {
-            cloud_location: CloudTableLocation::Public(account),
+            cloud_location,
             pipeline: pipeline_from_options(options, auth_token),
         }
     }

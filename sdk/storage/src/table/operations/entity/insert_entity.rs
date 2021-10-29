@@ -1,16 +1,15 @@
 use crate::table::prelude::{
     header_time_value, header_value, ApiVersion, EchoContent, OdataMetadataLevel,
 };
-
 use azure_core::{Error, Request};
-use chrono::{Duration, Utc};
+use chrono::Utc;
 use http::HeaderValue;
 
 use super::TableEntity;
 
 pub struct InsertEntityOptions {
     // Optional. The timeout parameter is expressed in seconds.
-    timeout: Option<Duration>,
+    // timeout: Option<Duration>,
     api_version: Option<ApiVersion>,
     echo_content: Option<EchoContent>,
     odata_metadata_level: Option<OdataMetadataLevel>,
@@ -19,7 +18,7 @@ pub struct InsertEntityOptions {
 impl Default for InsertEntityOptions {
     fn default() -> Self {
         Self {
-            timeout: Default::default(),
+            // timeout: Default::default(),
             api_version: Some(ApiVersion::default()),
             echo_content: Some(EchoContent::ReturnContent),
             odata_metadata_level: Some(OdataMetadataLevel::FullMetadata),
@@ -29,7 +28,7 @@ impl Default for InsertEntityOptions {
 
 impl InsertEntityOptions {
     setters! {
-        timeout: Duration => Some(timeout),
+        // timeout: Duration => Some(timeout),
         api_version: ApiVersion => Some(api_version),
         echo_content: EchoContent => Some(echo_content),
         odata_metadata_level: OdataMetadataLevel  => Some(odata_metadata_level),
