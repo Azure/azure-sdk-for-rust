@@ -1,8 +1,11 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
+#![recursion_limit = "256"]
+
+
+#[macro_use]
+extern crate azure_core;
+
+#[cfg(feature = "clusters")]
+pub mod clusters;
+
+#[cfg(feature = "clusters")]
+pub use clusters::*;
