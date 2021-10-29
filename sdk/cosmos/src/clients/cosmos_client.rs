@@ -348,8 +348,7 @@ impl CosmosClient {
     where
         F: FnOnce(&mut azure_core::Request) -> crate::Result<()>,
     {
-        let mut request = self
-            .prepare_request_pipeline(uri_path, http_method);
+        let mut request = self.prepare_request_pipeline(uri_path, http_method);
         let mut pipeline_context = PipelineContext::new(ctx, resource_type.into());
         decorate_request(&mut request)?;
         let response = self

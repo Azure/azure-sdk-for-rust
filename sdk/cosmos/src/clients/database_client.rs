@@ -1,11 +1,9 @@
 use super::*;
-use crate::authorization_policy::CosmosContext;
 use crate::operations::*;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
-use azure_core::pipeline::Pipeline;
 use azure_core::prelude::Continuation;
-use azure_core::{AddAsHeader, Context, PipelineContext};
+use azure_core::{AddAsHeader, Context};
 use futures::stream::unfold;
 use futures::Stream;
 
@@ -88,7 +86,7 @@ impl DatabaseClient {
             .run_pipeline(
                 ctx,
                 &format!("dbs/{}", self.database_name()),
-                http::Method::DELETE,
+                http::Method::GET,
                 ResourceType::Databases,
                 |request| options.decorate_request(request),
             )
@@ -103,45 +101,40 @@ impl DatabaseClient {
         ctx: Context,
         options: ListCollectionsOptions,
     ) -> impl Stream<Item = crate::Result<ListCollectionsResponse>> + '_ {
+        async fn do_request<'a, F>(
+            this: &'a DatabaseClient,
+            ctx: Context,
+            options: F,
+        ) -> crate::Result<ListCollectionsResponse>
+        where
+            F: FnOnce(&mut azure_core::Request) -> crate::Result<()> + 'a,
+        {
+            let response = this
+                .cosmos_client()
+                .run_pipeline(
+                    ctx,
+                    &format!("dbs/{}/colls", this.database_name()),
+                    http::Method::GET,
+                    ResourceType::Users,
+                    options,
+                )
+                .await?;
+            ListCollectionsResponse::try_from(response).await
+        }
         unfold(State::Init, move |state: State| {
-            let this = self.clone();
             let ctx = ctx.clone();
             let options = options.clone();
             async move {
                 let response = match state {
-                    State::Init => {
-                        let mut request = this.cosmos_client().prepare_request_pipeline(
-                            &format!("dbs/{}/colls", this.database_name()),
-                            http::Method::GET,
-                        );
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Collections.into());
-
-                        r#try!(options.decorate_request(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
-                        ListCollectionsResponse::try_from(response).await
-                    }
+                    State::Init => do_request(self, ctx, |req| options.decorate_request(req)).await,
                     State::Continuation(continuation_token) => {
                         let continuation = Continuation::new(continuation_token.as_str());
-                        let mut request = this.cosmos_client().prepare_request_pipeline(
-                            &format!("dbs/{}/colls", self.database_name()),
-                            http::Method::GET,
-                        );
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Collections.into());
-
-                        r#try!(options.decorate_request(&mut request));
-                        r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
-                        ListCollectionsResponse::try_from(response).await
+                        do_request(self, ctx, |request| {
+                            options.decorate_request(request)?;
+                            continuation.add_as_header2(request)?;
+                            Ok(())
+                        })
+                        .await
                     }
                     State::Done => return None,
                 };
@@ -152,7 +145,7 @@ impl DatabaseClient {
                     .continuation_token
                     .clone()
                     .map(State::Continuation)
-                    .unwrap_or(State::Done);
+                    .unwrap_or_else(|| State::Done);
 
                 Some((Ok(response), next_state))
             }
@@ -186,45 +179,40 @@ impl DatabaseClient {
         ctx: Context,
         options: ListUsersOptions,
     ) -> impl Stream<Item = crate::Result<ListUsersResponse>> + '_ {
+        async fn do_request<'a, F>(
+            this: &'a DatabaseClient,
+            ctx: Context,
+            options: F,
+        ) -> crate::Result<ListUsersResponse>
+        where
+            F: FnOnce(&mut azure_core::Request) -> crate::Result<()> + 'a,
+        {
+            let response = this
+                .cosmos_client()
+                .run_pipeline(
+                    ctx,
+                    &format!("dbs/{}/users", this.database_name()),
+                    http::Method::GET,
+                    ResourceType::Users,
+                    options,
+                )
+                .await?;
+            ListUsersResponse::try_from(response).await
+        }
         unfold(State::Init, move |state: State| {
-            let this = self.clone();
             let ctx = ctx.clone();
             let options = options.clone();
             async move {
                 let response = match state {
-                    State::Init => {
-                        let mut request = this.cosmos_client().prepare_request_pipeline(
-                            &format!("dbs/{}/users", this.database_name()),
-                            http::Method::GET,
-                        );
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Users.into());
-
-                        r#try!(options.decorate_request(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
-                        ListUsersResponse::try_from(response).await
-                    }
+                    State::Init => do_request(self, ctx, |req| options.decorate_request(req)).await,
                     State::Continuation(continuation_token) => {
                         let continuation = Continuation::new(continuation_token.as_str());
-                        let mut request = this.cosmos_client().prepare_request_pipeline(
-                            &format!("dbs/{}/users", self.database_name()),
-                            http::Method::GET,
-                        );
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Users.into());
-
-                        r#try!(options.decorate_request(&mut request));
-                        r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
-                        ListUsersResponse::try_from(response).await
+                        do_request(self, ctx, |request| {
+                            options.decorate_request(request)?;
+                            continuation.add_as_header2(request)?;
+                            Ok(())
+                        })
+                        .await
                     }
                     State::Done => return None,
                 };
@@ -253,9 +241,5 @@ impl DatabaseClient {
     /// Convert into a [`UserClient`]
     pub fn into_user_client<S: Into<ReadonlyString>>(self, user_name: S) -> UserClient {
         UserClient::new(self, user_name)
-    }
-
-    fn pipeline(&self) -> &Pipeline<CosmosContext> {
-        self.cosmos_client.pipeline()
     }
 }
