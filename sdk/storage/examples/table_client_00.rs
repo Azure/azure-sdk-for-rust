@@ -84,7 +84,7 @@ async fn main() -> Result<(), Error> {
 
     //create user table if not exists;
     if let Some(table_created) = create_if_not_exist(&table_client, table_name).await? {
-        //println!("create table response body: {:#?}", table_created);
+        println!("create table response body: {:#?}", table_created);
     }
 
     let entity_client = table_client.into_entity_client(table_name);
