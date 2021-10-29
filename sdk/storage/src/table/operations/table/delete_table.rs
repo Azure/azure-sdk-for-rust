@@ -33,6 +33,7 @@ impl DeleteTableOptions {
     }
 }
 
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DeleteTableResponse {
     // do we want to return some of the headers to the client? x-ms-request-id, x-ms-version, Date or x-ms-client-request-id
 }
