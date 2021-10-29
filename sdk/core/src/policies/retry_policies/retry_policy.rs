@@ -1,6 +1,6 @@
 use crate::policies::{Policy, PolicyResult, Request, Response};
 use crate::sleep::sleep;
-use crate::PipelineContext;
+use crate::{HttpError, PipelineContext};
 use chrono::{DateTime, Local};
 use http::StatusCode;
 use std::sync::Arc;
@@ -54,15 +54,19 @@ where
                     if status.as_u16() < 400 {
                         // Successful status code
                         return Ok(response);
-                    } else if !RETRY_STATUSES.contains(&status) {
-                        // Server didn't return a status we retry on
-                        return Ok(response.validate(StatusCode::OK).await?);
+                    }
+
+                    let body = response.into_body_string().await;
+                    let error = Box::new(HttpError::ErrorStatusCode { status, body });
+                    if !RETRY_STATUSES.contains(&status) {
+                        // Server didn't return a status we retry on so return early
+                        return Err(error);
                     }
                     log::error!(
                         "server returned error status which requires retry: {}",
                         status
                     );
-                    Box::new(response.validate(StatusCode::OK).await.unwrap_err())
+                    error
                 }
                 Err(error) => {
                     log::error!("error occurred when making request: {}", error);

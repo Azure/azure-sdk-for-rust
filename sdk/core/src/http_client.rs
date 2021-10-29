@@ -41,43 +41,13 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     async fn execute_request_check_status(
         &self,
         request: Request<Bytes>,
-        expected_status: StatusCode,
+        _expected_status: StatusCode,
     ) -> Result<Response<Bytes>, HttpError> {
         let response = self.execute_request(request).await?;
-        if expected_status != response.status() {
-            Err(HttpError::new_unexpected_status_code(
-                expected_status,
-                response.status(),
-                std::str::from_utf8(response.body())?,
-            ))
-        } else {
-            Ok(response)
-        }
-    }
-
-    async fn execute_request_check_statuses(
-        &self,
-        request: Request<Bytes>,
-        expected_statuses: &[StatusCode],
-    ) -> Result<Response<Bytes>, HttpError> {
-        let response = self.execute_request(request).await?;
-        if !expected_statuses
-            .iter()
-            .any(|expected_status| *expected_status == response.status())
-        {
-            if expected_statuses.len() == 1 {
-                Err(HttpError::new_unexpected_status_code(
-                    expected_statuses[0],
-                    response.status(),
-                    std::str::from_utf8(response.body())?,
-                ))
-            } else {
-                Err(HttpError::new_multiple_unexpected_status_code(
-                    expected_statuses.to_vec(),
-                    response.status(),
-                    std::str::from_utf8(response.body())?,
-                ))
-            }
+        let status = response.status();
+        if (200..400).contains(&status.as_u16()) {
+            let body = std::str::from_utf8(response.body())?.to_owned();
+            Err(crate::HttpError::ErrorStatusCode { status, body })
         } else {
             Ok(response)
         }

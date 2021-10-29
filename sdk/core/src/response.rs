@@ -36,20 +36,11 @@ impl ResponseBuilder {
     }
 }
 
+// An HTTP Response
 pub struct Response {
     status: StatusCode,
     headers: HeaderMap,
     body: PinnedStream,
-}
-
-impl std::fmt::Debug for Response {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Response")
-            .field("status", &self.status)
-            .field("headers", &self.headers)
-            .field("body", &"<BODY>")
-            .finish()
-    }
 }
 
 impl Response {
@@ -73,20 +64,28 @@ impl Response {
         (self.status, self.headers, self.body)
     }
 
-    pub async fn validate(self, expected_status: StatusCode) -> Result<Self, crate::HttpError> {
+    pub async fn validate(self) -> Result<Self, crate::HttpError> {
         let status = self.status();
-        if expected_status != status {
-            let body = collect_pinned_stream(self.body)
-                .await
-                .unwrap_or_else(|_| Bytes::from_static("<INVALID BODY>".as_bytes()));
-            Err(crate::HttpError::new_unexpected_status_code(
-                expected_status,
-                status,
-                std::str::from_utf8(&body as &[u8]).unwrap_or("<NON-UTF8 BODY>"),
-            ))
+        if (200..400).contains(&status.as_u16()) {
+            let body = self.into_body_string().await;
+            Err(crate::HttpError::ErrorStatusCode { status, body })
         } else {
             Ok(self)
         }
+    }
+
+    pub async fn into_body_string(self) -> String {
+        pinned_stream_into_utf8_string(self.body).await
+    }
+}
+
+impl std::fmt::Debug for Response {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Response")
+            .field("status", &self.status)
+            .field("headers", &self.headers)
+            .field("body", &"<BODY>")
+            .finish()
     }
 }
 
@@ -100,6 +99,20 @@ pub async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> Result<By
     }
 
     Ok(final_result.into())
+}
+
+/// Collects a `PinnedStream` into a utf8 String
+///
+/// If the stream cannot be collected or is not utf8, a placeholder string
+/// will be returned.
+pub async fn pinned_stream_into_utf8_string(stream: PinnedStream) -> String {
+    let body = collect_pinned_stream(stream)
+        .await
+        .unwrap_or_else(|_| Bytes::from_static("<INVALID BODY>".as_bytes()));
+    let body = std::str::from_utf8(&body)
+        .unwrap_or("<NON-UTF8 BODY>")
+        .to_owned();
+    body
 }
 
 impl From<BytesResponse> for Response {

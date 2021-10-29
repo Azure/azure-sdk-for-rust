@@ -124,17 +124,8 @@ pub enum StreamError {
 pub enum HttpError {
     #[error("Failed to serialize request body as json: {0}")]
     BodySerializationError(serde_json::Error),
-    #[error(
-        "unexpected HTTP result (expected: {:?}, received: {:?}, body: {:?})",
-        expected,
-        received,
-        body
-    )]
-    UnexpectedStatusCode {
-        expected: Vec<StatusCode>,
-        received: StatusCode,
-        body: String,
-    },
+    #[error("HTTP error status (status: {:?}, body: {:?})", status, body)]
+    ErrorStatusCode { status: StatusCode, body: String },
     #[error("UTF8 conversion error: {0}")]
     Utf8Error(#[from] std::str::Utf8Error),
     #[error("from UTF8 conversion error: {0}")]
@@ -157,31 +148,6 @@ pub enum HttpError {
     StreamResetError(StreamError),
 }
 
-impl HttpError {
-    pub fn new_unexpected_status_code(
-        expected: StatusCode,
-        received: StatusCode,
-        body: &str,
-    ) -> HttpError {
-        HttpError::UnexpectedStatusCode {
-            expected: vec![expected],
-            received,
-            body: body.to_owned(),
-        }
-    }
-
-    pub fn new_multiple_unexpected_status_code(
-        allowed: Vec<StatusCode>,
-        received: StatusCode,
-        body: &str,
-    ) -> HttpError {
-        HttpError::UnexpectedStatusCode {
-            expected: allowed,
-            received,
-            body: body.to_owned(),
-        }
-    }
-}
 #[derive(Debug, PartialEq, thiserror::Error)]
 pub enum Not512ByteAlignedError {
     #[error("start range not 512-byte aligned: {0}")]
