@@ -216,7 +216,10 @@ impl TableClient {
 #[cfg(test)]
 pub mod table_client_tests {
     use super::{TableClient, TableOptions};
-    use crate::table::operations::table::{create_table, delete_table, query_tables};
+    use crate::table::{
+        operations::table::{create_table, delete_table, query_tables},
+        prelude::table::delete_table::DeleteTableResponse,
+    };
     use azure_core::Context;
 
     fn emulator_table_client() -> TableClient {
@@ -257,7 +260,7 @@ pub mod table_client_tests {
             .query_tables(Context::new(), query_tables::QueryTablesOptions::default())
             .await
             .unwrap();
-        let mut names = list_tables_response.tables.iter().filter_map(|&t| {
+        let mut names = list_tables_response.tables.iter().filter_map(|t| {
             if t.name == table_name {
                 Some(t.name.as_str())
             } else {
@@ -276,7 +279,7 @@ pub mod table_client_tests {
                 )
                 .await
                 .unwrap(),
-            ()
+            DeleteTableResponse {}
         );
 
         assert_eq!(
