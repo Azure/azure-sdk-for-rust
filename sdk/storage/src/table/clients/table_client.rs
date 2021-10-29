@@ -43,7 +43,7 @@ impl CloudTableLocation {
             CloudTableLocation::Public(account) => {
                 format!("https://{}.table.core.windows.net", account)
             }
-            CloudTableLocation::Custom { url, account } => url.clone(),
+            CloudTableLocation::Custom { url, account: _ } => url.clone(),
         }
     }
 }
