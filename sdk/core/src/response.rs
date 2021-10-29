@@ -42,6 +42,16 @@ pub struct Response {
     body: PinnedStream,
 }
 
+impl std::fmt::Debug for Response {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Response")
+            .field("status", &self.status)
+            .field("headers", &self.headers)
+            .field("body", &"<BODY>")
+            .finish()
+    }
+}
+
 impl Response {
     pub(crate) fn new(status: StatusCode, headers: HeaderMap, body: PinnedStream) -> Self {
         Self {
