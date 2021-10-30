@@ -1,17 +1,5 @@
-use super::table_client::TableClient;
-use crate::table::operations::entity::delete_entity::DeleteEntityOptions;
-use crate::table::operations::entity::get_entity::QueryEntityOptions;
-use crate::table::operations::entity::insert_entity::InsertEntityOptions;
-use crate::table::operations::entity::insert_or_merge_entity::InsertOrMergeEntityOptions;
-use crate::table::operations::entity::insert_or_replace_entity::InsertOrReplaceEntityOptions;
-use crate::table::operations::entity::merge_entity::MergeEntityOptions;
-use crate::table::operations::entity::update_entity::UpdateEntityOptions;
-use crate::table::operations::entity::EntityResponse;
-use crate::table::operations::entity::TableEntity;
-use crate::table::table_context::TableContext;
-use azure_core::Context;
-use azure_core::Error;
-use azure_core::PipelineContext;
+use crate::table::prelude::*;
+use azure_core::{Context, Error, PipelineContext};
 use bytes::Buf;
 use http::method::Method;
 use once_cell::sync::Lazy;
@@ -87,6 +75,9 @@ impl EntityClient {
     }
 
     /// The Insert Entity operation inserts a new entity into a table.
+    ///
+    /// Both the PartitionKey and RowKey values must be string values; each key value may be up to 64 KiB in size.
+    /// If you are using an integer value for the key value, you should convert the integer to a fixed-width string, because they are canonically sorted.
     pub async fn insert_entity<'a, E: serde::Serialize + DeserializeOwned + TableEntity<'a>>(
         &self,
         ctx: Context,
@@ -116,7 +107,6 @@ impl EntityClient {
         Ok(response)
     }
 
-    /// TODO: write test, example, read remarks in documentation.
     /// The Update Entity operation updates an existing entity in a table.
     /// The Update Entity operation replaces the entire entity and can be used to remove properties.
     /// If the If-Match header is missing from the request, the service performs an Insert Or Replace Entity (upsert) operation.
@@ -193,7 +183,6 @@ impl EntityClient {
         Ok(())
     }
 
-    /// TODO: write test, example, read remarks in documentation.
     /// The Delete Entity operation deletes an existing entity in a table.
     /// When an entity is successfully deleted, the entity is immediately marked for deletion and is no longer accessible to clients.
     /// The entity is later removed from the Table service during garbage collection.
@@ -228,8 +217,8 @@ impl EntityClient {
         Ok(())
     }
 
-    /// TODO: add implementation, write test, example, read remarks in documentation.
     /// The Insert Or Replace Entity operation replaces an existing entity or inserts a new entity if it does not exist in the table.
+    /// If the Insert Or Replace Entity operation is used to replace an entity, any properties from the previous entity will be removed if the new entity does not define them. Properties with a null value will also be removed.
     pub async fn insert_or_replace_entity<'a, E: serde::Serialize + TableEntity<'a>>(
         &self,
         ctx: Context,
@@ -263,8 +252,8 @@ impl EntityClient {
         Ok(())
     }
 
-    /// TODO: add implementation, write test, example, read remarks in documentation.
     /// The Insert Or Merge Entity operation updates an existing entity or inserts a new entity if it does not exist in the table.
+    /// If the Insert Or Merge Entity operation is used to merge an entity, any properties from the previous entity will be retained if the request does not define or include them. Properties with a null value will also be retained.
     pub async fn insert_or_merge_entity<'a, E: serde::Serialize + TableEntity<'a>>(
         &self,
         ctx: Context,

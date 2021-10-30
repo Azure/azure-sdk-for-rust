@@ -1,21 +1,5 @@
 use azure_core::{Context, Error};
-
-use azure_storage::table::{
-    clients::{TableClient, TableOptions},
-    prelude::{
-        entity::{
-            delete_entity::DeleteEntityOptions, get_entity::QueryEntityOptions,
-            insert_entity::InsertEntityOptions,
-            insert_or_replace_entity::InsertOrReplaceEntityOptions, TableEntity,
-        },
-        table::{
-            create_table::{CreateTableOptions, CreateTableResponse},
-            delete_table::DeleteTableOptions,
-            query_tables::QueryTablesOptions,
-        },
-        EchoContent, OdataMetadataLevel,
-    },
-};
+use azure_storage::table::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,29 +34,29 @@ impl<'a> TableEntity<'a> for UserEntity {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct UserEntityExtended {
+struct UserEntityExtended<'a> {
     #[serde(rename = "PartitionKey")]
-    pub city: String,
+    pub city: &'a str,
     #[serde(rename = "RowKey")]
-    pub surname: String,
+    pub surname: &'a str,
     pub age: u8,
 }
 
-impl<'a> TableEntity<'a> for UserEntityExtended {
+impl<'a> TableEntity<'a> for UserEntityExtended<'a> {
     type Entity = Self;
 
     fn partition_key(&self) -> &str {
-        self.city.as_str()
+        self.city
     }
 
     fn row_key(&self) -> &str {
-        self.surname.as_str()
+        self.surname
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    // in the follwing example we will interact with the user table. first let's create the table if it doesn't exists;
+    // in the following example we will interact with the user table. first let's create the table if it doesn't exists;
     let users = vec![
         UserEntity::new("beit dagan", "shem tov", "or"),
         UserEntity::new("rishon lezion", "gerbil", "yaron"),
@@ -83,15 +67,17 @@ async fn main() -> Result<(), Error> {
     let table_client = TableClient::emulator(TableOptions::default());
 
     //create user table if not exists;
-    if let Some(table_created) = create_if_not_exist(&table_client, table_name).await? {
-        println!("create table response body: {:#?}", table_created);
+    if let Some(_) = create_if_not_exist(&table_client, table_name).await? {
+        println!("{} table created successfully.", table_name);
+    } else {
+        println!("{} already exists.", table_name);
     }
 
     let entity_client = table_client.into_entity_client(table_name);
 
     // insert users into users table;
     for user in users.iter() {
-        let _ = entity_client
+        let entity = entity_client
             .insert_entity(
                 Context::new(),
                 user,
@@ -100,34 +86,43 @@ async fn main() -> Result<(), Error> {
                     .odata_metadata_level(OdataMetadataLevel::NoMetadata),
             )
             .await?;
+        println!("insert operation completed successfully - {:?}", entity);
     }
 
     // print users from the table using partition_key and row_key;
     for user in users.iter() {
+        println!(
+            "trying to get user entity with partition_key: {} and row_key: {}",
+            user.partition_key(),
+            user.row_key()
+        );
+
         let entity = entity_client
             .query_entity::<UserEntity>(
                 Context::new(),
                 user.partition_key(),
                 user.row_key(),
-                QueryEntityOptions::default(),
+                QueryEntityOptions::default()
+                    .odata_metadata_level(OdataMetadataLevel::NoMetadata)
+                    .timeout(12),
             )
             .await?;
-        //println!("{:#?}", entity);
+        println!("Entity found - {:#?}", entity);
 
         // update entity by adding new column
         let _ = entity_client
             .insert_or_replace_entity::<UserEntityExtended>(
                 Context::new(),
                 &UserEntityExtended {
-                    city: entity.entity.city.as_ref().unwrap().to_string(),
-                    surname: user.surname.as_ref().unwrap().to_string(),
-                    //name: user.name,
+                    city: entity.entity.city.as_ref().unwrap(),
+                    surname: user.surname.as_ref().unwrap(),
                     age: 30,
                 },
                 InsertOrReplaceEntityOptions::default(),
             )
             .await
             .map_err(|err| println!("error in update entity. error details: {:#?}", err));
+        println!("Entity updated successfully");
     }
 
     // delete the users table content;
@@ -140,12 +135,13 @@ async fn main() -> Result<(), Error> {
                 DeleteEntityOptions::default(),
             )
             .await?;
-        //println!("{:#?}", user);
+        println!("Entity deleted successfully - {:?}", user);
     }
 
     TableClient::emulator(TableOptions::default())
         .delete_table(Context::new(), table_name, DeleteTableOptions::default())
         .await?;
+    println!("Table {:#?} deleted successfully", table_name);
 
     Ok(())
 }
@@ -162,7 +158,6 @@ async fn create_if_not_exist(
         .await?
         .tables
         .iter()
-        //.inspect(|t| println!("{:#?}", t))
         .find(|&t| t.name == table_name)
         .is_some();
 

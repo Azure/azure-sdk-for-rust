@@ -1,12 +1,16 @@
-use crate::table::prelude::{
-    header_time_value, header_value, ApiVersion, EchoContent, OdataMetadataLevel,
+use std::str::FromStr;
+
+use crate::table::{
+    operations::{header_time_value, header_value},
+    prelude::*,
 };
-use azure_core::{Error, Request, Response};
+use azure_core::{AppendToUrlQuery, Error, Request, Response};
 use chrono::Utc;
 use http::HeaderValue;
 
 #[derive(Debug, Clone)]
 pub struct CreateTableOptions {
+    timeout: Option<Timeout>,
     api_version: Option<ApiVersion>,
     echo_content: Option<EchoContent>,
     odata_metadata_level: Option<OdataMetadataLevel>,
@@ -15,6 +19,7 @@ pub struct CreateTableOptions {
 impl Default for CreateTableOptions {
     fn default() -> Self {
         Self {
+            timeout: Default::default(),
             api_version: Some(ApiVersion::default()),
             echo_content: Some(EchoContent::ReturnContent),
             odata_metadata_level: Some(OdataMetadataLevel::FullMetadata),
@@ -24,14 +29,13 @@ impl Default for CreateTableOptions {
 
 impl CreateTableOptions {
     setters! {
+        timeout: Timeout => Some(timeout),
         api_version: ApiVersion => Some(api_version),
         echo_content: EchoContent => Some(echo_content),
         odata_metadata_level: OdataMetadataLevel  => Some(odata_metadata_level),
     }
 
-    /// the create table response can contain two different status codes depending on the `EchoContent` header value.
-    /// * NO_CONTENT - the response body will be empty and the status code will be 204.
-    /// * NO_CONTENT - the response body will contain the create table with the specified metadata details and the status code will be 201.
+    // the create table response can contain two different status codes depending on the `EchoContent` header value.
     pub(crate) fn expected_status_code(&self) -> http::StatusCode {
         match &self.echo_content {
             Some(value) => match value {
@@ -71,6 +75,13 @@ impl CreateTableOptions {
         headers.append("Content-MD5", HeaderValue::from_str(md5.as_str()).unwrap());
 
         *request.body_mut() = bytes.into();
+
+        if let Some(timeout) = self.timeout.as_ref() {
+            let mut url = url::Url::from_str(request.uri().to_string().as_str()).unwrap();
+            timeout.append_to_url_query(&mut url);
+            *request.uri_mut() = http::Uri::from_str(url.to_string().as_str()).unwrap()
+        }
+
         Ok(())
     }
 }

@@ -1,15 +1,17 @@
-use crate::table::prelude::{
-    header_time_value, header_value, ApiVersion, EchoContent, OdataMetadataLevel,
+use std::str::FromStr;
+
+use crate::table::{
+    operations::{header_time_value, header_value, Timeout},
+    prelude::*,
 };
-use azure_core::{Error, Request};
+use azure_core::{AppendToUrlQuery, Error, Request};
 use chrono::Utc;
 use http::HeaderValue;
 
 use super::TableEntity;
 
 pub struct InsertEntityOptions {
-    // Optional. The timeout parameter is expressed in seconds.
-    // timeout: Option<Duration>,
+    timeout: Option<Timeout>,
     api_version: Option<ApiVersion>,
     echo_content: Option<EchoContent>,
     odata_metadata_level: Option<OdataMetadataLevel>,
@@ -18,7 +20,7 @@ pub struct InsertEntityOptions {
 impl Default for InsertEntityOptions {
     fn default() -> Self {
         Self {
-            // timeout: Default::default(),
+            timeout: Default::default(),
             api_version: Some(ApiVersion::default()),
             echo_content: Some(EchoContent::ReturnContent),
             odata_metadata_level: Some(OdataMetadataLevel::FullMetadata),
@@ -28,7 +30,7 @@ impl Default for InsertEntityOptions {
 
 impl InsertEntityOptions {
     setters! {
-        // timeout: Duration => Some(timeout),
+        timeout: Timeout => Some(timeout),
         api_version: ApiVersion => Some(api_version),
         echo_content: EchoContent => Some(echo_content),
         odata_metadata_level: OdataMetadataLevel  => Some(odata_metadata_level),
@@ -68,6 +70,12 @@ impl InsertEntityOptions {
             HeaderValue::from(serialized.as_bytes().len()),
         );
         request.set_body(bytes::Bytes::from(serialized).into());
+
+        if let Some(timeout) = self.timeout.as_ref() {
+            let mut url = url::Url::from_str(request.uri().to_string().as_str()).unwrap();
+            timeout.append_to_url_query(&mut url);
+            *request.uri_mut() = http::Uri::from_str(url.to_string().as_str()).unwrap();
+        };
 
         Ok(())
     }

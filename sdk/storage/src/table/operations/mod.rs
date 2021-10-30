@@ -1,7 +1,7 @@
 pub mod entity;
 pub mod table;
 
-use azure_core::HTTPHeaderError;
+use azure_core::{AppendToUrlQuery, HTTPHeaderError};
 use chrono::{DateTime, Utc};
 use http::HeaderValue;
 
@@ -44,6 +44,8 @@ impl AsRef<str> for OdataMetadataLevel {
 }
 
 /// Sets if the resource should be included in the response.
+/// * NO_CONTENT - the response body will be empty and the status code will be 204.
+/// * NO_CONTENT - the response body will contain the create table with the specified metadata details and the status code will be 201.
 #[derive(Debug, Clone)]
 pub enum EchoContent {
     ReturnNoContent,
@@ -78,6 +80,36 @@ impl AsRef<str> for ETag {
             ETag::ForceUpdate => "*",
             ETag::OnlyIfMatch(etag) => etag.as_str(),
         }
+    }
+}
+
+/// A call to a Table service API can include a server timeout interval.
+/// If the server timeout interval elapses before the service has finished processing the request, the service returns an error.
+///
+/// The maximum timeout interval for Table service operations is 30 seconds. The Table service automatically reduces any timeouts larger than 30 seconds to the 30-second maximum.
+/// The Table service enforces server timeouts as follows:
+/// * Insert, update, and delete operations: The maximum timeout interval is 30 seconds. Thirty seconds is also the default interval for all insert, update, and delete operations.
+/// * Query operations: During the timeout interval, a query may execute for up to a maximum of five seconds. If the query does not complete within the five-second interval, the response includes continuation tokens for retrieving remaining items on a subsequent request.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Timeout(u8);
+
+impl Timeout {
+    ///The timeout parameter is expressed in seconds.
+    pub fn new(sec: u8) -> Self {
+        Self(sec)
+    }
+}
+
+impl AppendToUrlQuery for Timeout {
+    fn append_to_url_query(&self, url: &mut url::Url) {
+        url.query_pairs_mut()
+            .append_pair("timeout", &self.0.to_string());
+    }
+}
+
+impl From<u8> for Timeout {
+    fn from(sec: u8) -> Self {
+        Self::new(sec)
     }
 }
 

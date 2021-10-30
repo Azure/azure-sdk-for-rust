@@ -11,4 +11,5 @@ pub mod operations;
 pub mod select;
 pub mod top;
 pub use filter::Filter;
+pub use select::Select;
 pub use top::Top;

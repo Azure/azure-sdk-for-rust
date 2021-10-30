@@ -1,6 +1,6 @@
-use crate::{
-    table::prelude::{header_time_value, header_value, ApiVersion, OdataMetadataLevel},
-    Filter, Top,
+use crate::table::{
+    operations::{header_time_value, header_value},
+    prelude::*,
 };
 use azure_core::{AppendToUrlQuery, Error, Request, Response};
 use chrono::Utc;
@@ -10,9 +10,9 @@ use std::str::FromStr;
 #[derive(Debug, Clone)]
 pub struct QueryTablesOptions<'a> {
     top: Option<Top>,
+    timeout: Option<Timeout>,
     filter: Option<Filter<'a>>,
     api_version: Option<ApiVersion>,
-    // next_table_name: Option<String>, // TODO: try use the next_table_name option
     odata_metadata_level: Option<OdataMetadataLevel>,
 }
 
@@ -21,7 +21,7 @@ impl Default for QueryTablesOptions<'_> {
         Self {
             top: Default::default(),
             filter: Default::default(),
-            // next_table_name: Default::default(),
+            timeout: Default::default(),
             api_version: Some(ApiVersion::default()),
             odata_metadata_level: Some(OdataMetadataLevel::FullMetadata),
         }
@@ -31,6 +31,7 @@ impl Default for QueryTablesOptions<'_> {
 impl<'a> QueryTablesOptions<'a> {
     setters! {
         top: Top => Some(top),
+        timeout: Timeout => Some(timeout),
         filter: Filter<'a> => Some(filter),
         api_version: ApiVersion => Some(api_version),
         odata_metadata_level: OdataMetadataLevel  => Some(odata_metadata_level),
@@ -55,19 +56,22 @@ impl<'a> QueryTablesOptions<'a> {
             "x-ms-version",
             header_value::<ApiVersion>(&self.api_version)?,
         );
-
-        if let Some(top) = self.top.as_ref() {
-            let mut url = url::Url::from_str(request.uri().to_string().as_str()).unwrap();
-            top.append_to_url_query(&mut url);
-            *request.uri_mut() = http::Uri::from_str(url.to_string().as_str()).unwrap();
-        };
-
-        if let Some(filter) = self.filter.as_ref() {
-            let mut url = url::Url::from_str(request.uri().to_string().as_str()).unwrap();
-            filter.append_to_url_query(&mut url);
-            *request.uri_mut() = Uri::from_str(url.to_string().as_str()).unwrap();
-        }
+        *request.uri_mut() = self.append_query_parameters(request);
         Ok(())
+    }
+
+    fn append_query_parameters(&self, request: &mut Request) -> Uri {
+        let mut url = url::Url::from_str(request.uri().to_string().as_str()).unwrap();
+        if let Some(top) = self.top.as_ref() {
+            top.append_to_url_query(&mut url);
+        };
+        if let Some(filter) = self.filter.as_ref() {
+            filter.append_to_url_query(&mut url);
+        }
+        if let Some(timeout) = self.timeout.as_ref() {
+            timeout.append_to_url_query(&mut url);
+        };
+        http::Uri::from_str(url.to_string().as_str()).unwrap()
     }
 }
 

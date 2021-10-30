@@ -1,19 +1,8 @@
-use super::entity_client::EntityClient;
-use crate::table::{
-    authorization::{authorization_policy::AuthorizationPolicy, AuthorizationToken},
-    operations::table::{
-        create_table::{CreateTableOptions, CreateTableResponse},
-        delete_table::{DeleteTableOptions, DeleteTableResponse},
-        query_tables::{QueryTablesOptions, QueryTablesResponse},
-    },
-    table_context::TableContext,
-};
+use crate::authorization::authorization_policy::AuthorizationPolicy;
+use crate::table::prelude::*;
 use azure_core::{pipeline::Pipeline, ClientOptions, Context, Error, PipelineContext, Policy};
-use http::request::Builder as RequestBuilder;
-use http::{method::Method, Uri};
-use std::borrow::Cow;
-use std::str::FromStr;
-use std::sync::Arc;
+use http::{method::Method, request::Builder as RequestBuilder, Uri};
+use std::{borrow::Cow, str::FromStr, sync::Arc};
 
 const PORT: u16 = 10002;
 const ADDRESS: &'static str = "127.0.0.1";
@@ -28,7 +17,6 @@ pub enum CloudTableLocation {
     Public(String),
     /// Azure China cloud
     China(String),
-    // TODO: Other govt clouds?
     /// A custom base URL
     Custom { url: String, account: String },
 }
@@ -110,7 +98,6 @@ impl TableClient {
         }
     }
 
-    /// TODO: this operation should return stream instead of a single response.
     /// The Query Tables operation returns a list of tables under the specified account.
     pub async fn query_tables(
         &self,
@@ -161,6 +148,8 @@ impl TableClient {
     }
 
     /// The Delete Table operation deletes the specified table and any data it contains.
+    /// When a table is successfully deleted, it is immediately marked for deletion and is no longer accessible to clients. The table is later removed from the Table service during garbage collection.
+    /// Note that deleting a table is likely to take at least 40 seconds to complete. If an operation is attempted against the table while it was being deleted, the service returns status code 409 (Conflict).
     pub async fn delete_table<N: AsRef<str>>(
         &self,
         ctx: Context,
@@ -194,7 +183,6 @@ impl TableClient {
         let url = format!("{}/{}", self.cloud_location.url(), uri_path);
         let url = url::Url::from_str(&url).unwrap();
         let uri = Uri::from_str(url.as_str()).unwrap();
-
         RequestBuilder::new()
             .method(http_method)
             .uri(uri)
@@ -215,11 +203,7 @@ impl TableClient {
 
 #[cfg(test)]
 pub mod table_client_tests {
-    use super::{TableClient, TableOptions};
-    use crate::table::{
-        operations::table::{create_table, delete_table, query_tables},
-        prelude::table::delete_table::DeleteTableResponse,
-    };
+    use crate::table::prelude::*;
     use azure_core::Context;
 
     fn emulator_table_client() -> TableClient {
@@ -231,7 +215,7 @@ pub mod table_client_tests {
         let table_name = "TableForTest";
         assert_eq!(
             emulator_table_client()
-                .query_tables(Context::new(), query_tables::QueryTablesOptions::default())
+                .query_tables(Context::new(), QueryTablesOptions::default())
                 .await
                 .unwrap()
                 .tables
@@ -243,11 +227,7 @@ pub mod table_client_tests {
 
         assert!(
             emulator_table_client()
-                .create_table(
-                    Context::new(),
-                    table_name,
-                    create_table::CreateTableOptions::default()
-                )
+                .create_table(Context::new(), table_name, CreateTableOptions::default())
                 .await
                 .unwrap()
                 .table
@@ -257,7 +237,7 @@ pub mod table_client_tests {
         );
 
         let list_tables_response = emulator_table_client()
-            .query_tables(Context::new(), query_tables::QueryTablesOptions::default())
+            .query_tables(Context::new(), QueryTablesOptions::default())
             .await
             .unwrap();
         let mut names = list_tables_response.tables.iter().filter_map(|t| {
@@ -272,11 +252,7 @@ pub mod table_client_tests {
 
         assert_eq!(
             emulator_table_client()
-                .delete_table(
-                    Context::new(),
-                    table_name,
-                    delete_table::DeleteTableOptions::default()
-                )
+                .delete_table(Context::new(), table_name, DeleteTableOptions::default())
                 .await
                 .unwrap(),
             DeleteTableResponse {}
@@ -284,7 +260,7 @@ pub mod table_client_tests {
 
         assert_eq!(
             emulator_table_client()
-                .query_tables(Context::new(), query_tables::QueryTablesOptions::default())
+                .query_tables(Context::new(), QueryTablesOptions::default())
                 .await
                 .unwrap()
                 .tables

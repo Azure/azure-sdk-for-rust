@@ -1,10 +1,15 @@
-use crate::table::prelude::{header_time_value, header_value, ApiVersion, ETag};
-use azure_core::{Error, Request};
-use chrono::{Duration, Utc};
+use std::str::FromStr;
+
+use crate::table::{
+    operations::{header_time_value, header_value},
+    prelude::*,
+};
+use azure_core::{AppendToUrlQuery, Error, Request};
+use chrono::Utc;
 
 pub struct DeleteEntityOptions {
     etag: Option<ETag>,
-    timeout: Option<Duration>,
+    timeout: Option<Timeout>,
     api_version: Option<ApiVersion>,
 }
 
@@ -21,7 +26,7 @@ impl Default for DeleteEntityOptions {
 impl DeleteEntityOptions {
     setters! {
         etag: ETag => Some(etag),
-        timeout: Duration => Some(timeout),
+        timeout: Timeout => Some(timeout),
         api_version: ApiVersion => Some(api_version),
     }
 
@@ -33,9 +38,13 @@ impl DeleteEntityOptions {
             "x-ms-version",
             header_value::<ApiVersion>(&self.api_version)?,
         );
-        if self.timeout.is_some() {
-            // add timeout header;
+
+        if let Some(timeout) = self.timeout.as_ref() {
+            let mut url = url::Url::from_str(request.uri().to_string().as_str()).unwrap();
+            timeout.append_to_url_query(&mut url);
+            *request.uri_mut() = http::Uri::from_str(url.to_string().as_str()).unwrap()
         }
+
         Ok(())
     }
 }

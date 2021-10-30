@@ -1,18 +1,22 @@
-use super::TableEntity;
-use crate::table::prelude::{header_time_value, header_value, ApiVersion};
-use azure_core::{Error, Request};
+use std::str::FromStr;
+
+use crate::table::{
+    operations::{header_time_value, header_value},
+    prelude::*,
+};
+use azure_core::{AppendToUrlQuery, Error, Request};
 use chrono::Utc;
 use http::HeaderValue;
 
 pub struct InsertOrMergeEntityOptions {
-    // timeout: Option<Duration>,
+    timeout: Option<Timeout>,
     api_version: Option<ApiVersion>,
 }
 
 impl Default for InsertOrMergeEntityOptions {
     fn default() -> Self {
         Self {
-            // timeout: Default::default(),
+            timeout: Default::default(),
             api_version: Some(ApiVersion::default()),
         }
     }
@@ -20,7 +24,7 @@ impl Default for InsertOrMergeEntityOptions {
 
 impl InsertOrMergeEntityOptions {
     setters! {
-        // timeout: Duration => Some(timeout),
+        timeout: Timeout => Some(timeout),
         api_version: ApiVersion => Some(api_version),
     }
 
@@ -43,6 +47,13 @@ impl InsertOrMergeEntityOptions {
             HeaderValue::from(serialized.as_bytes().len()),
         );
         request.set_body(bytes::Bytes::from(serialized).into());
+
+        if let Some(timeout) = self.timeout.as_ref() {
+            let mut url = url::Url::from_str(request.uri().to_string().as_str()).unwrap();
+            timeout.append_to_url_query(&mut url);
+            *request.uri_mut() = http::Uri::from_str(url.to_string().as_str()).unwrap();
+        };
+
         Ok(())
     }
 }
