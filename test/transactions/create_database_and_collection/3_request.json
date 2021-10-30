@@ -1,0 +1,11 @@
+{
+  "uri": "/dbs/sample",
+  "method": "DELETE",
+  "headers": {
+    "x-ms-date": "Sat, 30 Oct 2021 16:13:11 GMT",
+    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
+    "x-ms-version": "2018-12-31",
+    "authorization": "<<STRIPPED>>"
+  },
+  "body": ""
+}

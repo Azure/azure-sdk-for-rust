@@ -2,10 +2,10 @@
   "uri": "/dbs",
   "method": "POST",
   "headers": {
-    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.55.0; linux; x86_64)",
-    "x-ms-date": "Sun, 19 Sep 2021 10:01:01 GMT",
+    "authorization": "<<STRIPPED>>",
+    "x-ms-date": "Sat, 30 Oct 2021 16:13:05 GMT",
     "x-ms-version": "2018-12-31",
-    "authorization": "<<STRIPPED>>"
+    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)"
   },
   "body": "eyJpZCI6InNhbXBsZSJ9"
 }

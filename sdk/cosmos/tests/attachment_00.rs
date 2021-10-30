@@ -170,9 +170,8 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
     assert_eq!(1, ret.attachments.len());
 
     // delete the database
-    let options = DeleteDatabaseOptions::new();
     database_client
-        .delete_database(Context::new(), options)
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
         .await?;
 
     Ok(())
