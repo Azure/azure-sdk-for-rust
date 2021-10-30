@@ -1,11 +1,11 @@
 {
-  "uri": "/dbs/sample/colls/sample_collection",
-  "method": "GET",
+  "body": "",
   "headers": {
     "authorization": "<<STRIPPED>>",
     "user-agent": "azsdk-rust-cosmos/0.1.0 (1.55.0; windows; x86_64)",
     "x-ms-date": "Tue, 12 Oct 2021 18:09:10 GMT",
     "x-ms-version": "2018-12-31"
   },
-  "body": ""
+  "method": "GET",
+  "uri": "/dbs/sample/colls/sample_collection"
 }
