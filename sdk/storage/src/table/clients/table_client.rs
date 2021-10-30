@@ -201,14 +201,17 @@ impl TableClient {
     }
 }
 
+/*
 #[cfg(test)]
 pub mod table_client_tests {
+
     use crate::table::prelude::*;
     use azure_core::Context;
 
     fn emulator_table_client() -> TableClient {
         TableClient::emulator(TableOptions::default())
     }
+
 
     #[tokio::test]
     async fn create_and_delete_table_test() {
@@ -270,4 +273,6 @@ pub mod table_client_tests {
             None
         );
     }
+
 }
+*/
