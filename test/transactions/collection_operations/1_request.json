@@ -1,11 +1,11 @@
 {
-  "body": "",
+  "body": "eyJpZCI6InNhbXBsZV9jb2xsZWN0aW9uIiwicGFydGl0aW9uS2V5Ijp7InBhdGhzIjpbIi9pZCJdLCJraW5kIjoiSGFzaCJ9fQ==",
   "headers": {
     "authorization": "<<STRIPPED>>",
-    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.55.0; windows; x86_64)",
-    "x-ms-date": "Tue, 12 Oct 2021 18:09:10 GMT",
+    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
+    "x-ms-date": "Sat, 30 Oct 2021 17:58:58 GMT",
     "x-ms-version": "2018-12-31"
   },
-  "method": "GET",
-  "uri": "/dbs/sample/colls/sample_collection"
+  "method": "POST",
+  "uri": "/dbs/sample/colls"
 }

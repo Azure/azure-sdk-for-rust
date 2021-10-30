@@ -17,6 +17,14 @@ async fn collection_operations() -> Result<(), BoxedError> {
     let database_name = "sample";
     let context = Context::new();
 
+    client
+        .create_database(
+            azure_core::Context::new(),
+            database_name,
+            CreateDatabaseOptions::new(),
+        )
+        .await?;
+
     // create collection!
     let db_client = client.clone().into_database_client(database_name.clone());
 
@@ -119,6 +127,10 @@ async fn collection_operations() -> Result<(), BoxedError> {
         "The delete_collection response: {:#?}",
         delete_collection_response
     );
+
+    db_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await?;
 
     Ok(())
 }

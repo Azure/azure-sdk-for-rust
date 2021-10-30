@@ -3,9 +3,9 @@
   "headers": {
     "authorization": "<<STRIPPED>>",
     "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
-    "x-ms-date": "Sat, 30 Oct 2021 17:58:59 GMT",
+    "x-ms-date": "Sat, 30 Oct 2021 17:59:00 GMT",
     "x-ms-version": "2018-12-31"
   },
   "method": "GET",
-  "uri": "/dbs/sample/colls/sample_collection"
+  "uri": "/dbs/sample"
 }
