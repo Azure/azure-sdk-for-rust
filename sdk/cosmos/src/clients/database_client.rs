@@ -83,9 +83,10 @@ impl DatabaseClient {
         ctx: Context,
         options: DeleteDatabaseOptions,
     ) -> crate::Result<DeleteDatabaseResponse> {
-        let mut request = self
-            .cosmos_client()
-            .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), http::Method::GET);
+        let mut request = self.cosmos_client().prepare_request_pipeline(
+            &format!("dbs/{}", self.database_name()),
+            http::Method::DELETE,
+        );
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
         options.decorate_request(&mut request)?;

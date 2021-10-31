@@ -1,11 +1,11 @@
 {
   "uri": "/dbs/test-create-database-and-collection",
-  "method": "GET",
+  "method": "DELETE",
   "headers": {
-    "authorization": "<<STRIPPED>>",
-    "x-ms-version": "2018-12-31",
     "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
-    "x-ms-date": "Sun, 31 Oct 2021 13:09:02 GMT"
+    "authorization": "<<STRIPPED>>",
+    "x-ms-date": "Mon, 01 Nov 2021 11:53:32 GMT",
+    "x-ms-version": "2018-12-31"
   },
   "body": ""
 }
