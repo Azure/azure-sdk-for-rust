@@ -2,10 +2,10 @@
   "uri": "/dbs/test-create-database-and-collection/colls",
   "method": "POST",
   "headers": {
-    "x-ms-date": "Sun, 31 Oct 2021 13:09:01 GMT",
-    "x-ms-version": "2018-12-31",
+    "authorization": "<<STRIPPED>>",
     "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
-    "authorization": "<<STRIPPED>>"
+    "x-ms-date": "Sun, 31 Oct 2021 13:11:34 GMT",
+    "x-ms-version": "2018-12-31"
   },
   "body": "eyJpZCI6InBhbnphZG9ybyIsInBhcnRpdGlvbktleSI6eyJwYXRocyI6WyIvaWQiXSwia2luZCI6Ikhhc2gifX0="
 }

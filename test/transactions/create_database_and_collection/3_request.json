@@ -3,9 +3,9 @@
   "method": "GET",
   "headers": {
     "authorization": "<<STRIPPED>>",
-    "x-ms-version": "2018-12-31",
     "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
-    "x-ms-date": "Sun, 31 Oct 2021 13:09:02 GMT"
+    "x-ms-date": "Sun, 31 Oct 2021 13:11:36 GMT",
+    "x-ms-version": "2018-12-31"
   },
   "body": ""
 }

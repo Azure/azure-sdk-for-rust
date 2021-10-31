@@ -2,10 +2,10 @@
   "uri": "/dbs/test-collection-operations/colls",
   "method": "POST",
   "headers": {
-    "x-ms-date": "Sun, 31 Oct 2021 13:08:58 GMT",
-    "x-ms-version": "2018-12-31",
     "authorization": "<<STRIPPED>>",
-    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)"
+    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
+    "x-ms-date": "Sun, 31 Oct 2021 13:11:32 GMT",
+    "x-ms-version": "2018-12-31"
   },
   "body": "eyJpZCI6InNhbXBsZV9jb2xsZWN0aW9uIiwicGFydGl0aW9uS2V5Ijp7InBhdGhzIjpbIi9pZCJdLCJraW5kIjoiSGFzaCJ9fQ=="
 }
