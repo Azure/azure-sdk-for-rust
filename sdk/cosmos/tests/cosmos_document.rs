@@ -252,12 +252,15 @@ async fn replace_document() {
         .clone()
         .into_document_client(document_data.id.clone(), &document_data.id)
         .unwrap()
-        .replace_document()
-        .consistency_level(ConsistencyLevel::from(&documents))
-        .if_match_condition(IfMatchCondition::Match(
-            &documents.documents[0].document_attributes.etag(),
-        ))
-        .execute(&document_data)
+        .replace_document(
+            Context::new(),
+            &document_data,
+            ReplaceDocumentOptions::new()
+                .consistency_level(ConsistencyLevel::from(&documents))
+                .if_match_condition(IfMatchCondition::Match(
+                    &documents.documents[0].document_attributes.etag(),
+                )),
+        )
         .await
         .unwrap();
 

@@ -20,6 +20,7 @@ mod list_collections;
 mod list_databases;
 mod list_users;
 mod replace_collection;
+mod replace_document;
 mod replace_permission;
 mod replace_user;
 
@@ -41,5 +42,6 @@ pub use list_collections::*;
 pub use list_databases::*;
 pub use list_users::*;
 pub use replace_collection::*;
+pub use replace_document::*;
 pub use replace_permission::*;
 pub use replace_user::*;

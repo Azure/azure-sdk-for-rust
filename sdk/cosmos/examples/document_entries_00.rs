@@ -147,10 +147,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let replace_document_response = client
         .clone()
         .into_document_client(id.clone(), &id)?
-        .replace_document()
-        .consistency_level(ConsistencyLevel::from(&response))
-        .if_match_condition(IfMatchCondition::Match(&doc.etag)) // use optimistic concurrency check
-        .execute(&doc.document)
+        .replace_document(
+            Context::new(),
+            &doc.document,
+            ReplaceDocumentOptions::new()
+                .consistency_level(ConsistencyLevel::from(&response))
+                .if_match_condition(IfMatchCondition::Match(&doc.etag)), // use optimistic concurrency check
+        ) 
         .await?;
 
     println!(

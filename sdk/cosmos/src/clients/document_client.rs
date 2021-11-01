@@ -1,5 +1,5 @@
 use super::{AttachmentClient, CollectionClient, CosmosClient, DatabaseClient};
-use crate::prelude::{GetDocumentOptions, GetDocumentResponse};
+use crate::operations::*;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 use azure_core::{Context, HttpClient, PipelineContext, Request};
@@ -16,10 +16,11 @@ pub struct DocumentClient {
 
 impl DocumentClient {
     /// This function creates a new instance of a DocumentClient. A document is identified by its
-    /// primary key and its partition key. Partition key is eagerly evaluated: the json
-    /// representation is generated as soon as you call the `new` function. This avoids doing the
-    /// serialization over and over, saving time. It also releases the borrow since the serialized
-    /// string is owned by the DocumentClient.
+    /// primary key and its partition key.
+    ///
+    /// Partition key is eagerly evaluated: the json representation is generated as soon as you
+    /// call the `new` function. This avoids doing the serialization over and over, saving time.
+    /// It also releases the borrow since the serialized string is owned by the `DocumentClient`.
     pub(crate) fn new<S: Into<String>, PK: Serialize>(
         collection_client: CollectionClient,
         document_name: S,
@@ -57,11 +58,6 @@ impl DocumentClient {
         &self.partition_key_serialized
     }
 
-    /// replace a document in a collection
-    pub fn replace_document<'a>(&'a self) -> requests::ReplaceDocumentBuilder<'a, '_> {
-        requests::ReplaceDocumentBuilder::new(self)
-    }
-
     /// Get a document
     pub async fn get_document<T>(
         &self,
@@ -83,6 +79,27 @@ impl DocumentClient {
             .await?;
 
         GetDocumentResponse::try_from(response).await
+    }
+
+    /// replace a document in a collection
+    pub async fn replace_document<'a, T: Serialize>(
+        &self,
+        ctx: Context,
+        document: &'a T,
+        options: ReplaceDocumentOptions<'_>,
+    ) -> crate::Result<ReplaceDocumentResponse> {
+        let mut request = self.prepare_request_pipeline_with_document_name(http::Method::PUT);
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+
+        options.decorate_request(&mut request, document, self.partition_key_serialized())?;
+
+        let response = self
+            .cosmos_client()
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?;
+
+        ReplaceDocumentResponse::try_from(response).await
     }
 
     /// Delete a document
