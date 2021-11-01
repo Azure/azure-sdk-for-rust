@@ -60,9 +60,6 @@ impl fmt::Display for ErrorToken {
         if let Some(suberror) = &self.suberror {
             writeln!(f, "suberror: {}", suberror)?;
         }
-        if let Some(correlation_id) = &self.correlation_id {
-            writeln!(f, "correlation_id: {}", correlation_id)?;
-        }
         writeln!(f, "description: {}", self.error_description)
     }
 }
