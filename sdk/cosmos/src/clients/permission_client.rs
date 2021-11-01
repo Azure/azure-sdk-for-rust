@@ -67,8 +67,6 @@ impl PermissionClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::CREATED)
             .await?;
 
         Ok(PermissionResponse::try_from(response).await?)
@@ -90,8 +88,6 @@ impl PermissionClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         Ok(PermissionResponse::try_from(response).await?)
@@ -112,8 +108,6 @@ impl PermissionClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         Ok(PermissionResponse::try_from(response).await?)
@@ -134,8 +128,6 @@ impl PermissionClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::NO_CONTENT)
             .await?;
 
         Ok(DeletePermissionResponse::try_from(response).await?)
