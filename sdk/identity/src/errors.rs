@@ -1,5 +1,6 @@
 //! Errors specific to identity services.
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
@@ -38,4 +39,30 @@ pub enum Error {
 pub(crate) enum ErrorResponse {
     /// An unrecognized error response from an identity service.
     GenericError { error_description: String },
+}
+
+/// Error Token
+#[derive(Debug, Clone, Deserialize)]
+pub struct ErrorToken {
+    error: String,
+    error_description: String,
+    error_codes: Vec<i64>,
+    timestamp: Option<String>,
+    trace_id: Option<String>,
+    correlation_id: Option<String>,
+    suberror: Option<String>,
+    claims: Option<String>,
+}
+
+impl fmt::Display for ErrorToken {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        writeln!(f, "error: {}", self.error)?;
+        if let Some(suberror) = &self.suberror {
+            writeln!(f, "suberror: {}", suberror)?;
+        }
+        if let Some(correlation_id) = &self.correlation_id {
+            writeln!(f, "correlation_id: {}", correlation_id)?;
+        }
+        writeln!(f, "description: {}", self.error_description)
+    }
 }
