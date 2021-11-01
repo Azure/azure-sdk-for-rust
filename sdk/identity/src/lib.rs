@@ -53,3 +53,4 @@ pub use errors::Error;
 pub mod refresh_token;
 pub mod token_credentials;
 mod traits;
+pub use traits::{BearerToken, ExtExpiresIn, RefreshToken};
