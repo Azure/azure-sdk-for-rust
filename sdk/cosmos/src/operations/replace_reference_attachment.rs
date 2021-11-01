@@ -9,17 +9,15 @@ use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as Http
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct ReplaceReferenceAttachmentOptions<'a, 'b> {
-    attachment_client: &'a AttachmentClient,
-    if_match_condition: Option<IfMatchCondition<'b>>,
-    activity_id: Option<ActivityId<'b>>,
+pub struct ReplaceReferenceAttachmentOptions<'a> {
+    if_match_condition: Option<IfMatchCondition<'a>>,
+    activity_id: Option<ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a, 'b> ReplaceReferenceAttachmentOptions<'a, 'b> {
-    pub fn new(attachment_client: &'a AttachmentClient) -> Self {
+impl<'a> ReplaceReferenceAttachmentOptions<'a> {
+    pub fn new() -> Self {
         Self {
-            attachment_client,
             if_match_condition: None,
             activity_id: None,
             consistency_level: None,
@@ -27,19 +25,21 @@ impl<'a, 'b> ReplaceReferenceAttachmentOptions<'a, 'b> {
     }
 }
 
-impl<'a, 'b> ReplaceReferenceAttachmentOptions<'a, 'b> {
+impl<'a> ReplaceReferenceAttachmentOptions<'a> {
     setters! {
-        activity_id: &'b str => Some(ActivityId::new(activity_id)),
+        activity_id: &'a str => Some(ActivityId::new(activity_id)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
+        if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
     }
 }
 
 // methods callable only when every mandatory field has been filled
-impl<'a, 'b> ReplaceReferenceAttachmentOptions<'a, 'b> {
+impl<'a> ReplaceReferenceAttachmentOptions<'a> {
     pub(crate) fn decorate_request<'c, M, C>(
         &self,
         request: &mut HttpRequest,
+        partition_key: &str,
+        attachment_name: &str,
         media: M,
         content_type: C,
     ) -> Result<(), crate::Error>
@@ -52,12 +52,7 @@ impl<'a, 'b> ReplaceReferenceAttachmentOptions<'a, 'b> {
         azure_core::headers::add_optional_header2(&self.activity_id, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
 
-        crate::cosmos_entity::add_as_partition_key_header_serialized2(
-            self.attachment_client
-                .document_client()
-                .partition_key_serialized(),
-            request,
-        );
+        crate::cosmos_entity::add_as_partition_key_header_serialized2(partition_key, request);
 
         // create serialized request
         #[derive(Debug, Clone, Serialize)]
@@ -69,13 +64,12 @@ impl<'a, 'b> ReplaceReferenceAttachmentOptions<'a, 'b> {
         }
 
         let body = azure_core::to_json(&_Request {
-            id: self.attachment_client.attachment_name(),
+            id: attachment_name,
             content_type: content_type.into().as_str(),
             media: media.as_ref(),
         })?;
 
         request.set_body(body.into());
-        debug!("request == {:#?}", request);
 
         Ok(())
     }

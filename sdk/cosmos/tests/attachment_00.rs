@@ -1,6 +1,7 @@
-#![cfg(all(test, feature = "test_e2e"))]
+#![cfg(feature = "mock_transport_framework")]
 use azure_core::Context;
 use azure_cosmos::prelude::*;
+use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
@@ -17,7 +18,6 @@ struct MySampleStruct<'a> {
     id: Cow<'a, str>,
     a_string: Cow<'a, str>,
     a_number: u64,
-    a_timestamp: i64,
 }
 
 impl<'a> azure_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
@@ -33,7 +33,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
     const DATABASE_NAME: &str = "test-cosmos-db-attachment";
     const COLLECTION_NAME: &str = "test-collection-attachment";
 
-    let client = setup::initialize().unwrap();
+    let client = setup::initialize("attachment")?;
 
     // create a temp database
     let _create_database_response = client
@@ -42,8 +42,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
             DATABASE_NAME,
             CreateDatabaseOptions::new(),
         )
-        .await
-        .unwrap();
+        .await?;
 
     let database_client = client.into_database_client(DATABASE_NAME);
 
@@ -72,8 +71,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
             .indexing_policy(ip);
         database_client
             .create_collection(Context::new(), COLLECTION_NAME, options)
-            .await
-            .unwrap()
+            .await?
     };
 
     let collection_client = database_client
@@ -86,7 +84,6 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
         id: Cow::Borrowed(&id),
         a_string: Cow::Borrowed("Something here"),
         a_number: 100,
-        a_timestamp: chrono::Utc::now().timestamp(),
     };
 
     // let's add an entity.
@@ -98,16 +95,16 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
     let document_client = collection_client.into_document_client(id.clone(), &doc.id)?;
 
     // list attachments, there must be none.
-    let ret = document_client
-        .list_attachments()
-        .consistency_level(session_token.clone())
-        .execute()
-        .await?;
+    let options = ListAttachmentsOptions::new().consistency_level(session_token.clone());
+    let ret = Box::pin(document_client.list_attachments(Context::new(), options))
+        .next()
+        .await
+        .unwrap()?;
     assert_eq!(0, ret.attachments.len());
 
     // create reference attachment
     let attachment_client = document_client.clone().into_attachment_client("reference");
-    let options = CreateReferenceAttachmentOptions::new(&attachment_client).consistency_level(&ret);
+    let options = CreateReferenceAttachmentOptions::new().consistency_level(&ret);
     let resp = attachment_client
         .create_reference(
             Context::new(),
@@ -118,8 +115,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
         .await?;
 
     // replace reference attachment
-    let options =
-        ReplaceReferenceAttachmentOptions::new(&attachment_client).consistency_level(&resp);
+    let options = ReplaceReferenceAttachmentOptions::new().consistency_level(&resp);
     let resp = attachment_client
         .replace_reference(
             Context::new(),
@@ -131,7 +127,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
 
     // create slug attachment
     let attachment_client = document_client.clone().into_attachment_client("slug");
-    let options = CreateSlugAttachmentOptions::new(&attachment_client)
+    let options = CreateSlugAttachmentOptions::new()
         .consistency_level(&resp)
         .content_type("text/plain");
     let resp = attachment_client
@@ -139,11 +135,11 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
         .await?;
 
     // list attachments, there must be two.
-    let ret = document_client
-        .list_attachments()
-        .consistency_level(&resp)
-        .execute()
-        .await?;
+    let options = ListAttachmentsOptions::new().consistency_level(&resp);
+    let ret = Box::pin(document_client.list_attachments(Context::new(), options))
+        .next()
+        .await
+        .unwrap()?;
     assert_eq!(2, ret.attachments.len());
 
     // get reference attachment, it must have the updated media link
@@ -156,30 +152,28 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
     );
 
     // get slug attachment, it must have the text/plain content type
-    println!("getting slug attachment");
     let attachment_client = document_client.clone().into_attachment_client("slug");
     let options = GetAttachmentOptions::new().consistency_level(&reference_attachment);
-    let slug_attachment = attachment_client
-        .get(Context::new(), options)
-        .await
-        .unwrap();
+    let slug_attachment = attachment_client.get(Context::new(), options).await?;
     assert_eq!("text/plain", slug_attachment.attachment.content_type);
 
     // delete slug attachment
-    let options =
-        DeleteAttachmentOptions::new(&attachment_client).consistency_level(&slug_attachment);
+    let options = DeleteAttachmentOptions::new().consistency_level(&slug_attachment);
     let resp_delete = attachment_client.delete(Context::new(), options).await?;
 
     // list attachments, there must be one.
-    let ret = document_client
-        .list_attachments()
-        .consistency_level(&resp_delete)
-        .execute()
-        .await?;
+    let options = ListAttachmentsOptions::new().consistency_level(&resp_delete);
+    let ret = Box::pin(document_client.list_attachments(Context::new(), options))
+        .next()
+        .await
+        .unwrap()?;
     assert_eq!(1, ret.attachments.len());
 
     // delete the database
-    database_client.delete_database().execute().await?;
+    let options = DeleteDatabaseOptions::new();
+    database_client
+        .delete_database(Context::new(), options)
+        .await?;
 
     Ok(())
 }

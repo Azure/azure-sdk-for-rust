@@ -108,7 +108,10 @@ async fn create_and_delete_document() {
         .documents;
     assert!(documents.len() == 0);
 
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -182,7 +185,10 @@ async fn query_documents() {
     assert!(query_result[0].document_attributes.rid() == documents[0].document_attributes.rid());
     assert_eq!(query_result[0].result, document_data);
 
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -270,5 +276,8 @@ async fn replace_document() {
         panic!("document not found");
     }
 
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }

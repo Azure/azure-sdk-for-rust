@@ -1,0 +1,14 @@
+{
+    "uri": "/dbs/test-cosmos-db-attachment/colls/test-collection-attachment/docs",
+    "method": "POST",
+    "headers": {
+        "x-ms-date": "Wed, 27 Oct 2021 20:33:51 GMT",
+        "x-ms-version": "2018-12-31",
+        "authorization": "<<STRIPPED>>",
+        "x-ms-documentdb-partitionkey": "[\"unique_id100\"]",
+        "x-ms-documentdb-is-upsert": "false",
+        "x-ms-cosmos-allow-tentative-writes": "false",
+        "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)"
+    },
+    "body": "eyJpZCI6InVuaXF1ZV9pZDEwMCIsImFfc3RyaW5nIjoiU29tZXRoaW5nIGhlcmUiLCJhX251bWJlciI6MTAwfQ=="
+}

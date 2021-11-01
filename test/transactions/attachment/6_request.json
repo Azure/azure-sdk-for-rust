@@ -1,0 +1,16 @@
+{
+    "uri": "/dbs/test-cosmos-db-attachment/colls/test-collection-attachment/docs/unique_id100/attachments",
+    "method": "POST",
+    "headers": {
+        "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
+        "x-ms-version": "2018-12-31",
+        "content-type": "text/plain",
+        "x-ms-session-token": "0:-1#4",
+        "x-ms-consistency-level": "Session",
+        "slug": "slug",
+        "x-ms-documentdb-partitionkey": "[\"unique_id100\"]",
+        "authorization": "<<STRIPPED>>",
+        "x-ms-date": "Wed, 27 Oct 2021 20:33:53 GMT"
+    },
+    "body": "c29tZXRoaW5nIGNvb2wgaGVyZQ=="
+}
