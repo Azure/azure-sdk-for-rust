@@ -106,6 +106,3 @@ impl GetAttachmentResponse {
         })
     }
 }
-
-#[cfg(test)]
-mod tests {}

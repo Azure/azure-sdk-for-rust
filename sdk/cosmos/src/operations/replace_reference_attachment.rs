@@ -11,7 +11,6 @@ use chrono::{DateTime, Utc};
 #[derive(Debug, Clone)]
 pub struct ReplaceReferenceAttachmentOptions<'a> {
     if_match_condition: Option<IfMatchCondition<'a>>,
-    activity_id: Option<ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -19,7 +18,6 @@ impl<'a> ReplaceReferenceAttachmentOptions<'a> {
     pub fn new() -> Self {
         Self {
             if_match_condition: None,
-            activity_id: None,
             consistency_level: None,
         }
     }
@@ -27,7 +25,6 @@ impl<'a> ReplaceReferenceAttachmentOptions<'a> {
 
 impl<'a> ReplaceReferenceAttachmentOptions<'a> {
     setters! {
-        activity_id: &'a str => Some(ActivityId::new(activity_id)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
         if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
     }
@@ -49,7 +46,6 @@ impl<'a> ReplaceReferenceAttachmentOptions<'a> {
     {
         // add trait headers
         azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
-        azure_core::headers::add_optional_header2(&self.activity_id, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
 
         crate::cosmos_entity::add_as_partition_key_header_serialized2(partition_key, request);
@@ -105,9 +101,6 @@ impl ReplaceReferenceAttachmentResponse {
     pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
-
-        debug!("headers == {:#?}", headers);
-        debug!("body == {:#?}", std::str::from_utf8(&body));
 
         let attachment: Attachment = serde_json::from_slice(&body)?;
 

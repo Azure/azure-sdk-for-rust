@@ -151,7 +151,7 @@ impl AttachmentClient {
         ctx: Context,
         media: M,
         content_type: C,
-        options: CreateReferenceAttachmentOptions<'_>,
+        options: CreateReferenceAttachmentOptions,
     ) -> crate::Result<CreateReferenceAttachmentResponse>
     where
         M: AsRef<str>,

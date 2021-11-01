@@ -11,7 +11,6 @@ use chrono::{DateTime, Utc};
 pub struct ReplaceSlugAttachmentOptions<'a> {
     content_type: Option<ContentType<'a>>,
     if_match_condition: Option<IfMatchCondition<'a>>,
-    activity_id: Option<ActivityId<'a>>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
@@ -20,7 +19,6 @@ impl<'a> ReplaceSlugAttachmentOptions<'a> {
         Self {
             content_type: None,
             if_match_condition: None,
-            activity_id: None,
             consistency_level: None,
         }
     }
@@ -28,7 +26,6 @@ impl<'a> ReplaceSlugAttachmentOptions<'a> {
 
 impl<'a> ReplaceSlugAttachmentOptions<'a> {
     setters! {
-        activity_id: &'a str => Some(ActivityId::new(activity_id)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
         if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
         content_type: ContentType<'a> => Some(content_type),
@@ -44,7 +41,6 @@ impl<'a> ReplaceSlugAttachmentOptions<'a> {
         body: B,
     ) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
-        azure_core::headers::add_optional_header2(&self.activity_id, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
         azure_core::headers::add_optional_header2(&self.content_type, request)?;
 
@@ -91,9 +87,6 @@ impl ReplaceSlugAttachmentResponse {
     pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
-
-        debug!("headers == {:#?}", headers);
-        debug!("body == {:#?}", body);
 
         let attachment: Attachment = serde_json::from_slice(&body)?;
 
