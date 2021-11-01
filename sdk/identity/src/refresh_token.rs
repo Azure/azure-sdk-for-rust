@@ -68,7 +68,7 @@ pub async fn exchange(
 #[derive(Debug, Clone, Deserialize)]
 pub struct RefreshTokenResponse {
     token_type: String,
-    #[serde(deserialize_with = "deserialize::split")]
+    #[serde(rename = "scope", deserialize_with = "deserialize::split")]
     scopes: Vec<String>,
     expires_in: u64,
     ext_expires_in: u64,
