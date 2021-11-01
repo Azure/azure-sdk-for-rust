@@ -80,8 +80,6 @@ impl DocumentClient {
             .cosmos_client()
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         GetDocumentResponse::try_from(response).await
