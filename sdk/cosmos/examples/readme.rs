@@ -150,10 +150,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         collection_client
             .clone()
             .into_document_client(document.result.id.clone(), &document.result.a_number)?
-            .delete_document()
-            .consistency_level(session_token.clone())
-            .if_match_condition(&document.document_attributes)
-            .execute()
+            .delete_document(
+                Context::new(),
+                DeleteDocumentOptions::new()
+                    .consistency_level(session_token.clone())
+                    .if_match_condition(&document.document_attributes),
+            )
             .await?;
     }
 

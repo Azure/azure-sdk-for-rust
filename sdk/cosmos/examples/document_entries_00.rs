@@ -153,7 +153,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             ReplaceDocumentOptions::new()
                 .consistency_level(ConsistencyLevel::from(&response))
                 .if_match_condition(IfMatchCondition::Match(&doc.etag)), // use optimistic concurrency check
-        ) 
+        )
         .await?;
 
     println!(
@@ -183,9 +183,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         client
             .clone()
             .into_document_client(id.clone(), &id)?
-            .delete_document()
-            .consistency_level(&response)
-            .execute()
+            .delete_document(
+                Context::new(),
+                DeleteDocumentOptions::new().consistency_level(&response),
+            )
             .await?;
     }
     println!("Cleaned up");
