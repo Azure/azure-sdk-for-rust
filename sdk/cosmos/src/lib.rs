@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     Ok(())
 }
 ```
-!*/
+*/
 
 #![warn(unused_extern_crates)]
 #![deny(missing_docs)]

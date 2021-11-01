@@ -1,3 +1,4 @@
+//!  Azure OAuth2 helper crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 //! This crate provides mechanisms for several ways to authenticate against Azure
 //!
 //! For example, to authenticate using the client credential flow, you can do the following:
