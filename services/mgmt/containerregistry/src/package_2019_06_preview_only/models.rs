@@ -224,7 +224,7 @@ pub mod platform_properties {
         #[serde(rename = "x86")]
         X86,
         #[serde(rename = "386")]
-        _386,
+        N386,
         #[serde(rename = "arm")]
         Arm,
         #[serde(rename = "arm64")]
@@ -719,7 +719,7 @@ pub mod platform_update_parameters {
         #[serde(rename = "x86")]
         X86,
         #[serde(rename = "386")]
-        _386,
+        N386,
         #[serde(rename = "arm")]
         Arm,
         #[serde(rename = "arm64")]

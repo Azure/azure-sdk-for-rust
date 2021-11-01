@@ -34,7 +34,7 @@ impl<'a> GetAttachmentOptions<'a> {
         &self,
         request: &mut HttpRequest,
         partition_key_serialized: &str,
-    ) -> Result<(), crate::Error> {
+    ) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
         crate::cosmos_entity::add_as_partition_key_header_serialized2(
@@ -75,7 +75,7 @@ pub struct GetAttachmentResponse {
 }
 
 impl GetAttachmentResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

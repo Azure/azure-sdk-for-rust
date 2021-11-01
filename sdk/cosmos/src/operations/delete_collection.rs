@@ -20,7 +20,7 @@ impl DeleteCollectionOptions {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> Result<(), crate::Error> {
+    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
 
         Ok(())
@@ -56,7 +56,7 @@ pub struct DeleteCollectionResponse {
 }
 
 impl DeleteCollectionResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

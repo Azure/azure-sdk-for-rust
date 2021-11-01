@@ -14,29 +14,29 @@ pub trait CamelCaseIdent: ToOwned {
 
 impl CamelCaseIdent for str {
     fn to_camel_case_ident(&self) -> Result<TokenStream, Error> {
-        let mut txt = replace_chars_with_unicode_names(self);
-        txt = replace_chars_with_underscore(&txt);
-        txt = if starts_with_number(&txt) {
-            prefix_with_underscore_if_starts_with_number(&txt)
-        } else {
-            txt.to_camel_case()
-        };
+        let is_number = starts_with_number(self);
+        let mut txt = replace_first(self, true);
+        txt = replace_special_chars(&txt);
+        if !is_number {
+            // heck::CamelCase::to_camel_case will remove underscores
+            txt = txt.to_camel_case();
+        }
         let idt = syn::parse_str::<syn::Ident>(&txt).map_err(|source| Error::ParseIdentError {
             source,
-            text: txt.to_owned(),
+            text: self.to_owned(),
         })?;
         Ok(idt.into_token_stream())
     }
 }
 
 pub fn ident(text: &str) -> Result<TokenStream, Error> {
-    let mut txt = replace_chars_with_underscore(text);
+    let mut txt = replace_first(text, false);
+    txt = replace_special_chars(&txt);
     txt = remove_spaces(&txt);
-    txt = prefix_with_underscore_if_starts_with_number(&txt);
-    txt = prefix_with_underscore_keywords(&txt);
+    txt = suffix_keyword(&txt);
     let idt = syn::parse_str::<syn::Ident>(&txt).map_err(|source| Error::ParseIdentError {
         source,
-        text: txt.to_owned(),
+        text: text.to_owned(),
     })?;
     Ok(idt.into_token_stream())
 }
@@ -45,39 +45,48 @@ fn remove_spaces(text: &str) -> String {
     text.replace(" ", "")
 }
 
-fn replace_chars_with_underscore(text: &str) -> String {
+/// replace special characters with underscores
+fn replace_special_chars(text: &str) -> String {
     let mut txt = text.replace(".", "_");
     txt = txt.replace(",", "_");
     txt = txt.replace("-", "_");
     txt = txt.replace("/", "_");
+    txt = txt.replace("*", "_");
     txt
-}
-
-/// Replace some special charaters with their unicode names
-fn replace_chars_with_unicode_names(text: &str) -> String {
-    text.replace("*", "Asterisk")
 }
 
 fn starts_with_number(text: &str) -> bool {
     match text.chars().next() {
-        Some(ch) => match ch {
-            '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' => true,
-            _ => false,
-        },
+        Some(ch) => ch.is_numeric(),
         None => false,
     }
 }
 
-fn prefix_with_underscore_if_starts_with_number(text: &str) -> String {
-    if starts_with_number(text) {
-        format!("_{}", text)
+fn unicode(c: char, uppercase: bool) -> String {
+    let s = c.escape_unicode().to_string();
+    let u = if uppercase { 'U' } else { 'u' };
+    format!("{}{}", u, &s[3..s.len() - 1])
+}
+
+fn replace_first(text: &str, uppercase: bool) -> String {
+    let first = text.chars().next().unwrap_or_default();
+    if first.is_numeric() {
+        let n = if uppercase { 'N' } else { 'n' };
+        format!("{}{}", n, text)
+    } else if !first.is_ascii_alphanumeric() {
+        if text.len() > 1 {
+            format!("{}{}", unicode(first, uppercase), &text[1..])
+        } else {
+            unicode(first, uppercase)
+        }
     } else {
         text.to_owned()
     }
 }
 
-fn prefix_with_underscore_keywords(text: &str) -> String {
-    if is_keyword(&text) {
+/// add an underscore suffix it is a keyword
+fn suffix_keyword(text: &str) -> String {
+    if is_keyword(text) {
         format!("{}_", text)
     } else {
         text.to_owned()
@@ -149,9 +158,32 @@ mod tests {
     use heck::SnakeCase;
 
     #[test]
+    fn test_unicode() -> Result<(), Error> {
+        assert_eq!(unicode(',', false), "u2c");
+        Ok(())
+    }
+
+    #[test]
+    fn test_replace_first() -> Result<(), Error> {
+        assert_eq!(replace_first(".", false), "u2e");
+        assert_eq!(replace_first("/", false), "u2f");
+        assert_eq!(replace_first("", false), "u0");
+        Ok(())
+    }
+
+    #[test]
+    fn test_replace_special_chars() -> Result<(), Error> {
+        assert_eq!(replace_special_chars("."), "_");
+        assert_eq!(replace_special_chars(","), "_");
+        assert_eq!(replace_special_chars("-"), "_");
+        assert_eq!(replace_special_chars("/"), "_");
+        assert_eq!(replace_special_chars("*"), "_");
+        Ok(())
+    }
+
+    #[test]
     fn test_odata_next_link() -> Result<(), Error> {
         let idt = "odata.nextLink".to_snake_case();
-        assert_eq!(idt, "odata.next_link");
         let idt = ident(&idt)?;
         assert_eq!(idt.to_string(), "odata_next_link");
         Ok(())
@@ -160,14 +192,7 @@ mod tests {
     #[test]
     fn test_three_dot_two() -> Result<(), Error> {
         let idt = ident("3.2")?;
-        assert_eq!(idt.to_string(), "_3_2");
-        Ok(())
-    }
-
-    #[test]
-    fn test_asterisk() -> Result<(), Error> {
-        assert_eq!("*".to_camel_case(), "");
-        assert_eq!("*".to_camel_case_ident()?.to_string(), "Asterisk");
+        assert_eq!(idt.to_string(), "n3_2");
         Ok(())
     }
 
@@ -188,7 +213,7 @@ mod tests {
 
     #[test]
     fn test_5() -> Result<(), Error> {
-        assert_eq!("5".to_camel_case_ident()?.to_string(), "_5");
+        assert_eq!("5".to_camel_case_ident()?.to_string(), "N5");
         Ok(())
     }
 
@@ -213,7 +238,7 @@ mod tests {
     #[test]
     fn test_azure_virtual_machine_best_practices() -> Result<(), Error> {
         assert_eq!(
-            "Azure virtual machine best practices – Dev/Test".to_camel_case_ident()?.to_string(),
+            "Azure virtual machine best practices - Dev/Test".to_camel_case_ident()?.to_string(),
             "AzureVirtualMachineBestPracticesDevTest"
         );
         Ok(())
@@ -221,7 +246,7 @@ mod tests {
 
     #[test]
     fn test_1_0() -> Result<(), Error> {
-        assert_eq!("1.0".to_camel_case_ident()?.to_string(), "_1_0");
+        assert_eq!("1.0".to_camel_case_ident()?.to_string(), "N1_0");
         Ok(())
     }
 }

@@ -23,8 +23,8 @@ impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
         let body = std::str::from_utf8(response.body())?;
-        println!("{}", body);
-        println!("headers == {:#?}", response.headers());
+        debug!("{}", body);
+        debug!("headers == {:#?}", response.headers());
 
         let mut operation_responses = Vec::new();
 
@@ -33,7 +33,7 @@ impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
             .into_iter()
             .filter(|change_set_response| change_set_response.contains("HTTP/1.1"))
         {
-            println!("changeset --> {}", change_set_response);
+            trace!("changeset --> {}", change_set_response);
 
             let mut operation_response = OperationResponse::default();
 

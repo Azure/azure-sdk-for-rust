@@ -13,12 +13,12 @@ pub enum Error {
     WriteFile(#[source] crate::Error),
 }
 
-pub fn create(feature_mod_names: &Vec<(String, String)>, path: &Path, print_writing_file: bool) -> Result<()> {
+pub fn create(feature_mod_names: &[(String, String)], path: &Path, print_writing_file: bool) -> Result<()> {
     write_file(path, &create_body(feature_mod_names)?, print_writing_file).map_err(Error::WriteFile)?;
     Ok(())
 }
 
-fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream> {
+fn create_body(feature_mod_names: &[(String, String)]) -> Result<TokenStream> {
     let mut cfgs = TokenStream::new();
     for (feature_name, mod_name) in feature_mod_names {
         let mod_name = ident(mod_name).map_err(|source| Error::ModName {
@@ -27,13 +27,17 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
         })?;
         cfgs.extend(quote! {
             #[cfg(feature = #feature_name)]
-            mod #mod_name;
-            #[cfg(feature = #feature_name)]
-            pub use #mod_name::{models, operations, API_VERSION};
+            pub mod #mod_name;
+            #[cfg(all(feature = #feature_name, not(feature = "no-default-version")))]
+            pub use #mod_name::{models, operations};
         });
     }
     let generated_by = create_generated_by_header();
     Ok(quote! {
+        #![allow(clippy::module_inception)]
+        #![allow(clippy::too_many_arguments)]
+        #![allow(clippy::ptr_arg)]
+        #![allow(clippy::large_enum_variant)]
         #generated_by
         #cfgs
         use azure_core::setters;
@@ -43,7 +47,6 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
             token_credential: Box<dyn azure_core::TokenCredential>,
         ) -> OperationConfigBuilder {
             OperationConfigBuilder {
-                api_version: None,
                 http_client,
                 base_path: None,
                 token_credential,
@@ -52,7 +55,6 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
         }
 
         pub struct OperationConfigBuilder {
-            api_version: Option<String>,
             http_client: std::sync::Arc<dyn azure_core::HttpClient>,
             base_path: Option<String>,
             token_credential: Box<dyn azure_core::TokenCredential>,
@@ -61,24 +63,21 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
 
         impl OperationConfigBuilder {
             setters! {
-                api_version: String => Some(api_version),
                 base_path: String => Some(base_path),
                 token_credential_resource: String => Some(token_credential_resource),
             }
 
             pub fn build(self) -> OperationConfig {
                 OperationConfig {
-                    api_version: self.api_version.unwrap_or(API_VERSION.to_owned()),
                     http_client: self.http_client,
-                    base_path: self.base_path.unwrap_or("https://management.azure.com".to_owned()),
+                    base_path: self.base_path.unwrap_or_else(|| "https://management.azure.com".to_owned()),
                     token_credential: Some(self.token_credential),
-                    token_credential_resource: self.token_credential_resource.unwrap_or("https://management.azure.com/".to_owned()),
+                    token_credential_resource: self.token_credential_resource.unwrap_or_else(|| "https://management.azure.com/".to_owned()),
                 }
             }
         }
 
         pub struct OperationConfig {
-            api_version: String,
             http_client: std::sync::Arc<dyn azure_core::HttpClient>,
             base_path: String,
             token_credential: Option<Box<dyn azure_core::TokenCredential>>,
@@ -86,9 +85,6 @@ fn create_body(feature_mod_names: &Vec<(String, String)>) -> Result<TokenStream>
         }
 
         impl OperationConfig {
-            pub fn api_version(&self) -> &str {
-                self.api_version.as_str()
-            }
             pub fn http_client(&self) -> &dyn azure_core::HttpClient {
                 self.http_client.as_ref()
             }

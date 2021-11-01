@@ -58,8 +58,7 @@ impl std::convert::TryFrom<&str> for PermissionToken {
             return Err(PermissionTokenParsingError::InsufficientParts {
                 token_string: s.to_owned(),
                 found: parts.len() as u32,
-            }
-            .into());
+            });
         }
         let version = try_get_item(s, &parts, VERSION_PREFIX)?;
         if version != "1.0" && version != "1" {

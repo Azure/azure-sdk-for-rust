@@ -19,7 +19,7 @@ use std::{
 
 pub use self::{
     codegen::{create_mod, CodeGen},
-    spec::{OperationVerb, ResolvedSchema, Spec},
+    spec::{ResolvedSchema, Spec, WebOperation},
 };
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -34,8 +34,8 @@ pub enum Error {
     WriteFile { file: PathBuf, source: std::io::Error },
     #[error("CodeGenNewError")]
     CodeGenNew(#[source] codegen::Error),
-    #[error("CreateModelsError {} {}", config.output_folder.display(), source)]
-    CreateModels { source: codegen::Error, config: Config },
+    #[error("CreateModelsError {0}")]
+    CreateModels(#[source] codegen::Error),
     #[error("CreateOperationsError")]
     CreateOperations(#[source] codegen::Error),
     #[error("path: {0}")]
@@ -66,7 +66,7 @@ pub struct Config {
     pub output_folder: PathBuf,
     pub box_properties: HashSet<PropertyName>,
     pub optional_properties: HashSet<PropertyName>,
-    pub fix_case_properties: HashSet<PropertyName>,
+    pub fix_case_properties: HashSet<String>,
     pub invalid_types: HashSet<PropertyName>,
     pub runs: Vec<Runs>,
     pub print_writing_file: bool,
@@ -103,10 +103,7 @@ pub fn run(config: Config) -> Result<()> {
 
     // create models from schemas
     if config.should_run(&Runs::Models) {
-        let models = codegen_models::create_models(cg).map_err(|source| Error::CreateModels {
-            source,
-            config: config.clone(),
-        })?;
+        let models = codegen_models::create_models(cg).map_err(Error::CreateModels)?;
         let models_path = path::join(&config.output_folder, "models.rs").map_err(Error::Path)?;
         write_file(&models_path, &models, config.print_writing_file)?;
     }
@@ -137,7 +134,7 @@ fn write_file<P: AsRef<Path>>(file: P, tokens: &TokenStream, print_writing_file:
     let code = tokens.to_string();
     let mut buffer = File::create(&file).map_err(|source| Error::CreateFile { source, file: file.into() })?;
     buffer
-        .write_all(&code.as_bytes())
+        .write_all(code.as_bytes())
         .map_err(|source| Error::WriteFile { source, file: file.into() })?;
     Ok(())
 }
@@ -152,7 +149,7 @@ fn get_spec_folders(spec_folder: &str) -> Result<Vec<String>, Error> {
         let path = path.map_err(Error::Io)?;
         if path.file_type().map_err(Error::Io)?.is_dir() {
             let file_name = path.file_name();
-            let spec_folder = file_name.to_str().ok_or_else(|| Error::FileNameNotUtf8)?;
+            let spec_folder = file_name.to_str().ok_or(Error::FileNameNotUtf8)?;
             spec_folders.push(spec_folder.to_owned());
         }
     }
@@ -183,6 +180,9 @@ impl SpecReadme {
     pub fn spec(&self) -> &str {
         self.spec.as_str()
     }
+    pub fn service_name(&self) -> String {
+        get_service_name(&self.spec)
+    }
     pub fn readme(&self) -> &Path {
         self.readme.as_path()
     }
@@ -195,10 +195,7 @@ fn get_spec_readmes(spec_folders: Vec<String>, readme: impl AsRef<Path>) -> Resu
     Ok(spec_folders
         .into_iter()
         .filter_map(|spec| match path::join(SPEC_FOLDER, &spec) {
-            Ok(spec_folder_full) => match get_readme(&spec_folder_full, &readme) {
-                Some(readme) => Some(SpecReadme { spec, readme }),
-                None => None,
-            },
+            Ok(spec_folder_full) => get_readme(&spec_folder_full, &readme).map(|readme| SpecReadme { spec, readme }),
             Err(_) => None,
         })
         .collect())
@@ -228,4 +225,22 @@ pub fn get_svc_readmes() -> Result<Vec<SpecReadme>> {
         readme: path::join(SPEC_FOLDER, "storage/data-plane/Microsoft.StorageDataLake/readme.md")?,
     });
     Ok(readmes)
+}
+
+fn get_service_name(spec_name: &str) -> String {
+    spec_name.replace("azure", "").replace("_", "").replace("-", "").to_lowercase()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_service_name() {
+        assert_eq!("activedirectory", get_service_name("azureactivedirectory"));
+        assert_eq!("cosmosdb", get_service_name("cosmos_db"));
+        assert_eq!("datalakestore", get_service_name("datalake_store"));
+        assert_eq!("kusto", get_service_name("azure-kusto"));
+        assert_eq!("enterpriseknowledgegraph", get_service_name("EnterpriseKnowledgeGraph"));
+    }
 }

@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.LabServices/operations", operation_config.base_path(),);
@@ -18,6 +18,7 @@ pub mod operations {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -41,7 +42,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -65,8 +66,12 @@ pub mod operations {
     }
 }
 pub mod operation_results {
-    use crate::models::*;
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<get::Response, get::Error> {
+    use super::{models, models::*, API_VERSION};
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        operation_result_id: &str,
+    ) -> std::result::Result<get::Response, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.LabServices/operationResults/{}",
@@ -84,6 +89,7 @@ pub mod operation_results {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -108,7 +114,7 @@ pub mod operation_results {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(OperationResult),
@@ -137,9 +143,11 @@ pub mod operation_results {
     }
 }
 pub mod lab_plans {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        filter: Option<&str>,
     ) -> std::result::Result<PagedLabPlans, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -156,6 +164,10 @@ pub mod lab_plans {
                 .await
                 .map_err(list_by_subscription::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -183,7 +195,7 @@ pub mod lab_plans {
         }
     }
     pub mod list_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -207,6 +219,8 @@ pub mod lab_plans {
     }
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
     ) -> std::result::Result<PagedLabPlans, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -225,6 +239,7 @@ pub mod lab_plans {
                 .map_err(list_by_resource_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -253,7 +268,7 @@ pub mod lab_plans {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -275,7 +290,12 @@ pub mod lab_plans {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<LabPlan, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_plan_name: &str,
+    ) -> std::result::Result<LabPlan, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labPlans/{}",
@@ -294,6 +314,7 @@ pub mod lab_plans {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -317,7 +338,7 @@ pub mod lab_plans {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -341,6 +362,9 @@ pub mod lab_plans {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_plan_name: &str,
         body: &LabPlan,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -361,6 +385,7 @@ pub mod lab_plans {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -400,7 +425,7 @@ pub mod lab_plans {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(LabPlan),
@@ -430,6 +455,9 @@ pub mod lab_plans {
     }
     pub async fn update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_plan_name: &str,
         body: &LabPlanUpdate,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -450,6 +478,7 @@ pub mod lab_plans {
                 .map_err(update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -480,7 +509,7 @@ pub mod lab_plans {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(LabPlan),
@@ -507,7 +536,12 @@ pub mod lab_plans {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_plan_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labPlans/{}",
@@ -526,6 +560,7 @@ pub mod lab_plans {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -546,7 +581,7 @@ pub mod lab_plans {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -576,6 +611,9 @@ pub mod lab_plans {
     }
     pub async fn save_image(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_plan_name: &str,
         body: &SaveImageBody,
     ) -> std::result::Result<save_image::Response, save_image::Error> {
         let http_client = operation_config.http_client();
@@ -596,6 +634,7 @@ pub mod lab_plans {
                 .map_err(save_image::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(save_image::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -619,7 +658,7 @@ pub mod lab_plans {
         }
     }
     pub mod save_image {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -648,8 +687,14 @@ pub mod lab_plans {
     }
 }
 pub mod images {
-    use crate::models::*;
-    pub async fn list_by_lab_plan(operation_config: &crate::OperationConfig) -> std::result::Result<PagedImages, list_by_lab_plan::Error> {
+    use super::{models, models::*, API_VERSION};
+    pub async fn list_by_lab_plan(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_plan_name: &str,
+        filter: Option<&str>,
+    ) -> std::result::Result<PagedImages, list_by_lab_plan::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labPlans/{}/images",
@@ -667,6 +712,10 @@ pub mod images {
                 .await
                 .map_err(list_by_lab_plan::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -694,7 +743,7 @@ pub mod images {
         }
     }
     pub mod list_by_lab_plan {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -716,7 +765,13 @@ pub mod images {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<Image, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_plan_name: &str,
+        image_name: &str,
+    ) -> std::result::Result<Image, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labPlans/{}/images/{}",
@@ -736,6 +791,7 @@ pub mod images {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -759,7 +815,7 @@ pub mod images {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -783,6 +839,10 @@ pub mod images {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_plan_name: &str,
+        image_name: &str,
         body: &Image,
     ) -> std::result::Result<Image, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -804,6 +864,7 @@ pub mod images {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -831,7 +892,7 @@ pub mod images {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -853,7 +914,14 @@ pub mod images {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn update(operation_config: &crate::OperationConfig, body: &ImageUpdate) -> std::result::Result<Image, update::Error> {
+    pub async fn update(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_plan_name: &str,
+        image_name: &str,
+        body: &ImageUpdate,
+    ) -> std::result::Result<Image, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labPlans/{}/images/{}",
@@ -873,6 +941,7 @@ pub mod images {
                 .map_err(update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -897,7 +966,7 @@ pub mod images {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -921,9 +990,11 @@ pub mod images {
     }
 }
 pub mod labs {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        filter: Option<&str>,
     ) -> std::result::Result<PagedLabs, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -940,6 +1011,10 @@ pub mod labs {
                 .await
                 .map_err(list_by_subscription::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -967,7 +1042,7 @@ pub mod labs {
         }
     }
     pub mod list_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -991,6 +1066,8 @@ pub mod labs {
     }
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
     ) -> std::result::Result<PagedLabs, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1009,6 +1086,7 @@ pub mod labs {
                 .map_err(list_by_resource_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -1037,7 +1115,7 @@ pub mod labs {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1059,7 +1137,12 @@ pub mod labs {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<Lab, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+    ) -> std::result::Result<Lab, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}",
@@ -1078,6 +1161,7 @@ pub mod labs {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -1101,7 +1185,7 @@ pub mod labs {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1125,6 +1209,9 @@ pub mod labs {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
         body: &Lab,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1145,6 +1232,7 @@ pub mod labs {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -1184,7 +1272,7 @@ pub mod labs {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Lab),
@@ -1214,6 +1302,9 @@ pub mod labs {
     }
     pub async fn update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
         body: &LabUpdate,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -1234,6 +1325,7 @@ pub mod labs {
                 .map_err(update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -1264,7 +1356,7 @@ pub mod labs {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Lab),
@@ -1291,7 +1383,12 @@ pub mod labs {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}",
@@ -1310,6 +1407,7 @@ pub mod labs {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -1330,7 +1428,7 @@ pub mod labs {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1358,7 +1456,12 @@ pub mod labs {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn publish(operation_config: &crate::OperationConfig) -> std::result::Result<publish::Response, publish::Error> {
+    pub async fn publish(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+    ) -> std::result::Result<publish::Response, publish::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/publish",
@@ -1377,6 +1480,7 @@ pub mod labs {
                 .map_err(publish::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -1400,7 +1504,7 @@ pub mod labs {
         }
     }
     pub mod publish {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1427,7 +1531,12 @@ pub mod labs {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn sync_group(operation_config: &crate::OperationConfig) -> std::result::Result<sync_group::Response, sync_group::Error> {
+    pub async fn sync_group(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+    ) -> std::result::Result<sync_group::Response, sync_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/syncGroup",
@@ -1446,6 +1555,7 @@ pub mod labs {
                 .map_err(sync_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -1469,7 +1579,7 @@ pub mod labs {
         }
     }
     pub mod sync_group {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1498,8 +1608,14 @@ pub mod labs {
     }
 }
 pub mod users {
-    use crate::models::*;
-    pub async fn list_by_lab(operation_config: &crate::OperationConfig) -> std::result::Result<PagedUsers, list_by_lab::Error> {
+    use super::{models, models::*, API_VERSION};
+    pub async fn list_by_lab(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        filter: Option<&str>,
+    ) -> std::result::Result<PagedUsers, list_by_lab::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/users",
@@ -1517,6 +1633,10 @@ pub mod users {
                 .await
                 .map_err(list_by_lab::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1544,7 +1664,7 @@ pub mod users {
         }
     }
     pub mod list_by_lab {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1566,7 +1686,13 @@ pub mod users {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<User, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        user_name: &str,
+    ) -> std::result::Result<User, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/users/{}",
@@ -1586,6 +1712,7 @@ pub mod users {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -1609,7 +1736,7 @@ pub mod users {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1633,6 +1760,10 @@ pub mod users {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        user_name: &str,
         body: &User,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1654,6 +1785,7 @@ pub mod users {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -1693,7 +1825,7 @@ pub mod users {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(User),
@@ -1723,6 +1855,10 @@ pub mod users {
     }
     pub async fn update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        user_name: &str,
         body: &UserUpdate,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -1744,6 +1880,7 @@ pub mod users {
                 .map_err(update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -1774,7 +1911,7 @@ pub mod users {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(User),
@@ -1801,7 +1938,13 @@ pub mod users {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        user_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/users/{}",
@@ -1821,6 +1964,7 @@ pub mod users {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -1841,7 +1985,7 @@ pub mod users {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1871,6 +2015,10 @@ pub mod users {
     }
     pub async fn invite(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        user_name: &str,
         body: &InviteBody,
     ) -> std::result::Result<invite::Response, invite::Error> {
         let http_client = operation_config.http_client();
@@ -1892,6 +2040,7 @@ pub mod users {
                 .map_err(invite::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(invite::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -1912,7 +2061,7 @@ pub mod users {
         }
     }
     pub mod invite {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1941,8 +2090,14 @@ pub mod users {
     }
 }
 pub mod virtual_machines {
-    use crate::models::*;
-    pub async fn list_by_lab(operation_config: &crate::OperationConfig) -> std::result::Result<PagedVirtualMachines, list_by_lab::Error> {
+    use super::{models, models::*, API_VERSION};
+    pub async fn list_by_lab(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        filter: Option<&str>,
+    ) -> std::result::Result<PagedVirtualMachines, list_by_lab::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/virtualMachines",
@@ -1960,6 +2115,10 @@ pub mod virtual_machines {
                 .await
                 .map_err(list_by_lab::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1987,7 +2146,7 @@ pub mod virtual_machines {
         }
     }
     pub mod list_by_lab {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2009,7 +2168,13 @@ pub mod virtual_machines {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<VirtualMachine, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        virtual_machine_name: &str,
+    ) -> std::result::Result<VirtualMachine, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/virtualMachines/{}",
@@ -2029,6 +2194,7 @@ pub mod virtual_machines {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -2052,7 +2218,7 @@ pub mod virtual_machines {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2074,7 +2240,13 @@ pub mod virtual_machines {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn start(operation_config: &crate::OperationConfig) -> std::result::Result<start::Response, start::Error> {
+    pub async fn start(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        virtual_machine_name: &str,
+    ) -> std::result::Result<start::Response, start::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/virtualMachines/{}/start",
@@ -2094,6 +2266,7 @@ pub mod virtual_machines {
                 .map_err(start::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -2114,7 +2287,7 @@ pub mod virtual_machines {
         }
     }
     pub mod start {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2141,7 +2314,13 @@ pub mod virtual_machines {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn stop(operation_config: &crate::OperationConfig) -> std::result::Result<stop::Response, stop::Error> {
+    pub async fn stop(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        virtual_machine_name: &str,
+    ) -> std::result::Result<stop::Response, stop::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/virtualMachines/{}/stop",
@@ -2161,6 +2340,7 @@ pub mod virtual_machines {
                 .map_err(stop::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -2181,7 +2361,7 @@ pub mod virtual_machines {
         }
     }
     pub mod stop {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2208,7 +2388,13 @@ pub mod virtual_machines {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn reimage(operation_config: &crate::OperationConfig) -> std::result::Result<reimage::Response, reimage::Error> {
+    pub async fn reimage(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        virtual_machine_name: &str,
+    ) -> std::result::Result<reimage::Response, reimage::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/virtualMachines/{}/reimage",
@@ -2228,6 +2414,7 @@ pub mod virtual_machines {
                 .map_err(reimage::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -2251,7 +2438,7 @@ pub mod virtual_machines {
         }
     }
     pub mod reimage {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2278,7 +2465,13 @@ pub mod virtual_machines {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn redeploy(operation_config: &crate::OperationConfig) -> std::result::Result<redeploy::Response, redeploy::Error> {
+    pub async fn redeploy(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        virtual_machine_name: &str,
+    ) -> std::result::Result<redeploy::Response, redeploy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/virtualMachines/{}/redeploy",
@@ -2298,6 +2491,7 @@ pub mod virtual_machines {
                 .map_err(redeploy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -2321,7 +2515,7 @@ pub mod virtual_machines {
         }
     }
     pub mod redeploy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2350,6 +2544,10 @@ pub mod virtual_machines {
     }
     pub async fn reset_password(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        virtual_machine_name: &str,
         body: &ResetPasswordBody,
     ) -> std::result::Result<reset_password::Response, reset_password::Error> {
         let http_client = operation_config.http_client();
@@ -2371,6 +2569,7 @@ pub mod virtual_machines {
                 .map_err(reset_password::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(reset_password::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -2394,7 +2593,7 @@ pub mod virtual_machines {
         }
     }
     pub mod reset_password {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2423,8 +2622,14 @@ pub mod virtual_machines {
     }
 }
 pub mod schedules {
-    use crate::models::*;
-    pub async fn list_by_lab(operation_config: &crate::OperationConfig) -> std::result::Result<PagedSchedules, list_by_lab::Error> {
+    use super::{models, models::*, API_VERSION};
+    pub async fn list_by_lab(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        filter: Option<&str>,
+    ) -> std::result::Result<PagedSchedules, list_by_lab::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/schedules",
@@ -2442,6 +2647,10 @@ pub mod schedules {
                 .await
                 .map_err(list_by_lab::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2469,7 +2678,7 @@ pub mod schedules {
         }
     }
     pub mod list_by_lab {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2491,7 +2700,13 @@ pub mod schedules {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<Schedule, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        schedule_name: &str,
+    ) -> std::result::Result<Schedule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/schedules/{}",
@@ -2511,6 +2726,7 @@ pub mod schedules {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -2534,7 +2750,7 @@ pub mod schedules {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2558,6 +2774,10 @@ pub mod schedules {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        schedule_name: &str,
         body: &Schedule,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -2579,6 +2799,7 @@ pub mod schedules {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -2612,7 +2833,7 @@ pub mod schedules {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Schedule),
@@ -2639,7 +2860,14 @@ pub mod schedules {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn update(operation_config: &crate::OperationConfig, body: &ScheduleUpdate) -> std::result::Result<Schedule, update::Error> {
+    pub async fn update(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        schedule_name: &str,
+        body: &ScheduleUpdate,
+    ) -> std::result::Result<Schedule, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/schedules/{}",
@@ -2659,6 +2887,7 @@ pub mod schedules {
                 .map_err(update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -2683,7 +2912,7 @@ pub mod schedules {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2705,7 +2934,13 @@ pub mod schedules {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(operation_config: &crate::OperationConfig) -> std::result::Result<delete::Response, delete::Error> {
+    pub async fn delete(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        lab_name: &str,
+        schedule_name: &str,
+    ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labs/{}/schedules/{}",
@@ -2725,6 +2960,7 @@ pub mod schedules {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -2745,7 +2981,7 @@ pub mod schedules {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

@@ -1,11 +1,11 @@
 {
-    "uri": "/dbs",
-    "method": "POST",
-    "headers": {
-        "x-ms-date": "Wed, 27 Oct 2021 20:33:49 GMT",
-        "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
-        "authorization": "<<STRIPPED>>",
-        "x-ms-version": "2018-12-31"
-    },
-    "body": "eyJpZCI6InRlc3QtY29zbW9zLWRiLWF0dGFjaG1lbnQifQ=="
+  "uri": "/dbs",
+  "method": "POST",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
+    "x-ms-date": "Mon, 01 Nov 2021 12:41:43 GMT",
+    "x-ms-version": "2018-12-31"
+  },
+  "body": "eyJpZCI6InRlc3QtY29zbW9zLWRiLWF0dGFjaG1lbnQifQ=="
 }

@@ -29,7 +29,7 @@ impl<'a, 'b> DeleteTriggerBuilder<'a, 'b> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub async fn execute(&self) -> Result<DeleteTriggerResponse, crate::Error> {
+    pub async fn execute(&self) -> crate::Result<DeleteTriggerResponse> {
         trace!("DeleteTriggerBuilder::execute called");
 
         let req = self

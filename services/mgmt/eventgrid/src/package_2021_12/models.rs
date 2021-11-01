@@ -312,6 +312,8 @@ pub struct EventSubscriptionProperties {
     pub provisioning_state: Option<event_subscription_properties::ProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub destination: Option<EventSubscriptionDestination>,
+    #[serde(rename = "deliveryWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub delivery_with_resource_identity: Option<DeliveryWithResourceIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<EventSubscriptionFilter>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -324,6 +326,8 @@ pub struct EventSubscriptionProperties {
     pub retry_policy: Option<RetryPolicy>,
     #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_destination: Option<DeadLetterDestination>,
+    #[serde(rename = "deadLetterWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub dead_letter_with_resource_identity: Option<DeadLetterWithResourceIdentity>,
 }
 pub mod event_subscription_properties {
     use super::*;
@@ -553,6 +557,35 @@ pub mod advanced_filter {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeliveryWithResourceIdentity {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<EventSubscriptionIdentity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub destination: Option<EventSubscriptionDestination>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeadLetterWithResourceIdentity {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<EventSubscriptionIdentity>,
+    #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
+    pub dead_letter_destination: Option<DeadLetterDestination>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventSubscriptionIdentity {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<event_subscription_identity::Type>,
+    #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identity: Option<String>,
+}
+pub mod event_subscription_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+        UserAssigned,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebHookEventSubscriptionDestination {
     #[serde(flatten)]
     pub event_subscription_destination: EventSubscriptionDestination,
@@ -692,6 +725,8 @@ pub struct EventSubscription {
 pub struct EventSubscriptionUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub destination: Option<EventSubscriptionDestination>,
+    #[serde(rename = "deliveryWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub delivery_with_resource_identity: Option<DeliveryWithResourceIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<EventSubscriptionFilter>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -704,6 +739,8 @@ pub struct EventSubscriptionUpdateParameters {
     pub retry_policy: Option<RetryPolicy>,
     #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_destination: Option<DeadLetterDestination>,
+    #[serde(rename = "deadLetterWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub dead_letter_with_resource_identity: Option<DeadLetterWithResourceIdentity>,
 }
 pub mod event_subscription_update_parameters {
     use super::*;
@@ -894,6 +931,8 @@ pub struct Topic {
     pub tracked_resource: TrackedResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TopicProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<IdentityInfo>,
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -901,6 +940,8 @@ pub struct Topic {
 pub struct TopicUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<IdentityInfo>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TopicUpdateParameterProperties>,
 }
@@ -939,6 +980,22 @@ pub struct TopicSharedAccessKeys {
 pub struct TopicRegenerateKeyRequest {
     #[serde(rename = "keyName")]
     pub key_name: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExtensionTopicProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "systemTopic", default, skip_serializing_if = "Option::is_none")]
+    pub system_topic: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExtensionTopic {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ExtensionTopicProperties>,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventTypesListResult {

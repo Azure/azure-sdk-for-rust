@@ -45,7 +45,7 @@ impl UserClient {
         &self,
         ctx: Context,
         options: CreateUserOptions,
-    ) -> Result<UserResponse, crate::Error> {
+    ) -> crate::Result<UserResponse> {
         let mut request = self.cosmos_client().prepare_request_pipeline(
             &format!("dbs/{}/users", self.database_client.database_name()),
             http::Method::POST,
@@ -56,8 +56,6 @@ impl UserClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::CREATED)
             .await?;
 
         Ok(UserResponse::try_from(response).await?)
@@ -68,7 +66,7 @@ impl UserClient {
         &self,
         ctx: Context,
         options: GetUserOptions,
-    ) -> Result<UserResponse, crate::Error> {
+    ) -> crate::Result<UserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::GET);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
 
@@ -76,8 +74,6 @@ impl UserClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         Ok(UserResponse::try_from(response).await?)
@@ -89,7 +85,7 @@ impl UserClient {
         ctx: Context,
         user_name: S,
         options: ReplaceUserOptions,
-    ) -> Result<UserResponse, crate::Error> {
+    ) -> crate::Result<UserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::PUT);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
 
@@ -97,8 +93,6 @@ impl UserClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         Ok(UserResponse::try_from(response).await?)
@@ -109,7 +103,7 @@ impl UserClient {
         &self,
         ctx: Context,
         options: DeleteUserOptions,
-    ) -> Result<DeleteUserResponse, crate::Error> {
+    ) -> crate::Result<DeleteUserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::DELETE);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
 
@@ -117,8 +111,6 @@ impl UserClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::NO_CONTENT)
             .await?;
 
         Ok(DeleteUserResponse::try_from(response).await?)

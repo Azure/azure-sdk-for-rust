@@ -1,15 +1,15 @@
 {
-    "uri": "/dbs/test-cosmos-db-attachment/colls/test-collection-attachment/docs/unique_id100/attachments",
-    "method": "GET",
-    "headers": {
-        "x-ms-documentdb-partitionkey": "[\"unique_id100\"]",
-        "authorization": "<<STRIPPED>>",
-        "x-ms-date": "Wed, 27 Oct 2021 20:33:52 GMT",
-        "x-ms-max-item-count": "-1",
-        "x-ms-session-token": "0:-1#2",
-        "x-ms-version": "2018-12-31",
-        "x-ms-consistency-level": "Session",
-        "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)"
-    },
-    "body": ""
+  "uri": "/dbs/test-cosmos-db-attachment/colls/test-collection-attachment/docs/unique_id100/attachments",
+  "method": "GET",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
+    "x-ms-consistency-level": "Session",
+    "x-ms-date": "Mon, 01 Nov 2021 12:41:46 GMT",
+    "x-ms-documentdb-partitionkey": "[\"unique_id100\"]",
+    "x-ms-max-item-count": "-1",
+    "x-ms-session-token": "0:-1#2",
+    "x-ms-version": "2018-12-31"
+  },
+  "body": ""
 }

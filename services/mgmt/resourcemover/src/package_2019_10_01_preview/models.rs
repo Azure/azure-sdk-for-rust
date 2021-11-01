@@ -376,11 +376,11 @@ pub mod virtual_machine_resource_settings {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TargetAvailabilityZone {
         #[serde(rename = "1")]
-        _1,
+        N1,
         #[serde(rename = "2")]
-        _2,
+        N2,
         #[serde(rename = "3")]
-        _3,
+        N3,
         #[serde(rename = "NA")]
         Na,
     }

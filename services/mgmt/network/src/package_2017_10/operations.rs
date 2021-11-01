@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub mod application_gateways {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -29,7 +29,7 @@ pub mod application_gateways {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -51,7 +51,7 @@ pub mod application_gateways {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -95,7 +95,7 @@ pub mod application_gateways {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -127,7 +127,7 @@ pub mod application_gateways {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Created201(ApplicationGateway),
@@ -176,7 +176,7 @@ pub mod application_gateways {
                 .map_err(update_tags::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update_tags::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -202,7 +202,7 @@ pub mod application_gateways {
         }
     }
     pub mod update_tags {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -245,7 +245,7 @@ pub mod application_gateways {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -264,7 +264,7 @@ pub mod application_gateways {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -311,7 +311,7 @@ pub mod application_gateways {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -333,7 +333,7 @@ pub mod application_gateways {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -372,7 +372,7 @@ pub mod application_gateways {
                 .map_err(list_all::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_all::Error::BuildRequestError)?;
@@ -397,7 +397,7 @@ pub mod application_gateways {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -440,7 +440,7 @@ pub mod application_gateways {
                 .map_err(start::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -459,7 +459,7 @@ pub mod application_gateways {
         }
     }
     pub mod start {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -507,7 +507,7 @@ pub mod application_gateways {
                 .map_err(stop::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -526,7 +526,7 @@ pub mod application_gateways {
         }
     }
     pub mod stop {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -575,7 +575,7 @@ pub mod application_gateways {
                 .map_err(backend_health::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -605,7 +605,7 @@ pub mod application_gateways {
         }
     }
     pub mod backend_health {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ApplicationGatewayBackendHealth),
@@ -649,7 +649,7 @@ pub mod application_gateways {
                 .map_err(list_available_waf_rule_sets::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -676,7 +676,7 @@ pub mod application_gateways {
         }
     }
     pub mod list_available_waf_rule_sets {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -715,7 +715,7 @@ pub mod application_gateways {
                 .map_err(list_available_ssl_options::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -742,7 +742,7 @@ pub mod application_gateways {
         }
     }
     pub mod list_available_ssl_options {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -781,7 +781,7 @@ pub mod application_gateways {
                 .map_err(list_available_ssl_predefined_policies::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -808,7 +808,7 @@ pub mod application_gateways {
         }
     }
     pub mod list_available_ssl_predefined_policies {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -849,7 +849,7 @@ pub mod application_gateways {
                 .map_err(get_ssl_predefined_policy::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -876,7 +876,7 @@ pub mod application_gateways {
         }
     }
     pub mod get_ssl_predefined_policy {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -897,7 +897,7 @@ pub mod application_gateways {
     }
 }
 pub mod network_interfaces {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -923,7 +923,7 @@ pub mod network_interfaces {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -948,7 +948,7 @@ pub mod network_interfaces {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -992,7 +992,7 @@ pub mod network_interfaces {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -1024,7 +1024,7 @@ pub mod network_interfaces {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Created201(NetworkInterface),
@@ -1073,7 +1073,7 @@ pub mod network_interfaces {
                 .map_err(update_tags::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update_tags::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -1099,7 +1099,7 @@ pub mod network_interfaces {
         }
     }
     pub mod update_tags {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1142,7 +1142,7 @@ pub mod network_interfaces {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -1161,7 +1161,7 @@ pub mod network_interfaces {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -1206,7 +1206,7 @@ pub mod network_interfaces {
                 .map_err(list_all::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_all::Error::BuildRequestError)?;
@@ -1231,7 +1231,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1272,7 +1272,7 @@ pub mod network_interfaces {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -1294,7 +1294,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1337,7 +1337,7 @@ pub mod network_interfaces {
                 .map_err(get_effective_route_table::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -1366,7 +1366,7 @@ pub mod network_interfaces {
         }
     }
     pub mod get_effective_route_table {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(EffectiveRouteListResult),
@@ -1414,7 +1414,7 @@ pub mod network_interfaces {
                 .map_err(list_effective_network_security_groups::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -1443,7 +1443,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_effective_network_security_groups {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(EffectiveNetworkSecurityGroupListResult),
@@ -1486,7 +1486,7 @@ pub mod network_interfaces {
                 .map_err(list_virtual_machine_scale_set_vm_network_interfaces::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -1514,7 +1514,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_virtual_machine_scale_set_vm_network_interfaces {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1557,7 +1557,7 @@ pub mod network_interfaces {
                 .map_err(list_virtual_machine_scale_set_network_interfaces::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -1585,7 +1585,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_virtual_machine_scale_set_network_interfaces {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1625,7 +1625,7 @@ pub mod network_interfaces {
                 .map_err(get_virtual_machine_scale_set_network_interface::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -1655,7 +1655,7 @@ pub mod network_interfaces {
         }
     }
     pub mod get_virtual_machine_scale_set_network_interface {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1695,7 +1695,7 @@ pub mod network_interfaces {
                 .map_err(list_virtual_machine_scale_set_ip_configurations::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -1726,7 +1726,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_virtual_machine_scale_set_ip_configurations {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1767,7 +1767,7 @@ pub mod network_interfaces {
                 .map_err(get_virtual_machine_scale_set_ip_configuration::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -1797,7 +1797,7 @@ pub mod network_interfaces {
         }
     }
     pub mod get_virtual_machine_scale_set_ip_configuration {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1818,7 +1818,7 @@ pub mod network_interfaces {
     }
 }
 pub mod network_interface_ip_configurations {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -1843,7 +1843,7 @@ pub mod network_interface_ip_configurations {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -1865,7 +1865,7 @@ pub mod network_interface_ip_configurations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1910,7 +1910,7 @@ pub mod network_interface_ip_configurations {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -1932,7 +1932,7 @@ pub mod network_interface_ip_configurations {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1953,7 +1953,7 @@ pub mod network_interface_ip_configurations {
     }
 }
 pub mod network_interface_load_balancers {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -1978,7 +1978,7 @@ pub mod network_interface_load_balancers {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -2000,7 +2000,7 @@ pub mod network_interface_load_balancers {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2021,7 +2021,7 @@ pub mod network_interface_load_balancers {
     }
 }
 pub mod load_balancers {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -2047,7 +2047,7 @@ pub mod load_balancers {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -2072,7 +2072,7 @@ pub mod load_balancers {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2116,7 +2116,7 @@ pub mod load_balancers {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -2148,7 +2148,7 @@ pub mod load_balancers {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Created201(LoadBalancer),
@@ -2197,7 +2197,7 @@ pub mod load_balancers {
                 .map_err(update_tags::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update_tags::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -2223,7 +2223,7 @@ pub mod load_balancers {
         }
     }
     pub mod update_tags {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2266,7 +2266,7 @@ pub mod load_balancers {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -2285,7 +2285,7 @@ pub mod load_balancers {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -2330,7 +2330,7 @@ pub mod load_balancers {
                 .map_err(list_all::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_all::Error::BuildRequestError)?;
@@ -2355,7 +2355,7 @@ pub mod load_balancers {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2396,7 +2396,7 @@ pub mod load_balancers {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -2418,7 +2418,7 @@ pub mod load_balancers {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2439,7 +2439,7 @@ pub mod load_balancers {
     }
 }
 pub mod load_balancer_backend_address_pools {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -2464,7 +2464,7 @@ pub mod load_balancer_backend_address_pools {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -2486,7 +2486,7 @@ pub mod load_balancer_backend_address_pools {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2531,7 +2531,7 @@ pub mod load_balancer_backend_address_pools {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -2553,7 +2553,7 @@ pub mod load_balancer_backend_address_pools {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2574,7 +2574,7 @@ pub mod load_balancer_backend_address_pools {
     }
 }
 pub mod load_balancer_frontend_ip_configurations {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -2599,7 +2599,7 @@ pub mod load_balancer_frontend_ip_configurations {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -2621,7 +2621,7 @@ pub mod load_balancer_frontend_ip_configurations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2666,7 +2666,7 @@ pub mod load_balancer_frontend_ip_configurations {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -2688,7 +2688,7 @@ pub mod load_balancer_frontend_ip_configurations {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2709,7 +2709,7 @@ pub mod load_balancer_frontend_ip_configurations {
     }
 }
 pub mod inbound_nat_rules {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -2734,7 +2734,7 @@ pub mod inbound_nat_rules {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -2756,7 +2756,7 @@ pub mod inbound_nat_rules {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2802,7 +2802,7 @@ pub mod inbound_nat_rules {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -2827,7 +2827,7 @@ pub mod inbound_nat_rules {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2873,7 +2873,7 @@ pub mod inbound_nat_rules {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(inbound_nat_rule_parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -2905,7 +2905,7 @@ pub mod inbound_nat_rules {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Created201(InboundNatRule),
@@ -2955,7 +2955,7 @@ pub mod inbound_nat_rules {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -2974,7 +2974,7 @@ pub mod inbound_nat_rules {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -3001,7 +3001,7 @@ pub mod inbound_nat_rules {
     }
 }
 pub mod load_balancer_load_balancing_rules {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -3026,7 +3026,7 @@ pub mod load_balancer_load_balancing_rules {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -3048,7 +3048,7 @@ pub mod load_balancer_load_balancing_rules {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3093,7 +3093,7 @@ pub mod load_balancer_load_balancing_rules {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -3115,7 +3115,7 @@ pub mod load_balancer_load_balancing_rules {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3136,7 +3136,7 @@ pub mod load_balancer_load_balancing_rules {
     }
 }
 pub mod load_balancer_network_interfaces {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -3161,7 +3161,7 @@ pub mod load_balancer_network_interfaces {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -3183,7 +3183,7 @@ pub mod load_balancer_network_interfaces {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3204,7 +3204,7 @@ pub mod load_balancer_network_interfaces {
     }
 }
 pub mod load_balancer_probes {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -3229,7 +3229,7 @@ pub mod load_balancer_probes {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -3251,7 +3251,7 @@ pub mod load_balancer_probes {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3296,7 +3296,7 @@ pub mod load_balancer_probes {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -3318,7 +3318,7 @@ pub mod load_balancer_probes {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3339,7 +3339,7 @@ pub mod load_balancer_probes {
     }
 }
 pub mod virtual_networks {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -3365,7 +3365,7 @@ pub mod virtual_networks {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -3390,7 +3390,7 @@ pub mod virtual_networks {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3434,7 +3434,7 @@ pub mod virtual_networks {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -3466,7 +3466,7 @@ pub mod virtual_networks {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(VirtualNetwork),
@@ -3515,7 +3515,7 @@ pub mod virtual_networks {
                 .map_err(update_tags::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update_tags::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -3541,7 +3541,7 @@ pub mod virtual_networks {
         }
     }
     pub mod update_tags {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3584,7 +3584,7 @@ pub mod virtual_networks {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -3603,7 +3603,7 @@ pub mod virtual_networks {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -3648,7 +3648,7 @@ pub mod virtual_networks {
                 .map_err(list_all::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_all::Error::BuildRequestError)?;
@@ -3673,7 +3673,7 @@ pub mod virtual_networks {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3714,7 +3714,7 @@ pub mod virtual_networks {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -3736,7 +3736,7 @@ pub mod virtual_networks {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3780,7 +3780,7 @@ pub mod virtual_networks {
                 .map_err(check_ip_address_availability::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(ip_address) = ip_address {
             url.query_pairs_mut().append_pair("ipAddress", ip_address);
         }
@@ -3810,7 +3810,7 @@ pub mod virtual_networks {
         }
     }
     pub mod check_ip_address_availability {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3853,7 +3853,7 @@ pub mod virtual_networks {
                 .map_err(list_usage::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_usage::Error::BuildRequestError)?;
@@ -3878,7 +3878,7 @@ pub mod virtual_networks {
         }
     }
     pub mod list_usage {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3899,7 +3899,7 @@ pub mod virtual_networks {
     }
 }
 pub mod subnets {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -3927,7 +3927,7 @@ pub mod subnets {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -3952,7 +3952,7 @@ pub mod subnets {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3998,7 +3998,7 @@ pub mod subnets {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(subnet_parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -4030,7 +4030,7 @@ pub mod subnets {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Subnet),
@@ -4080,7 +4080,7 @@ pub mod subnets {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -4099,7 +4099,7 @@ pub mod subnets {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4148,7 +4148,7 @@ pub mod subnets {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -4170,7 +4170,7 @@ pub mod subnets {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4191,7 +4191,7 @@ pub mod subnets {
     }
 }
 pub mod virtual_network_peerings {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -4218,7 +4218,7 @@ pub mod virtual_network_peerings {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -4240,7 +4240,7 @@ pub mod virtual_network_peerings {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4286,7 +4286,7 @@ pub mod virtual_network_peerings {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(virtual_network_peering_parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -4318,7 +4318,7 @@ pub mod virtual_network_peerings {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(VirtualNetworkPeering),
@@ -4368,7 +4368,7 @@ pub mod virtual_network_peerings {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -4387,7 +4387,7 @@ pub mod virtual_network_peerings {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4436,7 +4436,7 @@ pub mod virtual_network_peerings {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -4458,7 +4458,7 @@ pub mod virtual_network_peerings {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4479,7 +4479,7 @@ pub mod virtual_network_peerings {
     }
 }
 pub mod network_security_groups {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -4505,7 +4505,7 @@ pub mod network_security_groups {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -4530,7 +4530,7 @@ pub mod network_security_groups {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4574,7 +4574,7 @@ pub mod network_security_groups {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -4606,7 +4606,7 @@ pub mod network_security_groups {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Created201(NetworkSecurityGroup),
@@ -4655,7 +4655,7 @@ pub mod network_security_groups {
                 .map_err(update_tags::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update_tags::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -4681,7 +4681,7 @@ pub mod network_security_groups {
         }
     }
     pub mod update_tags {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4724,7 +4724,7 @@ pub mod network_security_groups {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -4743,7 +4743,7 @@ pub mod network_security_groups {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -4788,7 +4788,7 @@ pub mod network_security_groups {
                 .map_err(list_all::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_all::Error::BuildRequestError)?;
@@ -4813,7 +4813,7 @@ pub mod network_security_groups {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4854,7 +4854,7 @@ pub mod network_security_groups {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -4876,7 +4876,7 @@ pub mod network_security_groups {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4897,7 +4897,7 @@ pub mod network_security_groups {
     }
 }
 pub mod security_rules {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -4924,7 +4924,7 @@ pub mod security_rules {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -4946,7 +4946,7 @@ pub mod security_rules {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4992,7 +4992,7 @@ pub mod security_rules {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(security_rule_parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -5024,7 +5024,7 @@ pub mod security_rules {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(SecurityRule),
@@ -5074,7 +5074,7 @@ pub mod security_rules {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -5093,7 +5093,7 @@ pub mod security_rules {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -5142,7 +5142,7 @@ pub mod security_rules {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -5164,7 +5164,7 @@ pub mod security_rules {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5185,7 +5185,7 @@ pub mod security_rules {
     }
 }
 pub mod default_security_rules {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -5210,7 +5210,7 @@ pub mod default_security_rules {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -5232,7 +5232,7 @@ pub mod default_security_rules {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5277,7 +5277,7 @@ pub mod default_security_rules {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -5299,7 +5299,7 @@ pub mod default_security_rules {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5320,7 +5320,7 @@ pub mod default_security_rules {
     }
 }
 pub mod application_security_groups {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -5345,7 +5345,7 @@ pub mod application_security_groups {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -5367,7 +5367,7 @@ pub mod application_security_groups {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5411,7 +5411,7 @@ pub mod application_security_groups {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -5443,7 +5443,7 @@ pub mod application_security_groups {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Created201(ApplicationSecurityGroup),
@@ -5491,7 +5491,7 @@ pub mod application_security_groups {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -5510,7 +5510,7 @@ pub mod application_security_groups {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -5555,7 +5555,7 @@ pub mod application_security_groups {
                 .map_err(list_all::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_all::Error::BuildRequestError)?;
@@ -5580,7 +5580,7 @@ pub mod application_security_groups {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5621,7 +5621,7 @@ pub mod application_security_groups {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -5643,7 +5643,7 @@ pub mod application_security_groups {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5664,7 +5664,7 @@ pub mod application_security_groups {
     }
 }
 pub mod route_tables {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -5690,7 +5690,7 @@ pub mod route_tables {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -5715,7 +5715,7 @@ pub mod route_tables {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5759,7 +5759,7 @@ pub mod route_tables {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -5791,7 +5791,7 @@ pub mod route_tables {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(RouteTable),
@@ -5840,7 +5840,7 @@ pub mod route_tables {
                 .map_err(update_tags::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update_tags::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -5866,7 +5866,7 @@ pub mod route_tables {
         }
     }
     pub mod update_tags {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5909,7 +5909,7 @@ pub mod route_tables {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -5928,7 +5928,7 @@ pub mod route_tables {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -5975,7 +5975,7 @@ pub mod route_tables {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -5997,7 +5997,7 @@ pub mod route_tables {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6036,7 +6036,7 @@ pub mod route_tables {
                 .map_err(list_all::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_all::Error::BuildRequestError)?;
@@ -6061,7 +6061,7 @@ pub mod route_tables {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6082,7 +6082,7 @@ pub mod route_tables {
     }
 }
 pub mod routes {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -6109,7 +6109,7 @@ pub mod routes {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -6131,7 +6131,7 @@ pub mod routes {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6177,7 +6177,7 @@ pub mod routes {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(route_parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -6209,7 +6209,7 @@ pub mod routes {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(Route),
@@ -6259,7 +6259,7 @@ pub mod routes {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -6278,7 +6278,7 @@ pub mod routes {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -6327,7 +6327,7 @@ pub mod routes {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -6349,7 +6349,7 @@ pub mod routes {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6370,7 +6370,7 @@ pub mod routes {
     }
 }
 pub mod public_ip_addresses {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -6396,7 +6396,7 @@ pub mod public_ip_addresses {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -6421,7 +6421,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6465,7 +6465,7 @@ pub mod public_ip_addresses {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -6497,7 +6497,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Created201(PublicIpAddress),
@@ -6546,7 +6546,7 @@ pub mod public_ip_addresses {
                 .map_err(update_tags::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update_tags::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -6572,7 +6572,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod update_tags {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6615,7 +6615,7 @@ pub mod public_ip_addresses {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -6634,7 +6634,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -6679,7 +6679,7 @@ pub mod public_ip_addresses {
                 .map_err(list_all::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_all::Error::BuildRequestError)?;
@@ -6704,7 +6704,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6745,7 +6745,7 @@ pub mod public_ip_addresses {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -6767,7 +6767,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6810,7 +6810,7 @@ pub mod public_ip_addresses {
                 .map_err(list_virtual_machine_scale_set_public_ip_addresses::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -6838,7 +6838,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod list_virtual_machine_scale_set_public_ip_addresses {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6878,7 +6878,7 @@ pub mod public_ip_addresses {
                 .map_err(list_virtual_machine_scale_set_vm_public_ip_addresses::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -6906,7 +6906,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod list_virtual_machine_scale_set_vm_public_ip_addresses {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6948,7 +6948,7 @@ pub mod public_ip_addresses {
                 .map_err(get_virtual_machine_scale_set_public_ip_address::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -6978,7 +6978,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod get_virtual_machine_scale_set_public_ip_address {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7021,7 +7021,7 @@ pub async fn check_dns_name_availability(
             .map_err(check_dns_name_availability::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     url.query_pairs_mut().append_pair("domainNameLabel", domain_name_label);
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -7049,7 +7049,7 @@ pub async fn check_dns_name_availability(
     }
 }
 pub mod check_dns_name_availability {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Unexpected HTTP status code {}", status_code)]
@@ -7069,7 +7069,7 @@ pub mod check_dns_name_availability {
     }
 }
 pub mod available_endpoint_services {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         location: &str,
@@ -7092,7 +7092,7 @@ pub mod available_endpoint_services {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -7114,7 +7114,7 @@ pub mod available_endpoint_services {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7135,7 +7135,7 @@ pub mod available_endpoint_services {
     }
 }
 pub mod express_route_circuit_authorizations {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -7162,7 +7162,7 @@ pub mod express_route_circuit_authorizations {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -7184,7 +7184,7 @@ pub mod express_route_circuit_authorizations {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7230,7 +7230,7 @@ pub mod express_route_circuit_authorizations {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(authorization_parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -7262,7 +7262,7 @@ pub mod express_route_circuit_authorizations {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Created201(ExpressRouteCircuitAuthorization),
@@ -7312,7 +7312,7 @@ pub mod express_route_circuit_authorizations {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -7331,7 +7331,7 @@ pub mod express_route_circuit_authorizations {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -7380,7 +7380,7 @@ pub mod express_route_circuit_authorizations {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -7402,7 +7402,7 @@ pub mod express_route_circuit_authorizations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7423,7 +7423,7 @@ pub mod express_route_circuit_authorizations {
     }
 }
 pub mod express_route_circuit_peerings {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -7450,7 +7450,7 @@ pub mod express_route_circuit_peerings {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -7472,7 +7472,7 @@ pub mod express_route_circuit_peerings {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7518,7 +7518,7 @@ pub mod express_route_circuit_peerings {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(peering_parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -7550,7 +7550,7 @@ pub mod express_route_circuit_peerings {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ExpressRouteCircuitPeering),
@@ -7600,7 +7600,7 @@ pub mod express_route_circuit_peerings {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -7619,7 +7619,7 @@ pub mod express_route_circuit_peerings {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -7668,7 +7668,7 @@ pub mod express_route_circuit_peerings {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -7690,7 +7690,7 @@ pub mod express_route_circuit_peerings {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7711,7 +7711,7 @@ pub mod express_route_circuit_peerings {
     }
 }
 pub mod express_route_circuits {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -7736,7 +7736,7 @@ pub mod express_route_circuits {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -7758,7 +7758,7 @@ pub mod express_route_circuits {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7802,7 +7802,7 @@ pub mod express_route_circuits {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -7834,7 +7834,7 @@ pub mod express_route_circuits {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Created201(ExpressRouteCircuit),
@@ -7883,7 +7883,7 @@ pub mod express_route_circuits {
                 .map_err(update_tags::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update_tags::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -7909,7 +7909,7 @@ pub mod express_route_circuits {
         }
     }
     pub mod update_tags {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7952,7 +7952,7 @@ pub mod express_route_circuits {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -7971,7 +7971,7 @@ pub mod express_route_circuits {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -8024,7 +8024,7 @@ pub mod express_route_circuits {
                 .map_err(list_arp_table::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -8051,7 +8051,7 @@ pub mod express_route_circuits {
         }
     }
     pub mod list_arp_table {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ExpressRouteCircuitsArpTableListResult),
@@ -8103,7 +8103,7 @@ pub mod express_route_circuits {
                 .map_err(list_routes_table::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -8130,7 +8130,7 @@ pub mod express_route_circuits {
         }
     }
     pub mod list_routes_table {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ExpressRouteCircuitsRoutesTableListResult),
@@ -8182,7 +8182,7 @@ pub mod express_route_circuits {
                 .map_err(list_routes_table_summary::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -8211,7 +8211,7 @@ pub mod express_route_circuits {
         }
     }
     pub mod list_routes_table_summary {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ExpressRouteCircuitsRoutesTableSummaryListResult),
@@ -8259,7 +8259,7 @@ pub mod express_route_circuits {
                 .map_err(get_stats::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get_stats::Error::BuildRequestError)?;
@@ -8284,7 +8284,7 @@ pub mod express_route_circuits {
         }
     }
     pub mod get_stats {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8329,7 +8329,7 @@ pub mod express_route_circuits {
                 .map_err(get_peering_stats::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get_peering_stats::Error::BuildRequestError)?;
@@ -8354,7 +8354,7 @@ pub mod express_route_circuits {
         }
     }
     pub mod get_peering_stats {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8395,7 +8395,7 @@ pub mod express_route_circuits {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -8417,7 +8417,7 @@ pub mod express_route_circuits {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8456,7 +8456,7 @@ pub mod express_route_circuits {
                 .map_err(list_all::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_all::Error::BuildRequestError)?;
@@ -8481,7 +8481,7 @@ pub mod express_route_circuits {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8502,7 +8502,7 @@ pub mod express_route_circuits {
     }
 }
 pub mod express_route_service_providers {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -8523,7 +8523,7 @@ pub mod express_route_service_providers {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -8545,7 +8545,7 @@ pub mod express_route_service_providers {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8566,7 +8566,7 @@ pub mod express_route_service_providers {
     }
 }
 pub mod route_filters {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -8592,7 +8592,7 @@ pub mod route_filters {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -8617,7 +8617,7 @@ pub mod route_filters {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8661,7 +8661,7 @@ pub mod route_filters {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(route_filter_parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -8693,7 +8693,7 @@ pub mod route_filters {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(RouteFilter),
@@ -8742,7 +8742,7 @@ pub mod route_filters {
                 .map_err(update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(route_filter_parameters).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -8765,7 +8765,7 @@ pub mod route_filters {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8808,7 +8808,7 @@ pub mod route_filters {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -8827,7 +8827,7 @@ pub mod route_filters {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -8874,7 +8874,7 @@ pub mod route_filters {
                 .map_err(list_by_resource_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -8901,7 +8901,7 @@ pub mod route_filters {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8940,7 +8940,7 @@ pub mod route_filters {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -8962,7 +8962,7 @@ pub mod route_filters {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8983,7 +8983,7 @@ pub mod route_filters {
     }
 }
 pub mod route_filter_rules {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -9010,7 +9010,7 @@ pub mod route_filter_rules {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -9032,7 +9032,7 @@ pub mod route_filter_rules {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9078,7 +9078,7 @@ pub mod route_filter_rules {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(route_filter_rule_parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -9110,7 +9110,7 @@ pub mod route_filter_rules {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(RouteFilterRule),
@@ -9161,7 +9161,7 @@ pub mod route_filter_rules {
                 .map_err(update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(route_filter_rule_parameters).map_err(update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -9184,7 +9184,7 @@ pub mod route_filter_rules {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9229,7 +9229,7 @@ pub mod route_filter_rules {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -9248,7 +9248,7 @@ pub mod route_filter_rules {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -9297,7 +9297,7 @@ pub mod route_filter_rules {
                 .map_err(list_by_route_filter::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_by_route_filter::Error::BuildRequestError)?;
@@ -9322,7 +9322,7 @@ pub mod route_filter_rules {
         }
     }
     pub mod list_by_route_filter {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9343,7 +9343,7 @@ pub mod route_filter_rules {
     }
 }
 pub mod network_watchers {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -9368,7 +9368,7 @@ pub mod network_watchers {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -9390,7 +9390,7 @@ pub mod network_watchers {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9434,7 +9434,7 @@ pub mod network_watchers {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -9466,7 +9466,7 @@ pub mod network_watchers {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(NetworkWatcher),
@@ -9515,7 +9515,7 @@ pub mod network_watchers {
                 .map_err(update_tags::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update_tags::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -9541,7 +9541,7 @@ pub mod network_watchers {
         }
     }
     pub mod update_tags {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9584,7 +9584,7 @@ pub mod network_watchers {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -9602,7 +9602,7 @@ pub mod network_watchers {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -9648,7 +9648,7 @@ pub mod network_watchers {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -9670,7 +9670,7 @@ pub mod network_watchers {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9709,7 +9709,7 @@ pub mod network_watchers {
                 .map_err(list_all::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_all::Error::BuildRequestError)?;
@@ -9734,7 +9734,7 @@ pub mod network_watchers {
         }
     }
     pub mod list_all {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9778,7 +9778,7 @@ pub mod network_watchers {
                 .map_err(get_topology::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(get_topology::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -9804,7 +9804,7 @@ pub mod network_watchers {
         }
     }
     pub mod get_topology {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9848,7 +9848,7 @@ pub mod network_watchers {
                 .map_err(verify_ip_flow::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(verify_ip_flow::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -9880,7 +9880,7 @@ pub mod network_watchers {
         }
     }
     pub mod verify_ip_flow {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(VerificationIpFlowResult),
@@ -9929,7 +9929,7 @@ pub mod network_watchers {
                 .map_err(get_next_hop::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(get_next_hop::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -9961,7 +9961,7 @@ pub mod network_watchers {
         }
     }
     pub mod get_next_hop {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(NextHopResult),
@@ -10010,7 +10010,7 @@ pub mod network_watchers {
                 .map_err(get_vm_security_rules::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(get_vm_security_rules::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -10044,7 +10044,7 @@ pub mod network_watchers {
         }
     }
     pub mod get_vm_security_rules {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(SecurityGroupViewResult),
@@ -10093,7 +10093,7 @@ pub mod network_watchers {
                 .map_err(get_troubleshooting::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(get_troubleshooting::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -10125,7 +10125,7 @@ pub mod network_watchers {
         }
     }
     pub mod get_troubleshooting {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(TroubleshootingResult),
@@ -10174,7 +10174,7 @@ pub mod network_watchers {
                 .map_err(get_troubleshooting_result::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(get_troubleshooting_result::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -10208,7 +10208,7 @@ pub mod network_watchers {
         }
     }
     pub mod get_troubleshooting_result {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(TroubleshootingResult),
@@ -10257,7 +10257,7 @@ pub mod network_watchers {
                 .map_err(set_flow_log_configuration::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(set_flow_log_configuration::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -10291,7 +10291,7 @@ pub mod network_watchers {
         }
     }
     pub mod set_flow_log_configuration {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(FlowLogInformation),
@@ -10340,7 +10340,7 @@ pub mod network_watchers {
                 .map_err(get_flow_log_status::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(get_flow_log_status::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -10372,7 +10372,7 @@ pub mod network_watchers {
         }
     }
     pub mod get_flow_log_status {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(FlowLogInformation),
@@ -10421,7 +10421,7 @@ pub mod network_watchers {
                 .map_err(check_connectivity::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(check_connectivity::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -10453,7 +10453,7 @@ pub mod network_watchers {
         }
     }
     pub mod check_connectivity {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ConnectivityInformation),
@@ -10502,7 +10502,7 @@ pub mod network_watchers {
                 .map_err(get_azure_reachability_report::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(get_azure_reachability_report::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -10536,7 +10536,7 @@ pub mod network_watchers {
         }
     }
     pub mod get_azure_reachability_report {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(AzureReachabilityReport),
@@ -10585,7 +10585,7 @@ pub mod network_watchers {
                 .map_err(list_available_providers::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(list_available_providers::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -10619,7 +10619,7 @@ pub mod network_watchers {
         }
     }
     pub mod list_available_providers {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(AvailableProvidersList),
@@ -10645,7 +10645,7 @@ pub mod network_watchers {
     }
 }
 pub mod packet_captures {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -10672,7 +10672,7 @@ pub mod packet_captures {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -10694,7 +10694,7 @@ pub mod packet_captures {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10740,7 +10740,7 @@ pub mod packet_captures {
                 .map_err(create::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -10763,7 +10763,7 @@ pub mod packet_captures {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10808,7 +10808,7 @@ pub mod packet_captures {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -10826,7 +10826,7 @@ pub mod packet_captures {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -10876,7 +10876,7 @@ pub mod packet_captures {
                 .map_err(stop::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -10895,7 +10895,7 @@ pub mod packet_captures {
         }
     }
     pub mod stop {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -10945,7 +10945,7 @@ pub mod packet_captures {
                 .map_err(get_status::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -10977,7 +10977,7 @@ pub mod packet_captures {
         }
     }
     pub mod get_status {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(PacketCaptureQueryStatusResult),
@@ -11025,7 +11025,7 @@ pub mod packet_captures {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -11047,7 +11047,7 @@ pub mod packet_captures {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11068,7 +11068,7 @@ pub mod packet_captures {
     }
 }
 pub mod connection_monitors {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -11095,7 +11095,7 @@ pub mod connection_monitors {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -11117,7 +11117,7 @@ pub mod connection_monitors {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11163,7 +11163,7 @@ pub mod connection_monitors {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -11195,7 +11195,7 @@ pub mod connection_monitors {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ConnectionMonitorResult),
@@ -11245,7 +11245,7 @@ pub mod connection_monitors {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -11263,7 +11263,7 @@ pub mod connection_monitors {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -11313,7 +11313,7 @@ pub mod connection_monitors {
                 .map_err(stop::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -11332,7 +11332,7 @@ pub mod connection_monitors {
         }
     }
     pub mod stop {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -11382,7 +11382,7 @@ pub mod connection_monitors {
                 .map_err(start::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -11401,7 +11401,7 @@ pub mod connection_monitors {
         }
     }
     pub mod start {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -11451,7 +11451,7 @@ pub mod connection_monitors {
                 .map_err(query::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -11480,7 +11480,7 @@ pub mod connection_monitors {
         }
     }
     pub mod query {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ConnectionMonitorQueryResult),
@@ -11528,7 +11528,7 @@ pub mod connection_monitors {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -11550,7 +11550,7 @@ pub mod connection_monitors {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11571,7 +11571,7 @@ pub mod connection_monitors {
     }
 }
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Network/operations", operation_config.base_path(),);
@@ -11585,7 +11585,7 @@ pub mod operations {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -11607,7 +11607,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11628,7 +11628,7 @@ pub mod operations {
     }
 }
 pub mod bgp_service_communities {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -11649,7 +11649,7 @@ pub mod bgp_service_communities {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -11671,7 +11671,7 @@ pub mod bgp_service_communities {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11692,7 +11692,7 @@ pub mod bgp_service_communities {
     }
 }
 pub mod usages {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         location: &str,
@@ -11715,7 +11715,7 @@ pub mod usages {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -11737,7 +11737,7 @@ pub mod usages {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11758,7 +11758,7 @@ pub mod usages {
     }
 }
 pub mod virtual_network_gateways {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -11783,7 +11783,7 @@ pub mod virtual_network_gateways {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -11805,7 +11805,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11849,7 +11849,7 @@ pub mod virtual_network_gateways {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -11881,7 +11881,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(VirtualNetworkGateway),
@@ -11930,7 +11930,7 @@ pub mod virtual_network_gateways {
                 .map_err(update_tags::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update_tags::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -11956,7 +11956,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod update_tags {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11999,7 +11999,7 @@ pub mod virtual_network_gateways {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -12018,7 +12018,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -12065,7 +12065,7 @@ pub mod virtual_network_gateways {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -12087,7 +12087,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -12130,7 +12130,7 @@ pub mod virtual_network_gateways {
                 .map_err(list_connections::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_connections::Error::BuildRequestError)?;
@@ -12155,7 +12155,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod list_connections {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -12199,7 +12199,7 @@ pub mod virtual_network_gateways {
                 .map_err(reset::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(gateway_vip) = gateway_vip {
             url.query_pairs_mut().append_pair("gatewayVip", gateway_vip);
         }
@@ -12226,7 +12226,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod reset {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -12275,7 +12275,7 @@ pub mod virtual_network_gateways {
                 .map_err(generatevpnclientpackage::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(generatevpnclientpackage::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -12304,7 +12304,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod generatevpnclientpackage {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(String),
@@ -12353,7 +12353,7 @@ pub mod virtual_network_gateways {
                 .map_err(generate_vpn_profile::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(generate_vpn_profile::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -12380,7 +12380,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod generate_vpn_profile {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(String),
@@ -12428,7 +12428,7 @@ pub mod virtual_network_gateways {
                 .map_err(get_vpn_profile_package_url::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -12457,7 +12457,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod get_vpn_profile_package_url {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(String),
@@ -12506,7 +12506,7 @@ pub mod virtual_network_gateways {
                 .map_err(get_bgp_peer_status::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(peer) = peer {
             url.query_pairs_mut().append_pair("peer", peer);
         }
@@ -12536,7 +12536,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod get_bgp_peer_status {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(BgpPeerStatusListResult),
@@ -12584,7 +12584,7 @@ pub mod virtual_network_gateways {
                 .map_err(supported_vpn_devices::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -12612,7 +12612,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod supported_vpn_devices {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -12655,7 +12655,7 @@ pub mod virtual_network_gateways {
                 .map_err(get_learned_routes::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
@@ -12682,7 +12682,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod get_learned_routes {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(GatewayRouteListResult),
@@ -12731,7 +12731,7 @@ pub mod virtual_network_gateways {
                 .map_err(get_advertised_routes::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         url.query_pairs_mut().append_pair("peer", peer);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
@@ -12761,7 +12761,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod get_advertised_routes {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(GatewayRouteListResult),
@@ -12810,7 +12810,7 @@ pub mod virtual_network_gateways {
                 .map_err(vpn_device_configuration_script::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(vpn_device_configuration_script::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -12838,7 +12838,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod vpn_device_configuration_script {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -12859,7 +12859,7 @@ pub mod virtual_network_gateways {
     }
 }
 pub mod virtual_network_gateway_connections {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -12884,7 +12884,7 @@ pub mod virtual_network_gateway_connections {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -12906,7 +12906,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -12950,7 +12950,7 @@ pub mod virtual_network_gateway_connections {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -12982,7 +12982,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(VirtualNetworkGatewayConnection),
@@ -13031,7 +13031,7 @@ pub mod virtual_network_gateway_connections {
                 .map_err(update_tags::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update_tags::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -13057,7 +13057,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod update_tags {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -13100,7 +13100,7 @@ pub mod virtual_network_gateway_connections {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -13119,7 +13119,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -13168,7 +13168,7 @@ pub mod virtual_network_gateway_connections {
                 .map_err(get_shared_key::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get_shared_key::Error::BuildRequestError)?;
@@ -13193,7 +13193,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod get_shared_key {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -13237,7 +13237,7 @@ pub mod virtual_network_gateway_connections {
                 .map_err(set_shared_key::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(set_shared_key::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -13269,7 +13269,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod set_shared_key {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Created201(ConnectionSharedKey),
@@ -13315,7 +13315,7 @@ pub mod virtual_network_gateway_connections {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -13337,7 +13337,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -13381,7 +13381,7 @@ pub mod virtual_network_gateway_connections {
                 .map_err(reset_shared_key::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(reset_shared_key::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -13408,7 +13408,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod reset_shared_key {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(ConnectionResetSharedKey),
@@ -13434,7 +13434,7 @@ pub mod virtual_network_gateway_connections {
     }
 }
 pub mod local_network_gateways {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -13459,7 +13459,7 @@ pub mod local_network_gateways {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
@@ -13481,7 +13481,7 @@ pub mod local_network_gateways {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -13525,7 +13525,7 @@ pub mod local_network_gateways {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -13557,7 +13557,7 @@ pub mod local_network_gateways {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Created201(LocalNetworkGateway),
@@ -13606,7 +13606,7 @@ pub mod local_network_gateways {
                 .map_err(update_tags::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(update_tags::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -13632,7 +13632,7 @@ pub mod local_network_gateways {
         }
     }
     pub mod update_tags {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -13675,7 +13675,7 @@ pub mod local_network_gateways {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
@@ -13694,7 +13694,7 @@ pub mod local_network_gateways {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -13741,7 +13741,7 @@ pub mod local_network_gateways {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -13763,7 +13763,7 @@ pub mod local_network_gateways {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

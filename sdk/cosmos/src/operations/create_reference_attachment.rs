@@ -38,7 +38,7 @@ impl<'a> CreateReferenceAttachmentOptions<'a> {
         attachment_name: &str,
         media: M,
         content_type: C,
-    ) -> Result<(), crate::Error>
+    ) -> crate::Result<()>
     where
         M: AsRef<str>,
         C: Into<ContentType<'c>>,
@@ -97,7 +97,7 @@ pub struct CreateReferenceAttachmentResponse {
 }
 
 impl CreateReferenceAttachmentResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

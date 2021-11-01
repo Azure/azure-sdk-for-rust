@@ -60,7 +60,7 @@ impl TableServiceClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
+    ) -> crate::Result<(Request<Bytes>, url::Url)> {
         self.storage_client
             .storage_account_client()
             .prepare_request(

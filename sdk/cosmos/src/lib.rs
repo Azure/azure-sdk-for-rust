@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     Ok(())
 }
 ```
-!*/
+*/
 
 #![warn(unused_extern_crates)]
 #![deny(missing_docs)]
@@ -125,6 +125,6 @@ pub use resource_quota::ResourceQuota;
 pub(crate) use slug::Slug;
 pub(crate) use time_nonce::TimeNonce;
 
-pub use errors::Error;
+pub use errors::{Error, Result};
 
 type ReadonlyString = std::borrow::Cow<'static, str>;

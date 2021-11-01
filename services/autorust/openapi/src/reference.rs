@@ -105,8 +105,8 @@ impl<'de> serde::de::Visitor<'de> for ReferenceVisitor {
                 } else {
                     (Some(s[0..i].to_string()), &s[i + 2..])
                 };
-                let path = s.split('/').collect::<Vec<_>>();
-                let mut path: Vec<String> = path.into_iter().map(str::to_owned).collect();
+
+                let mut path: Vec<String> = s.split('/').map(str::to_owned).collect();
                 let name = path.pop();
                 Reference { file, path, name }
             }
@@ -124,7 +124,7 @@ impl Serialize for Reference {
         let path = &self.path.join("/");
         if !path.is_empty() {
             str.push_str("#/");
-            str.push_str(&path);
+            str.push_str(path);
         }
         if let Some(name) = self.name.as_ref() {
             str.push('/');
@@ -138,7 +138,6 @@ impl Serialize for Reference {
 mod tests {
     use super::*;
     use crate::{Parameter, ReferenceOr};
-    use serde_json;
 
     #[test]
     fn can_parse_common_types() {
@@ -186,7 +185,7 @@ mod tests {
     fn deserializes() {
         let json = r#"{"$ref":"foo/bar"}"#;
         assert_eq!(
-            serde_json::from_str::<ReferenceOr<Parameter>>(&json).unwrap(),
+            serde_json::from_str::<ReferenceOr<Parameter>>(json).unwrap(),
             ReferenceOr::<Parameter>::from_reference(Reference::from_file("foo/bar"))
         );
     }

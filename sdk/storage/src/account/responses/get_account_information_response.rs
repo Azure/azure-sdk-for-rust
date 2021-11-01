@@ -16,7 +16,7 @@ pub struct GetAccountInformationResponse {
 impl GetAccountInformationResponse {
     pub(crate) fn from_headers(
         headers: &HeaderMap,
-    ) -> Result<GetAccountInformationResponse, crate::Error> {
+    ) -> crate::Result<GetAccountInformationResponse> {
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
         let sku_name = sku_name_from_headers(headers)?;

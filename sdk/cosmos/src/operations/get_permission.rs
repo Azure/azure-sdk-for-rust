@@ -18,7 +18,7 @@ impl GetPermissionOptions {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> Result<(), crate::Error> {
+    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
 
         Ok(())

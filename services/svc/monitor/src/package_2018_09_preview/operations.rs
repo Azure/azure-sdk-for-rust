@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub mod metrics {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn create(
         operation_config: &crate::OperationConfig,
         content_type: &str,
@@ -40,7 +40,6 @@ pub mod metrics {
         req_builder = req_builder.header("Content-Type", content_type);
         req_builder = req_builder.header("Content-Length", content_length);
         req_builder = req_builder.header("Authorization", authorization);
-        req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(body).map_err(create::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
@@ -64,7 +63,7 @@ pub mod metrics {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

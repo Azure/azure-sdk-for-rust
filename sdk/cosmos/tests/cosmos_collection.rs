@@ -4,6 +4,7 @@ mod setup;
 use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use azure_cosmos::resources::collection::*;
+use futures::stream::StreamExt;
 
 #[tokio::test]
 async fn create_and_delete_collection() {
@@ -32,7 +33,12 @@ async fn create_and_delete_collection() {
         )
         .await
         .unwrap();
-    let collections = database_client.list_collections().execute().await.unwrap();
+    let collections =
+        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
+            .next()
+            .await
+            .unwrap()
+            .unwrap();
     assert!(collections.collections.len() == 1);
 
     // try to get the previously created collection
@@ -58,7 +64,12 @@ async fn create_and_delete_collection() {
         .delete_collection(Context::new(), DeleteCollectionOptions::new())
         .await
         .unwrap();
-    let collections = database_client.list_collections().execute().await.unwrap();
+    let collections =
+        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
+            .next()
+            .await
+            .unwrap()
+            .unwrap();
     assert!(collections.collections.len() == 0);
 
     database_client
@@ -99,7 +110,12 @@ async fn replace_collection() {
         .await
         .unwrap();
 
-    let collections = database_client.list_collections().execute().await.unwrap();
+    let collections =
+        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
+            .next()
+            .await
+            .unwrap()
+            .unwrap();
     assert_eq!(collections.collections.len(), 1);
     assert_eq!(
         collection.collection.indexing_policy,
@@ -141,7 +157,12 @@ async fn replace_collection() {
         .await
         .unwrap();
 
-    let collections = database_client.list_collections().execute().await.unwrap();
+    let collections =
+        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
+            .next()
+            .await
+            .unwrap()
+            .unwrap();
     assert_eq!(collections.collections.len(), 1);
     let eps: Vec<&ExcludedPath> = collections.collections[0]
         .indexing_policy

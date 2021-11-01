@@ -156,9 +156,9 @@ where
     T: std::str::FromStr,
     T::Err: Into<ParsingError>,
 {
-    Ok(get_str_from_headers(headers, key)?
+    get_str_from_headers(headers, key)?
         .parse()
-        .map_err(|e: T::Err| Error::ParsingError(e.into()))?)
+        .map_err(|e: T::Err| Error::ParsingError(e.into()))
 }
 
 pub fn get_option_from_headers<T>(headers: &HeaderMap, key: &str) -> Result<Option<T>, Error>

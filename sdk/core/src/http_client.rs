@@ -41,45 +41,15 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     async fn execute_request_check_status(
         &self,
         request: Request<Bytes>,
-        expected_status: StatusCode,
+        _expected_status: StatusCode,
     ) -> Result<Response<Bytes>, HttpError> {
         let response = self.execute_request(request).await?;
-        if expected_status != response.status() {
-            Err(HttpError::new_unexpected_status_code(
-                expected_status,
-                response.status(),
-                std::str::from_utf8(response.body())?,
-            ))
-        } else {
+        let status = response.status();
+        if (200..400).contains(&status.as_u16()) {
             Ok(response)
-        }
-    }
-
-    async fn execute_request_check_statuses(
-        &self,
-        request: Request<Bytes>,
-        expected_statuses: &[StatusCode],
-    ) -> Result<Response<Bytes>, HttpError> {
-        let response = self.execute_request(request).await?;
-        if !expected_statuses
-            .iter()
-            .any(|expected_status| *expected_status == response.status())
-        {
-            if expected_statuses.len() == 1 {
-                Err(HttpError::new_unexpected_status_code(
-                    expected_statuses[0],
-                    response.status(),
-                    std::str::from_utf8(response.body())?,
-                ))
-            } else {
-                Err(HttpError::new_multiple_unexpected_status_code(
-                    expected_statuses.to_vec(),
-                    response.status(),
-                    std::str::from_utf8(response.body())?,
-                ))
-            }
         } else {
-            Ok(response)
+            let body = std::str::from_utf8(response.body())?.to_owned();
+            Err(crate::HttpError::ErrorStatusCode { status, body })
         }
     }
 }
@@ -166,7 +136,7 @@ impl HttpClient for reqwest::Client {
         request: &crate::Request,
     ) -> Result<crate::Response, HttpError> {
         let mut reqwest_request = self.request(
-            request.method().clone(),
+            request.method(),
             url::Url::parse(&request.uri().to_string()).unwrap(),
         );
         for header in request.headers() {

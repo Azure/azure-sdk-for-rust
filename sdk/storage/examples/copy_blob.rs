@@ -57,11 +57,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         let later = now + Duration::hours(1);
         let sas = source_storage_account_client
             .shared_access_signature()?
-            .with_resource(SasResource::Blob)
-            .with_resource_type(SasResourceType::Object)
+            .with_resource(AccountSasResource::Blob)
+            .with_resource_type(AccountSasResourceType::Object)
             .with_start(now)
             .with_expiry(later)
-            .with_permissions(SasPermissions::Read)
+            .with_permissions(AccountSasPermissions {
+                read: true,
+                ..Default::default()
+            })
             .with_protocol(SasProtocol::HttpHttps)
             .finalize();
         println!("token: '{}'", sas.token());

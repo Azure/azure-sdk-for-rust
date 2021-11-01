@@ -28,8 +28,8 @@ where
     type Error = crate::Error;
 
     fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
-        println!("{}", std::str::from_utf8(response.body())?);
-        println!("headers == {:#?}", response.headers());
+        debug!("{}", std::str::from_utf8(response.body())?);
+        debug!("headers == {:#?}", response.headers());
 
         let entity_with_metadata =
             match get_str_from_headers(response.headers(), "preference-applied")? {

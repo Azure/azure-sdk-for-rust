@@ -40,7 +40,7 @@ rustc_version = "0.4"
 
 [dev-dependencies]
 env_logger = "0.8"
-tokio = { version = "1.0", features = ["default"] }
+tokio = { version = "1", features = ["default"] }
 
 [features]
 default = ["enable_reqwest"]

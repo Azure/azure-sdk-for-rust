@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Search/operations", operation_config.base_path(),);
@@ -18,7 +18,7 @@ pub mod operations {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -42,7 +42,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,7 +66,7 @@ pub mod operations {
     }
 }
 pub mod admin_keys {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -92,7 +92,7 @@ pub mod admin_keys {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -120,7 +120,7 @@ pub mod admin_keys {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -169,7 +169,7 @@ pub mod admin_keys {
                 .map_err(regenerate::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -200,7 +200,7 @@ pub mod admin_keys {
         }
     }
     pub mod regenerate {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -224,7 +224,7 @@ pub mod admin_keys {
     }
 }
 pub mod query_keys {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn create(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -252,7 +252,7 @@ pub mod query_keys {
                 .map_err(create::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -280,7 +280,7 @@ pub mod query_keys {
         }
     }
     pub mod create {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -327,7 +327,7 @@ pub mod query_keys {
                 .map_err(list_by_search_service::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -360,7 +360,7 @@ pub mod query_keys {
         }
     }
     pub mod list_by_search_service {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -409,7 +409,7 @@ pub mod query_keys {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -433,7 +433,7 @@ pub mod query_keys {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -464,7 +464,7 @@ pub mod query_keys {
     }
 }
 pub mod services {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -490,7 +490,7 @@ pub mod services {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -517,7 +517,7 @@ pub mod services {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -565,7 +565,7 @@ pub mod services {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(service).map_err(create_or_update::Error::SerializeError)?;
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
@@ -602,7 +602,7 @@ pub mod services {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(SearchService),
@@ -655,7 +655,7 @@ pub mod services {
                 .map_err(update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(service).map_err(update::Error::SerializeError)?;
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
@@ -683,7 +683,7 @@ pub mod services {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -730,7 +730,7 @@ pub mod services {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -754,7 +754,7 @@ pub mod services {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -806,7 +806,7 @@ pub mod services {
                 .map_err(list_by_resource_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -838,7 +838,7 @@ pub mod services {
         }
     }
     pub mod list_by_resource_group {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -881,7 +881,7 @@ pub mod services {
                 .map_err(list_by_subscription::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -911,7 +911,7 @@ pub mod services {
         }
     }
     pub mod list_by_subscription {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -955,7 +955,7 @@ pub mod services {
                 .map_err(check_name_availability::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(check_name_availability_input).map_err(check_name_availability::Error::SerializeError)?;
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
@@ -988,7 +988,7 @@ pub mod services {
         }
     }
     pub mod check_name_availability {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1012,7 +1012,7 @@ pub mod services {
     }
 }
 pub mod private_link_resources {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list_supported(
         operation_config: &crate::OperationConfig,
         x_ms_client_request_id: Option<&str>,
@@ -1038,7 +1038,7 @@ pub mod private_link_resources {
                 .map_err(list_supported::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -1068,7 +1068,7 @@ pub mod private_link_resources {
         }
     }
     pub mod list_supported {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1092,7 +1092,7 @@ pub mod private_link_resources {
     }
 }
 pub mod private_endpoint_connections {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -1120,7 +1120,7 @@ pub mod private_endpoint_connections {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -1147,7 +1147,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1197,7 +1197,7 @@ pub mod private_endpoint_connections {
                 .map_err(update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(private_endpoint_connection).map_err(update::Error::SerializeError)?;
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
@@ -1225,7 +1225,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1274,7 +1274,7 @@ pub mod private_endpoint_connections {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -1302,7 +1302,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -1351,7 +1351,7 @@ pub mod private_endpoint_connections {
                 .map_err(list_by_service::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -1381,7 +1381,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod list_by_service {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1405,7 +1405,7 @@ pub mod private_endpoint_connections {
     }
 }
 pub mod shared_private_link_resources {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -1433,7 +1433,7 @@ pub mod shared_private_link_resources {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -1460,7 +1460,7 @@ pub mod shared_private_link_resources {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1510,7 +1510,7 @@ pub mod shared_private_link_resources {
                 .map_err(create_or_update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(shared_private_link_resource).map_err(create_or_update::Error::SerializeError)?;
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
@@ -1542,7 +1542,7 @@ pub mod shared_private_link_resources {
         }
     }
     pub mod create_or_update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(SharedPrivateLinkResource),
@@ -1596,7 +1596,7 @@ pub mod shared_private_link_resources {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -1620,7 +1620,7 @@ pub mod shared_private_link_resources {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -1674,7 +1674,7 @@ pub mod shared_private_link_resources {
                 .map_err(list_by_service::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(x_ms_client_request_id) = x_ms_client_request_id {
             req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
         }
@@ -1704,7 +1704,7 @@ pub mod shared_private_link_resources {
         }
     }
     pub mod list_by_service {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

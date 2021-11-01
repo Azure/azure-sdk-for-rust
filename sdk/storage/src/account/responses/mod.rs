@@ -1,2 +1,4 @@
 mod get_account_information_response;
+mod list_blobs_by_tags_response;
 pub use get_account_information_response::GetAccountInformationResponse;
+pub use list_blobs_by_tags_response::ListBlobsByTagsResponse;
