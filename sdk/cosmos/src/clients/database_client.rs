@@ -68,7 +68,7 @@ impl DatabaseClient {
                 &format!("dbs/{}", self.database_name()),
                 http::Method::GET,
                 ResourceType::Databases,
-                |request: &mut azure_core::Request| options.decorate_request(request),
+                |request| options.decorate_request(request),
             )
             .await?;
 
