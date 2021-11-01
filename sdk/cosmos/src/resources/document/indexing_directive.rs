@@ -14,9 +14,9 @@ pub enum IndexingDirective {
     Exclude,
 }
 
-impl std::convert::Into<&str> for &IndexingDirective {
-    fn into(self) -> &'static str {
-        match self {
+impl<'a> From<&'a IndexingDirective> for &'a str {
+    fn from(s: &'a IndexingDirective) -> &'a str {
+        match s {
             IndexingDirective::Default => "Default",
             IndexingDirective::Exclude => "Exclude",
             IndexingDirective::Include => "Include",

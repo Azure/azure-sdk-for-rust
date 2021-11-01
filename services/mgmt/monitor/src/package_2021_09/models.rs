@@ -1437,15 +1437,15 @@ pub enum MetricTriggerType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AlertSeverity {
     #[serde(rename = "0")]
-    _0,
+    N0,
     #[serde(rename = "1")]
-    _1,
+    N1,
     #[serde(rename = "2")]
-    _2,
+    N2,
     #[serde(rename = "3")]
-    _3,
+    N3,
     #[serde(rename = "4")]
-    _4,
+    N4,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QueryType {

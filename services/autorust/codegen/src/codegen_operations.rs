@@ -5,10 +5,10 @@ use crate::{
     },
     codegen::{parse_params, PARAM_RE},
     identifier::ident,
-    spec,
+    spec::{self, WebOperation, WebVerb},
     status_codes::{get_error_responses, get_response_type_name, get_success_responses, has_default_response},
     status_codes::{get_response_type_ident, get_status_code_ident},
-    CodeGen, OperationVerb,
+    CodeGen,
 };
 use autorust_openapi::{CollectionFormat, DataType, Parameter, ParameterType, Response};
 use heck::SnakeCase;
@@ -24,7 +24,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         #![allow(unused_mut)]
         #![allow(unused_variables)]
         #![allow(unused_imports)]
-        use crate::models::*;
+        use super::{API_VERSION, models, models::*};
 
     });
     let mut modules: IndexMap<Option<String>, TokenStream> = IndexMap::new();
@@ -35,9 +35,9 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         if cg.spec.is_input_file(&doc_file) {
             let paths = cg.spec.resolve_path_map(doc_file, doc.paths())?;
             for (path, item) in &paths {
-                for op in spec::path_item_operations(item) {
-                    let (module_name, function_name) = op.function_name(path);
-                    let function = create_function(cg, doc_file, path, &op, &function_name)?;
+                for operation in spec::path_operations(path, item) {
+                    let module_name = operation.rust_module_name();
+                    let function = create_function(cg, doc_file, &operation)?;
                     if modules.contains_key(&module_name) {}
                     match modules.get_mut(&module_name) {
                         Some(module) => {
@@ -59,7 +59,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
                 let name = ident(&module_name).map_err(Error::ModuleName)?;
                 file.extend(quote! {
                     pub mod #name {
-                        use crate::models::*;
+                        use super::{API_VERSION, models, models::*};
 
                         #module
                     }
@@ -73,34 +73,26 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
     Ok(file)
 }
 
-fn create_function(
-    cg: &CodeGen,
-    doc_file: &Path,
-    path: &str,
-    operation_verb: &OperationVerb,
-    function_name: &str,
-) -> Result<TokenStream, Error> {
-    let fname = ident(function_name).map_err(Error::FunctionName)?;
+// Create a Rust function for the web operation
+fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> Result<TokenStream, Error> {
+    let fname = ident(&operation.rust_function_name()).map_err(Error::FunctionName)?;
 
-    let params = parse_params(path);
+    let params = parse_params(&operation.path);
     // println!("path params {:#?}", params);
-    let params: Result<Vec<_>, Error> = params
-        .iter()
-        .map(|s| Ok(ident(&s.to_snake_case()).map_err(Error::ParamName)?))
-        .collect();
+    let params: Result<Vec<_>, Error> = params.iter().map(|s| ident(&s.to_snake_case()).map_err(Error::ParamName)).collect();
     let params = params?;
     let url_str_args = quote! { #(#params),* };
 
-    let fpath = format!("{{}}{}", &format_path(path));
+    let fpath = format!("{{}}{}", &format_path(&operation.path));
 
-    let parameters: Vec<Parameter> = cg.spec.resolve_parameters(doc_file, &operation_verb.operation().parameters)?;
+    let parameters: Vec<Parameter> = cg.spec.resolve_parameters(doc_file, &operation.parameters)?;
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
     let has_param_api_version = param_names.contains("api-version");
     let mut skip = HashSet::new();
     if cg.spec.api_version().is_some() {
         skip.insert("api-version");
     }
-    let parameters = parameters.into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
+    let parameters: Vec<_> = parameters.into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
 
     let fparams = create_function_params(cg, doc_file, &parameters)?;
 
@@ -110,17 +102,17 @@ fn create_function(
     let mut ts_request_builder = TokenStream::new();
 
     let mut is_post = false;
-    let req_verb = match operation_verb {
-        OperationVerb::Get(_) => quote! { req_builder = req_builder.method(http::Method::GET); },
-        OperationVerb::Post(_) => {
+    let req_verb = match operation.verb {
+        WebVerb::Get => quote! { req_builder = req_builder.method(http::Method::GET); },
+        WebVerb::Post => {
             is_post = true;
             quote! { req_builder = req_builder.method(http::Method::POST); }
         }
-        OperationVerb::Put(_) => quote! { req_builder = req_builder.method(http::Method::PUT); },
-        OperationVerb::Patch(_) => quote! { req_builder = req_builder.method(http::Method::PATCH); },
-        OperationVerb::Delete(_) => quote! { req_builder = req_builder.method(http::Method::DELETE); },
-        OperationVerb::Options(_) => quote! { req_builder = req_builder.method(http::Method::OPTIONS); },
-        OperationVerb::Head(_) => quote! { req_builder = req_builder.method(http::Method::HEAD); },
+        WebVerb::Put => quote! { req_builder = req_builder.method(http::Method::PUT); },
+        WebVerb::Patch => quote! { req_builder = req_builder.method(http::Method::PATCH); },
+        WebVerb::Delete => quote! { req_builder = req_builder.method(http::Method::DELETE); },
+        WebVerb::Options => quote! { req_builder = req_builder.method(http::Method::OPTIONS); },
+        WebVerb::Head => quote! { req_builder = req_builder.method(http::Method::HEAD); },
     };
     ts_request_builder.extend(req_verb);
 
@@ -138,16 +130,20 @@ fn create_function(
     if has_param_api_version {
         if let Some(_api_version) = cg.spec.api_version() {
             ts_request_builder.extend(quote! {
-                url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
             });
         }
     }
+
+    let has_content_type_header = parameters
+        .iter()
+        .any(|p| p.name.to_snake_case() == "content_type" && p.in_ == ParameterType::Header);
 
     // params
     let mut has_body_parameter = false;
     for param in &parameters {
         let param_name = &param.name;
-        let param_name_var = get_param_name(&param)?;
+        let param_name_var = get_param_name(param)?;
         let required = param.required.unwrap_or(false);
         let is_bool = matches!(&param.common.type_, Some(DataType::Boolean));
         match param.in_ {
@@ -212,34 +208,41 @@ fn create_function(
                             req_builder = req_builder.header(#param_name, #param_name_var);
                         });
                     }
+                } else if is_bool {
+                    ts_request_builder.extend(quote! {
+                        if let Some(#param_name_var) = #param_name_var {
+                            req_builder = req_builder.header(#param_name, #param_name_var .to_string());
+                        }
+                    });
                 } else {
-                    if is_bool {
-                        ts_request_builder.extend(quote! {
-                            if let Some(#param_name_var) = #param_name_var {
-                                req_builder = req_builder.header(#param_name, #param_name_var .to_string());
-                            }
-                        });
-                    } else {
-                        ts_request_builder.extend(quote! {
-                            if let Some(#param_name_var) = #param_name_var {
-                                req_builder = req_builder.header(#param_name, #param_name_var);
-                            }
-                        });
-                    }
+                    ts_request_builder.extend(quote! {
+                        if let Some(#param_name_var) = #param_name_var {
+                            req_builder = req_builder.header(#param_name, #param_name_var);
+                        }
+                    });
                 }
             }
             ParameterType::Body => {
                 has_body_parameter = true;
+                let set_content_type = if !has_content_type_header {
+                    let json_content_type = cg.get_request_content_type_json();
+                    quote! {
+                        req_builder = req_builder.header("content-type", #json_content_type);
+                    }
+                } else {
+                    quote! {}
+                };
+
                 if required {
                     ts_request_builder.extend(quote! {
-                        req_builder = req_builder.header("content-type", "application/json");
+                        #set_content_type
                         let req_body = azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?;
                     });
                 } else {
                     ts_request_builder.extend(quote! {
                         let req_body =
                             if let Some(#param_name_var) = #param_name_var {
-                                req_builder = req_builder.header("content-type", "application/json");
+                                #set_content_type
                                 azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?
                             } else {
                                 bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -276,7 +279,7 @@ fn create_function(
         });
     }
 
-    let responses = &operation_verb.operation().responses;
+    let responses = &operation.responses;
     let success_responses = get_success_responses(responses);
     let error_responses = get_error_responses(responses);
     let is_single_response = success_responses.len() == 1;
@@ -342,15 +345,16 @@ fn create_function(
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
+                let rsp_value = create_rsp_value(tp.as_ref(), &fname);
                 let status_code_name = get_status_code_ident(status_code)?;
                 let response_type_name = get_response_type_ident(status_code)?;
                 if is_single_response {
                     match tp {
-                        Some(tp) => {
+                        Some(_tp) => {
                             match_status.extend(quote! {
                                 http::StatusCode::#status_code_name => {
                                     let rsp_body = rsp.body();
-                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
+                                    #rsp_value
                                     Ok(rsp_value)
                                 }
                             });
@@ -365,11 +369,11 @@ fn create_function(
                     }
                 } else {
                     match tp {
-                        Some(tp) => {
+                        Some(_tp) => {
                             match_status.extend(quote! {
                                 http::StatusCode::#status_code_name => {
                                     let rsp_body = rsp.body();
-                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
+                                    #rsp_value
                                     Ok(#fname::Response::#response_type_name(rsp_value))
                                 }
                             });
@@ -391,14 +395,15 @@ fn create_function(
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
+                let rsp_value = create_rsp_value(tp.as_ref(), &fname);
                 let status_code_name = get_status_code_ident(status_code)?;
                 let response_type_name = get_response_type_ident(status_code)?;
                 match tp {
-                    Some(tp) => {
+                    Some(_tp) => {
                         match_status.extend(quote! {
                             http::StatusCode::#status_code_name => {
                                 let rsp_body = rsp.body();
-                                let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
+                                #rsp_value
                                 Err(#fname::Error::#response_type_name{value: rsp_value})
                             }
                         });
@@ -422,12 +427,13 @@ fn create_function(
                 autorust_openapi::StatusCode::Code(_) => {}
                 autorust_openapi::StatusCode::Default => {
                     let tp = create_response_type(rsp)?;
+                    let rsp_value = create_rsp_value(tp.as_ref(), &fname);
                     match tp {
-                        Some(tp) => {
+                        Some(_tp) => {
                             match_status.extend(quote! {
                                 status_code => {
                                     let rsp_body = rsp.body();
-                                    let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
+                                    #rsp_value
                                     Err(#fname::Error::DefaultResponse{status_code, value: rsp_value})
                                 }
                             });
@@ -467,7 +473,7 @@ fn create_function(
             }
         }
         pub mod #fname {
-            use crate::{models, models::*};
+            use super::{API_VERSION, models, models::*};
 
             #response_enum
 
@@ -489,14 +495,26 @@ fn create_function(
             }
         }
     };
-    Ok(TokenStream::from(func))
+    Ok(func)
+}
+
+fn create_rsp_value(tp: Option<&TokenStream>, fname: &TokenStream) -> TokenStream {
+    if tp.map(|tp| tp.to_string()) == Some("bytes :: Bytes".to_owned()) {
+        quote! {
+            let rsp_value = rsp_body.clone();
+        }
+    } else {
+        quote! {
+            let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
+        }
+    }
 }
 
 fn format_path(path: &str) -> String {
     PARAM_RE.replace_all(path, "{}").to_string()
 }
 
-fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &Vec<Parameter>) -> Result<TokenStream, Error> {
+fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &[Parameter]) -> Result<TokenStream, Error> {
     let mut params: Vec<TokenStream> = Vec::new();
     for param in parameters {
         let name = get_param_name(param)?;

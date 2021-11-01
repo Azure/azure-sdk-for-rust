@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-for f in $(find sdk -name *.json)
+for f in $(find test -name *.json)
 do
     jq . $f > temp
     diff temp $f

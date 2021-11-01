@@ -1,6 +1,9 @@
 //! Refresh token utilities
 
-use crate::traits::{BearerToken, ExtExpiresIn, RefreshToken};
+use crate::{
+    errors::ErrorToken,
+    traits::{BearerToken, ExtExpiresIn, RefreshToken},
+};
 use log::debug;
 use oauth2::{AccessToken, ClientId, ClientSecret};
 use serde::Deserialize;
@@ -19,6 +22,8 @@ pub enum Error {
     DeserializeError(serde_json::Error),
     #[error("Error parsing url for refresh token: {0}")]
     ParseUrlError(url::ParseError),
+    #[error("Error requesting token: {0}")]
+    TokenError(ErrorToken),
 }
 
 /// Exchange a refresh token for a new access token and refresh token
@@ -59,16 +64,26 @@ pub async fn exchange(
         .text()
         .await
         .map_err(Error::TextError)?;
-    debug!("{}", ret);
 
-    Ok(ret.try_into().map_err(Error::DeserializeError)?)
+    debug!("refresh token response: {:?}", ret);
+
+    match serde_json::from_str::<RefreshTokenResponse>(&ret).map_err(Error::DeserializeError) {
+        Ok(r) => Ok(r),
+        Err(e) => {
+            if let Ok(token_error) = serde_json::from_str::<ErrorToken>(&ret) {
+                Err(Error::TokenError(token_error))
+            } else {
+                Err(e)
+            }
+        }
+    }
 }
 
 /// A refresh token
 #[derive(Debug, Clone, Deserialize)]
 pub struct RefreshTokenResponse {
     token_type: String,
-    #[serde(deserialize_with = "deserialize::split")]
+    #[serde(rename = "scope", deserialize_with = "deserialize::split")]
     scopes: Vec<String>,
     expires_in: u64,
     ext_expires_in: u64,

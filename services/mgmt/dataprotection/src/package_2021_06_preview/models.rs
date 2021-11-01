@@ -776,7 +776,7 @@ pub struct InnerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(rename = "embeddedInnerError", default, skip_serializing_if = "Option::is_none")]
-    pub embedded_inner_error: Option<InnerError>,
+    pub embedded_inner_error: Box<Option<InnerError>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ItemLevelRestoreCriteria {

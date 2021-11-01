@@ -69,11 +69,11 @@ pub mod redis_common_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MinimumTlsVersion {
         #[serde(rename = "1.0")]
-        _1_0,
+        N1_0,
         #[serde(rename = "1.1")]
-        _1_1,
+        N1_1,
         #[serde(rename = "1.2")]
-        _1_2,
+        N1_2,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {

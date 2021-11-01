@@ -1,7 +1,6 @@
 // cargo run --example gen_svc --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/batch/data-plane
 use autorust_codegen::{self, cargo_toml, config_parser::to_mod_name, get_svc_readmes, lib_rs, path, Config, PropertyName, SpecReadme};
-use heck::SnakeCase;
 use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../svc";
@@ -9,38 +8,27 @@ const OUTPUT_FOLDER: &str = "../svc";
 const ONLY_SERVICES: &[&str] = &[];
 
 const SKIP_SERVICES: &[&str] = &[
-    "blobstorage",             // uses "x-ms-paths" instead of "paths"
-    "filestorage",             // uses "x-ms-paths" instead of "paths"
-    "queuestorage",            // uses "x-ms-paths" instead of "paths"
     "deviceupdate",            // missing field `authorizationUrl`
     "digitaltwins",            // missing field `scopes`
     "machinelearningservices", // untagged enum
     "servicefabric",           // currently generates `async` member names
     "hdinsight",               // job_id appears multiple times?
-    "keyvault",                // `{field_name}` used in formatting url
     "videoanalyzer",           // no operations
     "mediaservices",           // no operations
+    "marketplacecatalog",      // BadRequest400 uses models::String?
 ];
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
-    ("agrifood", "package-2021-03-31-preview"),  // untagged enum?
-    ("attestation", "package-2018-09-01"),       // uses models::String?
-    ("containerregistry", "package-2019-08"),    // untagged enum
-    ("containerregistry", "package-2019-07"),    // untagged enum
-    ("purview", "package-2021-05-01-preview"),   // untagged enum
-    ("keyvault", "package-preview-7.3-preview"), // parse error
-    ("keyvault", "package-7.2"),                 // parse error
-    ("keyvault", "package-7.2-preview"),         // parse error
-    ("batch", "package-2018-03.6.1"),            // TODO #81 DataType::File
-    ("batch", "package-2017-09.6.0"),            // TODO #81 DataType::File
-    ("batch", "package-2017-06.5.1"),            // TODO #81 DataType::File
-    ("maps", "package-preview-2.0"),             // string \"200Async\", expected length 3"
-    ("maps", "package-1.0-preview"),             // "invalid value: string \"201Async\"
-    ("storagedatalake", "package-2018-11"),      // "invalid value: string \"ErrorResponse\", expected length 3"
+    ("agrifood", "package-2021-03-31-preview"), // untagged enum?
+    ("attestation", "package-2018-09-01"),      // uses models::String?
+    ("containerregistry", "package-2019-08"),   // untagged enum
+    ("containerregistry", "package-2019-07"),   // untagged enum
+    ("purview", "package-2021-05-01-preview"),  // untagged enum
+    ("maps", "package-preview-2.0"),            // string \"200Async\", expected length 3"
+    ("maps", "package-1.0-preview"),            // "invalid value: string \"201Async\"
+    ("storagedatalake", "package-2018-11"),     // "invalid value: string \"ErrorResponse\", expected length 3"
     ("storagedatalake", "package-2018-06-preview"),
     ("storagedatalake", "package-2019-10"),
-    ("storagedatalake", "package-2020-06"), // uses "x-ms-paths" instead of "paths"
-    ("storagedatalake", "package-2020-10"),
 ];
 
 const INVALID_TYPE_WORKAROUND: &[(&str, &str, &str)] = &[(
@@ -49,38 +37,22 @@ const INVALID_TYPE_WORKAROUND: &[(&str, &str, &str)] = &[(
     "rows",
 )];
 
-const FIX_CASE_PROPERTIES: &[(&str, &str, &str)] = &[
-    (
-        "../../../azure-rest-api-specs/specification/batch/data-plane/Microsoft.Batch/stable/2021-06-01.14.0/BatchService.json",
-        "TaskSchedulingPolicy",
-        "nodeFillType",
-    ),
-    (
-        "../../../azure-rest-api-specs/specification/batch/data-plane/Microsoft.Batch/stable/2021-06-01.14.0/BatchService.json",
-        "NodePlacementConfiguration",
-        "policy",
-    ),
-    (
-        "../../../azure-rest-api-specs/specification/batch/data-plane/Microsoft.Batch/stable/2021-06-01.14.0/BatchService.json",
-        "PublicIPAddressConfiguration",
-        "provision",
-    ),
-];
+const FIX_CASE_PROPERTIES: &[&str] = &["BatchServiceClient", "BatchService"];
 
 // because of recursive types, some properties have to be boxed
 // https://github.com/ctaggart/autorust/issues/73
 const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
+    // applicationinsights
+    ("../../../azure-rest-api-specs/specification/applicationinsights/data-plane/Microsoft.Insights/preview/v1/AppInsights.json", "errorInfo", "innererror"),
     // keyvault
-    (
-        "../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/7.1/common.json",
-        "Error",
-        "innererror",
-    ),
-    (
-        "../../../azure-rest-api-specs/specification/applicationinsights/data-plane/Microsoft.Insights/preview/v1/AppInsights.json",
-        "errorInfo",
-        "innererror",
-    ),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/preview/7.0/keyvault.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/preview/7.1/common.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/preview/7.2-preview/common.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/preview/7.3-preview/common.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/2016-10-01/keyvault.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/7.0/keyvault.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/7.1/common.json" , "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/data-plane/Microsoft.KeyVault/stable/7.2/common.json" , "Error" , "innererror"),
     // webpubsub
     (
         "../../../azure-rest-api-specs/specification/webpubsub/data-plane/WebPubSub/stable/2021-10-01/webpubsub.json",
@@ -115,6 +87,17 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
         "../../../azure-rest-api-specs/specification/timeseriesinsights/data-plane/Microsoft.TimeSeriesInsights/stable/2020-07-31/timeseriesinsights.json",
         "TsiErrorBody",
         "innerError",
+    ),
+    // datalake-analytics
+    (
+        "../../../azure-rest-api-specs/specification/datalake-analytics/data-plane/Microsoft.DataLakeAnalytics/stable/2016-11-01/job.json",
+        "JobInnerError",
+        "innerError"
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/datalake-analytics/data-plane/Microsoft.DataLakeAnalytics/preview/2017-09-01-preview/job.json",
+        "JobInnerError",
+        "innerError"
     )
 ];
 
@@ -144,16 +127,14 @@ fn main() -> Result<()> {
         .iter()
         .enumerate()
     {
-        if ONLY_SERVICES.len() > 0 {
+        if !ONLY_SERVICES.is_empty() {
             if ONLY_SERVICES.contains(&spec.spec()) {
                 println!("{} {}", i + 1, spec.spec());
                 gen_crate(spec)?;
             }
-        } else {
-            if !SKIP_SERVICES.contains(&spec.spec()) {
-                println!("{} {}", i + 1, spec.spec());
-                gen_crate(spec)?;
-            }
+        } else if !SKIP_SERVICES.contains(&spec.spec()) {
+            println!("{} {}", i + 1, spec.spec());
+            gen_crate(spec)?;
         }
     }
     Ok(())
@@ -170,7 +151,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         return Ok(());
     }
 
-    let service_name = &get_service_name(spec.spec());
+    let service_name = &spec.service_name();
     let crate_name = &format!("azure_svc_{}", service_name);
     let output_folder = &path::join(OUTPUT_FOLDER, service_name).map_err(|source| Error::PathError { source })?;
 
@@ -182,12 +163,8 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let mut feature_mod_names = Vec::new();
 
     let mut fix_case_properties = HashSet::new();
-    for (file_path, schema_name, property_name) in FIX_CASE_PROPERTIES {
-        fix_case_properties.insert(PropertyName {
-            file_path: PathBuf::from(file_path),
-            schema_name: schema_name.to_string(),
-            property_name: property_name.to_string(),
-        });
+    for spec_title in FIX_CASE_PROPERTIES {
+        fix_case_properties.insert(spec_title.to_string());
     }
 
     let mut box_properties = HashSet::new();
@@ -226,14 +203,14 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         let input_files: Result<Vec<_>> = config
             .input_files
             .iter()
-            .map(|input_file| Ok(path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source })?))
+            .map(|input_file| path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source }))
             .collect();
         let input_files = input_files?;
         // for input_file in &input_files {
         //     println!("  {:?}", input_file);
         // }
         autorust_codegen::run(Config {
-            output_folder: mod_output_folder.into(),
+            output_folder: mod_output_folder,
             input_files,
             box_properties: box_properties.clone(),
             fix_case_properties: fix_case_properties.clone(),
@@ -243,10 +220,9 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         })
         .map_err(|source| Error::CodegenError { source })?;
     }
-    if feature_mod_names.len() == 0 {
+    if feature_mod_names.is_empty() {
         return Ok(());
     }
-    println!("creating");
     cargo_toml::create(
         crate_name,
         &feature_mod_names,
@@ -261,8 +237,4 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     .map_err(|source| Error::LibRsError { source })?;
 
     Ok(())
-}
-
-fn get_service_name(spec_folder: &str) -> String {
-    spec_folder.to_snake_case().replace("-", "_").replace(".", "_")
 }

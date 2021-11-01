@@ -34,7 +34,7 @@ use http::header;
 use std::{collections::HashMap, convert::TryInto, str::FromStr};
 
 #[cfg(feature = "azurite_workaround")]
-fn get_creation_time(h: &header::HeaderMap) -> Result<Option<DateTime<Utc>>, crate::Error> {
+fn get_creation_time(h: &header::HeaderMap) -> crate::Result<Option<DateTime<Utc>>> {
     if let Some(creation_time) = h.get(CREATION_TIME) {
         // Check that the creation time is valid
         let creation_time = creation_time.to_str()?;
@@ -75,10 +75,10 @@ where
 {
     let s: Option<String> = Option::deserialize(deserializer)?;
 
-    Ok(s.filter(|s| s.len() > 0)
+    s.filter(|s| !s.is_empty())
         .map(crate::ConsistencyCRC64::decode)
         .transpose()
-        .map_err(serde::de::Error::custom)?)
+        .map_err(serde::de::Error::custom)
 }
 
 fn deserialize_md5_optional<'de, D>(
@@ -89,10 +89,10 @@ where
 {
     let s: Option<String> = Option::deserialize(deserializer)?;
 
-    Ok(s.filter(|s| s.len() > 0)
+    s.filter(|s| !s.is_empty())
         .map(crate::ConsistencyMD5::decode)
         .transpose()
-        .map_err(serde::de::Error::custom)?)
+        .map_err(serde::de::Error::custom)
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -104,6 +104,26 @@ pub struct Blob {
     pub is_current_version: Option<bool>,
     pub deleted: Option<bool>,
     pub properties: BlobProperties,
+    pub tags: Option<Tags>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct Tags {
+    pub tag_set: Option<TagSet>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct TagSet {
+    pub tag: Vec<Tag>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct Tag {
+    pub key: String,
+    pub value: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -182,7 +202,7 @@ impl Blob {
     pub(crate) fn from_headers<BN: Into<String>>(
         blob_name: BN,
         h: &header::HeaderMap,
-    ) -> Result<Blob, crate::Error> {
+    ) -> crate::Result<Blob> {
         trace!("\n{:?}", h);
 
         #[cfg(not(feature = "azurite_workaround"))]
@@ -369,13 +389,12 @@ impl Blob {
                 metadata,
                 extra: HashMap::new(),
             },
+            tags: None,
         })
     }
 }
 
-pub(crate) fn copy_status_from_headers(
-    headers: &http::HeaderMap,
-) -> Result<CopyStatus, crate::Error> {
+pub(crate) fn copy_status_from_headers(headers: &http::HeaderMap) -> crate::Result<CopyStatus> {
     let val = headers
         .get_as_str(azure_core::headers::COPY_STATUS)
         .ok_or_else(|| crate::Error::HeaderNotFound(azure_core::headers::COPY_STATUS.to_owned()))?;

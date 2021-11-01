@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub async fn resource_changes(
     operation_config: &crate::OperationConfig,
     parameters: &ResourceChangesRequestParameters,
@@ -19,7 +19,7 @@ pub async fn resource_changes(
             .map_err(resource_changes::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(parameters).map_err(resource_changes::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
@@ -47,7 +47,7 @@ pub async fn resource_changes(
     }
 }
 pub mod resource_changes {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -88,7 +88,7 @@ pub async fn resource_change_details(
             .map_err(resource_change_details::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(parameters).map_err(resource_change_details::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
@@ -118,7 +118,7 @@ pub async fn resource_change_details(
     }
 }
 pub mod resource_change_details {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -156,7 +156,7 @@ pub async fn resources(
             .map_err(resources::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(query).map_err(resources::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
@@ -184,7 +184,7 @@ pub async fn resources(
     }
 }
 pub mod resources {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -225,7 +225,7 @@ pub async fn resources_history(
             .map_err(resources_history::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(request).map_err(resources_history::Error::SerializeError)?;
     req_builder = req_builder.uri(url.as_str());
@@ -253,7 +253,7 @@ pub async fn resources_history(
     }
 }
 pub mod resources_history {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -276,7 +276,7 @@ pub mod resources_history {
     }
 }
 pub mod operations {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.ResourceGraph/operations", operation_config.base_path(),);
@@ -290,7 +290,7 @@ pub mod operations {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -314,7 +314,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -1,3 +1,6 @@
+/// A specialized Result type for Cosmos.
+pub type Result<T> = std::result::Result<T, Error>;
+
 /// An error having to do with Cosmos.
 #[allow(missing_docs)]
 #[non_exhaustive]

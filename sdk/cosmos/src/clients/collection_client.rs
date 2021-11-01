@@ -48,7 +48,7 @@ impl CollectionClient {
         &self,
         ctx: Context,
         options: GetCollectionOptions,
-    ) -> Result<GetCollectionResponse, crate::Error> {
+    ) -> crate::Result<GetCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::GET);
 
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
@@ -58,8 +58,6 @@ impl CollectionClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         Ok(GetCollectionResponse::try_from(response).await?)
@@ -70,7 +68,7 @@ impl CollectionClient {
         &self,
         ctx: Context,
         options: DeleteCollectionOptions,
-    ) -> Result<DeleteCollectionResponse, crate::Error> {
+    ) -> crate::Result<DeleteCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::DELETE);
 
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
@@ -80,8 +78,6 @@ impl CollectionClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::NO_CONTENT)
             .await?;
 
         Ok(DeleteCollectionResponse::try_from(response).await?)
@@ -92,7 +88,7 @@ impl CollectionClient {
         &self,
         ctx: Context,
         options: ReplaceCollectionOptions,
-    ) -> Result<ReplaceCollectionResponse, crate::Error> {
+    ) -> crate::Result<ReplaceCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::PUT);
 
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
@@ -102,8 +98,6 @@ impl CollectionClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         Ok(ReplaceCollectionResponse::try_from(response).await?)
@@ -120,7 +114,7 @@ impl CollectionClient {
         ctx: Context,
         document: &'a D,
         options: CreateDocumentOptions<'_>,
-    ) -> Result<CreateDocumentResponse, crate::Error> {
+    ) -> crate::Result<CreateDocumentResponse> {
         let mut request = self.prepare_doc_request_pipeline(http::Method::POST);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
 
@@ -128,8 +122,6 @@ impl CollectionClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::CREATED)
             .await?;
 
         Ok(CreateDocumentResponse::try_from(response).await?)
@@ -197,7 +189,7 @@ impl CollectionClient {
             self.collection_name()
         );
         self.cosmos_client()
-            .prepare_request_pipeline(&path, http_method)
+            .prepare_request_pipeline(path, http_method)
     }
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
@@ -215,6 +207,6 @@ impl CollectionClient {
             self.collection_name()
         );
         self.cosmos_client()
-            .prepare_request_pipeline(&path, http_method)
+            .prepare_request_pipeline(path, http_method)
     }
 }

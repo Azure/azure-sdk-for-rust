@@ -62,6 +62,14 @@ jobs:
     - name: sdk tests
       run: cargo test --all --features mock_transport_framework
 
+    - name: update readme of sdks
+      run: |
+        cargo install cargo-readme
+        ./eng/scripts/cargo_readme.sh
+        if git status sdk | grep -q *.md; then
+          echo "Run ./eng/scripts/cargo_readme.sh to update readmes" && exit 1
+        fi
+
   test-services:
     name: Services Tests
     runs-on: ubuntu-20.04
@@ -123,7 +131,7 @@ jobs:
 
     - name: e2e tests build
       run: |
-        PROJECTS=(core  cosmos  identity  service_bus  storage)
+        PROJECTS=(core  cosmos  identity  messaging_servicebus  storage)
         for PROJ in ${PROJECTS[@]}
         do
           echo "Checking e2e tests for $PROJ"

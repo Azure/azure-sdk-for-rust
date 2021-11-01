@@ -2067,7 +2067,7 @@ pub mod security_rule_properties_format {
         Icmp,
         Esp,
         #[serde(rename = "*")]
-        Asterisk,
+        U2a,
         Ah,
     }
 }

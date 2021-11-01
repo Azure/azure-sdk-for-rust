@@ -21,7 +21,7 @@ impl ReplaceUserOptions {
         &self,
         request: &mut HttpRequest,
         user_name: &str,
-    ) -> Result<(), crate::Error> {
+    ) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
         let body = ReplaceUserBody { id: user_name };
         request.set_body(bytes::Bytes::from(serde_json::to_string(&body)?).into());

@@ -87,7 +87,7 @@ impl<T> QueryDocumentsResponse<T> {
         self.into()
     }
 
-    pub fn into_documents(self) -> Result<QueryDocumentsResponseDocuments<T>, crate::Error> {
+    pub fn into_documents(self) -> crate::Result<QueryDocumentsResponseDocuments<T>> {
         self.try_into()
     }
 }

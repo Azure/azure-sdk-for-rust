@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub mod application {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         maxresults: Option<i32>,
@@ -25,7 +25,7 @@ pub mod application {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
         }
@@ -64,7 +64,7 @@ pub mod application {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -106,7 +106,7 @@ pub mod application {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -142,7 +142,7 @@ pub mod application {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -166,7 +166,7 @@ pub mod application {
     }
 }
 pub mod pool {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list_usage_metrics(
         operation_config: &crate::OperationConfig,
         starttime: Option<&str>,
@@ -190,7 +190,7 @@ pub mod pool {
                 .map_err(list_usage_metrics::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(starttime) = starttime {
             url.query_pairs_mut().append_pair("starttime", starttime);
         }
@@ -241,7 +241,7 @@ pub mod pool {
         }
     }
     pub mod list_usage_metrics {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -282,7 +282,7 @@ pub mod pool {
                 .map_err(get_all_lifetime_statistics::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -323,7 +323,7 @@ pub mod pool {
         }
     }
     pub mod get_all_lifetime_statistics {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -368,7 +368,7 @@ pub mod pool {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -416,7 +416,7 @@ pub mod pool {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -458,8 +458,8 @@ pub mod pool {
                 .map_err(add::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(pool).map_err(add::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -490,7 +490,7 @@ pub mod pool {
         }
     }
     pub mod add {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -538,7 +538,7 @@ pub mod pool {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(select) = select {
             url.query_pairs_mut().append_pair("$select", select);
         }
@@ -592,7 +592,7 @@ pub mod pool {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -639,8 +639,8 @@ pub mod pool {
                 .map_err(patch::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(pool_patch_parameter).map_err(patch::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -683,7 +683,7 @@ pub mod pool {
         }
     }
     pub mod patch {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -729,7 +729,7 @@ pub mod pool {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -772,7 +772,7 @@ pub mod pool {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -818,7 +818,7 @@ pub mod pool {
                 .map_err(exists::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -862,7 +862,7 @@ pub mod pool {
         }
     }
     pub mod exists {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -906,7 +906,7 @@ pub mod pool {
                 .map_err(disable_auto_scale::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -941,7 +941,7 @@ pub mod pool {
         }
     }
     pub mod disable_auto_scale {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -988,8 +988,8 @@ pub mod pool {
                 .map_err(enable_auto_scale::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(pool_enable_auto_scale_parameter).map_err(enable_auto_scale::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -1035,7 +1035,7 @@ pub mod pool {
         }
     }
     pub mod enable_auto_scale {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1078,8 +1078,8 @@ pub mod pool {
                 .map_err(evaluate_auto_scale::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(pool_evaluate_auto_scale_parameter).map_err(evaluate_auto_scale::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -1118,7 +1118,7 @@ pub mod pool {
         }
     }
     pub mod evaluate_auto_scale {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1165,8 +1165,8 @@ pub mod pool {
                 .map_err(resize::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(pool_resize_parameter).map_err(resize::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -1209,7 +1209,7 @@ pub mod pool {
         }
     }
     pub mod resize {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1255,7 +1255,7 @@ pub mod pool {
                 .map_err(stop_resize::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -1302,7 +1302,7 @@ pub mod pool {
         }
     }
     pub mod stop_resize {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1345,8 +1345,8 @@ pub mod pool {
                 .map_err(update_properties::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(pool_update_properties_parameter).map_err(update_properties::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -1380,7 +1380,7 @@ pub mod pool {
         }
     }
     pub mod update_properties {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1427,8 +1427,8 @@ pub mod pool {
                 .map_err(remove_nodes::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(node_remove_parameter).map_err(remove_nodes::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -1474,7 +1474,7 @@ pub mod pool {
         }
     }
     pub mod remove_nodes {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1498,7 +1498,7 @@ pub mod pool {
     }
 }
 pub mod account {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list_supported_images(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
@@ -1520,7 +1520,7 @@ pub mod account {
                 .map_err(list_supported_images::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -1567,7 +1567,7 @@ pub mod account {
         }
     }
     pub mod list_supported_images {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1610,7 +1610,7 @@ pub mod account {
                 .map_err(list_pool_node_counts::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -1657,7 +1657,7 @@ pub mod account {
         }
     }
     pub mod list_pool_node_counts {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1681,7 +1681,7 @@ pub mod account {
     }
 }
 pub mod job {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get_all_lifetime_statistics(
         operation_config: &crate::OperationConfig,
         timeout: Option<i32>,
@@ -1701,7 +1701,7 @@ pub mod job {
                 .map_err(get_all_lifetime_statistics::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -1742,7 +1742,7 @@ pub mod job {
         }
     }
     pub mod get_all_lifetime_statistics {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1790,7 +1790,7 @@ pub mod job {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(select) = select {
             url.query_pairs_mut().append_pair("$select", select);
         }
@@ -1844,7 +1844,7 @@ pub mod job {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1891,8 +1891,8 @@ pub mod job {
                 .map_err(update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(job_update_parameter).map_err(update::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -1935,7 +1935,7 @@ pub mod job {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1982,8 +1982,8 @@ pub mod job {
                 .map_err(patch::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(job_patch_parameter).map_err(patch::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -2026,7 +2026,7 @@ pub mod job {
         }
     }
     pub mod patch {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2072,7 +2072,7 @@ pub mod job {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -2115,7 +2115,7 @@ pub mod job {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2162,8 +2162,8 @@ pub mod job {
                 .map_err(disable::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(job_disable_parameter).map_err(disable::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -2209,7 +2209,7 @@ pub mod job {
         }
     }
     pub mod disable {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2255,7 +2255,7 @@ pub mod job {
                 .map_err(enable::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -2299,7 +2299,7 @@ pub mod job {
         }
     }
     pub mod enable {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2346,9 +2346,9 @@ pub mod job {
                 .map_err(terminate::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = if let Some(job_terminate_parameter) = job_terminate_parameter {
-            req_builder = req_builder.header("content-type", "application/json");
+            req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
             azure_core::to_json(job_terminate_parameter).map_err(terminate::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -2397,7 +2397,7 @@ pub mod job {
         }
     }
     pub mod terminate {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2442,7 +2442,7 @@ pub mod job {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -2490,7 +2490,7 @@ pub mod job {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2532,8 +2532,8 @@ pub mod job {
                 .map_err(add::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(job).map_err(add::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -2564,7 +2564,7 @@ pub mod job {
         }
     }
     pub mod add {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2610,7 +2610,7 @@ pub mod job {
                 .map_err(list_from_job_schedule::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -2663,7 +2663,7 @@ pub mod job {
         }
     }
     pub mod list_from_job_schedule {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2712,7 +2712,7 @@ pub mod job {
                 .map_err(list_preparation_and_release_task_status::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -2762,7 +2762,7 @@ pub mod job {
         }
     }
     pub mod list_preparation_and_release_task_status {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2804,7 +2804,7 @@ pub mod job {
                 .map_err(get_task_counts::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -2843,7 +2843,7 @@ pub mod job {
         }
     }
     pub mod get_task_counts {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2867,7 +2867,7 @@ pub mod job {
     }
 }
 pub mod certificate {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
@@ -2890,7 +2890,7 @@ pub mod certificate {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -2935,7 +2935,7 @@ pub mod certificate {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2977,8 +2977,8 @@ pub mod certificate {
                 .map_err(add::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(certificate).map_err(add::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -3009,7 +3009,7 @@ pub mod certificate {
         }
     }
     pub mod add {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3057,7 +3057,7 @@ pub mod certificate {
                 .map_err(cancel_deletion::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -3092,7 +3092,7 @@ pub mod certificate {
         }
     }
     pub mod cancel_deletion {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3141,7 +3141,7 @@ pub mod certificate {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(select) = select {
             url.query_pairs_mut().append_pair("$select", select);
         }
@@ -3180,7 +3180,7 @@ pub mod certificate {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3228,7 +3228,7 @@ pub mod certificate {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -3259,7 +3259,7 @@ pub mod certificate {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3283,7 +3283,7 @@ pub mod certificate {
     }
 }
 pub mod file {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get_from_task(
         operation_config: &crate::OperationConfig,
         job_id: &str,
@@ -3315,7 +3315,7 @@ pub mod file {
                 .map_err(get_from_task::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -3363,7 +3363,7 @@ pub mod file {
         }
     }
     pub mod get_from_task {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3414,7 +3414,7 @@ pub mod file {
                 .map_err(delete_from_task::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(recursive) = recursive {
             url.query_pairs_mut().append_pair("recursive", recursive.to_string().as_str());
         }
@@ -3451,7 +3451,7 @@ pub mod file {
         }
     }
     pub mod delete_from_task {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3503,7 +3503,7 @@ pub mod file {
                 .map_err(get_properties_from_task::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -3545,7 +3545,7 @@ pub mod file {
         }
     }
     pub mod get_properties_from_task {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3598,7 +3598,7 @@ pub mod file {
                 .map_err(get_from_compute_node::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -3648,7 +3648,7 @@ pub mod file {
         }
     }
     pub mod get_from_compute_node {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3699,7 +3699,7 @@ pub mod file {
                 .map_err(delete_from_compute_node::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(recursive) = recursive {
             url.query_pairs_mut().append_pair("recursive", recursive.to_string().as_str());
         }
@@ -3738,7 +3738,7 @@ pub mod file {
         }
     }
     pub mod delete_from_compute_node {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3790,7 +3790,7 @@ pub mod file {
                 .map_err(get_properties_from_compute_node::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -3832,7 +3832,7 @@ pub mod file {
         }
     }
     pub mod get_properties_from_compute_node {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3878,7 +3878,7 @@ pub mod file {
                 .map_err(list_from_task::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -3926,7 +3926,7 @@ pub mod file {
         }
     }
     pub mod list_from_task {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3972,7 +3972,7 @@ pub mod file {
                 .map_err(list_from_compute_node::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -4022,7 +4022,7 @@ pub mod file {
         }
     }
     pub mod list_from_compute_node {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4046,7 +4046,7 @@ pub mod file {
     }
 }
 pub mod job_schedule {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         job_schedule_id: &str,
@@ -4073,7 +4073,7 @@ pub mod job_schedule {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(select) = select {
             url.query_pairs_mut().append_pair("$select", select);
         }
@@ -4127,7 +4127,7 @@ pub mod job_schedule {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4174,8 +4174,8 @@ pub mod job_schedule {
                 .map_err(update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(job_schedule_update_parameter).map_err(update::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -4218,7 +4218,7 @@ pub mod job_schedule {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4265,8 +4265,8 @@ pub mod job_schedule {
                 .map_err(patch::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(job_schedule_patch_parameter).map_err(patch::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -4309,7 +4309,7 @@ pub mod job_schedule {
         }
     }
     pub mod patch {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4355,7 +4355,7 @@ pub mod job_schedule {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -4398,7 +4398,7 @@ pub mod job_schedule {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4444,7 +4444,7 @@ pub mod job_schedule {
                 .map_err(exists::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -4488,7 +4488,7 @@ pub mod job_schedule {
         }
     }
     pub mod exists {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -4536,7 +4536,7 @@ pub mod job_schedule {
                 .map_err(disable::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -4583,7 +4583,7 @@ pub mod job_schedule {
         }
     }
     pub mod disable {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4629,7 +4629,7 @@ pub mod job_schedule {
                 .map_err(enable::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -4673,7 +4673,7 @@ pub mod job_schedule {
         }
     }
     pub mod enable {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4719,7 +4719,7 @@ pub mod job_schedule {
                 .map_err(terminate::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -4766,7 +4766,7 @@ pub mod job_schedule {
         }
     }
     pub mod terminate {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4811,7 +4811,7 @@ pub mod job_schedule {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -4859,7 +4859,7 @@ pub mod job_schedule {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4901,11 +4901,11 @@ pub mod job_schedule {
                 .map_err(add::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
-        req_builder = req_builder.header("content-type", "application/json");
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(cloud_job_schedule).map_err(add::Error::SerializeError)?;
         if let Some(client_request_id) = client_request_id {
             req_builder = req_builder.header("client-request-id", client_request_id);
@@ -4933,7 +4933,7 @@ pub mod job_schedule {
         }
     }
     pub mod add {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4957,7 +4957,7 @@ pub mod job_schedule {
     }
 }
 pub mod task {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         job_id: &str,
@@ -4982,7 +4982,7 @@ pub mod task {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -5030,7 +5030,7 @@ pub mod task {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5073,8 +5073,8 @@ pub mod task {
                 .map_err(add::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(task).map_err(add::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -5105,7 +5105,7 @@ pub mod task {
         }
     }
     pub mod add {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5148,8 +5148,8 @@ pub mod task {
                 .map_err(add_collection::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(task_collection).map_err(add_collection::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -5188,7 +5188,7 @@ pub mod task {
         }
     }
     pub mod add_collection {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5237,7 +5237,7 @@ pub mod task {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(select) = select {
             url.query_pairs_mut().append_pair("$select", select);
         }
@@ -5291,7 +5291,7 @@ pub mod task {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5339,8 +5339,8 @@ pub mod task {
                 .map_err(update::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(task_update_parameter).map_err(update::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -5383,7 +5383,7 @@ pub mod task {
         }
     }
     pub mod update {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5430,7 +5430,7 @@ pub mod task {
                 .map_err(delete::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -5473,7 +5473,7 @@ pub mod task {
         }
     }
     pub mod delete {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5517,7 +5517,7 @@ pub mod task {
                 .map_err(list_subtasks::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(select) = select {
             url.query_pairs_mut().append_pair("$select", select);
         }
@@ -5559,7 +5559,7 @@ pub mod task {
         }
     }
     pub mod list_subtasks {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5606,7 +5606,7 @@ pub mod task {
                 .map_err(terminate::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -5653,7 +5653,7 @@ pub mod task {
         }
     }
     pub mod terminate {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5700,7 +5700,7 @@ pub mod task {
                 .map_err(reactivate::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -5747,7 +5747,7 @@ pub mod task {
         }
     }
     pub mod reactivate {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5771,7 +5771,7 @@ pub mod task {
     }
 }
 pub mod compute_node {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn add_user(
         operation_config: &crate::OperationConfig,
         pool_id: &str,
@@ -5794,8 +5794,8 @@ pub mod compute_node {
                 .map_err(add_user::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(user).map_err(add_user::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -5829,7 +5829,7 @@ pub mod compute_node {
         }
     }
     pub mod add_user {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5880,8 +5880,8 @@ pub mod compute_node {
                 .map_err(update_user::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
-        req_builder = req_builder.header("content-type", "application/json");
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body = azure_core::to_json(node_update_user_parameter).map_err(update_user::Error::SerializeError)?;
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -5915,7 +5915,7 @@ pub mod compute_node {
         }
     }
     pub mod update_user {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5965,7 +5965,7 @@ pub mod compute_node {
                 .map_err(delete_user::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -5999,7 +5999,7 @@ pub mod compute_node {
         }
     }
     pub mod delete_user {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6043,7 +6043,7 @@ pub mod compute_node {
                 .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(select) = select {
             url.query_pairs_mut().append_pair("$select", select);
         }
@@ -6082,7 +6082,7 @@ pub mod compute_node {
         }
     }
     pub mod get {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6126,9 +6126,9 @@ pub mod compute_node {
                 .map_err(reboot::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = if let Some(node_reboot_parameter) = node_reboot_parameter {
-            req_builder = req_builder.header("content-type", "application/json");
+            req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
             azure_core::to_json(node_reboot_parameter).map_err(reboot::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -6162,7 +6162,7 @@ pub mod compute_node {
         }
     }
     pub mod reboot {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6206,9 +6206,9 @@ pub mod compute_node {
                 .map_err(reimage::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = if let Some(node_reimage_parameter) = node_reimage_parameter {
-            req_builder = req_builder.header("content-type", "application/json");
+            req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
             azure_core::to_json(node_reimage_parameter).map_err(reimage::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -6245,7 +6245,7 @@ pub mod compute_node {
         }
     }
     pub mod reimage {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6294,9 +6294,9 @@ pub mod compute_node {
                 .map_err(disable_scheduling::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = if let Some(node_disable_scheduling_parameter) = node_disable_scheduling_parameter {
-            req_builder = req_builder.header("content-type", "application/json");
+            req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
             azure_core::to_json(node_disable_scheduling_parameter).map_err(disable_scheduling::Error::SerializeError)?
         } else {
             bytes::Bytes::from_static(azure_core::EMPTY_BODY)
@@ -6333,7 +6333,7 @@ pub mod compute_node {
         }
     }
     pub mod disable_scheduling {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6381,7 +6381,7 @@ pub mod compute_node {
                 .map_err(enable_scheduling::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -6416,7 +6416,7 @@ pub mod compute_node {
         }
     }
     pub mod enable_scheduling {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6464,7 +6464,7 @@ pub mod compute_node {
                 .map_err(get_remote_login_settings::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -6505,7 +6505,7 @@ pub mod compute_node {
         }
     }
     pub mod get_remote_login_settings {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6548,7 +6548,7 @@ pub mod compute_node {
                 .map_err(get_remote_desktop::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -6587,7 +6587,7 @@ pub mod compute_node {
         }
     }
     pub mod get_remote_desktop {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6636,7 +6636,7 @@ pub mod compute_node {
                 .map_err(upload_batch_service_logs::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
         }
@@ -6649,7 +6649,7 @@ pub mod compute_node {
         if let Some(ocp_date) = ocp_date {
             req_builder = req_builder.header("ocp-date", ocp_date);
         }
-        req_builder = req_builder.header("content-type", "application/json");
+        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
         let req_body =
             azure_core::to_json(upload_batch_service_logs_configuration).map_err(upload_batch_service_logs::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
@@ -6679,7 +6679,7 @@ pub mod compute_node {
         }
     }
     pub mod upload_batch_service_logs {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6724,7 +6724,7 @@ pub mod compute_node {
                 .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -6769,7 +6769,7 @@ pub mod compute_node {
         }
     }
     pub mod list {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

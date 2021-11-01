@@ -40,7 +40,7 @@ impl<'a> CreateOrReplaceTriggerBuilder<'a> {
         body: B,
         trigger_type: T,
         trigger_operation: O,
-    ) -> Result<CreateTriggerResponse, crate::Error>
+    ) -> crate::Result<CreateTriggerResponse>
     where
         B: AsRef<str>,
         T: Into<TriggerType>,

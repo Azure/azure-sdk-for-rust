@@ -2,9 +2,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub mod network_interfaces {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list_virtual_machine_scale_set_vm_network_interfaces(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -24,7 +24,7 @@ pub mod network_interfaces {
                 .map_err(list_virtual_machine_scale_set_vm_network_interfaces::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -52,7 +52,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_virtual_machine_scale_set_vm_network_interfaces {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -95,7 +95,7 @@ pub mod network_interfaces {
                 .map_err(list_virtual_machine_scale_set_network_interfaces::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -123,7 +123,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_virtual_machine_scale_set_network_interfaces {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -163,7 +163,7 @@ pub mod network_interfaces {
                 .map_err(get_virtual_machine_scale_set_network_interface::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -193,7 +193,7 @@ pub mod network_interfaces {
         }
     }
     pub mod get_virtual_machine_scale_set_network_interface {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -233,7 +233,7 @@ pub mod network_interfaces {
                 .map_err(list_virtual_machine_scale_set_ip_configurations::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -264,7 +264,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_virtual_machine_scale_set_ip_configurations {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -305,7 +305,7 @@ pub mod network_interfaces {
                 .map_err(get_virtual_machine_scale_set_ip_configuration::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -335,7 +335,7 @@ pub mod network_interfaces {
         }
     }
     pub mod get_virtual_machine_scale_set_ip_configuration {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -356,7 +356,7 @@ pub mod network_interfaces {
     }
 }
 pub mod public_ip_addresses {
-    use crate::models::*;
+    use super::{models, models::*, API_VERSION};
     pub async fn list_virtual_machine_scale_set_public_ip_addresses(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -381,7 +381,7 @@ pub mod public_ip_addresses {
                 .map_err(list_virtual_machine_scale_set_public_ip_addresses::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -409,7 +409,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod list_virtual_machine_scale_set_public_ip_addresses {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -449,7 +449,7 @@ pub mod public_ip_addresses {
                 .map_err(list_virtual_machine_scale_set_vm_public_ip_addresses::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -477,7 +477,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod list_virtual_machine_scale_set_vm_public_ip_addresses {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -519,7 +519,7 @@ pub mod public_ip_addresses {
                 .map_err(get_virtual_machine_scale_set_public_ip_address::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
-        url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         if let Some(expand) = expand {
             url.query_pairs_mut().append_pair("$expand", expand);
         }
@@ -549,7 +549,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod get_virtual_machine_scale_set_public_ip_address {
-        use crate::{models, models::*};
+        use super::{models, models::*, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

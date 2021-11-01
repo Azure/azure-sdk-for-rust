@@ -1,14 +1,14 @@
 {
-    "uri": "/dbs/test-cosmos-db-attachment/colls/test-collection-attachment/docs/unique_id100/attachments/reference",
-    "method": "PUT",
-    "headers": {
-        "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
-        "x-ms-consistency-level": "Session",
-        "x-ms-date": "Wed, 27 Oct 2021 20:33:52 GMT",
-        "x-ms-documentdb-partitionkey": "[\"unique_id100\"]",
-        "x-ms-version": "2018-12-31",
-        "x-ms-session-token": "0:-1#3",
-        "authorization": "<<STRIPPED>>"
-    },
-    "body": "eyJpZCI6InJlZmVyZW5jZSIsImNvbnRlbnRUeXBlIjoiaW1hZ2UvanBlZyIsIm1lZGlhIjoiaHR0cHM6Ly93d3cubWljcm9zb2Z0LmNvbSJ9"
+  "uri": "/dbs/test-cosmos-db-attachment/colls/test-collection-attachment/docs/unique_id100/attachments/reference",
+  "method": "PUT",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
+    "x-ms-consistency-level": "Session",
+    "x-ms-date": "Mon, 01 Nov 2021 12:41:46 GMT",
+    "x-ms-documentdb-partitionkey": "[\"unique_id100\"]",
+    "x-ms-session-token": "0:-1#3",
+    "x-ms-version": "2018-12-31"
+  },
+  "body": "eyJpZCI6InJlZmVyZW5jZSIsImNvbnRlbnRUeXBlIjoiaW1hZ2UvanBlZyIsIm1lZGlhIjoiaHR0cHM6Ly93d3cubWljcm9zb2Z0LmNvbSJ9"
 }

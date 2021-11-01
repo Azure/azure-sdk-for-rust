@@ -57,7 +57,7 @@ impl<'a> CreateDocumentOptions<'a> {
         &self,
         req: &mut HttpRequest,
         document: &'b DOC,
-    ) -> Result<(), crate::Error>
+    ) -> crate::Result<()>
     where
         DOC: Serialize + CosmosEntity<'b>,
     {
@@ -110,7 +110,7 @@ pub struct CreateDocumentResponse {
 }
 
 impl CreateDocumentResponse {
-    pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

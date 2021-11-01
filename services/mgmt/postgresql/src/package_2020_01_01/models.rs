@@ -5,17 +5,17 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServerVersion {
     #[serde(rename = "9.5")]
-    _9_5,
+    N9_5,
     #[serde(rename = "9.6")]
-    _9_6,
+    N9_6,
     #[serde(rename = "10")]
-    _10,
+    N10,
     #[serde(rename = "10.0")]
-    _10_0,
+    N10_0,
     #[serde(rename = "10.2")]
-    _10_2,
+    N10_2,
     #[serde(rename = "11")]
-    _11,
+    N11,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SslEnforcement {

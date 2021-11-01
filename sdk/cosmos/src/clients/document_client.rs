@@ -71,7 +71,7 @@ impl DocumentClient {
         &self,
         ctx: Context,
         options: GetDocumentOptions<'_>,
-    ) -> Result<GetDocumentResponse<T>, crate::Error>
+    ) -> crate::Result<GetDocumentResponse<T>>
     where
         T: DeserializeOwned,
     {
@@ -84,8 +84,6 @@ impl DocumentClient {
             .cosmos_client()
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         GetDocumentResponse::try_from(response).await
@@ -101,7 +99,7 @@ impl DocumentClient {
         &'a self,
         ctx: Context,
         options: ListAttachmentsOptions<'a>,
-    ) -> impl Stream<Item = Result<ListAttachmentsResponse, crate::Error>> + 'a {
+    ) -> impl Stream<Item = crate::Result<ListAttachmentsResponse>> + 'a {
         macro_rules! r#try {
             ($expr:expr $(,)?) => {
                 match $expr {
@@ -148,7 +146,6 @@ impl DocumentClient {
                                     .send(&mut pipeline_context, &mut request)
                                     .await
                             );
-                            let response = r#try!(response.validate(http::StatusCode::OK).await);
                             ListAttachmentsResponse::try_from(response).await
                         }
                         State::Continuation(continuation_token) => {
@@ -174,7 +171,6 @@ impl DocumentClient {
                                     .send(&mut pipeline_context, &mut request)
                                     .await
                             );
-                            let response = r#try!(response.validate(http::StatusCode::OK).await);
                             ListAttachmentsResponse::try_from(response).await
                         }
                         State::Done => return None,

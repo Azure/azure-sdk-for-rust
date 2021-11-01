@@ -17,7 +17,7 @@ pub struct PermissionResponse<'a> {
 }
 
 impl<'a> PermissionResponse<'a> {
-    pub async fn try_from(response: HttpResponse) -> Result<PermissionResponse<'a>, crate::Error> {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<PermissionResponse<'a>> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

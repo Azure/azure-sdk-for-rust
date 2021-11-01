@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use crate::models::*;
+use super::{models, models::*, API_VERSION};
 pub async fn get_keys(
     operation_config: &crate::OperationConfig,
     name: Option<&str>,
@@ -22,7 +22,7 @@ pub async fn get_keys(
             .map_err(get_keys::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(name) = name {
         url.query_pairs_mut().append_pair("name", name);
     }
@@ -61,7 +61,7 @@ pub async fn get_keys(
     }
 }
 pub mod get_keys {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -102,7 +102,7 @@ pub async fn check_keys(
             .map_err(check_keys::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(name) = name {
         url.query_pairs_mut().append_pair("name", name);
     }
@@ -128,7 +128,7 @@ pub async fn check_keys(
     }
 }
 pub mod check_keys {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -154,7 +154,7 @@ pub async fn get_key_values(
     sync_token: Option<&str>,
     after: Option<&str>,
     accept_datetime: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<KeyValueListResult, get_key_values::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/kv", operation_config.base_path(),);
@@ -168,7 +168,7 @@ pub async fn get_key_values(
             .map_err(get_key_values::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(key) = key {
         url.query_pairs_mut().append_pair("key", key);
     }
@@ -210,7 +210,7 @@ pub async fn get_key_values(
     }
 }
 pub mod get_key_values {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -239,7 +239,7 @@ pub async fn check_key_values(
     sync_token: Option<&str>,
     after: Option<&str>,
     accept_datetime: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<(), check_key_values::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/kv", operation_config.base_path(),);
@@ -253,7 +253,7 @@ pub async fn check_key_values(
             .map_err(check_key_values::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(key) = key {
         url.query_pairs_mut().append_pair("key", key);
     }
@@ -282,7 +282,7 @@ pub async fn check_key_values(
     }
 }
 pub mod check_key_values {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -309,7 +309,7 @@ pub async fn get_key_value(
     accept_datetime: Option<&str>,
     if_match: Option<&str>,
     if_none_match: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<KeyValue, get_key_value::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/kv/{}", operation_config.base_path(), key);
@@ -323,7 +323,7 @@ pub async fn get_key_value(
             .map_err(get_key_value::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(label) = label {
         url.query_pairs_mut().append_pair("label", label);
     }
@@ -365,7 +365,7 @@ pub async fn get_key_value(
     }
 }
 pub mod get_key_value {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -408,7 +408,7 @@ pub async fn put_key_value(
             .map_err(put_key_value::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(label) = label {
         url.query_pairs_mut().append_pair("label", label);
     }
@@ -452,7 +452,7 @@ pub async fn put_key_value(
     }
 }
 pub mod put_key_value {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -493,7 +493,7 @@ pub async fn delete_key_value(
             .map_err(delete_key_value::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(label) = label {
         url.query_pairs_mut().append_pair("label", label);
     }
@@ -530,7 +530,7 @@ pub async fn delete_key_value(
     }
 }
 pub mod delete_key_value {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200(KeyValue),
@@ -565,7 +565,7 @@ pub async fn check_key_value(
     accept_datetime: Option<&str>,
     if_match: Option<&str>,
     if_none_match: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<(), check_key_value::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/kv/{}", operation_config.base_path(), key);
@@ -579,7 +579,7 @@ pub async fn check_key_value(
             .map_err(check_key_value::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(label) = label {
         url.query_pairs_mut().append_pair("label", label);
     }
@@ -608,7 +608,7 @@ pub async fn check_key_value(
     }
 }
 pub mod check_key_value {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -633,7 +633,7 @@ pub async fn get_labels(
     sync_token: Option<&str>,
     after: Option<&str>,
     accept_datetime: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<LabelListResult, get_labels::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/labels", operation_config.base_path(),);
@@ -647,7 +647,7 @@ pub async fn get_labels(
             .map_err(get_labels::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(name) = name {
         url.query_pairs_mut().append_pair("name", name);
     }
@@ -686,7 +686,7 @@ pub async fn get_labels(
     }
 }
 pub mod get_labels {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -714,7 +714,7 @@ pub async fn check_labels(
     sync_token: Option<&str>,
     after: Option<&str>,
     accept_datetime: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<(), check_labels::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/labels", operation_config.base_path(),);
@@ -728,7 +728,7 @@ pub async fn check_labels(
             .map_err(check_labels::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(name) = name {
         url.query_pairs_mut().append_pair("name", name);
     }
@@ -754,7 +754,7 @@ pub async fn check_labels(
     }
 }
 pub mod check_labels {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -793,7 +793,7 @@ pub async fn put_lock(
             .map_err(put_lock::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(label) = label {
         url.query_pairs_mut().append_pair("label", label);
     }
@@ -832,7 +832,7 @@ pub async fn put_lock(
     }
 }
 pub mod put_lock {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -874,7 +874,7 @@ pub async fn delete_lock(
             .map_err(delete_lock::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(label) = label {
         url.query_pairs_mut().append_pair("label", label);
     }
@@ -913,7 +913,7 @@ pub async fn delete_lock(
     }
 }
 pub mod delete_lock {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -942,7 +942,7 @@ pub async fn get_revisions(
     sync_token: Option<&str>,
     after: Option<&str>,
     accept_datetime: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<KeyValueListResult, get_revisions::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/revisions", operation_config.base_path(),);
@@ -956,7 +956,7 @@ pub async fn get_revisions(
             .map_err(get_revisions::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(key) = key {
         url.query_pairs_mut().append_pair("key", key);
     }
@@ -998,7 +998,7 @@ pub async fn get_revisions(
     }
 }
 pub mod get_revisions {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1027,7 +1027,7 @@ pub async fn check_revisions(
     sync_token: Option<&str>,
     after: Option<&str>,
     accept_datetime: Option<&str>,
-    select: &Vec<&str>,
+    select: &[&str],
 ) -> std::result::Result<(), check_revisions::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/revisions", operation_config.base_path(),);
@@ -1041,7 +1041,7 @@ pub async fn check_revisions(
             .map_err(check_revisions::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
-    url.query_pairs_mut().append_pair("api-version", operation_config.api_version());
+    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
     if let Some(key) = key {
         url.query_pairs_mut().append_pair("key", key);
     }
@@ -1070,7 +1070,7 @@ pub async fn check_revisions(
     }
 }
 pub mod check_revisions {
-    use crate::{models, models::*};
+    use super::{models, models::*, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
