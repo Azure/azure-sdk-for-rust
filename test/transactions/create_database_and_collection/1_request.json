@@ -1,10 +1,10 @@
 {
-  "uri": "/dbs/sample/colls",
+  "uri": "/dbs/test-create-database-and-collection/colls",
   "method": "POST",
   "headers": {
     "authorization": "<<STRIPPED>>",
     "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
-    "x-ms-date": "Sat, 30 Oct 2021 16:13:10 GMT",
+    "x-ms-date": "Sun, 31 Oct 2021 13:13:44 GMT",
     "x-ms-version": "2018-12-31"
   },
   "body": "eyJpZCI6InBhbnphZG9ybyIsInBhcnRpdGlvbktleSI6eyJwYXRocyI6WyIvaWQiXSwia2luZCI6Ikhhc2gifX0="

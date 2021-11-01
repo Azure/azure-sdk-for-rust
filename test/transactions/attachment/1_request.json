@@ -1,12 +1,12 @@
 {
-    "uri": "/dbs/test-cosmos-db-attachment/colls",
-    "method": "POST",
-    "headers": {
-        "x-ms-offer-throughput": "400",
-        "x-ms-date": "Wed, 27 Oct 2021 20:33:50 GMT",
-        "authorization": "<<STRIPPED>>",
-        "x-ms-version": "2018-12-31",
-        "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)"
-    },
-    "body": "eyJpZCI6InRlc3QtY29sbGVjdGlvbi1hdHRhY2htZW50IiwiaW5kZXhpbmdQb2xpY3kiOnsiYXV0b21hdGljIjp0cnVlLCJpbmRleGluZ01vZGUiOiJjb25zaXN0ZW50IiwiaW5jbHVkZWRQYXRocyI6W3sicGF0aCI6Ii8qIiwiaW5kZXhlcyI6W3siZGF0YVR5cGUiOiJTdHJpbmciLCJwcmVjaXNpb24iOjMsImtpbmQiOiJIYXNoIn1dfV0sImV4Y2x1ZGVkUGF0aHMiOltdfSwicGFydGl0aW9uS2V5Ijp7InBhdGhzIjpbIi9pZCJdLCJraW5kIjoiSGFzaCJ9fQ=="
+  "uri": "/dbs/test-cosmos-db-attachment/colls",
+  "method": "POST",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
+    "x-ms-date": "Mon, 01 Nov 2021 12:41:43 GMT",
+    "x-ms-offer-throughput": "400",
+    "x-ms-version": "2018-12-31"
+  },
+  "body": "eyJpZCI6InRlc3QtY29sbGVjdGlvbi1hdHRhY2htZW50IiwiaW5kZXhpbmdQb2xpY3kiOnsiYXV0b21hdGljIjp0cnVlLCJpbmRleGluZ01vZGUiOiJjb25zaXN0ZW50IiwiaW5jbHVkZWRQYXRocyI6W3sicGF0aCI6Ii8qIiwiaW5kZXhlcyI6W3siZGF0YVR5cGUiOiJTdHJpbmciLCJwcmVjaXNpb24iOjMsImtpbmQiOiJIYXNoIn1dfV0sImV4Y2x1ZGVkUGF0aHMiOltdfSwicGFydGl0aW9uS2V5Ijp7InBhdGhzIjpbIi9pZCJdLCJraW5kIjoiSGFzaCJ9fQ=="
 }

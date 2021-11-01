@@ -3,9 +3,9 @@
   "method": "POST",
   "headers": {
     "authorization": "<<STRIPPED>>",
-    "x-ms-date": "Sat, 30 Oct 2021 16:13:05 GMT",
-    "x-ms-version": "2018-12-31",
-    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)"
+    "user-agent": "azsdk-rust-cosmos/0.1.0 (1.56.0; linux; x86_64)",
+    "x-ms-date": "Sun, 31 Oct 2021 13:13:44 GMT",
+    "x-ms-version": "2018-12-31"
   },
-  "body": "eyJpZCI6InNhbXBsZSJ9"
+  "body": "eyJpZCI6InRlc3QtY3JlYXRlLWRhdGFiYXNlLWFuZC1jb2xsZWN0aW9uIn0="
 }

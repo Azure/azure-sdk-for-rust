@@ -84,8 +84,6 @@ impl DocumentClient {
             .cosmos_client()
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         GetDocumentResponse::try_from(response).await
@@ -148,7 +146,6 @@ impl DocumentClient {
                                     .send(&mut pipeline_context, &mut request)
                                     .await
                             );
-                            let response = r#try!(response.validate(http::StatusCode::OK).await);
                             ListAttachmentsResponse::try_from(response).await
                         }
                         State::Continuation(continuation_token) => {
@@ -174,7 +171,6 @@ impl DocumentClient {
                                     .send(&mut pipeline_context, &mut request)
                                     .await
                             );
-                            let response = r#try!(response.validate(http::StatusCode::OK).await);
                             ListAttachmentsResponse::try_from(response).await
                         }
                         State::Done => return None,

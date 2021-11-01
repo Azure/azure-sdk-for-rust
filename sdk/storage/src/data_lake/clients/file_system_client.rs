@@ -77,8 +77,6 @@ impl FileSystemClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::CREATED)
             .await?;
 
         Ok(CreatePathResponse::try_from(response).await?)

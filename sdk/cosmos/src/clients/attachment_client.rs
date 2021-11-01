@@ -68,8 +68,6 @@ impl AttachmentClient {
             .cosmos_client()
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         GetAttachmentResponse::try_from(response).await
@@ -92,8 +90,6 @@ impl AttachmentClient {
             .cosmos_client()
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::NO_CONTENT)
             .await?;
 
         DeleteAttachmentResponse::try_from(response).await
@@ -119,8 +115,6 @@ impl AttachmentClient {
             .cosmos_client()
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::CREATED)
             .await?;
 
         CreateSlugAttachmentResponse::try_from(response).await
@@ -146,8 +140,6 @@ impl AttachmentClient {
             .cosmos_client()
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         ReplaceSlugAttachmentResponse::try_from(response).await
@@ -179,8 +171,6 @@ impl AttachmentClient {
             .cosmos_client()
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::CREATED)
             .await?;
 
         CreateReferenceAttachmentResponse::try_from(response).await
@@ -212,8 +202,6 @@ impl AttachmentClient {
             .cosmos_client()
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         ReplaceReferenceAttachmentResponse::try_from(response).await
