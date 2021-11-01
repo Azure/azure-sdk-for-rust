@@ -9,28 +9,25 @@ use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as Http
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct CreateReferenceAttachmentOptions<'a> {
-    activity_id: Option<ActivityId<'a>>,
+pub struct CreateReferenceAttachmentOptions {
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a> CreateReferenceAttachmentOptions<'a> {
+impl CreateReferenceAttachmentOptions {
     pub fn new() -> Self {
         Self {
-            activity_id: None,
             consistency_level: None,
         }
     }
 }
 
-impl<'a> CreateReferenceAttachmentOptions<'a> {
+impl CreateReferenceAttachmentOptions {
     setters! {
-        activity_id: &'a str => Some(ActivityId::new(activity_id)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 }
 
-impl<'a> CreateReferenceAttachmentOptions<'a> {
+impl CreateReferenceAttachmentOptions {
     pub(crate) fn decorate_request<'c, M, C>(
         &self,
         request: &mut HttpRequest,
@@ -43,7 +40,6 @@ impl<'a> CreateReferenceAttachmentOptions<'a> {
         M: AsRef<str>,
         C: Into<ContentType<'c>>,
     {
-        azure_core::headers::add_optional_header2(&self.activity_id, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
 
         crate::cosmos_entity::add_as_partition_key_header_serialized2(partition_key, request);
@@ -100,9 +96,6 @@ impl CreateReferenceAttachmentResponse {
     pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
-
-        debug!("headers == {:#?}", headers);
-        debug!("body == {:#?}", body);
 
         let attachment: Attachment = serde_json::from_slice(&body)?;
 
