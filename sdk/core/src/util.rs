@@ -8,6 +8,14 @@ use serde::{
 
 use std::{convert::TryFrom, fmt::Display, str::FromStr};
 
+/// An async version of the `std::convert::TryFrom` trait.
+#[async_trait::async_trait]
+pub trait AsyncTryFrom<T>: Sized {
+    type Error;
+
+    async fn try_from(value: T) -> Result<Self, Self::Error>;
+}
+
 pub fn format_header_value<D: Display>(value: D) -> Result<HeaderValue, http::Error> {
     let value: &str = &format(value);
     Ok(HeaderValue::try_from(value)?)

@@ -55,8 +55,11 @@ pub struct ListCollectionsResponse {
     pub continuation_token: Option<String>,
 }
 
-impl ListCollectionsResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+#[async_trait::async_trait]
+impl azure_core::util::AsyncTryFrom<HttpResponse> for ListCollectionsResponse {
+    type Error = crate::Error;
+
+    async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

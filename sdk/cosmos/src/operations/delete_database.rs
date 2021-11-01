@@ -36,8 +36,11 @@ pub struct DeleteDatabaseResponse {
     pub resource_usage: Vec<ResourceQuota>,
 }
 
-impl DeleteDatabaseResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+#[async_trait::async_trait]
+impl azure_core::util::AsyncTryFrom<HttpResponse> for DeleteDatabaseResponse {
+    type Error = crate::Error;
+
+    async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let headers = response.headers();
 
         let charge = request_charge_from_headers(headers)?;

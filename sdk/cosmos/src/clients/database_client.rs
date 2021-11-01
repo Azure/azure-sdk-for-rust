@@ -61,8 +61,7 @@ impl DatabaseClient {
         ctx: Context,
         options: GetDatabaseOptions,
     ) -> crate::Result<GetDatabaseResponse> {
-        let response = self
-            .cosmos_client()
+        self.cosmos_client()
             .run_pipeline(
                 ctx,
                 &format!("dbs/{}", self.database_name()),
@@ -70,9 +69,7 @@ impl DatabaseClient {
                 ResourceType::Databases,
                 |request| options.decorate_request(request),
             )
-            .await?;
-
-        Ok(GetDatabaseResponse::try_from(response).await?)
+            .await
     }
 
     /// Delete the database
@@ -81,8 +78,7 @@ impl DatabaseClient {
         ctx: Context,
         options: DeleteDatabaseOptions,
     ) -> crate::Result<DeleteDatabaseResponse> {
-        let response = self
-            .cosmos_client()
+        self.cosmos_client()
             .run_pipeline(
                 ctx,
                 &format!("dbs/{}", self.database_name()),
@@ -90,9 +86,7 @@ impl DatabaseClient {
                 ResourceType::Databases,
                 |request| options.decorate_request(request),
             )
-            .await?;
-
-        Ok(DeleteDatabaseResponse::try_from(response).await?)
+            .await
     }
 
     /// List collections in the database
@@ -109,8 +103,7 @@ impl DatabaseClient {
         where
             F: FnOnce(&mut azure_core::Request) -> crate::Result<()> + 'a,
         {
-            let response = this
-                .cosmos_client()
+            this.cosmos_client()
                 .run_pipeline(
                     ctx,
                     &format!("dbs/{}/colls", this.database_name()),
@@ -118,8 +111,7 @@ impl DatabaseClient {
                     ResourceType::Users,
                     options,
                 )
-                .await?;
-            ListCollectionsResponse::try_from(response).await
+                .await
         }
         unfold(State::Init, move |state: State| {
             let ctx = ctx.clone();
@@ -159,8 +151,7 @@ impl DatabaseClient {
         collection_name: S,
         options: CreateCollectionOptions,
     ) -> crate::Result<CreateCollectionResponse> {
-        let response = self
-            .cosmos_client()
+        self.cosmos_client()
             .run_pipeline(
                 ctx,
                 &format!("dbs/{}/colls", self.database_name()),
@@ -168,9 +159,7 @@ impl DatabaseClient {
                 ResourceType::Collections,
                 |request| options.decorate_request(request, collection_name.as_ref()),
             )
-            .await?;
-
-        Ok(CreateCollectionResponse::try_from(response).await?)
+            .await
     }
 
     /// List users
@@ -187,8 +176,7 @@ impl DatabaseClient {
         where
             F: FnOnce(&mut azure_core::Request) -> crate::Result<()> + 'a,
         {
-            let response = this
-                .cosmos_client()
+            this.cosmos_client()
                 .run_pipeline(
                     ctx,
                     &format!("dbs/{}/users", this.database_name()),
@@ -196,8 +184,7 @@ impl DatabaseClient {
                     ResourceType::Users,
                     options,
                 )
-                .await?;
-            ListUsersResponse::try_from(response).await
+                .await
         }
         unfold(State::Init, move |state: State| {
             let ctx = ctx.clone();
