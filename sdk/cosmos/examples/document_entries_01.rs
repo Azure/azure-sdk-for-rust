@@ -1,4 +1,3 @@
-use azure_core::Context;
 use azure_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -50,11 +49,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // let's add an entity.
     let create_document_response = client
-        .create_document(
-            Context::new(),
-            &doc,
-            CreateDocumentOptions::new().is_upsert(true),
-        )
+        .create_document(&doc, CreateDocumentOptions::new().is_upsert(true))
         .await?;
 
     println!(
@@ -66,7 +61,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .clone()
         .into_document_client(doc.id.clone(), &doc.id)?
         .get_document::<serde_json::Value>(
-            Context::new(),
             GetDocumentOptions::new().consistency_level(&create_document_response),
         )
         .await?;
@@ -76,7 +70,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .clone()
         .into_document_client("ciccia", &doc.id)?
         .get_document::<serde_json::Value>(
-            Context::new(),
             GetDocumentOptions::new().consistency_level(&create_document_response),
         )
         .await?;

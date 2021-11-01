@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use stop_token::prelude::*;
 use stop_token::StopSource;
@@ -20,7 +19,7 @@ async fn main() -> azure_cosmos::Result<()> {
 
     // Create a new database, and time out if it takes more than 1 second.
     let options = CreateDatabaseOptions::new();
-    let future = client.create_database(Context::new(), "my_database", options);
+    let future = client.create_database("my_database", options);
     let deadline = Instant::now() + Duration::from_secs(1);
     match future.until(deadline).await {
         Ok(Ok(r)) => println!("successful response: {:?}", r),
@@ -37,7 +36,7 @@ async fn main() -> azure_cosmos::Result<()> {
         let stop = source.token();
         tokio::spawn(async move {
             let options = CreateDatabaseOptions::new();
-            let future = client.create_database(Context::new(), "my_database", options);
+            let future = client.create_database("my_database", options);
             match future.until(stop).await {
                 Ok(Ok(r)) => println!("successful response: {:?}", r),
                 Ok(Err(e)) => println!("request was made but failed: {:?}", e),

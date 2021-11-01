@@ -1,6 +1,5 @@
 #![cfg(feature = "mock_transport_framework")]
 
-use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use azure_cosmos::resources::collection::*;
 use std::error::Error;
@@ -15,10 +14,9 @@ async fn collection_operations() -> Result<(), BoxedError> {
 
     let client = setup::initialize("collection_operations")?;
     let database_name = "test-collection-operations";
-    let context = Context::new();
 
     client
-        .create_database(context.clone(), database_name, CreateDatabaseOptions::new())
+        .create_database(database_name, CreateDatabaseOptions::new())
         .await?;
 
     // create collection!
@@ -28,11 +26,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     log::info!("Creating a collection with name '{}'...", collection_name);
 
     let create_collection_response = db_client
-        .create_collection(
-            context.clone(),
-            collection_name,
-            CreateCollectionOptions::new("/id"),
-        )
+        .create_collection(collection_name, CreateCollectionOptions::new("/id"))
         .await?;
 
     assert_eq!(create_collection_response.collection.id, collection_name);
@@ -47,7 +41,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
 
     // get collection!
     let get_collection_response = collection_client
-        .get_collection(context.clone(), GetCollectionOptions::new())
+        .get_collection(GetCollectionOptions::new())
         .await?;
 
     assert_eq!(get_collection_response.collection.id, collection_name);
@@ -83,7 +77,6 @@ async fn collection_operations() -> Result<(), BoxedError> {
     // replace collection!
     let replace_collection_response = collection_client
         .replace_collection(
-            context.clone(),
             ReplaceCollectionOptions::new("/id").indexing_policy(new_indexing_policy),
         )
         .await?;
@@ -115,7 +108,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
 
     // delete collection!
     let delete_collection_response = collection_client
-        .delete_collection(context.clone(), DeleteCollectionOptions::new())
+        .delete_collection(DeleteCollectionOptions::new())
         .await?;
 
     log::info!("Successfully deleted collection");
@@ -125,7 +118,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     );
 
     db_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database(DeleteDatabaseOptions::new())
         .await
         .unwrap();
 

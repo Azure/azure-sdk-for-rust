@@ -65,14 +65,14 @@ impl DocumentClient {
     /// Get a document
     pub async fn get_document<T>(
         &self,
-        ctx: Context,
         options: GetDocumentOptions<'_>,
     ) -> crate::Result<GetDocumentResponse<T>>
     where
         T: DeserializeOwned,
     {
         let mut request = self.prepare_request_pipeline_with_document_name(http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut pipeline_context =
+            PipelineContext::new(Context::new(), ResourceType::Databases.into());
 
         options.decorate_request(&mut request)?;
 

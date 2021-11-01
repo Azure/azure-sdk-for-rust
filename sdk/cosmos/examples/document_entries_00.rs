@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // let's add an entity.
         response = Some(
             client
-                .create_document(Context::new(), &doc, CreateDocumentOptions::new())
+                .create_document(&doc, CreateDocumentOptions::new())
                 .await?,
         );
     }
@@ -128,10 +128,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let response = client
         .clone()
         .into_document_client(id.clone(), partition_key)?
-        .get_document::<MySampleStruct>(
-            Context::new(),
-            GetDocumentOptions::new().consistency_level(session_token),
-        )
+        .get_document::<MySampleStruct>(GetDocumentOptions::new().consistency_level(session_token))
         .await?;
 
     assert!(matches!(response, GetDocumentResponse::Found(_)));
@@ -166,10 +163,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let response = client
         .clone()
         .into_document_client(id.clone(), &id)?
-        .get_document::<MySampleStruct>(
-            Context::new(),
-            GetDocumentOptions::new().consistency_level(&response),
-        )
+        .get_document::<MySampleStruct>(GetDocumentOptions::new().consistency_level(&response))
         .await?;
 
     assert!(matches!(response, GetDocumentResponse::NotFound(_)));

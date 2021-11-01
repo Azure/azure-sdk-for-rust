@@ -1,4 +1,4 @@
-use azure_core::prelude::*;
+
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
-    let databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    let databases = Box::pin(client.list_databases(ListDatabasesOptions::new()))
         .next()
         .await
         .unwrap()?;
@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         let db = client
             .clone()
             .into_database_client(db.id.clone())
-            .get_database(Context::new(), GetDatabaseOptions::default())
+            .get_database(GetDatabaseOptions::default())
             .await?;
         println!("db {} found == {:?}", &db.database.id, &db);
     }
@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             let collection_response = database_client
                 .clone()
                 .into_collection_client(collection.id)
-                .get_collection(Context::new(), GetCollectionOptions::new())
+                .get_collection(GetCollectionOptions::new())
                 .await?;
 
             println!("\tcollection_response {:?}", collection_response);

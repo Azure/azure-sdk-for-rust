@@ -19,7 +19,7 @@ async fn users() {
     // create a temp database
     let _create_database_response = client
         .create_database(
-            azure_core::Context::new(),
+            
             DATABASE_NAME,
             CreateDatabaseOptions::new(),
         )
@@ -30,12 +30,12 @@ async fn users() {
     let user_client = database_client.clone().into_user_client(USER_NAME);
 
     let _create_user_response = user_client
-        .create_user(Context::new(), CreateUserOptions::new())
+        .create_user(CreateUserOptions::new())
         .await
         .unwrap();
 
     let list_users_response =
-        Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
+        Box::pin(database_client.list_users(ListUsersOptions::new()))
             .next()
             .await
             .unwrap()
@@ -44,7 +44,7 @@ async fn users() {
     assert_eq!(list_users_response.users.len(), 1);
 
     let get_user_response = user_client
-        .get_user(Context::new(), GetUserOptions::new())
+        .get_user(GetUserOptions::new())
         .await;
     assert!(get_user_response.is_ok());
     let retrieved_user = get_user_response.unwrap();
@@ -52,7 +52,7 @@ async fn users() {
 
     let _replace_user_response = user_client
         .replace_user(
-            Context::new(),
+            
             USER_NAME_REPLACED,
             ReplaceUserOptions::new(),
         )
@@ -60,7 +60,7 @@ async fn users() {
         .unwrap();
 
     let list_users_response =
-        Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
+        Box::pin(database_client.list_users(ListUsersOptions::new()))
             .next()
             .await
             .unwrap()
@@ -70,12 +70,12 @@ async fn users() {
     let user_client = database_client.clone().into_user_client(USER_NAME_REPLACED);
 
     let _delete_user_response = user_client
-        .delete_user(Context::new(), DeleteUserOptions::new())
+        .delete_user(DeleteUserOptions::new())
         .await
         .unwrap();
 
     let list_users_response =
-        Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
+        Box::pin(database_client.list_users(ListUsersOptions::new()))
             .next()
             .await
             .unwrap()
@@ -91,7 +91,7 @@ async fn users() {
         .await
         .unwrap();
 
-    let _databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    let _databases = Box::pin(client.list_databases(ListDatabasesOptions::new()))
         .next()
         .await
         .unwrap()

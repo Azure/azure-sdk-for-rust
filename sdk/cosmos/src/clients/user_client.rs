@@ -41,16 +41,12 @@ impl UserClient {
     }
 
     /// Create the user
-    pub async fn create_user(
-        &self,
-        ctx: Context,
-        options: CreateUserOptions,
-    ) -> crate::Result<UserResponse> {
+    pub async fn create_user(&self, options: CreateUserOptions) -> crate::Result<UserResponse> {
         let mut request = self.cosmos_client().prepare_request_pipeline(
             &format!("dbs/{}/users", self.database_client.database_name()),
             http::Method::POST,
         );
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
+        let mut pipeline_context = PipelineContext::new(Context::new(), ResourceType::Users.into());
 
         options.decorate_request(&mut request, self.user_name())?;
         let response = self
@@ -62,13 +58,9 @@ impl UserClient {
     }
 
     /// Get the user
-    pub async fn get_user(
-        &self,
-        ctx: Context,
-        options: GetUserOptions,
-    ) -> crate::Result<UserResponse> {
+    pub async fn get_user(&self, options: GetUserOptions) -> crate::Result<UserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
+        let mut pipeline_context = PipelineContext::new(Context::new(), ResourceType::Users.into());
 
         options.decorate_request(&mut request)?;
         let response = self
@@ -82,12 +74,11 @@ impl UserClient {
     /// Replace the user
     pub async fn replace_user<S: AsRef<str>>(
         &self,
-        ctx: Context,
         user_name: S,
         options: ReplaceUserOptions,
     ) -> crate::Result<UserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::PUT);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
+        let mut pipeline_context = PipelineContext::new(Context::new(), ResourceType::Users.into());
 
         options.decorate_request(&mut request, user_name.as_ref())?;
         let response = self
@@ -101,11 +92,10 @@ impl UserClient {
     /// Delete the user
     pub async fn delete_user(
         &self,
-        ctx: Context,
         options: DeleteUserOptions,
     ) -> crate::Result<DeleteUserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::DELETE);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
+        let mut pipeline_context = PipelineContext::new(Context::new(), ResourceType::Users.into());
 
         options.decorate_request(&mut request)?;
         let response = self

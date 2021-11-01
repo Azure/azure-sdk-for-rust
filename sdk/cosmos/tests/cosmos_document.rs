@@ -1,5 +1,4 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::Context;
 use azure_cosmos::prelude::{CreateDocumentOptions, DeleteDatabaseOptions, GetDocumentOptions};
 use serde::{Deserialize, Serialize};
 
@@ -32,11 +31,7 @@ async fn create_and_delete_document() {
     let client = setup::initialize().unwrap();
 
     client
-        .create_database(
-            azure_core::Context::new(),
-            DATABASE_NAME,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(DATABASE_NAME, CreateDatabaseOptions::new())
         .await
         .unwrap();
 
@@ -54,7 +49,7 @@ async fn create_and_delete_document() {
         .offer(Offer::Throughput(400))
         .indexing_policy(indexing_policy);
     database_client
-        .create_collection(Context::new(), COLLECTION_NAME, options)
+        .create_collection(COLLECTION_NAME, options)
         .await
         .unwrap();
 
@@ -68,7 +63,7 @@ async fn create_and_delete_document() {
         hello: 42,
     };
     collection_client
-        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
+        .create_document(&document_data, CreateDocumentOptions::new())
         .await
         .unwrap();
 
@@ -87,7 +82,7 @@ async fn create_and_delete_document() {
         .unwrap();
 
     let document_after_get = document_client
-        .get_document::<MyDocument>(Context::new(), GetDocumentOptions::new())
+        .get_document::<MyDocument>(GetDocumentOptions::new())
         .await
         .unwrap();
 
@@ -109,7 +104,7 @@ async fn create_and_delete_document() {
     assert!(documents.len() == 0);
 
     database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database(DeleteDatabaseOptions::new())
         .await
         .unwrap();
 }
@@ -123,11 +118,7 @@ async fn query_documents() {
     let client = setup::initialize().unwrap();
 
     client
-        .create_database(
-            azure_core::Context::new(),
-            DATABASE_NAME,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(DATABASE_NAME, CreateDatabaseOptions::new())
         .await
         .unwrap();
     let database_client = client.into_database_client(DATABASE_NAME);
@@ -144,7 +135,7 @@ async fn query_documents() {
         .indexing_policy(indexing_policy)
         .offer(Offer::S2);
     database_client
-        .create_collection(Context::new(), COLLECTION_NAME, options)
+        .create_collection(COLLECTION_NAME, options)
         .await
         .unwrap();
 
@@ -158,7 +149,7 @@ async fn query_documents() {
         hello: 42,
     };
     collection_client
-        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
+        .create_document(&document_data, CreateDocumentOptions::new())
         .await
         .unwrap();
 
@@ -186,7 +177,7 @@ async fn query_documents() {
     assert_eq!(query_result[0].result, document_data);
 
     database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database(DeleteDatabaseOptions::new())
         .await
         .unwrap();
 }
@@ -200,11 +191,7 @@ async fn replace_document() {
     let client = setup::initialize().unwrap();
 
     client
-        .create_database(
-            azure_core::Context::new(),
-            DATABASE_NAME,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(DATABASE_NAME, CreateDatabaseOptions::new())
         .await
         .unwrap();
     let database_client = client.into_database_client(DATABASE_NAME);
@@ -221,7 +208,7 @@ async fn replace_document() {
         .indexing_policy(indexing_policy)
         .offer(Offer::S2);
     database_client
-        .create_collection(Context::new(), COLLECTION_NAME, options)
+        .create_collection(COLLECTION_NAME, options)
         .await
         .unwrap();
 
@@ -235,7 +222,7 @@ async fn replace_document() {
         hello: 42,
     };
     collection_client
-        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
+        .create_document(&document_data, CreateDocumentOptions::new())
         .await
         .unwrap();
 
@@ -266,7 +253,7 @@ async fn replace_document() {
         .into_document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
         .unwrap();
     let document_after_get = document_client
-        .get_document::<MyDocument>(Context::new(), GetDocumentOptions::new())
+        .get_document::<MyDocument>(GetDocumentOptions::new())
         .await
         .unwrap();
 
@@ -277,7 +264,7 @@ async fn replace_document() {
     }
 
     database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database(DeleteDatabaseOptions::new())
         .await
         .unwrap();
 }

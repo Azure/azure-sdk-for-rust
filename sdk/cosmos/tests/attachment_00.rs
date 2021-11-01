@@ -1,5 +1,4 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::Context;
 use azure_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -37,11 +36,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
 
     // create a temp database
     let _create_database_response = client
-        .create_database(
-            azure_core::Context::new(),
-            DATABASE_NAME,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(DATABASE_NAME, CreateDatabaseOptions::new())
         .await
         .unwrap();
 
@@ -71,7 +66,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
             .offer(Offer::Throughput(400))
             .indexing_policy(ip);
         database_client
-            .create_collection(Context::new(), COLLECTION_NAME, options)
+            .create_collection(COLLECTION_NAME, options)
             .await
             .unwrap()
     };
@@ -91,7 +86,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
 
     // let's add an entity.
     let session_token: ConsistencyLevel = collection_client
-        .create_document(Context::new(), &doc, CreateDocumentOptions::new())
+        .create_document(&doc, CreateDocumentOptions::new())
         .await?
         .into();
 
@@ -179,7 +174,7 @@ async fn attachment() -> Result<(), azure_cosmos::Error> {
 
     // delete the database
     database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database(DeleteDatabaseOptions::new())
         .await?;
 
     Ok(())

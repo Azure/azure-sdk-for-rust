@@ -1,4 +1,3 @@
-use azure_core::Context;
 use azure_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -58,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // let's add an entity.
     match client
-        .create_document(Context::new(), &doc, CreateDocumentOptions::new())
+        .create_document(&doc, CreateDocumentOptions::new())
         .await
     {
         Ok(_) => {

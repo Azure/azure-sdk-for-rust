@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use std::error::Error;
 
@@ -25,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let database_client = client.into_database_client(database_name.clone());
 
     let response = database_client
-        .get_database(Context::new(), GetDatabaseOptions::new())
+        .get_database(GetDatabaseOptions::new())
         .await?;
     println!("response == {:?}", response);
 

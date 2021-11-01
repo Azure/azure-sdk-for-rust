@@ -47,7 +47,6 @@ impl PermissionClient {
     /// Create the permission
     pub async fn create_permission(
         &self,
-        ctx: Context,
         options: CreatePermissionOptions,
         permission_mode: &PermissionMode<'_>,
     ) -> crate::Result<PermissionResponse<'_>> {
@@ -60,7 +59,8 @@ impl PermissionClient {
             http::Method::POST,
         );
 
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Permissions.into());
+        let mut pipeline_context =
+            PipelineContext::new(Context::new(), ResourceType::Permissions.into());
 
         options.decorate_request(&mut request, self.permission_name(), permission_mode)?;
 
@@ -75,13 +75,13 @@ impl PermissionClient {
     /// Replace the permission
     pub async fn replace_permission(
         &self,
-        ctx: Context,
         options: ReplacePermissionOptions,
         permission_mode: &PermissionMode<'_>,
     ) -> crate::Result<PermissionResponse<'_>> {
         let mut request = self.prepare_request_with_permission_name(http::Method::PUT);
 
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Permissions.into());
+        let mut pipeline_context =
+            PipelineContext::new(Context::new(), ResourceType::Permissions.into());
 
         options.decorate_request(&mut request, self.permission_name(), permission_mode)?;
 
@@ -96,12 +96,12 @@ impl PermissionClient {
     /// Get the permission
     pub async fn get_permission(
         &self,
-        ctx: Context,
         options: GetPermissionOptions,
     ) -> crate::Result<PermissionResponse<'_>> {
         let mut request = self.prepare_request_with_permission_name(http::Method::GET);
 
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Permissions.into());
+        let mut pipeline_context =
+            PipelineContext::new(Context::new(), ResourceType::Permissions.into());
 
         options.decorate_request(&mut request)?;
 
@@ -116,12 +116,12 @@ impl PermissionClient {
     /// Delete the permission
     pub async fn delete_permission(
         &self,
-        ctx: Context,
         options: DeletePermissionOptions,
     ) -> crate::Result<DeletePermissionResponse> {
         let mut request = self.prepare_request_with_permission_name(http::Method::DELETE);
 
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Permissions.into());
+        let mut pipeline_context =
+            PipelineContext::new(Context::new(), ResourceType::Permissions.into());
 
         options.decorate_request(&mut request)?;
 

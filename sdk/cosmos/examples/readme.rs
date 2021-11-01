@@ -1,4 +1,3 @@
-use azure_core::Context;
 use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos.
 use azure_cosmos::prelude::*;
@@ -81,7 +80,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         session_token = Some(
             collection_client
                 .create_document(
-                    Context::new(),
                     &document_to_insert,
                     CreateDocumentOptions::new().is_upsert(true),
                 )

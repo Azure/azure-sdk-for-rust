@@ -1,4 +1,4 @@
-use azure_core::Context;
+
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
@@ -37,14 +37,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // both as struct or id.
 
     let mut list_databases_stream =
-        Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()));
+        Box::pin(client.list_databases(ListDatabasesOptions::new()));
     while let Some(list_databases_response) = list_databases_stream.next().await {
         println!("list_databases_response = {:#?}", list_databases_response?);
     }
     drop(list_databases_stream);
 
     let db = client
-        .create_database(Context::new(), &database_name, CreateDatabaseOptions::new())
+        .create_database(&database_name, CreateDatabaseOptions::new())
         .await?;
     println!("created database = {:#?}", db);
 
@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
         let create_collection_response = db_client
             .create_collection(
-                Context::new(),
+                
                 "panzadoro",
                 CreateCollectionOptions::new("/id"),
             )
@@ -68,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         let db_collection = db_client.clone().into_collection_client("panzadoro");
 
         let get_collection_response = db_collection
-            .get_collection(Context::new(), GetCollectionOptions::new())
+            .get_collection(GetCollectionOptions::new())
             .await?;
         println!("get_collection_response == {:#?}", get_collection_response);
 
@@ -80,7 +80,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         }
 
         let delete_response = db_collection
-            .delete_collection(Context::new(), DeleteCollectionOptions::new())
+            .delete_collection(DeleteCollectionOptions::new())
             .await?;
         println!("collection deleted: {:#?}", delete_response);
     }

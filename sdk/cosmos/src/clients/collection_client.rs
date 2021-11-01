@@ -46,12 +46,12 @@ impl CollectionClient {
     /// Get a collection
     pub async fn get_collection(
         &self,
-        ctx: Context,
         options: GetCollectionOptions,
     ) -> crate::Result<GetCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::GET);
 
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
+        let mut pipeline_context =
+            PipelineContext::new(Context::new(), ResourceType::Collections.into());
 
         options.decorate_request(&mut request)?;
 
@@ -66,12 +66,12 @@ impl CollectionClient {
     /// Delete a collection
     pub async fn delete_collection(
         &self,
-        ctx: Context,
         options: DeleteCollectionOptions,
     ) -> crate::Result<DeleteCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::DELETE);
 
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
+        let mut pipeline_context =
+            PipelineContext::new(Context::new(), ResourceType::Collections.into());
 
         options.decorate_request(&mut request)?;
 
@@ -86,12 +86,12 @@ impl CollectionClient {
     /// Replace a collection
     pub async fn replace_collection(
         &self,
-        ctx: Context,
         options: ReplaceCollectionOptions,
     ) -> crate::Result<ReplaceCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::PUT);
 
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
+        let mut pipeline_context =
+            PipelineContext::new(Context::new(), ResourceType::Collections.into());
 
         options.decorate_request(&mut request, self.collection_name())?;
 
@@ -111,12 +111,12 @@ impl CollectionClient {
     /// create a document in a collection
     pub async fn create_document<'a, D: Serialize + CosmosEntity<'a>>(
         &self,
-        ctx: Context,
         document: &'a D,
         options: CreateDocumentOptions<'_>,
     ) -> crate::Result<CreateDocumentResponse> {
         let mut request = self.prepare_doc_request_pipeline(http::Method::POST);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
+        let mut pipeline_context =
+            PipelineContext::new(Context::new(), ResourceType::Documents.into());
 
         options.decorate_request(&mut request, document)?;
         let response = self

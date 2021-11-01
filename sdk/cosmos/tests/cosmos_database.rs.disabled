@@ -13,7 +13,7 @@ async fn create_and_delete_database() {
     let client = setup::initialize().unwrap();
 
     // list existing databases and remember their number
-    let databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    let databases = Box::pin(client.list_databases(ListDatabasesOptions::new()))
         .next()
         .await
         .unwrap()
@@ -23,14 +23,14 @@ async fn create_and_delete_database() {
     // create a new database and check if the number of DBs increased
     let database = client
         .create_database(
-            azure_core::Context::new(),
+            
             DATABASE_NAME,
             CreateDatabaseOptions::new(),
         )
         .await
         .unwrap();
 
-    let databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    let databases = Box::pin(client.list_databases(ListDatabasesOptions::new()))
         .next()
         .await
         .unwrap()
@@ -42,7 +42,7 @@ async fn create_and_delete_database() {
     let database_after_get = client
         .clone()
         .into_database_client(DATABASE_NAME)
-        .get_database(Context::new(), GetDatabaseOptions::new())
+        .get_database(GetDatabaseOptions::new())
         .await
         .unwrap();
     assert!(database.database.rid == database_after_get.database.rid);
@@ -56,7 +56,7 @@ async fn create_and_delete_database() {
         .await
         .unwrap();
 
-    let databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    let databases = Box::pin(client.list_databases(ListDatabasesOptions::new()))
         .next()
         .await
         .unwrap()

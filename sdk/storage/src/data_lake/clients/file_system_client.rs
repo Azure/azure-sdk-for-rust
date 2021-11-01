@@ -65,13 +65,12 @@ impl FileSystemClient {
     /// Create a path
     pub async fn create_path(
         &self,
-        ctx: Context,
         path_name: &str,
         options: CreatePathOptions<'_>,
     ) -> Result<CreatePathResponse, crate::Error> {
         let mut request = self.prepare_request_pipeline(&path_name, http::Method::PUT);
         let contents = DataLakeContext {};
-        let mut pipeline_context = PipelineContext::new(ctx, contents);
+        let mut pipeline_context = PipelineContext::new(Context::new(), contents);
 
         options.decorate_request(&mut request)?;
         let response = self

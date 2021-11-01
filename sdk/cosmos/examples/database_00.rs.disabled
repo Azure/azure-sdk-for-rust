@@ -1,4 +1,4 @@
-use azure_core::Context;
+
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use serde_json::Value;
@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
 
-    let dbs = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    let dbs = Box::pin(client.list_databases(ListDatabasesOptions::new()))
         .next()
         .await
         .unwrap()?;
@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                     .partition_key(&43u32)
                     .unwrap();
                 let resp = collection_client
-                    .create_document(Context::new(), &document, options)
+                    .create_document(&document, options)
                     .await?;
 
                 println!("resp == {:?}", resp);
@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 println!("\nReplacing collection");
                 let replace_collection_response = collection_client
                     .replace_collection(
-                        Context::new(),
+                        
                         ReplaceCollectionOptions::new("/age").indexing_policy(indexing_policy_new),
                     )
                     .await?;

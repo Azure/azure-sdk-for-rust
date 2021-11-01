@@ -1,4 +1,3 @@
-use azure_core::Context;
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
@@ -29,35 +28,29 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let database_client = client.into_database_client(database_name);
     let user_client = database_client.clone().into_user_client(user_name.clone());
 
-    let create_user_response = user_client
-        .create_user(Context::new(), CreateUserOptions::new())
-        .await?;
+    let create_user_response = user_client.create_user(CreateUserOptions::new()).await?;
     println!("create_user_response == {:#?}", create_user_response);
 
-    let users = Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
+    let users = Box::pin(database_client.list_users(ListUsersOptions::new()))
         .next()
         .await
         .unwrap()?;
 
     println!("list_users_response == {:#?}", users);
 
-    let get_user_response = user_client
-        .get_user(Context::new(), GetUserOptions::new())
-        .await?;
+    let get_user_response = user_client.get_user(GetUserOptions::new()).await?;
     println!("get_user_response == {:#?}", get_user_response);
 
     let new_user = format!("{}replaced", user_name);
 
     let replace_user_response = user_client
-        .replace_user(Context::new(), &new_user, ReplaceUserOptions::new())
+        .replace_user(&new_user, ReplaceUserOptions::new())
         .await?;
     println!("replace_user_response == {:#?}", replace_user_response);
 
     let user_client = database_client.into_user_client(new_user);
 
-    let delete_user_response = user_client
-        .delete_user(Context::new(), DeleteUserOptions::new())
-        .await?;
+    let delete_user_response = user_client.delete_user(DeleteUserOptions::new()).await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 
     Ok(())

@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use std::error::Error;
 
@@ -41,17 +40,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let user_client = database_client.clone().into_user_client(user_name);
 
     let get_database_response = database_client
-        .get_database(Context::new(), GetDatabaseOptions::new())
+        .get_database(GetDatabaseOptions::new())
         .await?;
     println!("get_database_response == {:#?}", get_database_response);
 
     let get_collection_response = collection_client
-        .get_collection(Context::new(), GetCollectionOptions::new())
+        .get_collection(GetCollectionOptions::new())
         .await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
     let get_collection2_response = collection2_client
-        .get_collection(Context::new(), GetCollectionOptions::new())
+        .get_collection(GetCollectionOptions::new())
         .await?;
     println!(
         "get_collection2_response == {:#?}",
@@ -59,7 +58,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let create_user_response = user_client
-        .create_user(Context::new(), CreateUserOptions::default())
+        .create_user(CreateUserOptions::default())
         .await?;
     println!("create_user_response == {:#?}", create_user_response);
 
@@ -69,7 +68,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let create_permission_response = permission_client
         .create_permission(
-            Context::new(),
             CreatePermissionOptions::new()
                 .consistency_level(&create_user_response)
                 .expiry_seconds(18000u64),
@@ -88,7 +86,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let create_permission2_response = permission_client
         .create_permission(
-            Context::new(),
             CreatePermissionOptions::new().consistency_level(&create_user_response),
             &permission_mode,
         )
@@ -113,15 +110,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         list_permissions_response
     );
 
-    let get_permission_response = permission_client
-        .get_permission(
-            Context::new(),
-            GetPermissionOptions::new().consistency_level(ConsistencyLevel::Session(
-                list_permissions_response.session_token,
-            )),
-        )
-        .await
-        .unwrap();
+    let get_permission_response =
+        permission_client
+            .get_permission(GetPermissionOptions::new().consistency_level(
+                ConsistencyLevel::Session(list_permissions_response.session_token),
+            ))
+            .await
+            .unwrap();
     println!("get_permission_response == {:#?}", get_permission_response);
 
     let permission_mode = &get_permission_response.permission.permission_mode;
@@ -129,7 +124,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // renew permission extending its validity for 60 seconds more.
     let replace_permission_response = permission_client
         .replace_permission(
-            Context::new(),
             ReplacePermissionOptions::new()
                 .expiry_seconds(600u64)
                 .consistency_level(ConsistencyLevel::Session(
@@ -145,12 +139,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let delete_permission_response = permission_client
-        .delete_permission(
-            Context::new(),
-            DeletePermissionOptions::new().consistency_level(ConsistencyLevel::Session(
-                replace_permission_response.session_token,
-            )),
-        )
+        .delete_permission(DeletePermissionOptions::new().consistency_level(
+            ConsistencyLevel::Session(replace_permission_response.session_token),
+        ))
         .await
         .unwrap();
 
@@ -161,7 +152,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let delete_user_response = user_client
         .delete_user(
-            Context::new(),
             DeleteUserOptions::new().consistency_level(ConsistencyLevel::Session(
                 delete_permission_response.session_token,
             )),

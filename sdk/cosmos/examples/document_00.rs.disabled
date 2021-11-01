@@ -2,7 +2,7 @@ use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
-use azure_core::prelude::*;
+
 use azure_cosmos::prelude::*;
 use std::borrow::Cow;
 use std::error::Error;
@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // an error (for example, the given key is not valid) you will receive a
     // specific azure_cosmos::Error. In this example we will look for a specific database
     // so we chain a filter operation.
-    let db = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    let db = Box::pin(client.list_databases(ListDatabasesOptions::new()))
         .next()
         .await
         .unwrap()?
@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Some(db) => db,
         None => {
             client
-                .create_database(Context::new(), DATABASE, CreateDatabaseOptions::new())
+                .create_database(DATABASE, CreateDatabaseOptions::new())
                 .await?
                 .database
         }
@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 .clone()
                 .into_database_client(database.id.clone())
                 .create_collection(
-                    Context::new(),
+                    
                     COLLECTION,
                     CreateCollectionOptions::new("/id"),
                 )
@@ -131,7 +131,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // the document attributes.
 
     let create_document_response = collection_client
-        .create_document(Context::new(), &doc, CreateDocumentOptions::new())
+        .create_document(&doc, CreateDocumentOptions::new())
         .await?;
     println!(
         "create_document_response == {:#?}",
@@ -155,7 +155,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let get_document_response = collection_client
         .clone()
         .into_document_client(doc.id.clone(), &doc.id)?
-        .get_document::<MySampleStruct>(Context::new(), GetDocumentOptions::new())
+        .get_document::<MySampleStruct>(GetDocumentOptions::new())
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 
@@ -187,7 +187,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .clone()
         .into_database_client(DATABASE.to_owned())
         .into_collection_client(COLLECTION.to_owned())
-        .delete_collection(Context::new(), DeleteCollectionOptions::new())
+        .delete_collection(DeleteCollectionOptions::new())
         .await?;
     println!("collection deleted");
 

@@ -179,13 +179,13 @@ impl CosmosClient {
     /// Create a database
     pub async fn create_database<S: AsRef<str>>(
         &self,
-        ctx: Context,
         database_name: S,
         options: CreateDatabaseOptions,
     ) -> crate::Result<CreateDatabaseResponse> {
         let mut request = self.prepare_request_pipeline("dbs", http::Method::POST);
 
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut pipeline_context =
+            PipelineContext::new(Context::new(), ResourceType::Databases.into());
 
         options.decorate_request(&mut request, database_name.as_ref())?;
         let response = self
@@ -199,9 +199,9 @@ impl CosmosClient {
     /// List all databases
     pub fn list_databases(
         &self,
-        ctx: Context,
         options: ListDatabasesOptions,
     ) -> impl Stream<Item = crate::Result<ListDatabasesResponse>> + '_ {
+        let ctx = Context::new();
         macro_rules! r#try {
             ($expr:expr $(,)?) => {
                 match $expr {

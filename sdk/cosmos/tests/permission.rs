@@ -1,5 +1,4 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::Context;
 use azure_cosmos::prelude::*;
 
 mod setup;
@@ -17,11 +16,7 @@ async fn permissions() {
 
     // create a temp database
     let _create_database_response = client
-        .create_database(
-            azure_core::Context::new(),
-            DATABASE_NAME,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(DATABASE_NAME, CreateDatabaseOptions::new())
         .await
         .unwrap();
 
@@ -30,22 +25,18 @@ async fn permissions() {
     // create two users
     let user1_client = database_client.clone().into_user_client(USER_NAME1);
     let _create_user_response = user1_client
-        .create_user(Context::new(), CreateUserOptions::new())
+        .create_user(CreateUserOptions::new())
         .await
         .unwrap();
     let user2_client = database_client.clone().into_user_client(USER_NAME2);
     let _create_user_response = user2_client
-        .create_user(Context::new(), CreateUserOptions::new())
+        .create_user(CreateUserOptions::new())
         .await
         .unwrap();
 
     // create a temp collection
     let create_collection_response = database_client
-        .create_collection(
-            Context::new(),
-            COLLECTION_NAME,
-            CreateCollectionOptions::new("/id"),
-        )
+        .create_collection(COLLECTION_NAME, CreateCollectionOptions::new("/id"))
         .await
         .unwrap();
 
@@ -55,7 +46,6 @@ async fn permissions() {
 
     let _create_permission_user1_response = permission_client_user1
         .create_permission(
-            Context::new(),
             CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
             &create_collection_response.collection.all_permission(),
         )
@@ -64,7 +54,6 @@ async fn permissions() {
 
     let _create_permission_user2_response = permission_client_user2
         .create_permission(
-            Context::new(),
             CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
             &create_collection_response.collection.read_permission(),
         )
@@ -79,7 +68,7 @@ async fn permissions() {
 
     // delete the database
     database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database(DeleteDatabaseOptions::new())
         .await
         .unwrap();
 }

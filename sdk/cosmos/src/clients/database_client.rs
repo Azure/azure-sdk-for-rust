@@ -60,13 +60,13 @@ impl DatabaseClient {
     /// Get the database
     pub async fn get_database(
         &self,
-        ctx: Context,
         options: GetDatabaseOptions,
     ) -> crate::Result<GetDatabaseResponse> {
         let mut request = self
             .cosmos_client()
             .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut pipeline_context =
+            PipelineContext::new(Context::new(), ResourceType::Databases.into());
 
         options.decorate_request(&mut request)?;
         let response = self
@@ -80,14 +80,14 @@ impl DatabaseClient {
     /// Delete the database
     pub async fn delete_database(
         &self,
-        ctx: Context,
         options: DeleteDatabaseOptions,
     ) -> crate::Result<DeleteDatabaseResponse> {
         let mut request = self.cosmos_client().prepare_request_pipeline(
             &format!("dbs/{}", self.database_name()),
             http::Method::DELETE,
         );
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut pipeline_context =
+            PipelineContext::new(Context::new(), ResourceType::Databases.into());
 
         options.decorate_request(&mut request)?;
         let response = self
@@ -101,9 +101,9 @@ impl DatabaseClient {
     /// List collections in the database
     pub fn list_collections(
         &self,
-        ctx: Context,
         options: ListCollectionsOptions,
     ) -> impl Stream<Item = crate::Result<ListCollectionsResponse>> + '_ {
+        let ctx = Context::new();
         unfold(State::Init, move |state: State| {
             let this = self.clone();
             let ctx = ctx.clone();
@@ -163,7 +163,6 @@ impl DatabaseClient {
     /// Create a collection
     pub async fn create_collection<S: AsRef<str>>(
         &self,
-        ctx: Context,
         collection_name: S,
         options: CreateCollectionOptions,
     ) -> crate::Result<CreateCollectionResponse> {
@@ -171,7 +170,8 @@ impl DatabaseClient {
             &format!("dbs/{}/colls", self.database_name()),
             http::Method::POST,
         );
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
+        let mut pipeline_context =
+            PipelineContext::new(Context::new(), ResourceType::Collections.into());
 
         options.decorate_request(&mut request, collection_name.as_ref())?;
         let response = self
@@ -185,9 +185,9 @@ impl DatabaseClient {
     /// List users
     pub fn list_users(
         &self,
-        ctx: Context,
         options: ListUsersOptions,
     ) -> impl Stream<Item = crate::Result<ListUsersResponse>> + '_ {
+        let ctx = Context::new();
         unfold(State::Init, move |state: State| {
             let this = self.clone();
             let ctx = ctx.clone();

@@ -1,5 +1,4 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
@@ -45,11 +44,7 @@ async fn trigger() -> Result<(), azure_cosmos::Error> {
 
     // create a temp database
     let _create_database_response = client
-        .create_database(
-            azure_core::Context::new(),
-            DATABASE_NAME,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(DATABASE_NAME, CreateDatabaseOptions::new())
         .await
         .unwrap();
 
@@ -58,11 +53,7 @@ async fn trigger() -> Result<(), azure_cosmos::Error> {
     // create a temp collection
     let _create_collection_response = {
         database_client
-            .create_collection(
-                Context::new(),
-                COLLECTION_NAME,
-                CreateCollectionOptions::new("/id"),
-            )
+            .create_collection(COLLECTION_NAME, CreateCollectionOptions::new("/id"))
             .await
             .unwrap()
     };
@@ -111,7 +102,7 @@ async fn trigger() -> Result<(), azure_cosmos::Error> {
 
     // delete the database
     database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database(DeleteDatabaseOptions::new())
         .await?;
 
     Ok(())

@@ -1,4 +1,3 @@
-use azure_core::Context;
 use azure_cosmos::prelude::*;
 use std::error::Error;
 
@@ -35,12 +34,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let user_client = database_client.into_user_client(user_name);
 
     let get_collection_response = collection_client
-        .get_collection(Context::new(), GetCollectionOptions::new())
+        .get_collection(GetCollectionOptions::new())
         .await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
     let create_user_response = user_client
-        .create_user(Context::new(), CreateUserOptions::default())
+        .create_user(CreateUserOptions::default())
         .await?;
     println!("create_user_response == {:#?}", create_user_response);
 
@@ -62,7 +61,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let create_permission_response = permission_client
         .create_permission(
-            Context::new(),
             CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
             &permission_mode,
         )
@@ -121,7 +119,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_database_client(database_name.clone())
         .into_collection_client(collection_name.clone())
         .create_document(
-            Context::new(),
             &document,
             CreateDocumentOptions::new()
                 .is_upsert(true)
@@ -135,14 +132,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     }
 
     permission_client
-        .delete_permission(Context::new(), DeletePermissionOptions::new())
+        .delete_permission(DeletePermissionOptions::new())
         .await?;
 
     // All includes read and write.
     let permission_mode = get_collection_response.collection.all_permission();
     let create_permission_response = permission_client
         .create_permission(
-            Context::new(),
             CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
             &permission_mode,
         )
@@ -170,7 +166,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_database_client(database_name)
         .into_collection_client(collection_name)
         .create_document(
-            Context::new(),
             &document,
             CreateDocumentOptions::new()
                 .is_upsert(true)
@@ -184,9 +179,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     println!("Cleaning up user.");
-    let delete_user_response = user_client
-        .delete_user(Context::new(), DeleteUserOptions::new())
-        .await?;
+    let delete_user_response = user_client.delete_user(DeleteUserOptions::new()).await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 
     Ok(())
