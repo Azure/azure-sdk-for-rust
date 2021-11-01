@@ -1,6 +1,6 @@
 # Azure SDK for Rust - Azure Storage 
 
-Azure storage crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
+{{readme}}
 
 ## Usage
 
@@ -15,5 +15,5 @@ By default all of these features are turned on. If you only need a specific feat
 ```toml
 [dependencies]
 # specifying strictly "blob" feature
-azure_storage = { version = "0.1.0", git = "https://github.com/Azure/azure-sdk-for-rust", default-features = false, features = ["blob"] }
+{{crate}} = { version = "{{version}}", git = "https://github.com/Azure/azure-sdk-for-rust", default-features = false, features = ["blob"] }
 ```
