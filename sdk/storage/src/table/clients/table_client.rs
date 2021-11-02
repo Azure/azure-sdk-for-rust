@@ -10,36 +10,20 @@ const EMULATOR_ACCOUNT: &'static str = "devstoreaccount1";
 const EMULATOR_KEY: &'static str =
     "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
-/// The cloud with which you want to interact.
-#[derive(Debug, Clone)]
-pub enum CloudTableLocation {
-    /// Azure public cloud
-    Public(String),
-    /// Azure China cloud
-    China(String),
-    /// A custom base URL
-    Custom { url: String, account: String },
-}
-
-impl CloudTableLocation {
-    /// the base URL for a given cloud location
-    fn url(&self) -> String {
-        match self {
-            CloudTableLocation::China(account) => {
-                format!("https://{}.table.core.chinacloudapi.cn", account)
-            }
-            CloudTableLocation::Public(account) => {
-                format!("https://{}.table.core.windows.net", account)
-            }
-            CloudTableLocation::Custom { url, account: _ } => url.clone(),
-        }
-    }
-}
-
 /// Options for specifying how a Table client will behave
 #[derive(Debug, Clone, Default)]
 pub struct TableOptions {
     options: ClientOptions<TableContext>,
+}
+
+impl TableOptions {
+    #[cfg(feature = "mock_transport_framework")]
+    /// Create new options with a given transaction name
+    pub fn new_with_transaction_name(name: String) -> Self {
+        Self {
+            options: ClientOptions::new_with_transaction_name(name.into()),
+        }
+    }
 }
 
 /// Create a Pipeline from TableOptions
@@ -60,42 +44,79 @@ fn pipeline_from_options(
 }
 
 pub struct TableClient {
-    cloud_location: CloudTableLocation,
+    cloud_location: CloudLocation,
     pipeline: Pipeline<TableContext>,
 }
 
 impl TableClient {
     /// Create a new `TableClient`
     pub fn new(
-        cloud_location: CloudTableLocation,
+        account: impl Into<String>,
         auth_token: AuthorizationToken,
         options: TableOptions,
     ) -> Self {
         Self {
-            cloud_location,
+            cloud_location: CloudLocation::Public(account.into()),
             pipeline: pipeline_from_options(options, auth_token),
+        }
+    }
+
+    pub fn new_china(
+        account: impl Into<String>,
+        auth_token: AuthorizationToken,
+        options: TableOptions,
+    ) -> Self {
+        Self {
+            cloud_location: CloudLocation::China(account.into()),
+            pipeline: pipeline_from_options(options, auth_token),
+        }
+    }
+
+    pub fn new_custom(
+        account: impl Into<String>,
+        auth_token: AuthorizationToken,
+        uri: impl Into<String>,
+        options: TableOptions,
+    ) -> Self {
+        Self {
+            pipeline: pipeline_from_options(options, auth_token),
+            cloud_location: CloudLocation::Custom {
+                account: account.into(),
+                uri: uri.into(),
+            },
         }
     }
 
     /// Create a new `TableClient` for Azure storage emulator
     pub fn emulator(options: TableOptions) -> Self {
-        let auth_token = AuthorizationToken::SharedKeyToken {
-            account: self::EMULATOR_ACCOUNT.to_string(),
-            key: self::EMULATOR_KEY.to_string(),
-        };
-
-        Self {
-            cloud_location: CloudTableLocation::Custom {
+        Self::new_custom(
+            self::EMULATOR_ACCOUNT,
+            AuthorizationToken::SharedKeyToken {
                 account: self::EMULATOR_ACCOUNT.to_string(),
-                url: format!(
-                    "http://{}:{}/{}",
-                    self::ADDRESS,
-                    self::PORT,
-                    self::EMULATOR_ACCOUNT
-                ),
+                key: self::EMULATOR_KEY.to_string(),
             },
-            pipeline: pipeline_from_options(options, auth_token),
-        }
+            format!(
+                "http://{}:{}/{}",
+                self::ADDRESS,
+                self::PORT,
+                self::EMULATOR_ACCOUNT
+            ),
+            options,
+        )
+    }
+
+    /// Create new options with a given transaction name
+    #[cfg(feature = "mock_transport_framework")]
+    pub fn new_with_transaction(
+        account: impl Into<String>,
+        auth_token: AuthorizationToken,
+        transaction_name: impl Into<String>,
+    ) -> Self {
+        Self::new(
+            account.into(),
+            auth_token,
+            TableOptions::new_with_transaction_name(transaction_name.into()),
+        )
     }
 
     /// The Query Tables operation returns a list of tables under the specified account.
@@ -201,78 +222,28 @@ impl TableClient {
     }
 }
 
-/*
-#[cfg(test)]
-pub mod table_client_tests {
-
-    use crate::table::prelude::*;
-    use azure_core::Context;
-
-    fn emulator_table_client() -> TableClient {
-        TableClient::emulator(TableOptions::default())
-    }
-
-
-    #[tokio::test]
-    async fn create_and_delete_table_test() {
-        let table_name = "TableForTest";
-        assert_eq!(
-            emulator_table_client()
-                .query_tables(Context::new(), QueryTablesOptions::default())
-                .await
-                .unwrap()
-                .tables
-                .iter()
-                .filter(|&t| t.name == table_name)
-                .next(),
-            None
-        );
-
-        assert!(
-            emulator_table_client()
-                .create_table(Context::new(), table_name, CreateTableOptions::default())
-                .await
-                .unwrap()
-                .table
-                .name
-                .as_str()
-                == table_name
-        );
-
-        let list_tables_response = emulator_table_client()
-            .query_tables(Context::new(), QueryTablesOptions::default())
-            .await
-            .unwrap();
-        let mut names = list_tables_response.tables.iter().filter_map(|t| {
-            if t.name == table_name {
-                Some(t.name.as_str())
-            } else {
-                None
-            }
-        });
-        assert_eq!(names.next(), Some(table_name));
-        assert_eq!(names.next(), None);
-
-        assert_eq!(
-            emulator_table_client()
-                .delete_table(Context::new(), table_name, DeleteTableOptions::default())
-                .await
-                .unwrap(),
-            DeleteTableResponse {}
-        );
-
-        assert_eq!(
-            emulator_table_client()
-                .query_tables(Context::new(), QueryTablesOptions::default())
-                .await
-                .unwrap()
-                .tables
-                .iter()
-                .filter(|&t| t.name == table_name)
-                .next(),
-            None
-        );
-    }
-
+/// The cloud with which you want to interact.
+#[derive(Debug, Clone)]
+pub enum CloudLocation {
+    /// Azure public cloud
+    Public(String),
+    /// Azure China cloud
+    China(String),
+    /// A custom base URL
+    Custom { account: String, uri: String },
 }
-*/
+
+impl CloudLocation {
+    /// the base URL for a given cloud location
+    fn url(&self) -> String {
+        match self {
+            CloudLocation::China(account) => {
+                format!("https://{}.table.core.chinacloudapi.cn", account)
+            }
+            CloudLocation::Public(account) => {
+                format!("https://{}.table.core.windows.net", account)
+            }
+            CloudLocation::Custom { uri, .. } => uri.clone(),
+        }
+    }
+}
