@@ -61,15 +61,10 @@ impl DatabaseClient {
         ctx: Context,
         options: GetDatabaseOptions,
     ) -> crate::Result<GetDatabaseResponse> {
-        self.cosmos_client()
-            .run_pipeline(
-                ctx,
-                &format!("dbs/{}", self.database_name()),
-                http::Method::GET,
-                ResourceType::Databases,
-                |request| options.decorate_request(request),
-            )
-            .await
+        self.run_databases_pipeline(ctx, http::Method::GET, |request| {
+            options.decorate_request(request)
+        })
+        .await
     }
 
     /// Delete the database
@@ -78,15 +73,10 @@ impl DatabaseClient {
         ctx: Context,
         options: DeleteDatabaseOptions,
     ) -> crate::Result<DeleteDatabaseResponse> {
-        self.cosmos_client()
-            .run_pipeline(
-                ctx,
-                &format!("dbs/{}", self.database_name()),
-                http::Method::GET,
-                ResourceType::Databases,
-                |request| options.decorate_request(request),
-            )
-            .await
+        self.run_databases_pipeline(ctx, http::Method::DELETE, |request| {
+            options.decorate_request(request)
+        })
+        .await
     }
 
     /// List collections in the database
@@ -95,35 +85,22 @@ impl DatabaseClient {
         ctx: Context,
         options: ListCollectionsOptions,
     ) -> impl Stream<Item = crate::Result<ListCollectionsResponse>> + '_ {
-        async fn do_request<'a, F>(
-            this: &'a DatabaseClient,
-            ctx: Context,
-            options: F,
-        ) -> crate::Result<ListCollectionsResponse>
-        where
-            F: FnOnce(&mut azure_core::Request) -> crate::Result<()> + 'a,
-        {
-            this.cosmos_client()
-                .run_pipeline(
-                    ctx,
-                    &format!("dbs/{}/colls", this.database_name()),
-                    http::Method::GET,
-                    ResourceType::Users,
-                    options,
-                )
-                .await
-        }
         unfold(State::Init, move |state: State| {
             let ctx = ctx.clone();
             let options = options.clone();
             async move {
                 let response = match state {
-                    State::Init => do_request(self, ctx, |req| options.decorate_request(req)).await,
+                    State::Init => {
+                        self.run_collections_pipeline(ctx, http::Method::GET, |req| {
+                            options.decorate_request(req)
+                        })
+                        .await
+                    }
                     State::Continuation(continuation_token) => {
                         let continuation = Continuation::new(continuation_token.as_str());
-                        do_request(self, ctx, |request| {
-                            options.decorate_request(request)?;
-                            continuation.add_as_header2(request)?;
+                        self.run_collections_pipeline(ctx, http::Method::GET, |req| {
+                            options.decorate_request(req)?;
+                            continuation.add_as_header2(req)?;
                             Ok(())
                         })
                         .await
@@ -131,7 +108,7 @@ impl DatabaseClient {
                     State::Done => return None,
                 };
 
-                let response = r#try!(response);
+                let response: ListCollectionsResponse = r#try!(response);
 
                 let next_state = response
                     .continuation_token
@@ -151,15 +128,10 @@ impl DatabaseClient {
         collection_name: S,
         options: CreateCollectionOptions,
     ) -> crate::Result<CreateCollectionResponse> {
-        self.cosmos_client()
-            .run_pipeline(
-                ctx,
-                &format!("dbs/{}/colls", self.database_name()),
-                http::Method::POST,
-                ResourceType::Collections,
-                |request| options.decorate_request(request, collection_name.as_ref()),
-            )
-            .await
+        self.run_collections_pipeline(ctx, http::Method::POST, |request| {
+            options.decorate_request(request, collection_name.as_ref())
+        })
+        .await
     }
 
     /// List users
@@ -168,35 +140,22 @@ impl DatabaseClient {
         ctx: Context,
         options: ListUsersOptions,
     ) -> impl Stream<Item = crate::Result<ListUsersResponse>> + '_ {
-        async fn do_request<'a, F>(
-            this: &'a DatabaseClient,
-            ctx: Context,
-            options: F,
-        ) -> crate::Result<ListUsersResponse>
-        where
-            F: FnOnce(&mut azure_core::Request) -> crate::Result<()> + 'a,
-        {
-            this.cosmos_client()
-                .run_pipeline(
-                    ctx,
-                    &format!("dbs/{}/users", this.database_name()),
-                    http::Method::GET,
-                    ResourceType::Users,
-                    options,
-                )
-                .await
-        }
         unfold(State::Init, move |state: State| {
             let ctx = ctx.clone();
             let options = options.clone();
             async move {
                 let response = match state {
-                    State::Init => do_request(self, ctx, |req| options.decorate_request(req)).await,
+                    State::Init => {
+                        self.run_users_pipeline(ctx, http::Method::GET, |req| {
+                            options.decorate_request(req)
+                        })
+                        .await
+                    }
                     State::Continuation(continuation_token) => {
                         let continuation = Continuation::new(continuation_token.as_str());
-                        do_request(self, ctx, |request| {
-                            options.decorate_request(request)?;
-                            continuation.add_as_header2(request)?;
+                        self.run_users_pipeline(ctx, http::Method::GET, |req| {
+                            options.decorate_request(req)?;
+                            continuation.add_as_header2(req)?;
                             Ok(())
                         })
                         .await
@@ -204,7 +163,7 @@ impl DatabaseClient {
                     State::Done => return None,
                 };
 
-                let response = r#try!(response);
+                let response: ListUsersResponse = r#try!(response);
 
                 let next_state = response
                     .continuation_token
@@ -228,5 +187,68 @@ impl DatabaseClient {
     /// Convert into a [`UserClient`]
     pub fn into_user_client<S: Into<ReadonlyString>>(self, user_name: S) -> UserClient {
         UserClient::new(self, user_name)
+    }
+
+    async fn run_databases_pipeline<'a, F, T>(
+        &'a self,
+        ctx: Context,
+        method: http::Method,
+        options: F,
+    ) -> Result<T, crate::Error>
+    where
+        F: FnOnce(&mut azure_core::Request) -> crate::Result<()> + 'a,
+        T: azure_core::util::AsyncTryFrom<azure_core::Response, Error = crate::Error>,
+    {
+        self.cosmos_client()
+            .run_pipeline(
+                ctx,
+                &format!("dbs/{}", self.database_name()),
+                method,
+                ResourceType::Databases,
+                options,
+            )
+            .await
+    }
+
+    async fn run_collections_pipeline<'a, F, T>(
+        &'a self,
+        ctx: Context,
+        method: http::Method,
+        options: F,
+    ) -> Result<T, crate::Error>
+    where
+        F: FnOnce(&mut azure_core::Request) -> crate::Result<()> + 'a,
+        T: azure_core::util::AsyncTryFrom<azure_core::Response, Error = crate::Error>,
+    {
+        self.cosmos_client()
+            .run_pipeline(
+                ctx,
+                &format!("dbs/{}/colls", self.database_name()),
+                method,
+                ResourceType::Collections,
+                options,
+            )
+            .await
+    }
+
+    async fn run_users_pipeline<'a, F, T>(
+        &'a self,
+        ctx: Context,
+        method: http::Method,
+        options: F,
+    ) -> Result<T, crate::Error>
+    where
+        F: FnOnce(&mut azure_core::Request) -> crate::Result<()> + 'a,
+        T: azure_core::util::AsyncTryFrom<azure_core::Response, Error = crate::Error>,
+    {
+        self.cosmos_client()
+            .run_pipeline(
+                ctx,
+                &format!("dbs/{}/users", self.database_name()),
+                method,
+                ResourceType::Users,
+                options,
+            )
+            .await
     }
 }
