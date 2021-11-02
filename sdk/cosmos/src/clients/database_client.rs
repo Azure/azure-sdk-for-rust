@@ -61,7 +61,7 @@ impl DatabaseClient {
         ctx: Context,
         options: GetDatabaseOptions,
     ) -> crate::Result<GetDatabaseResponse> {
-        self.run_databases_pipeline(ctx, http::Method::GET, |request| {
+        self.run_dbs_pipeline(ctx, http::Method::GET, |request| {
             options.decorate_request(request)
         })
         .await
@@ -73,7 +73,7 @@ impl DatabaseClient {
         ctx: Context,
         options: DeleteDatabaseOptions,
     ) -> crate::Result<DeleteDatabaseResponse> {
-        self.run_databases_pipeline(ctx, http::Method::DELETE, |request| {
+        self.run_dbs_pipeline(ctx, http::Method::DELETE, |request| {
             options.decorate_request(request)
         })
         .await
@@ -91,14 +91,14 @@ impl DatabaseClient {
             async move {
                 let response = match state {
                     State::Init => {
-                        self.run_collections_pipeline(ctx, http::Method::GET, |req| {
+                        self.run_colls_pipeline(ctx, http::Method::GET, |req| {
                             options.decorate_request(req)
                         })
                         .await
                     }
                     State::Continuation(continuation_token) => {
                         let continuation = Continuation::new(continuation_token.as_str());
-                        self.run_collections_pipeline(ctx, http::Method::GET, |req| {
+                        self.run_colls_pipeline(ctx, http::Method::GET, |req| {
                             options.decorate_request(req)?;
                             continuation.add_as_header2(req)?;
                             Ok(())
@@ -128,7 +128,7 @@ impl DatabaseClient {
         collection_name: S,
         options: CreateCollectionOptions,
     ) -> crate::Result<CreateCollectionResponse> {
-        self.run_collections_pipeline(ctx, http::Method::POST, |request| {
+        self.run_colls_pipeline(ctx, http::Method::POST, |request| {
             options.decorate_request(request, collection_name.as_ref())
         })
         .await
@@ -189,7 +189,7 @@ impl DatabaseClient {
         UserClient::new(self, user_name)
     }
 
-    async fn run_databases_pipeline<'a, F, T>(
+    async fn run_dbs_pipeline<'a, F, T>(
         &'a self,
         ctx: Context,
         method: http::Method,
@@ -210,7 +210,7 @@ impl DatabaseClient {
             .await
     }
 
-    async fn run_collections_pipeline<'a, F, T>(
+    async fn run_colls_pipeline<'a, F, T>(
         &'a self,
         ctx: Context,
         method: http::Method,

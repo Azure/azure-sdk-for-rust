@@ -183,17 +183,10 @@ impl CosmosClient {
         database_name: S,
         options: CreateDatabaseOptions,
     ) -> crate::Result<CreateDatabaseResponse> {
-        let mut request = self.prepare_request_pipeline("dbs", http::Method::POST);
-
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
-
-        options.decorate_request(&mut request, database_name.as_ref())?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?;
-
-        Ok(CreateDatabaseResponse::try_from(response).await?)
+        self.run_dbs_pipeline(ctx, http::Method::POST, |req| {
+            options.decorate_request(req, database_name.as_ref())
+        })
+        .await
     }
 
     /// List all databases
@@ -221,44 +214,29 @@ impl CosmosClient {
         }
 
         unfold(State::Init, move |state: State| {
-            let this = self.clone();
             let ctx = ctx.clone();
             let options = options.clone();
             async move {
                 let response = match state {
                     State::Init => {
-                        let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Databases.into());
-
-                        r#try!(options.decorate_request(&mut request).await);
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
-
-                        ListDatabasesResponse::try_from(response).await
+                        self.run_dbs_pipeline(ctx, http::Method::GET, |req| {
+                            options.decorate_request(req)
+                        })
+                        .await
                     }
                     State::Continuation(continuation_token) => {
                         let continuation = Continuation::new(continuation_token.as_str());
-                        let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Databases.into());
-
-                        r#try!(options.decorate_request(&mut request).await);
-                        r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
-                        ListDatabasesResponse::try_from(response).await
+                        self.run_dbs_pipeline(ctx, http::Method::GET, |req| {
+                            options.decorate_request(req)?;
+                            continuation.add_as_header2(req)?;
+                            Ok(())
+                        })
+                        .await
                     }
                     State::Done => return None,
                 };
 
-                let response = r#try!(response);
+                let response: ListDatabasesResponse = r#try!(response);
 
                 let next_state = response
                     .continuation_token
@@ -365,6 +343,20 @@ impl CosmosClient {
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
         self.pipeline.http_client()
+    }
+
+    async fn run_dbs_pipeline<'a, F, T>(
+        &'a self,
+        ctx: Context,
+        method: http::Method,
+        options: F,
+    ) -> Result<T, crate::Error>
+    where
+        F: FnOnce(&mut azure_core::Request) -> crate::Result<()> + 'a,
+        T: azure_core::util::AsyncTryFrom<azure_core::Response, Error = crate::Error>,
+    {
+        self.run_pipeline(ctx, "dbs", method, ResourceType::Databases, options)
+            .await
     }
 }
 
