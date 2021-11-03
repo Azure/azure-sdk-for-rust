@@ -67,7 +67,7 @@ pub enum DefaultCredentialError {
     #[error("Error getting managed identity credential: {0}")]
     ManagedIdentityCredentialError(#[from] super::ManagedIdentityCredentialError),
     #[error(
-        "Multiple errors were encountered while attempting to authenticate:{}",
+        "Multiple errors were encountered while attempting to authenticate:\n{}",
         format_aggregate_error(.0)
     )]
     EndOfDefaultList(Vec<DefaultCredentialError>),
@@ -140,10 +140,9 @@ impl TokenCredential for DefaultCredential {
         for source in &self.sources {
             let token_res = source.get_token(resource).await;
 
-            if let Ok(token) = token_res {
-                return Ok(token);
-            } else {
-                errors.push(token_res.err().unwrap());
+            match token_res {
+                Ok(token) => return Ok(token),
+                Err(error) => errors.push(error),
             }
         }
         Err(DefaultCredentialError::EndOfDefaultList(errors))
@@ -163,5 +162,9 @@ impl azure_core::TokenCredential for DefaultCredential {
 }
 
 fn format_aggregate_error(errors: &Vec<DefaultCredentialError>) -> String {
-    errors.iter().map(|error| format!("\n{}", error)).collect()
+    errors
+        .iter()
+        .map(|error| error.to_string())
+        .collect::<Vec<String>>()
+        .join("\n")
 }
