@@ -95,14 +95,14 @@ impl Spec {
     }
 
     pub fn consumes(&self) -> Vec<&String> {
-        let versions: Vec<_> = self
+        let mut versions: Vec<_> = self
             .docs()
             .values()
             .filter(|doc| !doc.paths().is_empty())
             .map(|api| &api.consumes)
+            .flatten()
             .collect();
 
-        let mut versions: Vec<_> = versions.into_iter().flatten().collect();
         versions.sort_unstable();
         versions
     }

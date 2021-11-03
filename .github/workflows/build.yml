@@ -19,12 +19,15 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
-          components: rustfmt
+          components: rustfmt, clippy
 
       - uses: Swatinem/rust-cache@v1
 
       - name: cargo fmt sdk
         run: cargo fmt --all -- --check
+
+      - name: cargo clippy sdk
+        run: cargo clippy --all
 
       - name: cargo fmt services
         run: |
@@ -80,12 +83,18 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-        components: rustfmt
+        components: rustfmt, clippy
 
     - uses: Swatinem/rust-cache@v1
 
     - name: services check
       run: cargo check --manifest-path services/Cargo.toml --all
+
+    - name: services clippy
+      run: cargo clippy --manifest-path services/Cargo.toml --all
+
+    - name: services fmt
+      run: cargo fmt --manifest-path services/Cargo.toml --all -- --check
 
     - name: display free disk space
       run: df -h /
@@ -156,15 +165,13 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-        components: rustfmt
+        components: rustfmt, clippy
     - name: fmt check
-      run: |
-        cd azure-sdk-for-rust/services/autorust
-        cargo fmt --all -- --check
+      run: cargo fmt --all --manifest-path azure-sdk-for-rust/services/autorust/Cargo.toml -- --check
+    - name: clippy check
+      run: cargo clippy --all --manifest-path azure-sdk-for-rust/services/autorust/Cargo.toml
     - name: unit tests
-      run:  |
-        cd azure-sdk-for-rust/services/autorust
-        cargo test --lib
+      run: cargo test --lib --manifest-path azure-sdk-for-rust/services/autorust/Cargo.toml
     - name: git clone Azure/azure-rest-api-specs
       uses: actions/checkout@v2
       with:
