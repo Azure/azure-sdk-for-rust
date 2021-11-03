@@ -70,7 +70,7 @@ pub enum DefaultCredentialError {
         "Multiple errors were encountered while attempting to authenticate:\n{}",
         format_aggregate_error(.0)
     )]
-    EndOfDefaultList(Vec<DefaultCredentialError>),
+    CredentialUnavailable(Vec<DefaultCredentialError>),
 }
 
 /// Types of TokenCredential supported by DefaultCredential
@@ -145,7 +145,7 @@ impl TokenCredential for DefaultCredential {
                 Err(error) => errors.push(error),
             }
         }
-        Err(DefaultCredentialError::EndOfDefaultList(errors))
+        Err(DefaultCredentialError::CredentialUnavailable(errors))
     }
 }
 
