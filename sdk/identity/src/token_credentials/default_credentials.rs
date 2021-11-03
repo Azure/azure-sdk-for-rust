@@ -161,7 +161,7 @@ impl azure_core::TokenCredential for DefaultCredential {
     }
 }
 
-fn format_aggregate_error(errors: &Vec<DefaultCredentialError>) -> String {
+fn format_aggregate_error(errors: &[DefaultCredentialError]) -> String {
     errors
         .iter()
         .map(|error| error.to_string())
