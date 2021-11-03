@@ -57,14 +57,14 @@ impl<'a> TableEntity<'a> for UserEntityExtended<'a> {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     // in the following example we will interact with the user table. first let's create the table if it doesn't exists;
+    let table_name = "users";
     let users = vec![
         UserEntity::new("beit dagan", "shem tov", "or"),
         UserEntity::new("rishon lezion", "gerbil", "yaron"),
         UserEntity::new("poria neve oved", "sachanov", "shay"),
     ];
 
-    let table_name = "users";
-    let table_client = TableClient::emulator(TableOptions::default());
+    let table_client = create_client();
 
     //create user table if not exists;
     if let Some(_) = create_if_not_exist(&table_client, table_name).await? {
@@ -144,6 +144,33 @@ async fn main() -> Result<(), Error> {
     println!("Table {:#?} deleted successfully", table_name);
 
     Ok(())
+}
+
+fn create_client() -> TableClient {
+    let account = std::env::vars()
+        .find(|i| i.0 == "STORAGE_ACCOUNT")
+        .map(|i| i.1);
+    let key = std::env::vars()
+        .find(|i| i.0 == "STORAGE_MASTER_KEY")
+        .map(|i| i.1);
+
+    let auth_token = match (account.as_ref(), key) {
+        (Some(account), Some(key)) => Some(AuthorizationToken::SharedKeyToken {
+            account: account.to_owned(),
+            key,
+        }),
+        _ => None,
+    };
+
+    if let Some(auth_token) = auth_token {
+        TableClient::new(
+            account.clone().unwrap(),
+            auth_token.clone(),
+            TableOptions::default(),
+        )
+    } else {
+        TableClient::emulator(TableOptions::default())
+    }
 }
 
 async fn create_if_not_exist(

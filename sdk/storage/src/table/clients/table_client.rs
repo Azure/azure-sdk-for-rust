@@ -2,7 +2,7 @@ use crate::authorization::authorization_policy::AuthorizationPolicy;
 use crate::table::prelude::*;
 use azure_core::{pipeline::Pipeline, ClientOptions, Context, Error, PipelineContext, Policy};
 use http::{method::Method, request::Builder as RequestBuilder, Uri};
-use std::{borrow::Cow, str::FromStr, sync::Arc};
+use std::{str::FromStr, sync::Arc};
 
 const PORT: u16 = 10002;
 const ADDRESS: &'static str = "127.0.0.1";
@@ -217,7 +217,7 @@ impl TableClient {
     }
 
     /// Crates Entity client for a given table. consuming Self in the process.
-    pub fn into_entity_client<S: Into<Cow<'static, str>>>(self, table_name: S) -> EntityClient {
+    pub fn into_entity_client(self, table_name: impl Into<String>) -> EntityClient {
         EntityClient::new(self, table_name)
     }
 }

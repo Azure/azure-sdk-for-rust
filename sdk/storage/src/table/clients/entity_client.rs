@@ -4,13 +4,12 @@ use bytes::Buf;
 use http::method::Method;
 use once_cell::sync::Lazy;
 use serde::de::DeserializeOwned;
-use std::borrow::Cow;
 
 // we need this since the http::Method does not have the MERGE verb. The unwrap is safe here.
 static MERGE: Lazy<http::Method> = Lazy::new(|| http::Method::from_bytes(b"MERGE").unwrap());
 
 pub struct EntityClient {
-    table_name: Cow<'static, str>,
+    table_name: String,
     table_client: TableClient,
 }
 
@@ -30,7 +29,7 @@ pub struct EntityClient {
 impl EntityClient {
     /// Creates a new EntityClient for the given table_name.
     /// Consuming table_client in the process.
-    pub fn new<NAME: Into<Cow<'static, str>>>(table_client: TableClient, table_name: NAME) -> Self {
+    pub fn new(table_client: TableClient, table_name: impl Into<String>) -> Self {
         Self {
             table_client,
             table_name: table_name.into(),

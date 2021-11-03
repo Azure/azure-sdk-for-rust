@@ -17,7 +17,13 @@ pub fn initialize(transaction_name: impl Into<String>) -> TableClient {
     .then(get_account)
     .unwrap_or_else(String::new);
 
-    TableClient::new_with_transaction(get_account(), get_authorization_token(), transaction_name)
+    let auth_token = (std::env::var(azure_core::TESTING_MODE_KEY).as_deref()
+        == Ok(azure_core::TESTING_MODE_RECORD))
+    .then(|| get_authorization_token().ok())
+    .flatten()
+    .unwrap_or_else(|| AuthorizationToken::new_resource(String::new()));
+
+    TableClient::new_with_transaction(account_name, auth_token, transaction_name)
 }
 
 fn get_account() -> String {
@@ -26,7 +32,8 @@ fn get_account() -> String {
 
 fn get_authorization_token() -> AuthorizationToken {
     AuthorizationToken::SharedKeyToken {
-        key: std::env::var("SHARED_KEY_TOKEN").expect("Set env variable COSMOS_MASTER_KEY first!"),
+        key: std::env::var("STORAGE_MASTER_KEY")
+            .expect("Set env variable COSMOS_MASTER_KEY first!"),
         account: get_account(),
     }
 }

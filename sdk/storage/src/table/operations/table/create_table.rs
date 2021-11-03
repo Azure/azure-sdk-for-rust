@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use crate::table::{
     operations::{header_time_value, header_value},
     prelude::*,
@@ -7,6 +5,7 @@ use crate::table::{
 use azure_core::{AppendToUrlQuery, Error, Request, Response};
 use chrono::Utc;
 use http::HeaderValue;
+use std::str::FromStr;
 
 #[derive(Debug, Clone)]
 pub struct CreateTableOptions {
@@ -74,7 +73,7 @@ impl CreateTableOptions {
         let md5 = base64::encode(&md5::compute(bytes.as_ref())[..]);
         headers.append("Content-MD5", HeaderValue::from_str(md5.as_str()).unwrap());
 
-        *request.body_mut() = bytes.into();
+        request.set_body(bytes.into());
 
         if let Some(timeout) = self.timeout.as_ref() {
             let mut url = url::Url::from_str(request.uri().to_string().as_str()).unwrap();
