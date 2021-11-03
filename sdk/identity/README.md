@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         client,
         &client_id,
         &client_secret,
-        "https://management.azure.com/",
+        &["https://management.azure.com/"],
         &tenant_id,
     )
     .await?;
