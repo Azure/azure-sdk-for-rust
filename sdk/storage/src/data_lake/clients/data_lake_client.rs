@@ -38,7 +38,7 @@ pub trait AsCustomDataLakeClient<DS: Into<String>, A: Into<String>> {
     ) -> Result<Arc<DataLakeClient>, url::ParseError>;
 }
 
-impl<A: Into<String>> AsDataLakeClient<A> for Arc<StorageClient> {
+impl<A: Into<String>> AsDataLakeClient<A> for StorageClient {
     fn as_data_lake_client(
         &self,
         account: A,
@@ -63,7 +63,7 @@ impl<A: Into<String>> AsDataLakeClient<A> for Arc<StorageClient> {
     }
 }
 
-impl<DS: Into<String>, A: Into<String>> AsCustomDataLakeClient<DS, A> for Arc<StorageClient> {
+impl<DS: Into<String>, A: Into<String>> AsCustomDataLakeClient<DS, A> for StorageClient {
     fn as_data_lake_client_with_custom_dns_suffix(
         &self,
         account: A,
@@ -82,7 +82,7 @@ impl<DS: Into<String>, A: Into<String>> AsCustomDataLakeClient<DS, A> for Arc<St
 #[derive(Debug, Clone)]
 pub struct DataLakeClient {
     pipeline: Pipeline<DataLakeContext>,
-    storage_client: Arc<StorageClient>,
+    storage_client: StorageClient,
     account: String,
     custom_dns_suffix: Option<String>,
     url: Url, // TODO: Use CloudLocation similar to CosmosClient
@@ -90,7 +90,7 @@ pub struct DataLakeClient {
 
 impl DataLakeClient {
     pub(crate) fn new_with_options(
-        storage_client: Arc<StorageClient>,
+        storage_client: StorageClient,
         account: String,
         bearer_token: String,
         custom_dns_suffix: Option<String>,
@@ -137,7 +137,7 @@ impl DataLakeClient {
     }
 
     pub fn new(
-        storage_client: Arc<StorageClient>,
+        storage_client: StorageClient,
         account: String,
         bearer_token: String,
         custom_dns_suffix: Option<String>,

@@ -1,3 +1,4 @@
+use super::*;
 use crate::headers::CONTENT_MD5;
 use crate::{
     core::{ConnectionString, No},
@@ -80,14 +81,14 @@ fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>, url::Pa
 }
 
 impl StorageAccountClient {
-    pub fn new_access_key<A, K>(http_client: Arc<dyn HttpClient>, account: A, key: K) -> Arc<Self>
+    pub fn new_access_key<A, K>(http_client: Arc<dyn HttpClient>, account: A, key: K) -> Self
     where
         A: Into<String>,
         K: Into<String>,
     {
         let account = account.into();
 
-        Arc::new(Self {
+        Self {
             blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
                 .unwrap(),
             table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
@@ -104,7 +105,7 @@ impl StorageAccountClient {
             storage_credentials: StorageCredentials::Key(account.clone(), key.into()),
             http_client,
             account,
-        })
+        }
     }
 
     /// Create a new client for customized emulator endpoints.
@@ -342,6 +343,10 @@ impl StorageAccountClient {
 
     pub fn storage_credentials(&self) -> &StorageCredentials {
         &self.storage_credentials
+    }
+
+    pub fn into_storage_client(self) -> StorageClient {
+        StorageClient::new(self)
     }
 
     pub(crate) fn prepare_request(

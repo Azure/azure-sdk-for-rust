@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!();
 
     let data_lake = storage_account_client
-        .as_storage_client()
+        .into_storage_client()
         .as_data_lake_client(account, bearer_token.token.secret().to_owned())?;
 
     let file_system = data_lake.as_file_system_client(&file_system_name)?;
