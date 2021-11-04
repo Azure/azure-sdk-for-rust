@@ -16,7 +16,7 @@ pub enum Error {
         #[from] crate::token_credentials::ManagedIdentityCredentialError,
     ),
     #[error("Error getting default credential: {0}")]
-    DefaultCredentialError(#[from] crate::token_credentials::DefaultCredentialError),
+    DefaultAzureCredentialError(#[from] crate::token_credentials::DefaultAzureCredentialError),
     #[error("Error refreshing token: {0}")]
     RefreshTokenError(#[from] crate::refresh_token::Error),
     /// An unrecognized error response from an identity service.

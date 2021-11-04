@@ -123,11 +123,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = KeyClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
@@ -149,11 +149,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     /// let mut client = KeyClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
@@ -196,11 +196,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = KeyClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
@@ -251,11 +251,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = KeyClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
@@ -316,11 +316,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = KeyClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
@@ -363,11 +363,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = KeyClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
@@ -404,11 +404,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::{KeyClient, RecoveryLevel};
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = KeyClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
@@ -448,12 +448,12 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::{KeyClient, RecoveryLevel};
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     /// use chrono::{Utc, Duration};
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = KeyClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
@@ -507,11 +507,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = KeyClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
@@ -545,11 +545,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyClient;
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = KeyClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,
@@ -590,11 +590,11 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::{KeyClient, RecoveryLevel};
-    /// use azure_identity::token_credentials::DefaultCredential;
+    /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultCredential::default();
+    ///     let creds = DefaultAzureCredential::default();
     ///     let mut client = KeyClient::new(
     ///     &"KEYVAULT_URL",
     ///     &creds,

@@ -4,15 +4,15 @@ use super::{
 use azure_core::TokenResponse;
 
 #[derive(Debug, Default)]
-/// Provides a mechanism of selectively disabling credentials used for a `DefaultCredential` instance
-pub struct DefaultCredentialBuilder {
+/// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
+pub struct DefaultAzureCredentialBuilder {
     include_environment_credential: bool,
     include_managed_identity_credential: bool,
     include_cli_credential: bool,
 }
 
-impl DefaultCredentialBuilder {
-    /// Create a new `DefaultCredentialBuilder`
+impl DefaultAzureCredentialBuilder {
+    /// Create a new `DefaultAzureCredentialBuilder`
     pub fn new() -> Self {
         Self::default()
     }
@@ -35,31 +35,31 @@ impl DefaultCredentialBuilder {
         self
     }
 
-    pub fn build(&self) -> DefaultCredential {
+    pub fn build(&self) -> DefaultAzureCredential {
         let source_count = self.include_cli_credential as usize
             + self.include_cli_credential as usize
             + self.include_managed_identity_credential as usize;
-        let mut sources = Vec::<DefaultCredentialEnum>::with_capacity(source_count);
+        let mut sources = Vec::<DefaultAzureCredentialEnum>::with_capacity(source_count);
         if self.include_environment_credential {
-            sources.push(DefaultCredentialEnum::Environment(
+            sources.push(DefaultAzureCredentialEnum::Environment(
                 EnvironmentCredential::default(),
             ));
         }
         if self.include_managed_identity_credential {
-            sources.push(DefaultCredentialEnum::ManagedIdentity(
+            sources.push(DefaultAzureCredentialEnum::ManagedIdentity(
                 ManagedIdentityCredential {},
             ))
         }
         if self.include_cli_credential {
-            sources.push(DefaultCredentialEnum::AzureCli(AzureCliCredential {}));
+            sources.push(DefaultAzureCredentialEnum::AzureCli(AzureCliCredential {}));
         }
-        DefaultCredential::with_sources(sources)
+        DefaultAzureCredential::with_sources(sources)
     }
 }
 
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
-pub enum DefaultCredentialError {
+pub enum DefaultAzureCredentialError {
     #[error("Error getting token credential from Azure CLI: {0}")]
     AzureCliCredentialError(#[from] super::AzureCliCredentialError),
     #[error("Error getting environment credential: {0}")]
@@ -70,34 +70,34 @@ pub enum DefaultCredentialError {
         "Multiple errors were encountered while attempting to authenticate:\n{}",
         format_aggregate_error(.0)
     )]
-    CredentialUnavailable(Vec<DefaultCredentialError>),
+    CredentialUnavailable(Vec<DefaultAzureCredentialError>),
 }
 
-/// Types of TokenCredential supported by DefaultCredential
-pub enum DefaultCredentialEnum {
+/// Types of TokenCredential supported by DefaultAzureCredential
+pub enum DefaultAzureCredentialEnum {
     Environment(EnvironmentCredential),
     ManagedIdentity(ManagedIdentityCredential),
     AzureCli(AzureCliCredential),
 }
 
 #[async_trait::async_trait]
-impl TokenCredential for DefaultCredentialEnum {
-    type Error = DefaultCredentialError;
+impl TokenCredential for DefaultAzureCredentialEnum {
+    type Error = DefaultAzureCredentialError;
 
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
         match self {
-            DefaultCredentialEnum::Environment(credential) => credential
+            DefaultAzureCredentialEnum::Environment(credential) => credential
                 .get_token(resource)
                 .await
-                .map_err(DefaultCredentialError::EnvironmentCredentialError),
-            DefaultCredentialEnum::ManagedIdentity(credential) => credential
+                .map_err(DefaultAzureCredentialError::EnvironmentCredentialError),
+            DefaultAzureCredentialEnum::ManagedIdentity(credential) => credential
                 .get_token(resource)
                 .await
-                .map_err(DefaultCredentialError::ManagedIdentityCredentialError),
-            DefaultCredentialEnum::AzureCli(credential) => credential
+                .map_err(DefaultAzureCredentialError::ManagedIdentityCredentialError),
+            DefaultAzureCredentialEnum::AzureCli(credential) => credential
                 .get_token(resource)
                 .await
-                .map_err(DefaultCredentialError::AzureCliCredentialError),
+                .map_err(DefaultAzureCredentialError::AzureCliCredentialError),
         }
     }
 }
@@ -109,31 +109,31 @@ impl TokenCredential for DefaultCredentialEnum {
 /// - ManagedIdentityCredential
 /// - AzureCliCredential
 /// Consult the documentation of these credential types for more information on how they attempt authentication.
-pub struct DefaultCredential {
-    sources: Vec<DefaultCredentialEnum>,
+pub struct DefaultAzureCredential {
+    sources: Vec<DefaultAzureCredentialEnum>,
 }
 
-impl DefaultCredential {
-    pub fn with_sources(sources: Vec<DefaultCredentialEnum>) -> Self {
-        DefaultCredential { sources }
+impl DefaultAzureCredential {
+    pub fn with_sources(sources: Vec<DefaultAzureCredentialEnum>) -> Self {
+        DefaultAzureCredential { sources }
     }
 }
 
-impl Default for DefaultCredential {
+impl Default for DefaultAzureCredential {
     fn default() -> Self {
-        DefaultCredential {
+        DefaultAzureCredential {
             sources: vec![
-                DefaultCredentialEnum::Environment(EnvironmentCredential::default()),
-                DefaultCredentialEnum::ManagedIdentity(ManagedIdentityCredential {}),
-                DefaultCredentialEnum::AzureCli(AzureCliCredential {}),
+                DefaultAzureCredentialEnum::Environment(EnvironmentCredential::default()),
+                DefaultAzureCredentialEnum::ManagedIdentity(ManagedIdentityCredential {}),
+                DefaultAzureCredentialEnum::AzureCli(AzureCliCredential {}),
             ],
         }
     }
 }
 
 #[async_trait::async_trait]
-impl TokenCredential for DefaultCredential {
-    type Error = DefaultCredentialError;
+impl TokenCredential for DefaultAzureCredential {
+    type Error = DefaultAzureCredentialError;
     /// Try to fetch a token using each of the credential sources until one succeeds
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
         let mut errors = Vec::new();
@@ -145,12 +145,12 @@ impl TokenCredential for DefaultCredential {
                 Err(error) => errors.push(error),
             }
         }
-        Err(DefaultCredentialError::CredentialUnavailable(errors))
+        Err(DefaultAzureCredentialError::CredentialUnavailable(errors))
     }
 }
 
 #[async_trait::async_trait]
-impl azure_core::TokenCredential for DefaultCredential {
+impl azure_core::TokenCredential for DefaultAzureCredential {
     async fn get_token(
         &self,
         resource: &str,
@@ -161,7 +161,7 @@ impl azure_core::TokenCredential for DefaultCredential {
     }
 }
 
-fn format_aggregate_error(errors: &[DefaultCredentialError]) -> String {
+fn format_aggregate_error(errors: &[DefaultAzureCredentialError]) -> String {
     errors
         .iter()
         .map(|error| error.to_string())
