@@ -9,9 +9,7 @@ pub struct StorageClient {
 }
 
 impl StorageClient {
-    pub(crate) fn new(
-        storage_account_client: StorageAccountClient,
-    ) -> Self {
+    pub(crate) fn new(storage_account_client: StorageAccountClient) -> Self {
         Self {
             storage_account_client,
         }
