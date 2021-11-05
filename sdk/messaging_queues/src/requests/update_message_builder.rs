@@ -1,20 +1,26 @@
-use crate::queue::clients::PopReceiptClient;
-use crate::queue::responses::*;
+use crate::clients::PopReceiptClient;
+use crate::prelude::*;
+use crate::responses::*;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use std::convert::TryInto;
 
-#[derive(Debug)]
-pub struct DeleteMessageBuilder<'a> {
+#[derive(Debug, Clone)]
+pub struct UpdateMessageBuilder<'a> {
     pop_receipt_client: &'a PopReceiptClient,
+    visibility_timeout: VisibilityTimeout,
     timeout: Option<Timeout>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 
-impl<'a> DeleteMessageBuilder<'a> {
-    pub(crate) fn new(pop_receipt_client: &'a PopReceiptClient) -> Self {
-        DeleteMessageBuilder {
+impl<'a> UpdateMessageBuilder<'a> {
+    pub(crate) fn new(
+        pop_receipt_client: &'a PopReceiptClient,
+        visibility_timeout: impl Into<VisibilityTimeout>,
+    ) -> Self {
+        UpdateMessageBuilder {
             pop_receipt_client,
+            visibility_timeout: visibility_timeout.into(),
             timeout: None,
             client_request_id: None,
         }
@@ -27,21 +33,33 @@ impl<'a> DeleteMessageBuilder<'a> {
 
     pub async fn execute(
         &self,
-    ) -> Result<DeleteMessageResponse, Box<dyn std::error::Error + Sync + Send>> {
+        new_body: impl AsRef<str>,
+    ) -> Result<UpdateMessageResponse, Box<dyn std::error::Error + Sync + Send>> {
         let mut url = self.pop_receipt_client.pop_receipt_url()?;
 
+        self.visibility_timeout.append_to_url_query(&mut url);
         self.timeout.append_to_url_query(&mut url);
 
-        debug!("url == {}", url.as_str());
+        trace!("url == {}", url.as_str());
+
+        // since the format is fixed we just decorate the message with the tags.
+        // This could be made optional in the future and/or more
+        // stringent.
+        let message = format!(
+            "<QueueMessage><MessageText>{}</MessageText></QueueMessage>",
+            new_body.as_ref()
+        );
+
+        debug!("message about to be put == {}", message);
 
         let request = self.pop_receipt_client.storage_client().prepare_request(
             url.as_str(),
-            &http::method::Method::DELETE,
+            &http::method::Method::PUT,
             &|mut request| {
                 request = add_optional_header(&self.client_request_id, request);
                 request
             },
-            None,
+            Some(message.into()),
         )?;
 
         let response = self

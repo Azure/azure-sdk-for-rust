@@ -1,20 +1,20 @@
-use crate::queue::clients::QueueClient;
-use crate::queue::responses::*;
+use crate::clients::PopReceiptClient;
+use crate::responses::*;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use std::convert::TryInto;
 
 #[derive(Debug)]
-pub struct ClearMessagesBuilder<'a> {
-    queue_client: &'a QueueClient,
+pub struct DeleteMessageBuilder<'a> {
+    pop_receipt_client: &'a PopReceiptClient,
     timeout: Option<Timeout>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 
-impl<'a> ClearMessagesBuilder<'a> {
-    pub(crate) fn new(queue_client: &'a QueueClient) -> Self {
-        ClearMessagesBuilder {
-            queue_client,
+impl<'a> DeleteMessageBuilder<'a> {
+    pub(crate) fn new(pop_receipt_client: &'a PopReceiptClient) -> Self {
+        DeleteMessageBuilder {
+            pop_receipt_client,
             timeout: None,
             client_request_id: None,
         }
@@ -27,14 +27,14 @@ impl<'a> ClearMessagesBuilder<'a> {
 
     pub async fn execute(
         &self,
-    ) -> Result<ClearMessagesResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self.queue_client.url_with_segments(Some("messages"))?;
+    ) -> Result<DeleteMessageResponse, Box<dyn std::error::Error + Sync + Send>> {
+        let mut url = self.pop_receipt_client.pop_receipt_url()?;
 
         self.timeout.append_to_url_query(&mut url);
 
-        debug!("url == {}", url);
+        debug!("url == {}", url.as_str());
 
-        let request = self.queue_client.storage_client().prepare_request(
+        let request = self.pop_receipt_client.storage_client().prepare_request(
             url.as_str(),
             &http::method::Method::DELETE,
             &|mut request| {
@@ -45,9 +45,7 @@ impl<'a> ClearMessagesBuilder<'a> {
         )?;
 
         let response = self
-            .queue_client
-            .storage_client()
-            .storage_account_client()
+            .pop_receipt_client
             .http_client()
             .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
             .await?;

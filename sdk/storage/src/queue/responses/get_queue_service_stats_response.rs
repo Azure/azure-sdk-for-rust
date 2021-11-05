@@ -1,4 +1,4 @@
-use crate::xml::read_xml;
+use crate::core::xml::read_xml;
 use azure_core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};

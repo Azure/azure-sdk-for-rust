@@ -17,7 +17,9 @@ pub use copy_progress::CopyProgress;
 pub(crate) mod parsing_xml;
 mod stored_access_policy;
 pub use errors::{Error, Result};
-pub(crate) mod xml;
+// @@@TODO: The new `message_queues` crate uses this, so changed from pub(crate) to pub to get build working.
+// An alternative option would be to duplicate the module into message_queues (it is only one small utility function).
+pub mod xml;
 
 #[derive(Debug, Clone, Eq, PartialEq, Copy, Serialize, Deserialize)]
 pub struct Yes;

@@ -1,0 +1,31 @@
+[package]
+name = "azure_messaging_queues"
+version = "0.1.0"
+description = "Rust wrappers around Microsoft Azure Messaging Queues REST APIs"
+readme = "README.md"
+authors = ["Microsoft Corp."]
+license = "MIT"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_messaging_queues"
+keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+categories = ["api-bindings"]
+edition = "2018"
+
+[dependencies]
+azure_core = { path = "../core", version = "0.1.0" }
+azure_storage = { path = "../storage", version = "0.1.0" }
+bytes = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+futures = "0.3"
+http = "0.2"
+log = "0.4"
+serde = { version = "1.0" }
+serde_derive = "1.0"
+serde_json = "1.0"
+serde-xml-rs = "0.4"
+uuid = { version = "0.8", features = ["v4"] }
+url = "2.2"
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["full"] }

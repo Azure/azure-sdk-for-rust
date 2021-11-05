@@ -2,7 +2,7 @@ use azure_core::PermissionError;
 use chrono::{DateTime, FixedOffset};
 use std::convert::TryFrom;
 
-use crate::StoredAccessPolicy;
+use azure_storage::StoredAccessPolicy;
 
 #[derive(Debug, Clone)]
 pub struct QueueStoredAccessPolicy {

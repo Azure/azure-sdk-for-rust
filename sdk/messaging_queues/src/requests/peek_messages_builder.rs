@@ -1,46 +1,48 @@
-use crate::queue::clients::QueueClient;
-use crate::queue::responses::*;
+use crate::clients::QueueClient;
+use crate::prelude::*;
+use crate::responses::*;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
-use http::method::Method;
-use http::status::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct GetQueueMetadataBuilder<'a> {
+pub struct PeekMessagesBuilder<'a> {
     queue_client: &'a QueueClient,
+    number_of_messages: Option<NumberOfMessages>,
     timeout: Option<Timeout>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 
-impl<'a> GetQueueMetadataBuilder<'a> {
+impl<'a> PeekMessagesBuilder<'a> {
     pub(crate) fn new(queue_client: &'a QueueClient) -> Self {
-        Self {
+        PeekMessagesBuilder {
             queue_client,
+            number_of_messages: None,
             timeout: None,
             client_request_id: None,
         }
     }
 
     setters! {
+        number_of_messages: NumberOfMessages => Some(number_of_messages),
         timeout: Timeout => Some(timeout),
         client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
     pub async fn execute(
         &self,
-    ) -> Result<GetQueueMetadataResponse, Box<dyn std::error::Error + Sync + Send>> {
-        let mut url = self.queue_client.url_with_segments(None)?;
+    ) -> Result<PeekMessagesResponse, Box<dyn std::error::Error + Sync + Send>> {
+        let mut url = self.queue_client.url_with_segments(Some("messages"))?;
 
-        url.query_pairs_mut().append_pair("comp", "metadata");
-
+        url.query_pairs_mut().append_pair("peekonly", "true");
+        self.number_of_messages.append_to_url_query(&mut url);
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("url == {}", url);
+        debug!("url == {}", url);
 
         let request = self.queue_client.storage_client().prepare_request(
             url.as_str(),
-            &Method::GET,
+            &http::method::Method::GET,
             &|mut request| {
                 request = add_optional_header(&self.client_request_id, request);
                 request
@@ -53,7 +55,7 @@ impl<'a> GetQueueMetadataBuilder<'a> {
             .storage_client()
             .storage_account_client()
             .http_client()
-            .execute_request_check_status(request.0, StatusCode::OK)
+            .execute_request_check_status(request.0, http::status::StatusCode::OK)
             .await?;
 
         Ok((&response).try_into()?)

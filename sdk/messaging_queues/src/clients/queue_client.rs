@@ -1,5 +1,5 @@
-use crate::core::clients::StorageClient;
-use crate::queue::requests::*;
+use crate::requests::*;
+use azure_storage::core::clients::StorageClient;
 use std::fmt::Debug;
 use std::sync::Arc;
 

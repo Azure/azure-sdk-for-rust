@@ -1,7 +1,7 @@
-use crate::core::clients::StorageClient;
-use crate::queue::prelude::*;
-use crate::queue::requests::*;
+use crate::prelude::*;
+use crate::requests::*;
 use azure_core::HttpClient;
+use azure_storage::core::clients::StorageClient;
 use std::sync::Arc;
 
 pub trait AsPopReceiptClient {

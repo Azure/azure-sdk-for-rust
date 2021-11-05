@@ -1,8 +1,9 @@
-use crate::queue::responses::*;
+use crate::clients::QueueClient;
+use crate::responses::*;
 use crate::QueueStoredAccessPolicy;
-use crate::{queue::clients::QueueClient, StoredAccessPolicyList};
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
+use azure_storage::StoredAccessPolicyList;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]

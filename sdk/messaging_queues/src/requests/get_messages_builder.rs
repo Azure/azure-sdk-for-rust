@@ -1,23 +1,25 @@
-use crate::queue::clients::QueueClient;
-use crate::queue::prelude::*;
-use crate::queue::responses::*;
+use crate::clients::QueueClient;
+use crate::prelude::*;
+use crate::responses::*;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct PeekMessagesBuilder<'a> {
+pub struct GetMessagesBuilder<'a> {
     queue_client: &'a QueueClient,
     number_of_messages: Option<NumberOfMessages>,
+    visibility_timeout: Option<VisibilityTimeout>,
     timeout: Option<Timeout>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
 
-impl<'a> PeekMessagesBuilder<'a> {
+impl<'a> GetMessagesBuilder<'a> {
     pub(crate) fn new(queue_client: &'a QueueClient) -> Self {
-        PeekMessagesBuilder {
+        GetMessagesBuilder {
             queue_client,
             number_of_messages: None,
+            visibility_timeout: None,
             timeout: None,
             client_request_id: None,
         }
@@ -25,16 +27,17 @@ impl<'a> PeekMessagesBuilder<'a> {
 
     setters! {
         number_of_messages: NumberOfMessages => Some(number_of_messages),
+        visibility_timeout: VisibilityTimeout => Some(visibility_timeout),
         timeout: Timeout => Some(timeout),
         client_request_id: ClientRequestId<'a> => Some(client_request_id),
     }
 
     pub async fn execute(
         &self,
-    ) -> Result<PeekMessagesResponse, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<GetMessagesResponse, Box<dyn std::error::Error + Sync + Send>> {
         let mut url = self.queue_client.url_with_segments(Some("messages"))?;
 
-        url.query_pairs_mut().append_pair("peekonly", "true");
+        self.visibility_timeout.append_to_url_query(&mut url);
         self.number_of_messages.append_to_url_query(&mut url);
         self.timeout.append_to_url_query(&mut url);
 

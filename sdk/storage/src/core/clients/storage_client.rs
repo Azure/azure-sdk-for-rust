@@ -27,7 +27,7 @@ impl StorageClient {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
+    pub fn storage_account_client(&self) -> &StorageAccountClient {
         self.storage_account_client.as_ref()
     }
 
@@ -64,7 +64,7 @@ impl StorageClient {
         )
     }
 
-    pub(crate) fn queue_url_with_segments<'a, I>(
+    pub fn queue_url_with_segments<'a, I>(
         &'a self,
         segments: I,
     ) -> Result<url::Url, url::ParseError>
@@ -118,7 +118,7 @@ impl StorageClient {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn prepare_request(
+    pub fn prepare_request(
         &self,
         url: &str,
         method: &Method,
