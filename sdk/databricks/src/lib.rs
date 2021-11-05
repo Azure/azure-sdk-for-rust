@@ -1,7 +1,6 @@
 #![recursion_limit = "256"]
 
-
-pub mod core;
+pub mod prelude;
 
 #[macro_use]
 extern crate azure_core;

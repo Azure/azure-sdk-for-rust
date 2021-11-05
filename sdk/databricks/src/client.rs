@@ -1,70 +1,41 @@
-use http::{HeaderMap, Method, Uri, self};
+use crate::prelude::*;
+use reqwest::{self, header, Client, Url};
 use std::sync::Arc;
-use azure_core::{Body, prelude::*};
-use crate::core::*;
-use bytes::Bytes;
 
 #[derive(Debug)]
-pub enum DatabricksCredentials{
-    BearerToken(String),
-    Username(String)
+pub struct DatabricksClient {
+    token: String,
+    pub http_client: Client,
+    pub host: Url,
 }
 
-#[derive(Debug)]
-pub struct DatabricksClient{
-    credentials: DatabricksCredentials,
-    host: Uri,
-    http_client: Arc<dyn HttpClient>,
-    port: u16
-}
+impl DatabricksClient {
+    pub fn new<'a>(token: &'a str, host: &'a str) -> DatabricksResult<Arc<Self>> {
+        let mut headers = header::HeaderMap::new();
 
-impl DatabricksClient{
-    pub fn new<'a>(credentials: DatabricksCredentials, host: &'a str, port: Option<u16>) -> Arc<Self>{
-        let http_client = new_http_client();
+        let bearer = "Bearer ".to_owned() + &token.to_string();
 
-        let port = port.unwrap_or_else(|| {DATABRICKS_DEFAULT_PORT});
+        headers.insert(
+            header::AUTHORIZATION,
+            header::HeaderValue::from_str(&bearer).unwrap(),
+        );
 
+        headers.insert(
+            header::CONTENT_TYPE,
+            header::HeaderValue::from_str("application/json").unwrap(),
+        );
 
-        let url_parsed = host.parse::<Uri>().expect("Unable to parse url");
-        Arc::new(Self{
-            credentials: credentials,
+        let http_client = Client::builder()
+            .default_headers(headers)
+            .build()
+            .expect("Unable to build http_client");
+
+        let url_parsed: Url = Url::parse(host).expect("host not in correct format");
+
+        Ok(Arc::new(Self {
+            token: String::from(token),
             host: url_parsed,
-            port: port,
-            http_client: http_client
-        })
-    }
-
-    pub fn http_client(&self) -> &dyn HttpClient{
-        self.http_client.as_ref()
-    }
-
-    pub fn credentials(&self) -> &DatabricksCredentials{
-        &self.credentials
-    }
-
-
-    // so far prepare only supports personal access token
-    pub fn prepare_request(&self, method: &Method, body: Body) -> http::Result<http::Request<Bytes>>{
-        let mut auth_token: String = String::from("Bearer: ");
-
-        let token = match self.credentials(){
-            DatabricksCredentials::BearerToken(token) => {
-                token
-            }
-            _ => {
-                panic!("nope!");
-            }
-        };
-
-        auth_token.push_str(token);
-        let request = http::Request::builder().uri(&self.host).method(method).header("Authorization", auth_token);
-
-        if let Body::Bytes(body) = body {
-            request.body(body)
-        }
-        else{
-            request.body(Bytes::new())
-        }
+            http_client: http_client,
+        }))
     }
 }
-
