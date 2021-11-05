@@ -110,7 +110,9 @@ async fn trigger() -> Result<(), azure_cosmos::Error> {
         .await?;
 
     // delete the database
-    database_client.delete_database().execute().await?;
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await?;
 
     Ok(())
 }

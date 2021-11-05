@@ -1,3 +1,7 @@
+#![allow(clippy::enum_variant_names)]
+#![allow(clippy::new_without_default)]
+#![allow(clippy::module_inception)]
+
 /*!
 # The Cosmos DB crate.
 
@@ -89,7 +93,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     Ok(())
 }
 ```
-!*/
+*/
 
 #![warn(unused_extern_crates)]
 #![deny(missing_docs)]

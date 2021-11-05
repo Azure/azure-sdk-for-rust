@@ -128,8 +128,7 @@ impl BlobSharedAccessSignature {
             "".to_string(), // rsct
         ];
 
-        let signed = sign(&self.key, &content.join("\n"));
-        signed
+        sign(&self.key, &content.join("\n"))
     }
 }
 

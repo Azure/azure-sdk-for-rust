@@ -191,8 +191,6 @@ impl CosmosClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::CREATED)
             .await?;
 
         Ok(CreateDatabaseResponse::try_from(response).await?)
@@ -239,7 +237,6 @@ impl CosmosClient {
                                 .send(&mut pipeline_context, &mut request)
                                 .await
                         );
-                        let response = r#try!(response.validate(http::StatusCode::OK).await);
 
                         ListDatabasesResponse::try_from(response).await
                     }
@@ -256,7 +253,6 @@ impl CosmosClient {
                                 .send(&mut pipeline_context, &mut request)
                                 .await
                         );
-                        let response = r#try!(response.validate(http::StatusCode::OK).await);
                         ListDatabasesResponse::try_from(response).await
                     }
                     State::Done => return None,
@@ -307,7 +303,16 @@ impl CosmosClient {
                 time,
             )
         };
-        self.prepare_request_with_signature(uri_path, http_method, time, &auth)
+        trace!("prepare_request::auth == {:?}", auth);
+        let uri = format!("{}/{}", self.cloud_location.url(), uri_path);
+        debug!("building request. uri: {}", uri);
+
+        RequestBuilder::new()
+            .method(http_method)
+            .uri(uri)
+            .header(HEADER_DATE, time.to_string())
+            .header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION))
+            .header(header::AUTHORIZATION, auth)
     }
 
     /// Prepares' an `azure_core::Request`. This function will
@@ -330,28 +335,6 @@ impl CosmosClient {
             .body(bytes::Bytes::new())
             .unwrap()
             .into()
-    }
-
-    fn prepare_request_with_signature(
-        &self,
-        uri_path: &str,
-        http_method: http::Method,
-        time_nonce: TimeNonce,
-        signature: &str,
-    ) -> RequestBuilder {
-        trace!("prepare_request::auth == {:?}", signature);
-        let uri = format!("{}/{}", self.cloud_location.url(), uri_path);
-        debug!(
-            "cosmos::client::prepare_request_with_resource_signature::uri == {:?}",
-            uri
-        );
-
-        RequestBuilder::new()
-            .method(http_method)
-            .uri(uri)
-            .header(HEADER_DATE, time_nonce.to_string())
-            .header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION))
-            .header(header::AUTHORIZATION, signature)
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline<CosmosContext> {

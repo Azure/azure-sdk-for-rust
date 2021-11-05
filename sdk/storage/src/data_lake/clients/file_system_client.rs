@@ -69,7 +69,7 @@ impl FileSystemClient {
         path_name: &str,
         options: CreatePathOptions<'_>,
     ) -> Result<CreatePathResponse, crate::Error> {
-        let mut request = self.prepare_request_pipeline(&path_name, http::Method::PUT);
+        let mut request = self.prepare_request_pipeline(path_name, http::Method::PUT);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
@@ -77,8 +77,6 @@ impl FileSystemClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::CREATED)
             .await?;
 
         Ok(CreatePathResponse::try_from(response).await?)
@@ -119,6 +117,6 @@ impl FileSystemClient {
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline<DataLakeContext> {
-        &self.data_lake_client.pipeline()
+        self.data_lake_client.pipeline()
     }
 }

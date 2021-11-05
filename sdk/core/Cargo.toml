@@ -23,7 +23,7 @@ http = "0.2"
 hyper = { version = "0.14", optional = true }
 hyper-rustls = { version = "0.22", optional = true }
 log = "0.4"
-oauth2 = "4.0"
+oauth2 = { version = "4.0", default_features=false }
 rand = "0.8"
 # Add dependency to getrandom to enable WASM support
 getrandom = { version = "0.2", features = ["js"] }
@@ -40,12 +40,12 @@ rustc_version = "0.4"
 
 [dev-dependencies]
 env_logger = "0.8"
-tokio = { version = "1.0", features = ["default"] }
+tokio = { version = "1", features = ["default"] }
 
 [features]
 default = ["enable_reqwest"]
-enable_reqwest = ["reqwest/default-tls"]
-enable_reqwest_rustls = ["reqwest/rustls-tls"]
+enable_reqwest = ["reqwest/default-tls", "oauth2/native-tls"]
+enable_reqwest_rustls = ["reqwest/rustls-tls", "oauth2/rustls-tls"]
 enable_hyper = ["hyper", "hyper-rustls"]
 test_e2e = []
 azurite_workaround = []

@@ -14,8 +14,12 @@ async fn collection_operations() -> Result<(), BoxedError> {
     env_logger::init();
 
     let client = setup::initialize("collection_operations")?;
-    let database_name = "sample";
+    let database_name = "test-collection-operations";
     let context = Context::new();
+
+    client
+        .create_database(context.clone(), database_name, CreateDatabaseOptions::new())
+        .await?;
 
     // create collection!
     let db_client = client.clone().into_database_client(database_name.clone());
@@ -119,6 +123,11 @@ async fn collection_operations() -> Result<(), BoxedError> {
         "The delete_collection response: {:#?}",
         delete_collection_response
     );
+
+    db_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 
     Ok(())
 }

@@ -1,6 +1,21 @@
 # \[Unofficial\] Azure SDK for Rust
 
-This repository is for the development of the *unofficial* Azure SDK for Rust. Users of the SDK may wish to learn more about this crate on [crates.io](https://crates.io/crates/azure_sdk_for_rust).
+This repository is for the development of the *unofficial* Azure SDK for Rust. It is *unofficial* because it is not yet supported by Azure Support or the Azure SDK team. It has been built primarily by volunteers on their own time. For more information, see the [project history](HISTORY.md) or [FAQs](FAQ.md):
+- When will the crates be published to crates.io?
+- How do we build a case for making it official?
+
+## Crates
+
+### SDK
+These crates are available from in (sdk):
+- azure_core
+- azure_identity
+- azure_cosmos
+- azure_storage
+- azure_security_keyvault
+
+### Services
+More than 200 Azure service crates are available in [services](services). They are generated from the [Azure REST API Specifications](https://github.com/Azure/azure-rest-api-specs).
 
 ## Status
 
