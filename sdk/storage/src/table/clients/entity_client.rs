@@ -85,7 +85,7 @@ impl EntityClient {
     ) -> Result<EntityResponse<E>, Error> {
         let mut request = self
             .table_client
-            .prepare_table_request(format!("{}", self.table_name).as_str(), Method::POST);
+            .prepare_table_request(self.table_name.as_str(), Method::POST);
 
         options.decorate_request::<E>(&mut request, entity)?;
 
@@ -166,7 +166,7 @@ impl EntityClient {
             MERGE.clone(),
         );
 
-        options.decorate_request::<E>(&mut request, &entity)?;
+        options.decorate_request::<E>(&mut request, entity)?;
 
         let table_context = TableContext::default();
         let mut pipeline_context = PipelineContext::new(ctx, table_context);

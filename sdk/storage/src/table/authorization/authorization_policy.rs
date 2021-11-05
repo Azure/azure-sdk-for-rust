@@ -71,7 +71,7 @@ fn shared_key_token(
     key: &str,
 ) -> String {
     let to_sign = format!(
-        "{}\n{}\n{}\n{}\n{}",
+        "{}\n{}\n{}\n{}\n/{}{}",
         method.as_str(),
         headers
             .get("Content-MD5")
@@ -80,7 +80,8 @@ fn shared_key_token(
             .get("Content-Type")
             .map_or("", |v| v.to_str().unwrap()),
         headers.get("x-ms-date").map_or("", |v| v.to_str().unwrap()),
-        format!("/{}{}", account, uri.path())
+        account,
+        uri.path()
     );
     let signature = hmac::sign(
         &hmac::Key::new(hmac::HMAC_SHA256, &base64::decode(key).unwrap()),
