@@ -32,9 +32,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let data_lake = storage_account_client
         .into_storage_client()
-        .as_data_lake_client(account, bearer_token.token.secret().to_owned())?;
+        .into_data_lake_client(account, bearer_token.token.secret().to_owned());
 
-    let file_system = data_lake.as_file_system_client(&file_system_name)?;
+    let file_system = data_lake
+        .clone()
+        .into_file_system_client(file_system_name.to_string());
 
     let mut fs_properties = Properties::new();
     fs_properties.insert("AddedVia", "Azure SDK for Rust");

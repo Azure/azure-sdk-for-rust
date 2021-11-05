@@ -40,9 +40,7 @@ impl<'a> ListFileSystemsBuilder<'a> {
     pub async fn execute(
         &self,
     ) -> Result<ListFileSystemsResponse, Box<dyn std::error::Error + Sync + Send>> {
-        // we clone this so we can add custom
-        // query parameters
-        let mut url = self.data_lake_client.url().clone();
+        let mut url = url::Url::parse(self.data_lake_client.url().as_str())?;
 
         url.query_pairs_mut().append_pair("resource", "account");
 

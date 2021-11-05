@@ -33,9 +33,11 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         .into_storage_client()
         // This test won't work during replay in CI until all operations are converted to pipeline architecture
         // .as_data_lake_client_with_transaction(account, bearer_token.token.secret().to_owned(), "test_data_lake_file_system_functions")?;
-        .as_data_lake_client(account, bearer_token.token.secret().to_owned())?;
+        .into_data_lake_client(account, bearer_token.token.secret().to_owned());
 
-    let file_system_client = data_lake_client.as_file_system_client(&file_system_name)?;
+    let file_system_client = data_lake_client
+        .clone()
+        .into_file_system_client(file_system_name.to_string());
 
     let mut fs_properties = Properties::new();
     fs_properties.insert("AddedVia", "Azure SDK for Rust");

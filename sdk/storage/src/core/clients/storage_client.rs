@@ -1,4 +1,5 @@
 use crate::core::clients::{ServiceType, StorageAccountClient};
+use crate::data_lake::clients::DataLakeClient;
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
@@ -104,6 +105,10 @@ impl StorageClient {
     #[cfg(feature = "queue")]
     pub fn get_queue_service_stats(&self) -> crate::queue::requests::GetQueueServiceStatsBuilder {
         crate::queue::requests::GetQueueServiceStatsBuilder::new(self)
+    }
+
+    pub fn into_data_lake_client(self, account: String, bearer_token: String) -> DataLakeClient {
+        DataLakeClient::new(self, account, bearer_token, None)
     }
 
     #[allow(dead_code)]
