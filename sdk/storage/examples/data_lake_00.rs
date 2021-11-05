@@ -30,9 +30,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("token expires on {}", bearer_token.expires_on);
     println!();
 
-    let data_lake = storage_account_client
-        .as_storage_client()
-        .into_data_lake_client(account, bearer_token.token.secret().to_owned());
+    let storage_client = storage_account_client.as_storage_client();
+    let data_lake = DataLakeClient::new(
+        storage_client,
+        account,
+        bearer_token.token.secret().to_owned(),
+        None,
+    );
 
     let file_system = data_lake
         .clone()

@@ -117,10 +117,6 @@ impl StorageClient {
         crate::queue::requests::GetQueueServiceStatsBuilder::new(self)
     }
 
-    pub fn into_data_lake_client(self, account: String, bearer_token: String) -> DataLakeClient {
-        DataLakeClient::new(self, account, bearer_token, None)
-    }
-
     #[allow(dead_code)]
     pub(crate) fn prepare_request(
         &self,

@@ -1,6 +1,7 @@
 use crate::core::prelude::*;
 use crate::data_lake::authorization_policy::AuthorizationPolicy;
 use crate::data_lake::authorization_policy::DataLakeContext;
+use crate::data_lake::clients::FileSystemClient;
 use crate::data_lake::requests::*;
 use azure_core::pipeline::Pipeline;
 use azure_core::prelude::*;
@@ -15,7 +16,7 @@ const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";
 #[derive(Debug, Clone)]
 pub struct DataLakeClient {
     pipeline: Pipeline<DataLakeContext>,
-    storage_client: StorageClient,
+    storage_client: Arc<StorageClient>,
     account: String,
     custom_dns_suffix: Option<String>,
     url: String, // TODO: Use CloudLocation similar to CosmosClient
@@ -23,7 +24,7 @@ pub struct DataLakeClient {
 
 impl DataLakeClient {
     pub(crate) fn new_with_options(
-        storage_client: StorageClient,
+        storage_client: Arc<StorageClient>,
         account: String,
         bearer_token: String,
         custom_dns_suffix: Option<String>,
@@ -67,7 +68,7 @@ impl DataLakeClient {
     }
 
     pub fn new(
-        storage_client: StorageClient,
+        storage_client: Arc<StorageClient>,
         account: String,
         bearer_token: String,
         custom_dns_suffix: Option<String>,
@@ -83,7 +84,7 @@ impl DataLakeClient {
 
     #[cfg(feature = "mock_transport_framework")]
     pub fn new_with_transaction(
-        storage_client: StorageClient,
+        storage_client: Arc<StorageClient>,
         account: String,
         bearer_token: String,
         transaction_name: impl Into<String>,
