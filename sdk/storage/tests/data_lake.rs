@@ -30,7 +30,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     let bearer_token = DefaultCredential::default().get_token(resource_id).await?;
 
     let data_lake_client = storage_account_client
-        .into_storage_client()
+        .as_storage_client()
         // This test won't work during replay in CI until all operations are converted to pipeline architecture
         // .as_data_lake_client_with_transaction(account, bearer_token.token.secret().to_owned(), "test_data_lake_file_system_functions")?;
         .into_data_lake_client(account, bearer_token.token.secret().to_owned());

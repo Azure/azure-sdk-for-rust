@@ -1,24 +1,34 @@
 use crate::core::clients::{ServiceType, StorageAccountClient};
-use crate::data_lake::clients::DataLakeClient;
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
+use std::sync::Arc;
+
+pub trait AsStorageClient {
+    fn as_storage_client(&self) -> Arc<StorageClient>;
+}
+
+impl AsStorageClient for Arc<StorageAccountClient> {
+    fn as_storage_client(&self) -> Arc<StorageClient> {
+        StorageClient::new(self.clone())
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct StorageClient {
-    storage_account_client: StorageAccountClient,
+    storage_account_client: Arc<StorageAccountClient>,
 }
 
 impl StorageClient {
-    pub(crate) fn new(storage_account_client: StorageAccountClient) -> Self {
-        Self {
+    pub(crate) fn new(storage_account_client: Arc<StorageAccountClient>) -> Arc<Self> {
+        Arc::new(Self {
             storage_account_client,
-        }
+        })
     }
 
     #[allow(dead_code)]
     pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
-        &self.storage_account_client
+        self.storage_account_client.as_ref()
     }
 
     #[allow(dead_code)]
