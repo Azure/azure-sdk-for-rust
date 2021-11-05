@@ -1,6 +1,6 @@
 use azure_core::prelude::IfMatchCondition;
 use azure_core::prelude::*;
-use azure_identity::token_credentials::DefaultCredential;
+use azure_identity::token_credentials::DefaultAzureCredential;
 use azure_identity::token_credentials::TokenCredential;
 use azure_storage::core::prelude::*;
 use azure_storage::data_lake::prelude::*;
@@ -26,7 +26,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let resource_id = "https://storage.azure.com/";
     println!("getting bearer token for '{}'...", resource_id);
-    let bearer_token = DefaultCredential::default().get_token(resource_id).await?;
+    let bearer_token = DefaultAzureCredential::default()
+        .get_token(resource_id)
+        .await?;
     println!("token expires on {}", bearer_token.expires_on);
     println!();
 
