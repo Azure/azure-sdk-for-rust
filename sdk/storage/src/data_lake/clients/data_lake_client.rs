@@ -106,8 +106,8 @@ impl DataLakeClient {
         self.storage_client.storage_account_client().http_client()
     }
 
-    pub(crate) fn url(&self) -> String {
-        self.url.clone()
+    pub(crate) fn url(&self) -> &str {
+        &self.url
     }
 
     pub fn list(&self) -> ListFileSystemsBuilder {

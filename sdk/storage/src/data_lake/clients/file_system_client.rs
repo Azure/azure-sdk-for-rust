@@ -17,7 +17,7 @@ pub struct FileSystemClient {
 
 impl FileSystemClient {
     pub(crate) fn new(data_lake_client: DataLakeClient, name: String) -> Self {
-        let mut url = url::Url::parse(data_lake_client.url().as_str()).unwrap();
+        let mut url = url::Url::parse(data_lake_client.url()).unwrap();
 
         url.path_segments_mut()
             .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)
