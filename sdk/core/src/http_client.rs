@@ -12,7 +12,7 @@ use hyper_rustls::HttpsConnector;
 use serde::Serialize;
 use std::sync::Arc;
 
-#[cfg(feature = "enable_reqwest")]
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 pub fn new_http_client() -> Arc<dyn HttpClient> {
     Arc::new(reqwest::Client::new())
 }
@@ -41,45 +41,15 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     async fn execute_request_check_status(
         &self,
         request: Request<Bytes>,
-        expected_status: StatusCode,
+        _expected_status: StatusCode,
     ) -> Result<Response<Bytes>, HttpError> {
         let response = self.execute_request(request).await?;
-        if expected_status != response.status() {
-            Err(HttpError::new_unexpected_status_code(
-                expected_status,
-                response.status(),
-                std::str::from_utf8(response.body())?,
-            ))
-        } else {
+        let status = response.status();
+        if (200..400).contains(&status.as_u16()) {
             Ok(response)
-        }
-    }
-
-    async fn execute_request_check_statuses(
-        &self,
-        request: Request<Bytes>,
-        expected_statuses: &[StatusCode],
-    ) -> Result<Response<Bytes>, HttpError> {
-        let response = self.execute_request(request).await?;
-        if !expected_statuses
-            .iter()
-            .any(|expected_status| *expected_status == response.status())
-        {
-            if expected_statuses.len() == 1 {
-                Err(HttpError::new_unexpected_status_code(
-                    expected_statuses[0],
-                    response.status(),
-                    std::str::from_utf8(response.body())?,
-                ))
-            } else {
-                Err(HttpError::new_multiple_unexpected_status_code(
-                    expected_statuses.to_vec(),
-                    response.status(),
-                    std::str::from_utf8(response.body())?,
-                ))
-            }
         } else {
-            Ok(response)
+            let body = std::str::from_utf8(response.body())?.to_owned();
+            Err(crate::HttpError::ErrorStatusCode { status, body })
         }
     }
 }
@@ -119,7 +89,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 //    }
 //}
 
-#[cfg(feature = "enable_reqwest")]
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for reqwest::Client {
@@ -166,7 +136,7 @@ impl HttpClient for reqwest::Client {
         request: &crate::Request,
     ) -> Result<crate::Response, HttpError> {
         let mut reqwest_request = self.request(
-            request.method().clone(),
+            request.method(),
             url::Url::parse(&request.uri().to_string()).unwrap(),
         );
         for header in request.headers() {

@@ -56,7 +56,7 @@ impl std::convert::TryFrom<Response<bytes::Bytes>> for ListAttachmentsResponse {
         debug!("headers == {:#?}", headers);
         debug!("body == {:#?}", body);
 
-        let json: JsonListAttachmentResponse = serde_json::from_slice(&body)?;
+        let json: JsonListAttachmentResponse = serde_json::from_slice(body)?;
 
         Ok(Self {
             rid: json.rid,

@@ -79,9 +79,9 @@ pub struct CapabilitiesListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServerVersion {
     #[serde(rename = "12")]
-    _12,
+    N12,
     #[serde(rename = "11")]
-    _11,
+    N11,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerProperties {
@@ -91,6 +91,8 @@ pub struct ServerProperties {
     pub administrator_login_password: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<ServerVersion>,
+    #[serde(rename = "minorVersion", default, skip_serializing_if = "Option::is_none")]
+    pub minor_version: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<server_properties::State>,
     #[serde(rename = "haState", default, skip_serializing_if = "Option::is_none")]
@@ -107,6 +109,10 @@ pub struct ServerProperties {
     pub maintenance_window: Option<MaintenanceWindow>,
     #[serde(rename = "haEnabled", default, skip_serializing_if = "Option::is_none")]
     pub ha_enabled: Option<server_properties::HaEnabled>,
+    #[serde(rename = "standbyCount", default, skip_serializing_if = "Option::is_none")]
+    pub standby_count: Option<i32>,
+    #[serde(rename = "logBackupStorageSku", default, skip_serializing_if = "Option::is_none")]
+    pub log_backup_storage_sku: Option<String>,
     #[serde(rename = "sourceServerName", default, skip_serializing_if = "Option::is_none")]
     pub source_server_name: Option<String>,
     #[serde(rename = "sourceSubscriptionId", default, skip_serializing_if = "Option::is_none")]
@@ -125,6 +131,8 @@ pub struct ServerProperties {
     pub delegated_subnet_arguments: Option<server_properties::DelegatedSubnetArguments>,
     #[serde(rename = "privateDnsZoneArguments", default, skip_serializing_if = "Option::is_none")]
     pub private_dns_zone_arguments: Option<server_properties::PrivateDnsZoneArguments>,
+    #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
+    pub earliest_restore_date: Option<String>,
     #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<server_properties::CreateMode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -207,6 +215,8 @@ pub struct ServerPropertiesForUpdate {
     pub storage_profile: Option<StorageProfile>,
     #[serde(rename = "haEnabled", default, skip_serializing_if = "Option::is_none")]
     pub ha_enabled: Option<server_properties_for_update::HaEnabled>,
+    #[serde(rename = "standbyCount", default, skip_serializing_if = "Option::is_none")]
+    pub standby_count: Option<i32>,
     #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window: Option<MaintenanceWindow>,
 }
@@ -242,6 +252,16 @@ pub struct StorageProfile {
     pub backup_retention_days: Option<i32>,
     #[serde(rename = "storageMB", default, skip_serializing_if = "Option::is_none")]
     pub storage_mb: Option<i32>,
+    #[serde(rename = "geoRedundantBackup", default, skip_serializing_if = "Option::is_none")]
+    pub geo_redundant_backup: Option<storage_profile::GeoRedundantBackup>,
+}
+pub mod storage_profile {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum GeoRedundantBackup {
+        Enabled,
+        Disabled,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {

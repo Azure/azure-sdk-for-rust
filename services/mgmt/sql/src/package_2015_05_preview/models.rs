@@ -2733,6 +2733,8 @@ pub mod resource_identity {
         None,
         SystemAssigned,
         UserAssigned,
+        #[serde(rename = "SystemAssigned,UserAssigned")]
+        SystemAssignedUserAssigned,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

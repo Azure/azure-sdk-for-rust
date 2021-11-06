@@ -1,6 +1,10 @@
 use crate::blob::prelude::PublicAccess;
 use crate::container::requests::*;
-use crate::core::clients::{StorageAccountClient, StorageClient};
+use crate::core::clients::{StorageAccountClient, StorageClient, StorageCredentials};
+use crate::shared_access_signature::{
+    service_sas::{BlobSharedAccessSignatureBuilder, BlobSignedResource, SetResources},
+    SasToken,
+};
 use azure_core::prelude::*;
 use bytes::Bytes;
 use http::method::Method;
@@ -102,9 +106,42 @@ impl ContainerClient {
         method: &Method,
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
-    ) -> Result<(Request<Bytes>, url::Url), crate::Error> {
+    ) -> crate::Result<(Request<Bytes>, url::Url)> {
         self.storage_client
             .prepare_request(url, method, http_header_adder, request_body)
+    }
+
+    pub fn shared_access_signature(
+        &self,
+    ) -> Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>, crate::Error> {
+        let canonicalized_resource = format!(
+            "/blob/{}/{}",
+            self.storage_account_client().account(),
+            self.container_name(),
+        );
+
+        match self.storage_account_client().storage_credentials() {
+            StorageCredentials::Key(ref _account, ref key) => Ok(
+                BlobSharedAccessSignatureBuilder::new(key.to_string(), canonicalized_resource)
+                    .with_resources(BlobSignedResource::Container),
+            ),
+            _ => Err(crate::Error::OperationNotSupported(
+                "Shared access signature generation".to_owned(),
+                "SAS can be generated only from key and account clients".to_owned(),
+            )),
+        }
+    }
+
+    pub fn generate_signed_container_url<T>(
+        &self,
+        signature: &T,
+    ) -> Result<url::Url, Box<dyn std::error::Error + Send + Sync>>
+    where
+        T: SasToken,
+    {
+        let mut url = self.url_with_segments(None)?;
+        url.set_query(Some(&signature.token()));
+        Ok(url)
     }
 }
 

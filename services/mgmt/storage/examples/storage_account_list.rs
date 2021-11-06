@@ -2,7 +2,7 @@
 Lists the storage accounts, similar to:
 az storage account list --query [].id
 
-cargo run --example storage_account_list
+cargo run --package azure_mgmt_storage --example storage_account_list
 */
 
 use azure_identity::token_credentials::AzureCliCredential;

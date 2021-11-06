@@ -52,7 +52,7 @@ where
     pub fn new(
         crate_name: Option<&'static str>,
         crate_version: Option<&'static str>,
-        options: &ClientOptions<C>,
+        options: ClientOptions<C>,
         per_call_policies: Vec<Arc<dyn Policy<C>>>,
         per_retry_policies: Vec<Arc<dyn Policy<C>>>,
     ) -> Self {
@@ -75,16 +75,51 @@ where
 
         pipeline.extend_from_slice(&per_retry_policies);
         pipeline.extend_from_slice(&options.per_retry_policies);
+        let http_client = options.transport.http_client.clone();
 
         // TODO: Add transport policy for WASM once https://github.com/Azure/azure-sdk-for-rust/issues/293 is resolved.
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let transport_policy = TransportPolicy::new(&options.transport);
-            pipeline.push(Arc::new(transport_policy));
+            #[allow(unused_mut)]
+            let mut policy: Arc<dyn Policy<_>> =
+                Arc::new(TransportPolicy::new(options.transport.clone()));
+
+            // This code replaces the default transport policy at runtime if these two conditions
+            // are met:
+            // 1. The mock_transport_framework is enabled
+            // 2. The environmental variable TESTING_MODE is either RECORD or PLAY
+            #[cfg(feature = "mock_transport_framework")]
+            match std::env::var(crate::TESTING_MODE_KEY)
+                .as_deref()
+                .unwrap_or(crate::TESTING_MODE_REPLAY)
+            {
+                crate::TESTING_MODE_RECORD => {
+                    log::warn!("mock testing framework record mode enabled");
+                    policy = Arc::new(crate::policies::MockTransportRecorderPolicy::new(
+                        options.transport,
+                    ))
+                }
+                crate::TESTING_MODE_REPLAY => {
+                    log::info!("mock testing framework replay mode enabled");
+                    policy = Arc::new(crate::policies::MockTransportPlayerPolicy::new(
+                        options.transport,
+                    ))
+                }
+                m => {
+                    log::error!(
+                        "invalid TESTING_MODE '{}' selected. Supported options are '{}' and '{}'",
+                        m,
+                        crate::TESTING_MODE_RECORD,
+                        crate::TESTING_MODE_REPLAY
+                    );
+                }
+            };
+
+            pipeline.push(policy);
         }
 
         Self {
-            http_client: options.transport.http_client.clone(),
+            http_client,
             pipeline,
         }
     }
@@ -93,6 +128,18 @@ where
     pub fn http_client(&self) -> &dyn HttpClient {
         // TODO: Request methods should be defined directly on the pipeline instead of exposing the HttpClient.
         self.http_client.as_ref()
+    }
+
+    pub fn replace_policy(
+        &mut self,
+        policy: Arc<dyn Policy<C>>,
+        position: usize,
+    ) -> Arc<dyn Policy<C>> {
+        std::mem::replace(&mut self.pipeline[position], policy)
+    }
+
+    pub fn policies(&self) -> &[Arc<dyn Policy<C>>] {
+        &self.pipeline
     }
 
     pub async fn send(

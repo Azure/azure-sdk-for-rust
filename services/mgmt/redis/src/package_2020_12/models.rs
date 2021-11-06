@@ -25,7 +25,7 @@ pub mod sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisCommonProperties {
     #[serde(rename = "redisConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub redis_configuration: Option<serde_json::Value>,
+    pub redis_configuration: Option<redis_common_properties::RedisConfiguration>,
     #[serde(rename = "redisVersion", default, skip_serializing_if = "Option::is_none")]
     pub redis_version: Option<String>,
     #[serde(rename = "enableNonSslPort", default, skip_serializing_if = "Option::is_none")]
@@ -46,13 +46,38 @@ pub struct RedisCommonProperties {
 pub mod redis_common_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct RedisConfiguration {
+        #[serde(rename = "rdb-backup-enabled", default, skip_serializing_if = "Option::is_none")]
+        pub rdb_backup_enabled: Option<String>,
+        #[serde(rename = "rdb-backup-frequency", default, skip_serializing_if = "Option::is_none")]
+        pub rdb_backup_frequency: Option<String>,
+        #[serde(rename = "rdb-backup-max-snapshot-count", default, skip_serializing_if = "Option::is_none")]
+        pub rdb_backup_max_snapshot_count: Option<String>,
+        #[serde(rename = "rdb-storage-connection-string", default, skip_serializing_if = "Option::is_none")]
+        pub rdb_storage_connection_string: Option<String>,
+        #[serde(rename = "aof-storage-connection-string-0", default, skip_serializing_if = "Option::is_none")]
+        pub aof_storage_connection_string_0: Option<String>,
+        #[serde(rename = "aof-storage-connection-string-1", default, skip_serializing_if = "Option::is_none")]
+        pub aof_storage_connection_string_1: Option<String>,
+        #[serde(rename = "maxfragmentationmemory-reserved", default, skip_serializing_if = "Option::is_none")]
+        pub maxfragmentationmemory_reserved: Option<String>,
+        #[serde(rename = "maxmemory-policy", default, skip_serializing_if = "Option::is_none")]
+        pub maxmemory_policy: Option<String>,
+        #[serde(rename = "maxmemory-reserved", default, skip_serializing_if = "Option::is_none")]
+        pub maxmemory_reserved: Option<String>,
+        #[serde(rename = "maxmemory-delta", default, skip_serializing_if = "Option::is_none")]
+        pub maxmemory_delta: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub maxclients: Option<String>,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MinimumTlsVersion {
         #[serde(rename = "1.0")]
-        _1_0,
+        N1_0,
         #[serde(rename = "1.1")]
-        _1_1,
+        N1_1,
         #[serde(rename = "1.2")]
-        _1_2,
+        N1_2,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {

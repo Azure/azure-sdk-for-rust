@@ -69,7 +69,7 @@ impl Policy<CosmosContext> for AuthorizationPolicy {
         trace!("uri_path used by AuthorizationPolicy == {:#?}", uri_path);
 
         let auth = {
-            let resource_link = generate_resource_link(&uri_path);
+            let resource_link = generate_resource_link(uri_path);
             trace!("resource_link == {}", resource_link);
             generate_authorization(
                 &self.authorization_token,
@@ -88,13 +88,13 @@ impl Policy<CosmosContext> for AuthorizationPolicy {
 
         request
             .headers_mut()
-            .append(HEADER_DATE, HeaderValue::from_str(&time_nonce.to_string())?);
+            .insert(HEADER_DATE, HeaderValue::from_str(&time_nonce.to_string())?);
         request
             .headers_mut()
-            .append(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION));
+            .insert(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION));
         request
             .headers_mut()
-            .append(AUTHORIZATION, HeaderValue::from_str(&auth)?);
+            .insert(AUTHORIZATION, HeaderValue::from_str(&auth)?);
 
         // now next[0] is safe (will not panic) because we checked
         // at the beginning of the function.
@@ -139,13 +139,13 @@ pub(crate) fn generate_resource_link(uri: &str) -> &str {
     // return an empty string. This is necessary because the previous check included a leading
     // slash.
     if ENDING_STRINGS
-        .into_iter()
+        .iter()
         .map(|ending| &ending[1..]) // this is safe since every ENDING_STRING starts with a slash
         .any(|item| uri == item)
     {
-        return "";
+        ""
     } else {
-        return uri;
+        uri
     }
 }
 
@@ -182,7 +182,7 @@ pub(crate) fn generate_authorization(
         str_unencoded
     );
 
-    form_urlencoded::byte_serialize(&str_unencoded.as_bytes()).collect::<String>()
+    form_urlencoded::byte_serialize(str_unencoded.as_bytes()).collect::<String>()
 }
 
 /// This function generates a valid authorization string, according to the documentation.

@@ -37,10 +37,10 @@ impl<'a> SubmitTransactionBuilder<'a> {
             .push("$batch");
 
         self.timeout.append_to_url_query(&mut url);
-        println!("url = {}", url);
+        debug!("url = {}", url);
 
         let payload = batch.to_string()?;
-        println!("payload == {}", payload);
+        debug!("payload == {}", payload);
 
         let request = self.partition_key_client.prepare_request(
             url.as_str(),
@@ -59,7 +59,7 @@ impl<'a> SubmitTransactionBuilder<'a> {
             Some(bytes::Bytes::from(payload)),
         )?;
 
-        println!("request == {:#?}\n", request);
+        debug!("request == {:#?}\n", request);
 
         let response = self
             .partition_key_client

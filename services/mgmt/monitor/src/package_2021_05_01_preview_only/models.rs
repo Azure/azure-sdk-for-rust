@@ -43,6 +43,8 @@ pub struct DiagnosticSettings {
     pub logs: Vec<LogSettings>,
     #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
+    #[serde(rename = "marketplacePartnerId", default, skip_serializing_if = "Option::is_none")]
+    pub marketplace_partner_id: Option<String>,
     #[serde(rename = "logAnalyticsDestinationType", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_destination_type: Option<String>,
 }
@@ -118,6 +120,8 @@ pub struct ManagementGroupDiagnosticSettings {
     pub logs: Vec<ManagementGroupLogSettings>,
     #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
+    #[serde(rename = "marketplacePartnerId", default, skip_serializing_if = "Option::is_none")]
+    pub marketplace_partner_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementGroupDiagnosticSettingsResource {
@@ -155,6 +159,8 @@ pub struct SubscriptionDiagnosticSettings {
     pub logs: Vec<SubscriptionLogSettings>,
     #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
+    #[serde(rename = "marketplacePartnerId", default, skip_serializing_if = "Option::is_none")]
+    pub marketplace_partner_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionDiagnosticSettingsResource {

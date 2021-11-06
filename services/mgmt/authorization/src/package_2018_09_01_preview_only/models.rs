@@ -29,14 +29,7 @@ pub mod role_assignment_properties_with_scope {
         User,
         Group,
         ServicePrincipal,
-        Unknown,
-        DirectoryRoleTemplate,
         ForeignGroup,
-        Application,
-        #[serde(rename = "MSI")]
-        Msi,
-        DirectoryObjectOrGroup,
-        Everyone,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -75,14 +68,7 @@ pub mod role_assignment_properties {
         User,
         Group,
         ServicePrincipal,
-        Unknown,
-        DirectoryRoleTemplate,
         ForeignGroup,
-        Application,
-        #[serde(rename = "MSI")]
-        Msi,
-        DirectoryObjectOrGroup,
-        Everyone,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

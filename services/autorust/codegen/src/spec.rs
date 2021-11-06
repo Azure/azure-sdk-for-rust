@@ -1,5 +1,7 @@
 use crate::path;
-use autorust_openapi::{AdditionalProperties, OpenAPI, Operation, Parameter, PathItem, Reference, ReferenceOr, Schema};
+use autorust_openapi::{
+    AdditionalProperties, MsExamples, OpenAPI, Operation, Parameter, PathItem, Reference, ReferenceOr, Response, Schema, StatusCode,
+};
 use heck::SnakeCase;
 use indexmap::{IndexMap, IndexSet};
 use std::{
@@ -79,7 +81,45 @@ impl Spec {
         &self.docs
     }
 
-    pub fn input_docs<'a>(&'a self) -> impl Iterator<Item = (&'a PathBuf, &'a OpenAPI)> {
+    pub fn title(&self) -> Option<&str> {
+        let mut titles: Vec<_> = self
+            .docs
+            .values()
+            .map(|doc| &doc.info.title)
+            .filter(|t| t.is_some())
+            .flatten()
+            .collect();
+        titles.sort_unstable();
+
+        titles.get(0).map(|t| t.as_str())
+    }
+
+    pub fn consumes(&self) -> Vec<&String> {
+        let mut versions: Vec<_> = self
+            .docs()
+            .values()
+            .filter(|doc| !doc.paths().is_empty())
+            .map(|api| &api.consumes)
+            .flatten()
+            .collect();
+
+        versions.sort_unstable();
+        versions
+    }
+
+    /// Look for specs with operations and return the last one sorted alphabetically
+    pub fn api_version(&self) -> Option<String> {
+        let mut versions: Vec<&str> = self
+            .docs()
+            .values()
+            .filter(|doc| !doc.paths().is_empty())
+            .filter_map(|api| api.info.version.as_deref())
+            .collect();
+        versions.sort_unstable();
+        versions.last().map(|version| version.to_string())
+    }
+
+    pub fn input_docs(&self) -> impl Iterator<Item = (&PathBuf, &OpenAPI)> {
         self.docs.iter().filter(move |(p, _)| self.is_input_file(p))
     }
 
@@ -95,7 +135,7 @@ impl Spec {
             Some(file) => path::join(doc_path, &file).map_err(|source| Error::PathJoin { source })?,
         };
 
-        let name = reference.name.ok_or_else(|| Error::NoNameInReference)?;
+        let name = reference.name.ok_or(Error::NoNameInReference)?;
         let ref_key = RefKey {
             file_path: full_path,
             name,
@@ -103,7 +143,7 @@ impl Spec {
         let schema = self
             .schemas
             .get(&ref_key)
-            .map_or(Err(Error::SchemaNotFound { ref_key: ref_key.clone() }), Ok)?
+            .ok_or_else(|| Error::SchemaNotFound { ref_key: ref_key.clone() })?
             .clone();
         Ok(ResolvedSchema {
             ref_key: Some(ref_key),
@@ -118,16 +158,12 @@ impl Spec {
             None => doc_path.to_owned(),
             Some(file) => path::join(doc_path, &file).map_err(|source| Error::PathJoin { source })?,
         };
-        let name = reference.name.ok_or_else(|| Error::NoNameInReference)?;
+        let name = reference.name.ok_or(Error::NoNameInReference)?;
         let ref_key = RefKey {
             file_path: full_path,
             name,
         };
-        Ok(self
-            .parameters
-            .get(&ref_key)
-            .map_or(Err(Error::ParameterNotFound { ref_key }), Ok)?
-            .clone())
+        Ok(self.parameters.get(&ref_key).ok_or(Error::ParameterNotFound { ref_key })?.clone())
     }
 
     /// Resolve a reference or schema to a resolved schema
@@ -189,7 +225,7 @@ impl Spec {
         }
     }
 
-    pub fn resolve_parameters(&self, doc_file: &Path, parameters: &Vec<ReferenceOr<Parameter>>) -> Result<Vec<Parameter>> {
+    pub fn resolve_parameters(&self, doc_file: &Path, parameters: &[ReferenceOr<Parameter>]) -> Result<Vec<Parameter>> {
         let mut resolved = Vec::new();
         for param in parameters {
             resolved.push(self.resolve_parameter(doc_file, param)?);
@@ -276,14 +312,13 @@ pub mod openapi {
         let mut list = Vec::new();
 
         // paths and operations
-        for (_path, item) in &api.paths {
+        for (path, item) in api.paths() {
             match item {
                 ReferenceOr::Reference { reference, .. } => list.push(TypedReference::PathItem(reference.clone())),
                 ReferenceOr::Item(item) => {
-                    for verb in path_item_operations(&item) {
-                        let op = verb.operation();
+                    for operation in path_operations(path, item) {
                         // parameters
-                        for param in &op.parameters {
+                        for param in &operation.parameters {
                             match param {
                                 ReferenceOr::Reference { reference, .. } => list.push(TypedReference::Parameter(reference.clone())),
                                 ReferenceOr::Item(parameter) => match &parameter.schema {
@@ -295,7 +330,7 @@ pub mod openapi {
                         }
 
                         // responses
-                        for (_code, rsp) in &op.responses {
+                        for (_code, rsp) in &operation.responses {
                             match &rsp.schema {
                                 Some(ReferenceOr::Reference { reference, .. }) => list.push(TypedReference::Schema(reference.clone())),
                                 Some(ReferenceOr::Item(schema)) => add_references_for_schema(&mut list, schema),
@@ -304,7 +339,7 @@ pub mod openapi {
                         }
 
                         // examples
-                        for (_name, example) in &op.x_ms_examples {
+                        for (_name, example) in &operation.examples {
                             if let ReferenceOr::Reference { reference, .. } = example {
                                 list.push(TypedReference::Example(reference.clone()));
                             }
@@ -337,82 +372,129 @@ pub mod openapi {
     }
 }
 
-pub enum OperationVerb<'a> {
-    Get(&'a Operation),
-    Post(&'a Operation),
-    Put(&'a Operation),
-    Patch(&'a Operation),
-    Delete(&'a Operation),
-    Options(&'a Operation),
-    Head(&'a Operation),
+pub struct WebOperation {
+    pub id: Option<String>,
+    pub path: String,
+    pub verb: WebVerb,
+    pub parameters: Vec<ReferenceOr<Parameter>>,
+    pub responses: IndexMap<StatusCode, Response>,
+    pub examples: MsExamples,
 }
 
-// Hold an operation and remembers the operation verb.
-impl<'a> OperationVerb<'a> {
-    pub fn operation(&self) -> &'a Operation {
-        match self {
-            OperationVerb::Get(op) => op,
-            OperationVerb::Post(op) => op,
-            OperationVerb::Put(op) => op,
-            OperationVerb::Patch(op) => op,
-            OperationVerb::Delete(op) => op,
-            OperationVerb::Options(op) => op,
-            OperationVerb::Head(op) => op,
+impl WebOperation {
+    pub fn rust_module_name(&self) -> Option<String> {
+        match &self.id {
+            Some(id) => {
+                let parts: Vec<&str> = id.splitn(2, '_').collect();
+                if parts.len() == 2 {
+                    Some(parts[0].to_snake_case())
+                } else {
+                    None
+                }
+            }
+            None => None,
         }
     }
-
-    pub fn verb_name(&self) -> &'static str {
-        match self {
-            OperationVerb::Get(_) => "get",
-            OperationVerb::Post(_) => "post",
-            OperationVerb::Put(_) => "put",
-            OperationVerb::Patch(_) => "patch",
-            OperationVerb::Delete(_) => "delete",
-            OperationVerb::Options(_) => "options",
-            OperationVerb::Head(_) => "head",
-        }
-    }
-
-    pub fn function_name(&self, path: &str) -> (Option<String>, String) {
-        if let Some(operation_id) = &self.operation().operation_id {
-            function_name_from_operation_id(operation_id)
-        } else {
-            (None, create_function_name(path, self.verb_name()))
+    pub fn rust_function_name(&self) -> String {
+        match &self.id {
+            Some(id) => {
+                let parts: Vec<&str> = id.splitn(2, '_').collect();
+                if parts.len() == 2 {
+                    parts[1].to_snake_case()
+                } else {
+                    parts[0].to_snake_case()
+                }
+            }
+            None => create_function_name(&self.verb, &self.path),
         }
     }
 }
 
-/// Returns the module name and function name.
-/// The module name is optional and is text before an underscore in the operatonId.
-fn function_name_from_operation_id(operation_id: &str) -> (Option<String>, String) {
-    let parts: Vec<&str> = operation_id.splitn(2, '_').collect();
-    if parts.len() == 2 {
-        (Some(parts[0].to_snake_case()), parts[1].to_snake_case())
-    } else {
-        (None, parts[0].to_snake_case())
+pub enum WebVerb {
+    Get,
+    Post,
+    Put,
+    Patch,
+    Delete,
+    Options,
+    Head,
+}
+
+impl<'a> WebVerb {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            WebVerb::Get => "get",
+            WebVerb::Post => "post",
+            WebVerb::Put => "put",
+            WebVerb::Patch => "patch",
+            WebVerb::Delete => "delete",
+            WebVerb::Options => "options",
+            WebVerb::Head => "head",
+        }
     }
 }
 
 /// Creating a function name from the path and verb when an operationId is not specified.
 /// All azure-rest-api-specs operations should have an operationId.
-fn create_function_name(path: &str, verb_name: &str) -> String {
+fn create_function_name(verb: &WebVerb, path: &str) -> String {
     let mut path = path.split('/').filter(|&x| !x.is_empty()).collect::<Vec<_>>();
-    path.push(verb_name);
+    path.insert(0, verb.as_str());
     path.join("_")
 }
 
-pub fn path_item_operations(item: &PathItem) -> impl Iterator<Item = OperationVerb> {
+struct OperationVerb<'a> {
+    pub operation: Option<&'a Operation>,
+    pub verb: WebVerb,
+}
+
+pub fn path_operations(path: &str, item: &PathItem) -> Vec<WebOperation> {
     vec![
-        item.get.as_ref().map(OperationVerb::Get),
-        item.post.as_ref().map(OperationVerb::Post),
-        item.put.as_ref().map(OperationVerb::Put),
-        item.patch.as_ref().map(OperationVerb::Patch),
-        item.delete.as_ref().map(OperationVerb::Delete),
-        item.options.as_ref().map(OperationVerb::Options),
-        item.head.as_ref().map(OperationVerb::Head),
+        OperationVerb {
+            operation: item.get.as_ref(),
+            verb: WebVerb::Get,
+        },
+        OperationVerb {
+            operation: item.post.as_ref(),
+            verb: WebVerb::Post,
+        },
+        OperationVerb {
+            operation: item.put.as_ref(),
+            verb: WebVerb::Put,
+        },
+        OperationVerb {
+            operation: item.patch.as_ref(),
+            verb: WebVerb::Patch,
+        },
+        OperationVerb {
+            operation: item.delete.as_ref(),
+            verb: WebVerb::Delete,
+        },
+        OperationVerb {
+            operation: item.options.as_ref(),
+            verb: WebVerb::Options,
+        },
+        OperationVerb {
+            operation: item.head.as_ref(),
+            verb: WebVerb::Head,
+        },
     ]
     .into_iter()
-    .filter_map(|x| x)
+    .filter_map(|op_verb| match op_verb.operation {
+        Some(op) => {
+            let mut parameters = item.parameters.clone();
+            parameters.append(&mut op.parameters.clone());
+            Some(WebOperation {
+                id: op.operation_id.clone(),
+                path: path.to_string(),
+                verb: op_verb.verb,
+                parameters,
+                responses: op.responses.clone(),
+                examples: op.x_ms_examples.clone(),
+            })
+        }
+        None => None,
+    })
+    .collect()
 }
 
 /// A $ref reference type that knows what type of reference it is
@@ -424,9 +506,9 @@ pub enum TypedReference {
     Example(Reference),
 }
 
-impl Into<Reference> for TypedReference {
-    fn into(self) -> Reference {
-        match self {
+impl From<TypedReference> for Reference {
+    fn from(s: TypedReference) -> Reference {
+        match s {
             TypedReference::PathItem(r) => r,
             TypedReference::Parameter(r) => r,
             TypedReference::Schema(r) => r,
@@ -454,22 +536,21 @@ fn add_references_for_schema(list: &mut Vec<TypedReference>, schema: &Schema) {
             ReferenceOr::Item(schema) => add_references_for_schema(list, schema),
         }
     }
-    match schema.additional_properties.as_ref() {
-        Some(ap) => match ap {
+
+    if let Some(ap) = schema.additional_properties.as_ref() {
+        match ap {
             AdditionalProperties::Boolean(_) => {}
             AdditionalProperties::Schema(schema) => match schema {
                 ReferenceOr::Reference { reference, .. } => list.push(TypedReference::Schema(reference.clone())),
                 ReferenceOr::Item(schema) => add_references_for_schema(list, schema),
             },
-        },
-        _ => {}
+        }
     }
-    match schema.common.items.as_ref() {
-        Some(schema) => match schema {
+    if let Some(schema) = schema.common.items.as_ref() {
+        match schema {
             ReferenceOr::Reference { reference, .. } => list.push(TypedReference::Schema(reference.clone())),
             ReferenceOr::Item(schema) => add_references_for_schema(list, schema),
-        },
-        _ => {}
+        }
     }
     for schema in &schema.all_of {
         match schema {
@@ -485,15 +566,48 @@ mod tests {
 
     #[test]
     fn test_create_function_name() {
-        assert_eq!(create_function_name("/pets", "get"), "pets_get");
+        assert_eq!(create_function_name(&WebVerb::Get, "/pets"), "get_pets");
     }
 
     #[test]
     fn test_function_name_from_operation_id() {
-        assert_eq!(
-            function_name_from_operation_id("PrivateClouds_CreateOrUpdate"),
-            (Some("private_clouds".to_owned()), "create_or_update".to_owned())
-        );
-        assert_eq!(function_name_from_operation_id("get"), (None, "get".to_owned()));
+        let operation = WebOperation {
+            id: Some("PrivateClouds_CreateOrUpdate".to_owned()),
+            path: "/horse".to_owned(),
+            verb: WebVerb::Get,
+            parameters: Vec::new(),
+            responses: IndexMap::new(),
+            examples: IndexMap::new(),
+        };
+        assert_eq!(Some("private_clouds".to_owned()), operation.rust_module_name());
+        assert_eq!("create_or_update", operation.rust_function_name());
+    }
+
+    #[test]
+    fn test_function_name_from_verb_and_path() {
+        let operation = WebOperation {
+            id: None,
+            path: "/horse".to_owned(),
+            verb: WebVerb::Get,
+            parameters: Vec::new(),
+            responses: IndexMap::new(),
+            examples: IndexMap::new(),
+        };
+        assert_eq!(None, operation.rust_module_name());
+        assert_eq!("get_horse", operation.rust_function_name());
+    }
+
+    #[test]
+    fn test_function_name_with_no_module_name() {
+        let operation = WebOperation {
+            id: Some("PerformConnectivityCheck".to_owned()),
+            path: "/horse".to_owned(),
+            verb: WebVerb::Put,
+            parameters: Vec::new(),
+            responses: IndexMap::new(),
+            examples: IndexMap::new(),
+        };
+        assert_eq!(None, operation.rust_module_name());
+        assert_eq!("perform_connectivity_check", operation.rust_function_name());
     }
 }

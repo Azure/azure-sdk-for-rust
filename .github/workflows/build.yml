@@ -19,12 +19,15 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
-          components: rustfmt
+          components: rustfmt, clippy
 
       - uses: Swatinem/rust-cache@v1
 
       - name: cargo fmt sdk
         run: cargo fmt --all -- --check
+
+      - name: cargo clippy sdk
+        run: cargo clippy --all
 
       - name: cargo fmt services
         run: |
@@ -60,7 +63,15 @@ jobs:
     #   run: cargo check -p azure_core --no-default-features --features enable_hyper
 
     - name: sdk tests
-      run: cargo test --all
+      run: cargo test --all --features mock_transport_framework
+
+    - name: update readme of sdks
+      run: |
+        cargo install cargo-readme
+        ./eng/scripts/cargo_readme.sh
+        if git status sdk | grep -q *.md; then
+          echo "Run ./eng/scripts/cargo_readme.sh to update readmes" && exit 1
+        fi
 
   test-services:
     name: Services Tests
@@ -72,12 +83,18 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-        components: rustfmt
+        components: rustfmt, clippy
 
     - uses: Swatinem/rust-cache@v1
 
     - name: services check
       run: cargo check --manifest-path services/Cargo.toml --all
+
+    - name: services clippy
+      run: cargo clippy --manifest-path services/Cargo.toml --all
+
+    - name: services fmt
+      run: cargo fmt --manifest-path services/Cargo.toml --all -- --check
 
     - name: display free disk space
       run: df -h /
@@ -97,7 +114,7 @@ jobs:
 
     - uses: Swatinem/rust-cache@v1
 
-    - name: integration tests
+    - name: emulator integration tests
       run: |
         npm install azurite@3.13.1
         npx azurite &
@@ -123,7 +140,7 @@ jobs:
 
     - name: e2e tests build
       run: |
-        PROJECTS=(core  cosmos  identity  service_bus  storage)
+        PROJECTS=(core  cosmos  identity  messaging_servicebus  storage)
         for PROJ in ${PROJECTS[@]}
         do
           echo "Checking e2e tests for $PROJ"
@@ -134,3 +151,40 @@ jobs:
       run: df -h /
       if: ${{ always() }}
 
+  test-autorust:
+    name: test AutoRust
+    runs-on: ubuntu-20.04
+    steps:
+    - name: git clone
+      uses: actions/checkout@v2
+      with:
+        path: azure-sdk-for-rust
+    - name: install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+        components: rustfmt, clippy
+    - name: fmt check
+      run: cargo fmt --all --manifest-path azure-sdk-for-rust/services/autorust/Cargo.toml -- --check
+    - name: clippy check
+      run: cargo clippy --all --manifest-path azure-sdk-for-rust/services/autorust/Cargo.toml
+    - name: unit tests
+      run: cargo test --lib --manifest-path azure-sdk-for-rust/services/autorust/Cargo.toml
+    - name: git clone Azure/azure-rest-api-specs
+      uses: actions/checkout@v2
+      with:
+        repository: Azure/azure-rest-api-specs
+        path: azure-rest-api-specs
+    - name: git clone OAI/OpenAPI-Specification
+      uses: actions/checkout@v2
+      with:
+        repository: OAI/OpenAPI-Specification
+        path: OpenAPI-Specification
+    - name: integration tests
+      run: |
+        cd azure-sdk-for-rust/services/autorust
+        cargo test --package autorust_openapi --test openapi_spec_examples
+        cargo test --package autorust_openapi --test azure_rest_api_specs
+        cargo test --package autorust_codegen --test azure_rest_api_specs

@@ -28,8 +28,14 @@ pub struct GuestConfigurationNavigation {
     pub content_uri: Option<String>,
     #[serde(rename = "contentHash", default, skip_serializing_if = "Option::is_none")]
     pub content_hash: Option<String>,
+    #[serde(rename = "assignmentType", default, skip_serializing_if = "Option::is_none")]
+    pub assignment_type: Option<guest_configuration_navigation::AssignmentType>,
+    #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
+    pub content_type: Option<String>,
     #[serde(rename = "configurationParameter", default, skip_serializing_if = "Vec::is_empty")]
     pub configuration_parameter: Vec<ConfigurationParameter>,
+    #[serde(rename = "configurationProtectedParameter", default, skip_serializing_if = "Vec::is_empty")]
+    pub configuration_protected_parameter: Vec<ConfigurationParameter>,
     #[serde(rename = "configurationSetting", default, skip_serializing_if = "Option::is_none")]
     pub configuration_setting: Option<ConfigurationSetting>,
 }
@@ -39,6 +45,13 @@ pub mod guest_configuration_navigation {
     pub enum Kind {
         #[serde(rename = "DSC")]
         Dsc,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AssignmentType {
+        Audit,
+        DeployAndAutoCorrect,
+        ApplyAndAutoCorrect,
+        ApplyAndMonitor,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -124,6 +137,8 @@ pub struct GuestConfigurationAssignmentProperties {
     pub last_compliance_status_checked: Option<String>,
     #[serde(rename = "latestReportId", default, skip_serializing_if = "Option::is_none")]
     pub latest_report_id: Option<String>,
+    #[serde(rename = "parameterHash", default, skip_serializing_if = "Option::is_none")]
+    pub parameter_hash: Option<String>,
     #[serde(rename = "latestAssignmentReport", default, skip_serializing_if = "Option::is_none")]
     pub latest_assignment_report: Option<AssignmentReport>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

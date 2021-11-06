@@ -1516,7 +1516,5 @@ pub struct Participants {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Action {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NotAction {}
+pub type Action = String;
+pub type NotAction = String;

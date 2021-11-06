@@ -87,7 +87,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             );
         }
 
-        chunk = chunk + 1;
+        chunk += 1;
     }
 
     for dropped_suffix_len in &[3usize, 1] {

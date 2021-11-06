@@ -1,13 +1,12 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::Context;
-use azure_cosmos::prelude::CreateDocumentOptions;
+use azure_cosmos::prelude::{CreateDocumentOptions, DeleteDatabaseOptions, GetDocumentOptions};
 use serde::{Deserialize, Serialize};
 
 mod setup;
 
 use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
-use azure_cosmos::responses::GetDocumentResponse;
 use collection::*;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -88,8 +87,7 @@ async fn create_and_delete_document() {
         .unwrap();
 
     let document_after_get = document_client
-        .get_document()
-        .execute::<MyDocument>()
+        .get_document::<MyDocument>(Context::new(), GetDocumentOptions::new())
         .await
         .unwrap();
 
@@ -110,7 +108,10 @@ async fn create_and_delete_document() {
         .documents;
     assert!(documents.len() == 0);
 
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -184,7 +185,10 @@ async fn query_documents() {
     assert!(query_result[0].document_attributes.rid() == documents[0].document_attributes.rid());
     assert_eq!(query_result[0].result, document_data);
 
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -262,8 +266,7 @@ async fn replace_document() {
         .into_document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
         .unwrap();
     let document_after_get = document_client
-        .get_document()
-        .execute::<MyDocument>()
+        .get_document::<MyDocument>(Context::new(), GetDocumentOptions::new())
         .await
         .unwrap();
 
@@ -273,5 +276,8 @@ async fn replace_document() {
         panic!("document not found");
     }
 
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }

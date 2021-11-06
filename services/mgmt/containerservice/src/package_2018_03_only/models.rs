@@ -44,15 +44,13 @@ pub struct TagsObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceOsDisk {}
+pub type ContainerServiceOsDisk = i32;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ContainerServiceStorageProfile {
     StorageAccount,
     ManagedDisks,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceVnetSubnetId {}
+pub type ContainerServiceVnetSubnetId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ContainerServiceVmSize {
     #[serde(rename = "Standard_A1")]

@@ -6,7 +6,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
     let sub_id = std::env::var("AZURE_SUBSCRIPTION_ID")?;
-    let creds = DefaultCredential::default();
+    let creds = DefaultAzureCredential::default();
     let res = creds
         .get_token("https://management.azure.com/")
         .await

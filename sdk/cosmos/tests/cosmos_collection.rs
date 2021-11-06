@@ -4,6 +4,7 @@ mod setup;
 use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use azure_cosmos::resources::collection::*;
+use futures::stream::StreamExt;
 
 #[tokio::test]
 async fn create_and_delete_collection() {
@@ -32,7 +33,12 @@ async fn create_and_delete_collection() {
         )
         .await
         .unwrap();
-    let collections = database_client.list_collections().execute().await.unwrap();
+    let collections =
+        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
+            .next()
+            .await
+            .unwrap()
+            .unwrap();
     assert!(collections.collections.len() == 1);
 
     // try to get the previously created collection
@@ -40,7 +46,10 @@ async fn create_and_delete_collection() {
         .clone()
         .into_collection_client(COLLECTION_NAME);
 
-    let collection_after_get = collection_client.get_collection().execute().await.unwrap();
+    let collection_after_get = collection_client
+        .get_collection(Context::new(), GetCollectionOptions::new())
+        .await
+        .unwrap();
     assert!(collection.collection.rid == collection_after_get.collection.rid);
 
     // check GetPartitionKeyRanges: https://docs.microsoft.com/rest/api/cosmos-db/get-partition-key-ranges
@@ -52,14 +61,21 @@ async fn create_and_delete_collection() {
 
     // delete the collection
     collection_client
-        .delete_collection()
-        .execute()
+        .delete_collection(Context::new(), DeleteCollectionOptions::new())
         .await
         .unwrap();
-    let collections = database_client.list_collections().execute().await.unwrap();
+    let collections =
+        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
+            .next()
+            .await
+            .unwrap()
+            .unwrap();
     assert!(collections.collections.len() == 0);
 
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -94,7 +110,12 @@ async fn replace_collection() {
         .await
         .unwrap();
 
-    let collections = database_client.list_collections().execute().await.unwrap();
+    let collections =
+        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
+            .next()
+            .await
+            .unwrap()
+            .unwrap();
     assert_eq!(collections.collections.len(), 1);
     assert_eq!(
         collection.collection.indexing_policy,
@@ -128,14 +149,20 @@ async fn replace_collection() {
         .clone()
         .into_collection_client(COLLECTION_NAME);
 
-    let _replace_collection_reponse = collection_client
-        .replace_collection()
-        .indexing_policy(&new_ip)
-        .execute("/id")
+    let _replace_collection_response = collection_client
+        .replace_collection(
+            Context::new(),
+            ReplaceCollectionOptions::new("/id").indexing_policy(new_ip),
+        )
         .await
         .unwrap();
 
-    let collections = database_client.list_collections().execute().await.unwrap();
+    let collections =
+        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
+            .next()
+            .await
+            .unwrap()
+            .unwrap();
     assert_eq!(collections.collections.len(), 1);
     let eps: Vec<&ExcludedPath> = collections.collections[0]
         .indexing_policy
@@ -145,5 +172,8 @@ async fn replace_collection() {
         .collect();
     assert!(eps.len() > 0);
 
-    database_client.delete_database().execute().await.unwrap();
+    database_client
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .await
+        .unwrap();
 }

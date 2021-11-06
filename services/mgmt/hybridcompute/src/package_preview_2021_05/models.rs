@@ -227,8 +227,7 @@ pub struct MachineExtensionsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TargetVersion {}
+pub type TargetVersion = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtensionTargetProperties {
     #[serde(rename = "targetVersion", default, skip_serializing_if = "Option::is_none")]

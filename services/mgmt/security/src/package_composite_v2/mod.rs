@@ -1,3 +1,4 @@
 pub mod models;
 pub mod operations;
-pub const API_VERSION: &str = "2021-05-01-preview";
+#[allow(dead_code)]
+pub const API_VERSION: &str = "2021-10-01-preview";

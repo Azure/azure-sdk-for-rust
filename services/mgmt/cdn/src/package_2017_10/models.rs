@@ -433,7 +433,7 @@ pub mod cdn_certificate_source_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.CdnCertificateSourceParameters")]
-        MicrosoftAzureCdnModelsCdnCertificateSourceParameters,
+        U23MicrosoftAzureCdnModelsCdnCertificateSourceParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CertificateType {
@@ -472,7 +472,7 @@ pub mod key_vault_certificate_source_parameters {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Odata_type {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.KeyVaultCertificateSourceParameters")]
-        MicrosoftAzureCdnModelsKeyVaultCertificateSourceParameters,
+        U23MicrosoftAzureCdnModelsKeyVaultCertificateSourceParameters,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UpdateRule {

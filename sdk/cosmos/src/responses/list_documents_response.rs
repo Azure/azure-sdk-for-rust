@@ -143,7 +143,7 @@ where
 mod tests {
     use super::*;
 
-    const BODY: &'static str = "
+    const BODY: &str = "
 {
     \"_rid\": \"3iNTAJKxVCk=\",
     \"Documents\": [

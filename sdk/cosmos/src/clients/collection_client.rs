@@ -44,18 +44,63 @@ impl CollectionClient {
     }
 
     /// Get a collection
-    pub fn get_collection(&self) -> requests::GetCollectionBuilder<'_> {
-        requests::GetCollectionBuilder::new(self)
+    pub async fn get_collection(
+        &self,
+        ctx: Context,
+        options: GetCollectionOptions,
+    ) -> crate::Result<GetCollectionResponse> {
+        let mut request = self.prepare_request_with_collection_name(http::Method::GET);
+
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
+
+        options.decorate_request(&mut request)?;
+
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?;
+
+        Ok(GetCollectionResponse::try_from(response).await?)
     }
 
     /// Delete a collection
-    pub fn delete_collection(&self) -> requests::DeleteCollectionBuilder<'_> {
-        requests::DeleteCollectionBuilder::new(self)
+    pub async fn delete_collection(
+        &self,
+        ctx: Context,
+        options: DeleteCollectionOptions,
+    ) -> crate::Result<DeleteCollectionResponse> {
+        let mut request = self.prepare_request_with_collection_name(http::Method::DELETE);
+
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
+
+        options.decorate_request(&mut request)?;
+
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?;
+
+        Ok(DeleteCollectionResponse::try_from(response).await?)
     }
 
     /// Replace a collection
-    pub fn replace_collection(&self) -> requests::ReplaceCollectionBuilder<'_, '_> {
-        requests::ReplaceCollectionBuilder::new(self)
+    pub async fn replace_collection(
+        &self,
+        ctx: Context,
+        options: ReplaceCollectionOptions,
+    ) -> crate::Result<ReplaceCollectionResponse> {
+        let mut request = self.prepare_request_with_collection_name(http::Method::PUT);
+
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
+
+        options.decorate_request(&mut request, self.collection_name())?;
+
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?;
+
+        Ok(ReplaceCollectionResponse::try_from(response).await?)
     }
 
     /// list documents in a collection
@@ -69,7 +114,7 @@ impl CollectionClient {
         ctx: Context,
         document: &'a D,
         options: CreateDocumentOptions<'_>,
-    ) -> Result<CreateDocumentResponse, crate::Error> {
+    ) -> crate::Result<CreateDocumentResponse> {
         let mut request = self.prepare_doc_request_pipeline(http::Method::POST);
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
 
@@ -77,8 +122,6 @@ impl CollectionClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::CREATED)
             .await?;
 
         Ok(CreateDocumentResponse::try_from(response).await?)
@@ -139,19 +182,14 @@ impl CollectionClient {
         StoredProcedureClient::new(self, stored_procedure_name)
     }
 
-    pub(crate) fn prepare_request_with_collection_name(
-        &self,
-        method: http::Method,
-    ) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
-            &format!(
-                "dbs/{}/colls/{}",
-                self.database_client().database_name(),
-                self.collection_name()
-            ),
-            method,
-            ResourceType::Collections,
-        )
+    fn prepare_request_with_collection_name(&self, http_method: http::Method) -> Request {
+        let path = &format!(
+            "dbs/{}/colls/{}",
+            self.database_client().database_name(),
+            self.collection_name()
+        );
+        self.cosmos_client()
+            .prepare_request_pipeline(path, http_method)
     }
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
@@ -169,6 +207,6 @@ impl CollectionClient {
             self.collection_name()
         );
         self.cosmos_client()
-            .prepare_request_pipeline(&path, http_method)
+            .prepare_request_pipeline(path, http_method)
     }
 }

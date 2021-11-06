@@ -105,13 +105,13 @@ impl TryFrom<&HeaderMap> for Properties<'static, 'static> {
                 // we do not check if there are more entries. We just ignore them.
                 Ok((key, value))
             })
-            .collect::<Result<Vec<(&str, &str)>, crate::Error>>()? // if we have an error, return error
+            .collect::<crate::Result<Vec<(&str, &str)>>>()? // if we have an error, return error
             .into_iter()
             .map(|(key, value)| {
                 let value = std::str::from_utf8(&base64::decode(value)?)?.to_owned(); // the value is base64 encoded se we decode it
                 Ok((key, value))
             })
-            .collect::<Result<Vec<(&str, String)>, crate::Error>>()? // if we have an error, return error
+            .collect::<crate::Result<Vec<(&str, String)>>>()? // if we have an error, return error
             .into_iter()
             .for_each(|(key, value)| {
                 properties.insert(key.to_owned(), value); // finally store the key and value into the properties

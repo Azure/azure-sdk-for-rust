@@ -37,6 +37,8 @@ pub struct Workflow {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkflowProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ManagedServiceIdentity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkflowProperties {
@@ -1106,6 +1108,8 @@ pub struct IntegrationServiceEnvironment {
     pub properties: Option<IntegrationServiceEnvironmentProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<IntegrationServiceEnvironmentSku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ManagedServiceIdentity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationServiceEnvironmentSku {
@@ -1236,6 +1240,33 @@ pub struct IpAddress {
     pub address: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedServiceIdentity {
+    #[serde(rename = "type")]
+    pub type_: managed_service_identity::Type,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+pub mod managed_service_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+        UserAssigned,
+        None,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserAssignedIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationServiceEnvironmentSkuList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IntegrationServiceEnvironmentSkuDefinition>,
@@ -1279,6 +1310,32 @@ pub enum IntegrationServiceEnvironmentSkuScaleType {
     None,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IntegrationServiceEnvironmentManagedApiListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<IntegrationServiceEnvironmentManagedApi>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IntegrationServiceEnvironmentManagedApi {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<IntegrationServiceEnvironmentManagedApiProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IntegrationServiceEnvironmentManagedApiProperties {
+    #[serde(flatten)]
+    pub api_resource_properties: ApiResourceProperties,
+    #[serde(rename = "deploymentParameters", default, skip_serializing_if = "Option::is_none")]
+    pub deployment_parameters: Option<IntegrationServiceEnvironmentManagedApiDeploymentParameters>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IntegrationServiceEnvironmentManagedApiDeploymentParameters {
+    #[serde(rename = "contentLinkDefinition", default, skip_serializing_if = "Option::is_none")]
+    pub content_link_definition: Option<ContentLink>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IntegrationAccountSkuName {
     NotSpecified,
     Free,
@@ -1297,7 +1354,7 @@ pub struct IntegrationAccount {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountProperties {
     #[serde(rename = "integrationServiceEnvironment", default, skip_serializing_if = "Option::is_none")]
-    pub integration_service_environment: Option<IntegrationServiceEnvironment>,
+    pub integration_service_environment: Option<ResourceReference>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<WorkflowState>,
 }

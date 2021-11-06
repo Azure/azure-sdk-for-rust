@@ -1,8 +1,4 @@
-use crate::policies::{Policy, PolicyResult, Request, Response};
-use crate::sleep::sleep;
-use crate::PipelineContext;
 use chrono::{DateTime, Local};
-use std::sync::Arc;
 use std::time::Duration;
 
 /// Retry policy with exponential back-off.
@@ -27,55 +23,24 @@ impl ExponentialRetryPolicy {
             max_delay,
         }
     }
+}
 
-    fn is_expired(
-        &self,
-        first_retry_time: &mut Option<DateTime<Local>>,
-        current_retries: &u32,
-    ) -> bool {
-        if *current_retries > self.max_retries {
+impl super::RetryPolicy for ExponentialRetryPolicy {
+    fn is_expired(&self, first_retry_time: &mut Option<DateTime<Local>>, retry_count: u32) -> bool {
+        if retry_count > self.max_retries {
             return true;
         }
 
-        if first_retry_time.is_none() {
-            *first_retry_time = Some(Local::now());
-        }
+        let first_retry_time = first_retry_time.get_or_insert_with(Local::now);
+        let max_delay = chrono::Duration::from_std(self.max_delay)
+            .unwrap_or_else(|_| chrono::Duration::max_value());
 
-        Local::now()
-            > first_retry_time.unwrap() + chrono::Duration::from_std(self.max_delay).unwrap()
+        Local::now() > *first_retry_time + max_delay
     }
-}
 
-#[async_trait::async_trait]
-impl<C> Policy<C> for ExponentialRetryPolicy
-where
-    C: Send + Sync,
-{
-    async fn send(
-        &self,
-        ctx: &mut PipelineContext<C>,
-        request: &mut Request,
-        next: &[Arc<dyn Policy<C>>],
-    ) -> PolicyResult<Response> {
-        let mut first_retry_time = None;
-        let mut current_retries = 0;
-
-        loop {
-            match next[0].send(ctx, request, &next[1..]).await {
-                Ok(response) => return Ok(response),
-                Err(error) => {
-                    if self.is_expired(&mut first_retry_time, &mut current_retries) {
-                        return Err(error);
-                    } else {
-                        current_retries += 1;
-
-                        let sleep_ms = self.delay.as_millis() as u64
-                            * u64::pow(2u64, current_retries - 1)
-                            + rand::random::<u8>() as u64;
-                        sleep(Duration::from_millis(sleep_ms)).await;
-                    }
-                }
-            }
-        }
+    fn sleep_duration(&self, retry_count: u32) -> Duration {
+        let sleep_ms = self.delay.as_millis() as u64 * u64::pow(2u64, retry_count - 1)
+            + rand::random::<u8>() as u64;
+        Duration::from_millis(sleep_ms)
     }
 }

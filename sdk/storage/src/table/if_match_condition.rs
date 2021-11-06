@@ -34,7 +34,7 @@ impl AddAsHeader for IfMatchCondition {
 
         request.headers_mut().append(
             header_name,
-            http::header::HeaderValue::from_str(&header_value)?,
+            http::header::HeaderValue::from_str(header_value)?,
         );
 
         Ok(())

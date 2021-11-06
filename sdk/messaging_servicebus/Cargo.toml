@@ -1,0 +1,31 @@
+[package]
+name = "azure_messaging_servicebus"
+version = "0.1.0"
+description = "Rust wrappers around Microsoft Azure REST APIs - Service Bus crate"
+readme = "README.md"
+authors = ["Microsoft Corp."]
+license = "MIT"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_messaging_servicebus"
+
+keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+categories = ["api-bindings"]
+
+edition = "2018"
+
+[dependencies]
+azure_core = { path = "../core", version = "0.1.0" }
+ring = "0.16"
+base64 = "0.13"
+chrono = "0.4"
+log = "0.4"
+url = "2.2"
+
+[dev-dependencies]
+futures = "0.3"
+tokio = { version = "1.0", features = ["macros"] }
+env_logger = "0.8"
+
+[features]
+test_e2e = []

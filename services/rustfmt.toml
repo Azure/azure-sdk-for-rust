@@ -1,3 +1,8 @@
-imports_granularity = "Crate"
+# https://github.com/rust-lang/rustfmt/blob/master/Configurations.md
 max_width = 140
 newline_style = "Unix"
+
+# these require nightly
+# imports_granularity = "Crate"
+# imports_layout = "Vertical"
+# group_imports = "StdExternalCrate"

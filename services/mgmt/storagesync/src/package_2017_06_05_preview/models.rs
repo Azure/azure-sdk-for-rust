@@ -367,10 +367,8 @@ pub struct ServerEndpointProperties {
     #[serde(rename = "lastWorkflowId", default, skip_serializing_if = "Option::is_none")]
     pub last_workflow_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PhysicalPath {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceId {}
+pub type PhysicalPath = String;
+pub type ResourceId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagsObject {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

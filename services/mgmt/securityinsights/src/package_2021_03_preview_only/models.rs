@@ -617,8 +617,7 @@ pub struct IpEntityProperties {
     #[serde(rename = "threatIntelligence", default, skip_serializing_if = "Vec::is_empty")]
     pub threat_intelligence: Vec<ThreatIntelligence>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Label {}
+pub type Label = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MailboxEntity {
     #[serde(flatten)]
@@ -1183,10 +1182,23 @@ pub mod settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
+        Anomalies,
         EyesOn,
         EntityAnalytics,
         Ueba,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Anomalies {
+    #[serde(flatten)]
+    pub settings: Settings,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AnomaliesSettingsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AnomaliesSettingsProperties {
+    #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EyesOn {
@@ -1300,8 +1312,8 @@ pub struct RepoList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Repo {
-    #[serde(rename = "repoUrl", default, skip_serializing_if = "Option::is_none")]
-    pub repo_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
     #[serde(rename = "fullName", default, skip_serializing_if = "Option::is_none")]
     pub full_name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1319,11 +1331,13 @@ pub struct SourceControl {
     pub resource_with_etag: ResourceWithEtag,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SourceControlProperties>,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceControlProperties {
-    #[serde(rename = "sourceControlId", default, skip_serializing_if = "Option::is_none")]
-    pub source_control_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[serde(rename = "displayName")]
     pub display_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1340,6 +1354,10 @@ pub struct Repository {
     pub url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branch: Option<String>,
+    #[serde(rename = "displayUrl", default, skip_serializing_if = "Option::is_none")]
+    pub display_url: Option<String>,
+    #[serde(rename = "deploymentLogsUrl", default, skip_serializing_if = "Option::is_none")]
+    pub deployment_logs_url: Option<String>,
     #[serde(rename = "pathMapping", default, skip_serializing_if = "Vec::is_empty")]
     pub path_mapping: Vec<ContentPathMap>,
 }
@@ -2513,6 +2531,63 @@ pub mod activity_entity_queries_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EntityQueryTemplateKind {
+    Activity,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQueryTemplateList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<EntityQueryTemplate>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQueryTemplate {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub kind: EntityQueryTemplateKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActivityEntityQueryTemplate {
+    #[serde(flatten)]
+    pub entity_query_template: EntityQueryTemplate,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ActivityEntityQueryTemplateProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActivityEntityQueryTemplateProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "queryDefinitions", default, skip_serializing_if = "Option::is_none")]
+    pub query_definitions: Option<activity_entity_query_template_properties::QueryDefinitions>,
+    #[serde(rename = "dataTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_types: Vec<DataTypeDefinitions>,
+    #[serde(rename = "inputEntityType", default, skip_serializing_if = "Option::is_none")]
+    pub input_entity_type: Option<EntityInnerType>,
+    #[serde(rename = "requiredInputFieldsSets", default, skip_serializing_if = "Vec::is_empty")]
+    pub required_input_fields_sets: Vec<Vec<String>>,
+    #[serde(rename = "entitiesFilter", default, skip_serializing_if = "Option::is_none")]
+    pub entities_filter: Option<serde_json::Value>,
+}
+pub mod activity_entity_query_template_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct QueryDefinitions {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub query: Option<String>,
+        #[serde(rename = "summarizeBy", default, skip_serializing_if = "Option::is_none")]
+        pub summarize_by: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataTypeDefinitions {
+    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
+    pub data_type: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataList {
     pub value: Vec<MetadataModel>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2532,41 +2607,24 @@ pub struct MetadataPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetadataPropertiesPatch>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetadataContentId {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetadataParentId {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetadataVersion {}
+pub type MetadataContentId = String;
+pub type MetadataParentId = String;
+pub type MetadataVersion = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MetadataKind {
-    #[serde(rename = "dataConnector")]
     DataConnector,
-    #[serde(rename = "dataType")]
     DataType,
-    #[serde(rename = "workbook")]
     Workbook,
-    #[serde(rename = "workbookTemplate")]
     WorkbookTemplate,
-    #[serde(rename = "playbook")]
     Playbook,
-    #[serde(rename = "playbookTemplate")]
     PlaybookTemplate,
-    #[serde(rename = "analyticRuleTemplate")]
-    AnalyticRuleTemplate,
-    #[serde(rename = "analyticRule")]
-    AnalyticRule,
-    #[serde(rename = "huntingQuery")]
+    AnalyticsRuleTemplate,
+    AnalyticsRule,
     HuntingQuery,
-    #[serde(rename = "investigationQuery")]
     InvestigationQuery,
-    #[serde(rename = "parser")]
     Parser,
-    #[serde(rename = "watchlist")]
     Watchlist,
-    #[serde(rename = "watchlistTemplate")]
     WatchlistTemplate,
-    #[serde(rename = "solution")]
     Solution,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2581,13 +2639,9 @@ pub mod metadata_source {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
-        #[serde(rename = "localWorkspace")]
         LocalWorkspace,
-        #[serde(rename = "community")]
         Community,
-        #[serde(rename = "solution")]
         Solution,
-        #[serde(rename = "sourceRepository")]
         SourceRepository,
     }
 }
@@ -2614,11 +2668,8 @@ pub mod metadata_support {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
-        #[serde(rename = "microsoft")]
         Microsoft,
-        #[serde(rename = "developer")]
-        Developer,
-        #[serde(rename = "community")]
+        Partner,
         Community,
     }
 }
@@ -2648,9 +2699,19 @@ pub mod metadata_dependencies {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataCategories {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub domains: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub verticals: Vec<String>,
+}
+pub type MetadataProviders = Vec<String>;
+pub type FirstPublishDate = String;
+pub type LastPublishDate = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataProperties {
-    #[serde(rename = "contentId")]
-    pub content_id: MetadataContentId,
+    #[serde(rename = "contentId", default, skip_serializing_if = "Option::is_none")]
+    pub content_id: Option<MetadataContentId>,
     #[serde(rename = "parentId")]
     pub parent_id: MetadataParentId,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2664,6 +2725,14 @@ pub struct MetadataProperties {
     pub support: Option<MetadataSupport>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dependencies: Option<MetadataDependencies>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub categories: Option<MetadataCategories>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub providers: Option<MetadataProviders>,
+    #[serde(rename = "firstPublishDate", default, skip_serializing_if = "Option::is_none")]
+    pub first_publish_date: Option<FirstPublishDate>,
+    #[serde(rename = "lastPublishDate", default, skip_serializing_if = "Option::is_none")]
+    pub last_publish_date: Option<LastPublishDate>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataPropertiesPatch {
@@ -2683,6 +2752,14 @@ pub struct MetadataPropertiesPatch {
     pub support: Option<MetadataSupport>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dependencies: Option<MetadataDependencies>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub categories: Option<MetadataCategories>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub providers: Option<MetadataProviders>,
+    #[serde(rename = "firstPublishDate", default, skip_serializing_if = "Option::is_none")]
+    pub first_publish_date: Option<FirstPublishDate>,
+    #[serde(rename = "lastPublishDate", default, skip_serializing_if = "Option::is_none")]
+    pub last_publish_date: Option<LastPublishDate>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {

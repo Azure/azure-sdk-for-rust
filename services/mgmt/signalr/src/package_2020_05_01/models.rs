@@ -276,6 +276,7 @@ pub enum SignalRRequestType {
     ServerConnection,
     #[serde(rename = "RESTAPI")]
     Restapi,
+    Trace,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointAcl {

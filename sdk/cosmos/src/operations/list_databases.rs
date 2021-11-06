@@ -26,52 +26,11 @@ impl ListDatabasesOptions {
         max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 
-    pub async fn decorate_request(&self, request: &mut Request) -> Result<(), crate::Error> {
+    pub async fn decorate_request(&self, request: &mut Request) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
         azure_core::headers::add_mandatory_header2(&self.max_item_count, request)?;
         Ok(())
     }
-
-    // pub fn stream(&self) -> impl Stream<Item = Result<ListDatabasesResponse, crate::Error>> + '_ {
-    //     #[derive(Debug, Clone, PartialEq)]
-    //     enum States {
-    //         Init,
-    //         Continuation(String),
-    //     }
-
-    //     unfold(
-    //         Some(States::Init),
-    //         move |continuation_token: Option<States>| {
-    //             async move {
-    //                 debug!("continuation_token == {:?}", &continuation_token);
-    //                 let response = match continuation_token {
-    //                     Some(States::Init) => self.decorate_request().await,
-    //                     Some(States::Continuation(continuation_token)) => {
-    //                         self.clone()
-    //                             .continuation(continuation_token.as_str())
-    //                             .decorate_request()
-    //                             .await
-    //                     }
-    //                     None => return None,
-    //                 };
-
-    //                 // the ? operator does not work in async move (yet?)
-    //                 // so we have to resort to this boilerplate
-    //                 let response = match response {
-    //                     Ok(response) => response,
-    //                     Err(err) => return Some((Err(err), None)),
-    //                 };
-
-    //                 let continuation_token = response
-    //                     .continuation_token
-    //                     .as_ref()
-    //                     .map(|ct| States::Continuation(ct.to_owned()));
-
-    //                 Some((Ok(response), continuation_token))
-    //             }
-    //         },
-    //     )
-    // }
 }
 
 #[derive(Clone, PartialEq, PartialOrd, Debug)]
@@ -92,7 +51,9 @@ pub struct ListDatabasesResponse {
 }
 
 impl ListDatabasesResponse {
-    pub(crate) async fn try_from(response: Response) -> Result<Self, crate::Error> {
+    // TODO: To remove pragma when list_databases has been re-enabled
+    #[allow(dead_code)]
+    pub(crate) async fn try_from(response: Response) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 
@@ -123,5 +84,15 @@ impl ListDatabasesResponse {
             continuation_token: continuation_token_from_headers_optional(&headers)?,
             gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
         })
+    }
+}
+
+impl IntoIterator for ListDatabasesResponse {
+    type Item = Database;
+
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.databases.into_iter()
     }
 }

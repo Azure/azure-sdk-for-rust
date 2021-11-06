@@ -92,7 +92,7 @@ impl<'a> ListContainersBuilder<'a> {
         let body = std::str::from_utf8(response.body())?;
         debug!("body == {}", body);
 
-        let incomplete_vector = incomplete_vector_from_container_response(&body)?;
+        let incomplete_vector = incomplete_vector_from_container_response(body)?;
         let request_id = request_id_from_headers(response.headers())?;
         Ok(ListContainersResponse {
             incomplete_vector,
