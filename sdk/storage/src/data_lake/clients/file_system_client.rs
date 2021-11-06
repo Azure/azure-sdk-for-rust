@@ -62,14 +62,13 @@ impl FileSystemClient {
         SetFileSystemPropertiesBuilder::new(self, properties)
     }
 
-    /// Create a path
     pub async fn create_path(
         &self,
         ctx: Context,
         path_name: &str,
         options: CreatePathOptions<'_>,
     ) -> Result<CreatePathResponse, crate::Error> {
-        let mut request = self.prepare_request_pipeline(path_name, http::Method::PUT);
+        let mut request = self.prepare_create_path_request(path_name);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
@@ -82,6 +81,25 @@ impl FileSystemClient {
         Ok(CreatePathResponse::try_from(response).await?)
     }
 
+    pub async fn update_path(
+        &self,
+        ctx: Context,
+        path_name: &str,
+        options: UpdatePathOptions<'_>,
+    ) -> Result<UpdatePathResponse, crate::Error> {
+        let mut request = self.prepare_update_path_request(path_name);
+        let contents = DataLakeContext {};
+        let mut pipeline_context = PipelineContext::new(ctx, contents);
+
+        options.decorate_request(&mut request, bytes::Bytes::new())?;
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?;
+
+        Ok(UpdatePathResponse::try_from(response).await?)
+    }
+
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
         self.data_lake_client.http_client()
     }
@@ -90,6 +108,7 @@ impl FileSystemClient {
         &self.url
     }
 
+    /// Note: This is part of the old (non-pipeline) architecture. Eventually this method will disappear.
     pub(crate) fn prepare_request(
         &self,
         url: &str,
@@ -101,17 +120,26 @@ impl FileSystemClient {
             .prepare_request(url, method, http_header_adder, request_body)
     }
 
-    /// Note: This is part of the new pipeline architecture. Eventually this method will replace `prepare_request` fully.
-    pub(crate) fn prepare_request_pipeline(
+    // TODO: Support '?resource=directory'
+    pub(crate) fn prepare_create_path_request(
         &self,
-        uri_path: &str,
-        http_method: http::method::Method,
+        path_name: &str,
     ) -> azure_core::Request {
-        let uri = format!("{}/{}?resource=file", self.url(), uri_path); // TODO: Support '?resource=directory'
-        http::request::Builder::new()
-            .method(http_method)
-            .uri(uri)
-            .body(bytes::Bytes::new())
+        let uri = format!("{}/{}?resource=file", self.url(), path_name);
+        http::request::Request::put(uri)
+            .body(bytes::Bytes::new())// Request builder requires a body here
+            .unwrap()
+            .into()
+    }
+
+    // TODO: Support '?action=flush'
+    pub(crate) fn prepare_update_path_request(
+        &self,
+        path_name: &str,
+    ) -> azure_core::Request {
+        let uri = format!("{}/{}?action=append", self.url(), path_name);
+        http::request::Request::patch(uri)
+            .body(bytes::Bytes::new()) // Request builder requires a body here
             .unwrap()
             .into()
     }
