@@ -62,13 +62,13 @@ impl FileSystemClient {
         SetFileSystemPropertiesBuilder::new(self, properties)
     }
 
-    pub async fn create_path(
+    pub async fn create_file(
         &self,
         ctx: Context,
         path_name: &str,
-        options: CreatePathOptions<'_>,
-    ) -> Result<CreatePathResponse, crate::Error> {
-        let mut request = self.prepare_create_path_request(path_name);
+        options: FileCreateOptions<'_>,
+    ) -> Result<FileCreateResponse, crate::Error> {
+        let mut request = self.prepare_file_create_request(path_name);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
@@ -78,16 +78,16 @@ impl FileSystemClient {
             .send(&mut pipeline_context, &mut request)
             .await?;
 
-        Ok(CreatePathResponse::try_from(response).await?)
+        Ok(FileCreateResponse::try_from(response).await?)
     }
 
-    pub async fn update_path(
+    pub async fn append_to_file(
         &self,
         ctx: Context,
         path_name: &str,
-        options: UpdatePathOptions<'_>,
-    ) -> Result<UpdatePathResponse, crate::Error> {
-        let mut request = self.prepare_update_path_request(path_name);
+        options: FileAppendOptions<'_>,
+    ) -> Result<FileAppendResponse, crate::Error> {
+        let mut request = self.prepare_file_append_request(path_name);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
@@ -97,7 +97,7 @@ impl FileSystemClient {
             .send(&mut pipeline_context, &mut request)
             .await?;
 
-        Ok(UpdatePathResponse::try_from(response).await?)
+        Ok(FileAppendResponse::try_from(response).await?)
     }
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
@@ -120,23 +120,15 @@ impl FileSystemClient {
             .prepare_request(url, method, http_header_adder, request_body)
     }
 
-    // TODO: Support '?resource=directory'
-    pub(crate) fn prepare_create_path_request(
-        &self,
-        path_name: &str,
-    ) -> azure_core::Request {
+    pub(crate) fn prepare_file_create_request(&self, path_name: &str) -> azure_core::Request {
         let uri = format!("{}/{}?resource=file", self.url(), path_name);
         http::request::Request::put(uri)
-            .body(bytes::Bytes::new())// Request builder requires a body here
+            .body(bytes::Bytes::new()) // Request builder requires a body here
             .unwrap()
             .into()
     }
 
-    // TODO: Support '?action=flush'
-    pub(crate) fn prepare_update_path_request(
-        &self,
-        path_name: &str,
-    ) -> azure_core::Request {
+    pub(crate) fn prepare_file_append_request(&self, path_name: &str) -> azure_core::Request {
         let uri = format!("{}/{}?action=append", self.url(), path_name);
         http::request::Request::patch(uri)
             .body(bytes::Bytes::new()) // Request builder requires a body here

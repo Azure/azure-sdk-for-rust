@@ -2,8 +2,8 @@
 
 #![allow(missing_docs)]
 
-mod create_path;
-mod update_path;
+mod file_append;
+mod file_create;
 
-pub use create_path::*;
-pub use update_path::*;
+pub use file_append::*;
+pub use file_create::*;

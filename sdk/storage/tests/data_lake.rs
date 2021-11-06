@@ -85,17 +85,17 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     let file_name = "e2etest-file.txt";
 
     file_system_client
-        .create_path(Context::default(), file_name, CreatePathOptions::default())
+        .create_file(Context::default(), file_name, FileCreateOptions::default())
         .await?;
 
     file_system_client
-        .create_path(Context::default(), file_name, CreatePathOptions::default())
+        .create_file(Context::default(), file_name, FileCreateOptions::default())
         .await?;
 
     let do_not_overwrite =
-        CreatePathOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
+        FileCreateOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
     let create_path_result = file_system_client
-        .create_path(Context::default(), file_name, do_not_overwrite)
+        .create_file(Context::default(), file_name, do_not_overwrite) // Add method create_file_if_not_exists
         .await;
     assert!(create_path_result.is_err());
 

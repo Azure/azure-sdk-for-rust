@@ -74,23 +74,23 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("creating path '{}'...", file_name);
     let create_path_response = file_system
-        .create_path(Context::default(), file_name, CreatePathOptions::default())
+        .create_file(Context::default(), file_name, FileCreateOptions::default())
         .await?;
     println!("create path response == {:?}", create_path_response);
     println!();
 
     println!("creating path '{}' (overwrite)...", file_name);
     let create_path_response = file_system
-        .create_path(Context::default(), file_name, CreatePathOptions::default())
+        .create_file(Context::default(), file_name, FileCreateOptions::default())
         .await?;
     println!("create path response == {:?}", create_path_response);
     println!();
 
     println!("creating path '{}' (do not overwrite)...", file_name);
     let do_not_overwrite =
-        CreatePathOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
+        FileCreateOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
     let create_path_result = file_system
-        .create_path(Context::default(), file_name, do_not_overwrite)
+        .create_file(Context::default(), file_name, do_not_overwrite)
         .await;
     println!(
         "create path result (should fail) == {:?}",

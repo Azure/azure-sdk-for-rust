@@ -10,11 +10,11 @@ use std::convert::TryInto;
 use azure_core::{Request as HttpRequest, Response as HttpResponse};
 
 #[derive(Debug, Clone, Default)]
-pub struct UpdatePathOptions<'a> {
+pub struct FileAppendOptions<'a> {
     if_match_condition: Option<IfMatchCondition<'a>>,
 }
 
-impl<'a> UpdatePathOptions<'a> {
+impl<'a> FileAppendOptions<'a> {
     pub fn new() -> Self {
         Self {
             if_match_condition: None,
@@ -39,13 +39,13 @@ impl<'a> UpdatePathOptions<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct UpdatePathResponse {
+pub struct FileAppendResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: String,
     pub last_modified: DateTime<Utc>,
 }
 
-impl UpdatePathResponse {
+impl FileAppendResponse {
     pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
