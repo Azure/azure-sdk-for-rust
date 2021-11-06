@@ -2,7 +2,6 @@ use super::{
     AzureCliCredential, EnvironmentCredential, ManagedIdentityCredential, TokenCredential,
 };
 use azure_core::TokenResponse;
-use log::debug;
 
 #[derive(Debug, Default)]
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
@@ -67,8 +66,11 @@ pub enum DefaultAzureCredentialError {
     EnvironmentCredentialError(#[from] super::EnvironmentCredentialError),
     #[error("Error getting managed identity credential: {0}")]
     ManagedIdentityCredentialError(#[from] super::ManagedIdentityCredentialError),
-    #[error("End of default list")]
-    EndOfDefaultList,
+    #[error(
+        "Multiple errors were encountered while attempting to authenticate:\n{}",
+        format_aggregate_error(.0)
+    )]
+    CredentialUnavailable(Vec<DefaultAzureCredentialError>),
 }
 
 /// Types of TokenCredential supported by DefaultAzureCredential
@@ -134,16 +136,16 @@ impl TokenCredential for DefaultAzureCredential {
     type Error = DefaultAzureCredentialError;
     /// Try to fetch a token using each of the credential sources until one succeeds
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
+        let mut errors = Vec::new();
         for source in &self.sources {
             let token_res = source.get_token(resource).await;
 
-            if let Ok(token) = token_res {
-                return Ok(token);
-            } else {
-                debug!("Failed to get credentials: {:?}", token_res.err().unwrap());
+            match token_res {
+                Ok(token) => return Ok(token),
+                Err(error) => errors.push(error),
             }
         }
-        Err(DefaultAzureCredentialError::EndOfDefaultList)
+        Err(DefaultAzureCredentialError::CredentialUnavailable(errors))
     }
 }
 
@@ -157,4 +159,12 @@ impl azure_core::TokenCredential for DefaultAzureCredential {
             .await
             .map_err(|error| azure_core::Error::GetTokenError(Box::new(error)))
     }
+}
+
+fn format_aggregate_error(errors: &[DefaultAzureCredentialError]) -> String {
+    errors
+        .iter()
+        .map(|error| error.to_string())
+        .collect::<Vec<String>>()
+        .join("\n")
 }
