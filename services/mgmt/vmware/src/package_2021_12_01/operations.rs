@@ -3,6 +3,18 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, models::*, API_VERSION};
+
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    OperationsList(#[from] operations::list::Error),
+    #[error(transparent)]
+    LocationCheckTrialAvailability(#[from] locations::check_trial_availability::Error),
+    #[error(transparent)]
+    LocationCheckQuotaAvailability(#[from] locations::check_quota_availability::Error),
+}
+
 pub mod operations {
     use super::{models, models::*, API_VERSION};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
